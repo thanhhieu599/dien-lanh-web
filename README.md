@@ -10,7 +10,7 @@ Website thương mại điện tử ngành điện lạnh (máy lạnh, tủ l�
 |---|---|---|
 | 1 | Frontend đầy đủ trang và chức năng (dữ liệu mẫu, lưu ở trình duyệt) | ✅ Xong |
 | 2 | Cơ sở dữ liệu Supabase/PostgreSQL: sản phẩm, đơn hàng, khách hàng, lead, đánh giá (xem `supabase/README.md`) | ✅ Xong – cần tạo project & dán khóa |
-| 3 | Trang quản trị (admin): sản phẩm, đơn hàng, CRM lead, khuyến mãi, bài viết, báo cáo | ⏳ |
+| 3 | Trang quản trị `/admin/`: đơn hàng, CRM lead, sản phẩm, khuyến mãi, bài viết, đánh giá, báo cáo, phân quyền (xem `admin/README.md`) | ✅ Xong |
 | 4 | Thanh toán online (VNPay/MoMo), SEO SSR, email/Zalo tự động | ⏳ |
 
 ## Cấu trúc thư mục
@@ -27,7 +27,7 @@ dien-lanh-web/
 │           ├── core/          # utils.js, api.js (lớp dữ liệu), store.js (giỏ hàng, tài khoản, đơn hàng)
 │           ├── components/    # layout (header/footer/mega menu), ui (thẻ SP, modal), icons, art (ảnh minh họa SVG)
 │           └── pages/         # script riêng từng trang
-├── admin/                     # Giai đoạn 3 – trang quản trị
+├── admin/                     # Giai đoạn 3 – trang quản trị (SPA, dùng chung database)
 ├── supabase/                  # Giai đoạn 2 – database: migrations, seed, kiểm thử
 ├── server/                    # (dự phòng) dịch vụ server riêng nếu cần: thanh toán, email
 ├── tools/generate-catalog.mjs # Sinh dữ liệu sản phẩm mẫu
@@ -59,7 +59,8 @@ Mã giảm giá demo: `DTCOOL10`, `GIAM300K`, `FREESHIP`.
 
 ## Xem online
 
-GitHub Pages: https://thanhhieu599.github.io/dien-lanh-web/ (tự chuyển vào `frontend/`).
+- Website: https://thanhhieu599.github.io/dien-lanh-web/ (tự chuyển vào `frontend/`)
+- Quản trị: https://thanhhieu599.github.io/dien-lanh-web/admin/
 
 ## Chạy thử
 

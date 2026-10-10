@@ -28,11 +28,12 @@ Frontend (`assets/js/core/backend.js`) tự nhận chế độ:
 
 Việc còn lại cho giai đoạn sau: thanh toán online (VNPay/MoMo cần server ký IPN → Supabase Edge Functions), email/Zalo thông báo đơn mới (Database Webhooks), OTP xác minh số điện thoại, SSR/pre-render cho SEO.
 
-## Giai đoạn 3 – Quản trị (`admin/`)
+## Giai đoạn 3 – Quản trị (đã triển khai: `admin/`)
 
-- Dashboard: doanh thu, đơn mới, lead mới, top sản phẩm.
-- Sản phẩm: CRUD, biến thể, thông số, upload ảnh, tồn kho theo cửa hàng, nhập/xuất Excel.
-- Đơn hàng: duyệt, đổi trạng thái (chờ xác nhận → giao → lắp đặt → hoàn thành), in phiếu, xuất hóa đơn (kết nối MISA).
-- CRM lead: báo giá dự án B2B, đặt lịch dịch vụ, phân công nhân viên, nhắc lịch bảo trì.
-- Marketing: banner, mã giảm giá, flash sale, bài viết SEO.
-- Phân quyền: Admin / Sales / Kỹ thuật / Biên tập.
+Ứng dụng một trang, hash routing (`#/orders/123`), dùng lại `backend-config.js`, `utils.js`, `icons.js`, `art.js` của website.
+- `db.js`: hai adapter cùng giao diện `list/get/insert/update/remove` – Supabase (PostgREST, đếm bằng `Prefer: count=exact`) và Demo (localStorage, đồng bộ đơn/lead/đánh giá từ website demo cùng tên miền).
+- `resources.js`: cấu hình khai báo cho các mục CRUD (cột, bộ lọc, trường form); `pages-crud.js` dựng danh sách + form từ cấu hình.
+- `pages-sales.js`: tổng quan, đơn hàng, CRM lead, báo cáo; `pages-other.js`: đánh giá, khách hàng, cài đặt; `charts.js`: biểu đồ SVG.
+- Quyền thật nằm ở RLS (migrations); giao diện chỉ ẩn mục không có quyền. Migration `20261011000001_admin.sql` thêm trigger hoàn/trừ kho khi đơn vào/ra trạng thái hủy.
+
+Việc tiếp theo đề xuất: thanh toán online (VNPay/MoMo qua Supabase Edge Functions), thông báo đơn mới qua email/Zalo OA (Database Webhooks), upload ảnh sản phẩm lên Supabase Storage ngay trong form, nhập/xuất Excel sản phẩm, pre-render trang sản phẩm cho SEO.

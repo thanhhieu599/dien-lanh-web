@@ -146,3 +146,22 @@ do $$ begin
   raise notice 'OK 9 - đánh giá đã duyệt hiển thị';
 end $$;
 select pg_temp.reset_user();
+
+-- 10. Hoàn kho khi hủy: khách hủy và nhân viên hủy đều hoàn đúng 1 lần
+select pg_temp.reset_user();
+do $$
+declare r jsonb; s0 int; s1 int;
+begin
+  select stock into s0 from public.products where id = 1020;
+  r := public.place_order('[{"id":1020,"qty":2}]', '{"name":"Test Kho","phone":"0904444444"}', '{"method":"pickup"}', 'cod');
+  select stock into s1 from public.products where id = 1020;
+  assert s1 = greatest(s0 - 2, 0), 'đặt hàng phải trừ kho';
+  perform public.cancel_order(r ->> 'code', '0904444444');
+  assert (select stock from public.products where id = 1020) = s1 + 2, 'khách hủy hoàn kho đúng 1 lần';
+  r := public.place_order('[{"id":1020,"qty":1}]', '{"name":"Test Kho","phone":"0904444445"}', '{"method":"pickup"}', 'cod');
+  select stock into s1 from public.products where id = 1020;
+  update public.orders set status = 'shipping' where code = r ->> 'code';
+  update public.orders set status = 'cancelled' where code = r ->> 'code';
+  assert (select stock from public.products where id = 1020) = s1 + 1, 'nhân viên hủy (kể cả đang giao) cũng hoàn kho';
+  raise notice 'OK 10 - hoàn tồn kho khi hủy đơn';
+end $$;

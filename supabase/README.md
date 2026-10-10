@@ -14,13 +14,14 @@ Trang quản trị (giai đoạn 3) ──(tài khoản role staff/admin)──�
 | `migrations/20261010000001_schema.sql` | 16 bảng: sản phẩm, danh mục, thương hiệu, đơn hàng, khách hàng, đánh giá, lead, mã giảm giá, nội dung... |
 | `migrations/20261010000002_functions.sql` | Hàm nghiệp vụ: `place_order`, `track_order`, `cancel_order`, `my_orders`, `validate_coupon`, `submit_lead` + trigger bảo vệ |
 | `migrations/20261010000003_security.sql` | RLS & phân quyền |
+| `migrations/20261011000001_admin.sql` | Hoàn / trừ tồn kho tự động khi hủy đơn (khách hoặc nhân viên) |
 | `seed.sql` | Dữ liệu ban đầu (71 sản phẩm, bài viết, cửa hàng, mã giảm giá) – sinh bằng `node tools/build-seed.mjs` |
 | `tests/` | Bộ kiểm thử chạy trên PostgreSQL cục bộ (`tests/run-local.sh`) |
 
 ## Cài đặt (khoảng 15 phút)
 
 1. **Tạo project**: vào https://supabase.com → *New project* → Region **Southeast Asia (Singapore)** → lưu lại mật khẩu database.
-2. **Tạo bảng**: mở *SQL Editor* → *New query* → dán và chạy **lần lượt** nội dung 3 file trong `migrations/` (theo thứ tự số), sau đó chạy `seed.sql`.
+2. **Tạo bảng**: mở *SQL Editor* → *New query* → dán và chạy **lần lượt** nội dung 4 file trong `migrations/` (theo thứ tự tên file), sau đó chạy `seed.sql`.
    - Hoặc dùng Supabase CLI: `supabase link --project-ref <ref>` rồi `supabase db push` và chạy `seed.sql`.
 3. **Cấu hình đăng nhập**: *Authentication → Sign In / Providers → Email*: bật Email, **tắt "Confirm email"**.
    Khách đăng nhập bằng **số điện thoại + mật khẩu**; hệ thống tự ánh xạ thành email nội bộ `<sđt>@sdt.trangthietbi.vn` nên không gửi email xác nhận.
@@ -59,9 +60,9 @@ Bảo vệ nghiệp vụ:
 - Chống spam: tối đa 5 đơn và 5 form / số điện thoại / 10 phút.
 - Đặt hàng tự trừ tồn kho, hủy đơn tự hoàn kho; mọi thay đổi trạng thái đơn được ghi lịch sử (`order_status_history`).
 
-## Vận hành hằng ngày (trước khi có trang quản trị)
+## Vận hành hằng ngày
 
-Dùng *Table Editor* của Supabase để xem/sửa trực tiếp, hoặc các truy vấn sau trong *SQL Editor*:
+Dùng **trang quản trị** tại `/admin/` (xem `admin/README.md`). Khi cần thao tác hàng loạt, dùng *SQL Editor*:
 
 ```sql
 -- Đơn mới cần xác nhận
@@ -98,5 +99,5 @@ Thay đổi sản phẩm hiển thị trên website sau tối đa `cacheMinutes`
 ```bash
 # Cần PostgreSQL 15+
 PGHOST=localhost PGUSER=postgres ./supabase/tests/run-local.sh
-# Kết quả mong đợi: OK 1 … OK 9
+# Kết quả mong đợi: OK 1 … OK 10
 ```

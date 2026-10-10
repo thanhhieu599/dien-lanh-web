@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>Không tìm thấy trang | D&amp;T Điện Lạnh</title>
+  <script>
+    // Link cũ không có /frontend/ -> chuyển vào thư mục frontend
+    var base = '/dien-lanh-web/';
+    var rest = location.pathname.indexOf(base) === 0 ? location.pathname.slice(base.length) : '';
+    location.replace(base + (rest && rest.indexOf('frontend/') !== 0 ? 'frontend/' + rest : 'frontend/404.html') + location.search);
+  </script>
+</head>
+<body><a href="frontend/index.html">Về trang chủ</a></body>
+</html>

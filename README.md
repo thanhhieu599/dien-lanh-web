@@ -55,6 +55,10 @@ dien-lanh-web/
 
 Mã giảm giá demo: `DTCOOL10`, `GIAM300K`, `FREESHIP`.
 
+## Xem online
+
+GitHub Pages: https://thanhhieu599.github.io/dien-lanh-web/ (tự chuyển vào `frontend/`).
+
 ## Chạy thử
 
 ```bash

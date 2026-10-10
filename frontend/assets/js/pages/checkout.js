@@ -1,5 +1,5 @@
 // Thanh toán
-document.addEventListener('DOMContentLoaded', () => {
+DT.onReady(() => {
   const { $, $$, esc, money } = DT.u;
   if (!DT.store.get().cart.length) { location.replace('gio-hang.html'); return; }
   const user = DT.store.get().user;
@@ -102,8 +102,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const btn = form.querySelector('button[type=submit]');
+    if (btn.disabled) return;
     const d = DT.u.formData(form);
     if (!d) {
       DT.u.toast('Vui lòng kiểm tra lại thông tin còn thiếu', 'error');
@@ -113,7 +115,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (d.email && !DT.u.validEmail(d.email)) { form.email.closest('.field').classList.add('invalid'); return; }
     if (!form.agree.checked) { DT.u.toast('Vui lòng đồng ý điều khoản mua hàng', 'error'); return; }
     const pickup = d.method === 'pickup';
-    const order = DT.store.placeOrder({
+    btn.disabled = true; btn.textContent = 'Đang gửi đơn hàng…';
+    let order;
+    try {
+      order = await DT.store.placeOrder({
       customer: { gender: d.gender, name: d.name.trim(), phone: d.phone.replace(/[\s.]/g, ''), email: d.email },
       shipping: pickup
         ? { method: 'pickup', store: DT.stores.find((s) => s.id === Number(d.store))?.name }
@@ -121,8 +126,12 @@ document.addEventListener('DOMContentLoaded', () => {
       payment: d.payment,
       invoice: d.needInvoice ? { company: d.company, taxCode: d.taxCode, address: d.companyAddress, email: d.invoiceEmail } : null,
       note: d.note,
-    });
-    if (order && pickup) { order.total -= order.shippingFee; order.shippingFee = 0; DT.store.save(); }
+      });
+    } catch (err) {
+      btn.disabled = false; btn.textContent = 'ĐẶT HÀNG';
+      DT.u.toast(err.message, 'error');
+      return;
+    }
     if (order) location.href = `dat-hang-thanh-cong.html?code=${order.code}`;
   });
 

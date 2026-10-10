@@ -232,10 +232,15 @@ DT.layout = (() => {
     }, { passive: true });
     top.addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
 
-    $('#newsletter-form').addEventListener('submit', (e) => {
+    $('#newsletter-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      e.target.reset();
-      DT.u.toast('Đăng ký thành công! Mã GIAM300K đã được gửi tới email của bạn.');
+      const email = e.target.querySelector('input').value.trim();
+      try {
+        if (DT.saveLead) await DT.saveLead('newsletter', { email });
+        else if (DT.backend.enabled) await DT.backend.rpc('submit_lead', { p_type: 'newsletter', p_data: { email }, p_source_url: location.href });
+        e.target.reset();
+        DT.u.toast('Đăng ký thành công! Chúng tôi sẽ gửi ưu đãi tới email của bạn.');
+      } catch (err) { DT.u.toast(err.message, 'error'); }
     });
 
     document.addEventListener('dt:change', refresh);
@@ -245,4 +250,4 @@ DT.layout = (() => {
   return { init, megaMenu, bindMega };
 })();
 
-document.addEventListener('DOMContentLoaded', DT.layout.init);
+DT.onReady(DT.layout.init);

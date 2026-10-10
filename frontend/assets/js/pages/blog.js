@@ -1,5 +1,5 @@
 // Tin tức (tin-tuc.html) & chi tiết bài viết (bai-viet.html)
-document.addEventListener('DOMContentLoaded', () => {
+DT.onReady(() => {
   const { $, esc } = DT.u;
   const page = document.body.dataset.page;
   const sidebar = (exclude) => `

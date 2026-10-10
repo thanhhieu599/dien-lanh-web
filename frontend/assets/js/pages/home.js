@@ -1,5 +1,5 @@
 // Trang chủ
-document.addEventListener('DOMContentLoaded', () => {
+DT.onReady(() => {
   const { $, $$, esc, money } = DT.u;
 
   // ---------- Hero: menu dọc + slider + banner phụ

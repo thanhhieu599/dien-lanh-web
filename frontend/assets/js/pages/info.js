@@ -1,6 +1,7 @@
 // Trang thông tin: liên hệ, dịch vụ, báo giá dự án, hệ thống cửa hàng, chính sách.
 // Các form lưu "lead" vào localStorage (giai đoạn 2 gửi về API -> CRM trong trang quản trị).
-DT.saveLead = (type, data) => {
+DT.saveLead = async (type, data) => {
+  if (DT.backend.enabled) return DT.backend.rpc('submit_lead', { p_type: type, p_data: data, p_source_url: location.href });
   const KEY = 'dt_leads_v1';
   let leads = [];
   try { leads = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { /* bỏ qua */ }
@@ -10,22 +11,26 @@ DT.saveLead = (type, data) => {
   return lead;
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+DT.onReady(() => {
   const { $, $$, esc, money } = DT.u;
   const page = document.body.dataset.page;
 
   // Gắn xử lý cho mọi form có data-lead
   $$('form[data-lead]').forEach((form) => {
     form.setAttribute('novalidate', '');
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const d = DT.u.formData(form);
       if (!d) { DT.u.toast('Vui lòng điền đầy đủ thông tin bắt buộc', 'error'); return; }
-      const lead = DT.saveLead(form.dataset.lead, d);
+      const btn = form.querySelector('button:not([type=button])');
+      if (btn.disabled) return;
+      btn.disabled = true;
+      let lead;
+      try { lead = await DT.saveLead(form.dataset.lead, d); } catch (err) { DT.u.toast(err.message, 'error'); return; } finally { btn.disabled = false; }
       form.reset();
       DT.ui.modal(`<div style="text-align:center"><div class="success-ic">${DT.icon('check')}</div>
         <h3>${esc(form.dataset.success || 'Gửi yêu cầu thành công!')}</h3>
-        <p class="muted">Mã yêu cầu: <b>${lead.id}</b>. Chúng tôi sẽ liên hệ lại trong vòng 30 phút (giờ làm việc). Cần gấp vui lòng gọi <a class="link" href="tel:${DT.config.hotline.replace(/\s/g, '')}">${DT.config.hotline}</a>.</p>
+        <p class="muted">Mã yêu cầu: <b>${lead.code || lead.id}</b>. Chúng tôi sẽ liên hệ lại trong vòng 30 phút (giờ làm việc). Cần gấp vui lòng gọi <a class="link" href="tel:${DT.config.hotline.replace(/\s/g, '')}">${DT.config.hotline}</a>.</p>
         <button class="btn btn-primary" data-close>Đóng</button></div>`);
     });
   });

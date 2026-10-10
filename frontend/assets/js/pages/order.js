@@ -31,7 +31,7 @@ DT.orderView = (o) => {
     </div>`;
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+DT.onReady(() => {
   const { $ } = DT.u;
   const page = document.body.dataset.page;
 
@@ -47,13 +47,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (page === 'tracking') {
     const form = $('#track-form');
-    const show = (code, phone) => {
-      const o = DT.store.findOrder(code, phone);
+    const show = async (code, phone) => {
+      $('#track-result').innerHTML = '<div class="section-box"><p class="muted">Đang tra cứu…</p></div>';
+      let o = null;
+      try { o = await DT.store.trackOrder(code, phone); } catch (err) { DT.u.toast(err.message, 'error'); }
       $('#track-result').innerHTML = o
         ? `<div class="section-box">${DT.orderView(o)}${o.status === 'pending' ? '<button class="btn btn-light" id="cancel-order">Hủy đơn hàng</button>' : ''}</div>`
         : `<div class="section-box">${DT.ui.empty('Không tìm thấy đơn hàng', 'Vui lòng kiểm tra lại mã đơn hàng và số điện thoại đặt hàng.')}</div>`;
       const btn = $('#cancel-order');
-      if (btn) btn.onclick = () => { if (confirm('Bạn chắc chắn muốn hủy đơn hàng này?') && DT.store.cancelOrder(o.code)) { DT.u.toast('Đã hủy đơn hàng'); show(code, phone); } };
+      if (btn) {
+        btn.onclick = async () => {
+          if (!confirm('Bạn chắc chắn muốn hủy đơn hàng này?')) return;
+          try { await DT.store.cancelOrder(o.code, phone); DT.u.toast('Đã hủy đơn hàng'); show(code, phone); } catch (err) { DT.u.toast(err.message, 'error'); }
+        };
+      }
     };
     form.addEventListener('submit', (e) => {
       e.preventDefault();

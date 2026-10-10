@@ -1,5 +1,5 @@
 // Tài khoản: đăng nhập / đăng ký / tổng quan / đơn hàng / sổ địa chỉ / thông tin cá nhân
-document.addEventListener('DOMContentLoaded', () => {
+DT.onReady(() => {
   const { $, $$, esc, money } = DT.u;
   const root = $('#account');
 
@@ -76,9 +76,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const currentTab = () => location.hash.slice(1) || 'overview';
+  let synced = false;
   function render() {
-    if (DT.store.get().user) dashView(['overview', 'orders', 'addresses', 'profile', 'wishlist'].includes(currentTab()) ? currentTab() : 'overview');
-    else authView(currentTab() === 'register' ? 'register' : 'login');
+    if (DT.store.get().user) {
+      dashView(['overview', 'orders', 'addresses', 'profile', 'wishlist'].includes(currentTab()) ? currentTab() : 'overview');
+      // Lấy đơn hàng mới nhất từ server một lần mỗi lần vào trang
+      if (!synced && DT.backend.enabled) { synced = true; DT.store.syncMyOrders().then(render).catch((e) => DT.u.toast(e.message, 'error')); }
+    } else authView(currentTab() === 'register' ? 'register' : 'login');
   }
 
   root.addEventListener('click', (e) => {
@@ -86,43 +90,53 @@ document.addEventListener('DOMContentLoaded', () => {
     if (t) authView(t.dataset.tab);
     const a = e.target.closest('[data-acc]');
     if (a) { history.replaceState(null, '', '#' + a.dataset.acc); render(); }
-    if (e.target.closest('#logout')) { DT.store.logout(); history.replaceState(null, '', location.pathname); render(); DT.u.toast('Đã đăng xuất'); }
+    if (e.target.closest('#logout')) {
+      DT.store.logout().then(() => { synced = false; history.replaceState(null, '', location.pathname); render(); DT.u.toast('Đã đăng xuất'); });
+    }
     const del = e.target.closest('[data-del-addr]');
     const def = e.target.closest('[data-default]');
     if (del || def) {
       const list = [...(DT.store.fullUser().addresses || [])];
       if (del) list.splice(+del.dataset.delAddr, 1);
       if (def) list.forEach((x, i) => { x.default = i === +def.dataset.default; });
-      DT.store.saveAddresses(list); render();
+      DT.store.saveAddresses(list).then(render).catch((err) => DT.u.toast(err.message, 'error'));
     }
   });
 
-  root.addEventListener('submit', (e) => {
+  root.addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = e.target;
     const d = DT.u.formData(f);
     if (!d) return;
+    const btn = f.querySelector('button:not([type=button])');
+    if (btn?.disabled) return;
+    if (btn) btn.disabled = true;
+    try { await handle(f, d); } catch (err) { DT.u.toast(err.message, 'error'); }
+    if (btn && document.contains(btn)) btn.disabled = false;
+  });
+
+  async function handle(f, d) {
     const next = DT.u.param('next');
     if (f.id === 'login-form') {
-      const r = DT.store.login(d.phone.replace(/[\s.]/g, ''), d.password);
+      const r = await DT.store.login(d.phone.replace(/[\s.]/g, ''), d.password);
       if (!r.ok) return DT.u.toast(r.msg, 'error');
       DT.u.toast('Đăng nhập thành công');
       if (next) location.href = next; else render();
     }
     if (f.id === 'register-form') {
       if (d.password.length < 6) { f.password.closest('.field').classList.add('invalid'); return; }
-      const r = DT.store.register({ name: d.name.trim(), phone: d.phone.replace(/[\s.]/g, ''), email: d.email, password: d.password });
+      const r = await DT.store.register({ name: d.name.trim(), phone: d.phone.replace(/[\s.]/g, ''), email: d.email, password: d.password });
       if (!r.ok) return DT.u.toast(r.msg, 'error');
       DT.u.toast('Tạo tài khoản thành công. Chào mừng bạn!');
       if (next) location.href = next; else render();
     }
-    if (f.id === 'profile-form') { DT.store.updateProfile({ name: d.name.trim(), email: d.email }); DT.u.toast('Đã cập nhật thông tin'); render(); }
+    if (f.id === 'profile-form') { await DT.store.updateProfile({ name: d.name.trim(), email: d.email }); DT.u.toast('Đã cập nhật thông tin'); render(); }
     if (f.id === 'addr-form') {
       const list = [...(DT.store.fullUser().addresses || [])];
       list.push({ ...d, default: !list.length });
-      DT.store.saveAddresses(list); DT.u.toast('Đã lưu địa chỉ'); render();
+      await DT.store.saveAddresses(list); DT.u.toast('Đã lưu địa chỉ'); render();
     }
-  });
+  }
 
   window.addEventListener('hashchange', render);
   render();

@@ -1,5 +1,5 @@
 // Giỏ hàng
-document.addEventListener('DOMContentLoaded', () => {
+DT.onReady(() => {
   const { $, esc, money } = DT.u;
   const root = $('#cart');
 
@@ -79,9 +79,11 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     applyCoupon(e.target.code.value);
   });
-  function applyCoupon(code) {
-    const r = DT.store.applyCoupon(code);
-    DT.u.toast(r.msg, r.ok ? 'success' : 'error');
+  async function applyCoupon(code) {
+    try {
+      const r = await DT.store.applyCoupon(code);
+      DT.u.toast(r.msg, r.ok ? 'success' : 'error');
+    } catch (err) { DT.u.toast(err.message, 'error'); }
   }
 
   document.addEventListener('dt:change', render);

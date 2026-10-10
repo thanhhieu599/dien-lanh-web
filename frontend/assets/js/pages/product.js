@@ -1,5 +1,5 @@
 // Trang chi tiết sản phẩm
-document.addEventListener('DOMContentLoaded', () => {
+DT.onReady(() => {
   const { $, $$, esc, money, stars, discount } = DT.u;
   const p = DT.api.product(DT.u.param('id') || DT.u.param('slug'));
   if (!p) { location.replace('404.html'); return; }
@@ -19,7 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Đánh giá: mẫu + đánh giá người dùng lưu localStorage
   const RKEY = 'dt_reviews_v1';
   const loadUserReviews = () => { try { return JSON.parse(localStorage.getItem(RKEY) || '{}')[p.id] || []; } catch { return []; } };
-  const reviews = () => [...loadUserReviews(), ...DT.api.reviews(p)];
+  // Có backend: đánh giá đã duyệt từ DB (nạp sau). Demo: đánh giá mẫu + đánh giá lưu trên trình duyệt.
+  const reviews = () => (DT.backend.enabled ? [] : [...loadUserReviews(), ...DT.api.reviews(p)]);
 
   // Biến thể: cùng thương hiệu, cùng loại, khác công suất/dung tích
   const variants = DT.products.filter((x) => x.cat === p.cat && x.sub === p.sub && x.brand === p.brand)
@@ -125,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="field"><textarea name="text" required placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm…"></textarea><div class="err">Vui lòng nhập nội dung</div></div>
           <button class="btn btn-primary">Gửi đánh giá</button>
         </form>
-        <div id="review-list">${rv.map(reviewHtml).join('')}</div>
+        <div id="review-list">${DT.backend.enabled ? '<p class="muted">Đang tải đánh giá…</p>' : rv.map(reviewHtml).join('')}</div>
       </section>
       <section class="pd-section faq"><h2>Câu hỏi thường gặp</h2>
         <details><summary>Giá đã bao gồm lắp đặt chưa?</summary><p>${p.freeInstall ? 'Sản phẩm được miễn phí công lắp đặt tiêu chuẩn. Vật tư phát sinh (ống đồng ngoài 3m, giá đỡ…) tính theo bảng giá niêm yết.' : 'Giá chưa gồm công lắp đặt. Bạn có thể chọn thêm dịch vụ lắp đặt khi đặt hàng.'}</p></details>
@@ -176,10 +177,23 @@ document.addEventListener('DOMContentLoaded', () => {
     rating = +st.dataset.v;
     $$('#star-input span').forEach((x) => x.classList.toggle('on', +x.dataset.v <= rating));
   });
-  $('#review-form').addEventListener('submit', (e) => {
+  if (DT.backend.enabled) {
+    DT.api.fetchReviews(p)
+      .then((list) => { $('#review-list').innerHTML = list.length ? list.map(reviewHtml).join('') : '<p class="muted">Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá sản phẩm này!</p>'; })
+      .catch(() => { $('#review-list').innerHTML = '<p class="muted">Không tải được đánh giá.</p>'; });
+  }
+  $('#review-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const d = DT.u.formData(e.target);
     if (!d) return;
+    if (DT.backend.enabled) {
+      try {
+        await DT.backend.insert('reviews', { product_id: p.id, name: d.name.trim(), phone: d.phone, rating, text: d.text.trim() });
+      } catch (err) { DT.u.toast(err.message, 'error'); return; }
+      e.target.reset(); e.target.classList.remove('open');
+      DT.u.toast('Cảm ơn bạn! Đánh giá sẽ hiển thị sau khi được duyệt.');
+      return;
+    }
     const all = (() => { try { return JSON.parse(localStorage.getItem(RKEY) || '{}'); } catch { return {}; } })();
     const r = { name: d.name, rating, text: d.text, date: new Date().toISOString().slice(0, 10), verified: false };
     all[p.id] = [r, ...(all[p.id] || [])];

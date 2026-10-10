@@ -1,5 +1,5 @@
 // Yêu thích (yeu-thich.html) & So sánh sản phẩm (so-sanh.html)
-document.addEventListener('DOMContentLoaded', () => {
+DT.onReady(() => {
   const { $, esc, money, stars } = DT.u;
   const page = document.body.dataset.page;
 

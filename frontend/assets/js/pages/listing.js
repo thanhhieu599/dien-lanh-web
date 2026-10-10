@@ -1,5 +1,5 @@
 // Trang danh sách sản phẩm: danh mục (danh-muc.html), tìm kiếm (tim-kiem.html), khuyến mãi (khuyen-mai.html)
-document.addEventListener('DOMContentLoaded', () => {
+DT.onReady(() => {
   const { $, $$, esc } = DT.u;
   const mode = document.body.dataset.page; // category | search | khuyen-mai
   const PER_PAGE = 12;

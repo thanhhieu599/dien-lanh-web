@@ -3,12 +3,19 @@
 window.DT = window.DT || {};
 
 DT.api = (() => {
-  const byId = new Map(DT.products.map((p) => [p.id, p]));
-  const bySlug = new Map(DT.products.map((p) => [p.slug, p]));
+  // Chỉ mục dựng lại khi DT.products được thay (sau khi nạp từ database)
+  let indexed = null; let byId; let bySlug;
+  function idx() {
+    if (indexed !== DT.products) {
+      byId = new Map(DT.products.map((p) => [p.id, p]));
+      bySlug = new Map(DT.products.map((p) => [p.slug, p]));
+      indexed = DT.products;
+    }
+  }
   const n = (s) => DT.u.norm(s);
 
-  const productById = (id) => byId.get(Number(id));
-  const product = (key) => byId.get(Number(key)) || bySlug.get(key);
+  const productById = (id) => { idx(); return byId.get(Number(id)); };
+  const product = (key) => { idx(); return byId.get(Number(key)) || bySlug.get(key); };
   const category = (id) => DT.categories.find((c) => c.id === id);
   const brand = (id) => DT.brands.find((b) => b.id === id);
   const url = (p) => `san-pham.html?id=${p.id}&${p.slug}`;
@@ -72,7 +79,14 @@ DT.api = (() => {
     return list({ q, sort: 'popular' }).items.slice(0, limit);
   }
 
-  // Đánh giá mẫu (giai đoạn 2 lấy từ DB)
+  // Đánh giá đã duyệt từ DB (Promise). Chế độ demo trả về đánh giá mẫu.
+  async function fetchReviews(p) {
+    if (!DT.backend.enabled) return reviews(p);
+    const rows = await DT.backend.select('reviews', `product_id=eq.${p.id}&status=eq.approved&select=name,rating,text,verified,created_at&order=created_at.desc&limit=30`);
+    return rows.map((r) => ({ name: r.name, rating: r.rating, text: r.text, verified: r.verified, date: String(r.created_at).slice(0, 10) }));
+  }
+
+  // Đánh giá mẫu cho chế độ demo
   function reviews(p) {
     const names = ['Nguyễn Văn An', 'Trần Thị Bích', 'Lê Hoàng Minh', 'Phạm Thu Hà', 'Công ty TNHH Minh Phát', 'Võ Quốc Bảo'];
     const texts = [
@@ -89,5 +103,5 @@ DT.api = (() => {
     });
   }
 
-  return { productById, product, category, brand, url, list, related, suggest, reviews };
+  return { productById, product, category, brand, url, list, related, suggest, reviews, fetchReviews };
 })();

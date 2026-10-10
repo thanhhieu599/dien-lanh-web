@@ -9,7 +9,7 @@ Website thương mại điện tử ngành điện lạnh (máy lạnh, tủ l�
 | Giai đoạn | Nội dung | Trạng thái |
 |---|---|---|
 | 1 | Frontend đầy đủ trang và chức năng (dữ liệu mẫu, lưu ở trình duyệt) | ✅ Xong |
-| 2 | Backend API + database (sản phẩm, đơn hàng, khách hàng, lead) | ⏳ Kế tiếp |
+| 2 | Cơ sở dữ liệu Supabase/PostgreSQL: sản phẩm, đơn hàng, khách hàng, lead, đánh giá (xem `supabase/README.md`) | ✅ Xong – cần tạo project & dán khóa |
 | 3 | Trang quản trị (admin): sản phẩm, đơn hàng, CRM lead, khuyến mãi, bài viết, báo cáo | ⏳ |
 | 4 | Thanh toán online (VNPay/MoMo), SEO SSR, email/Zalo tự động | ⏳ |
 
@@ -28,8 +28,10 @@ dien-lanh-web/
 │           ├── components/    # layout (header/footer/mega menu), ui (thẻ SP, modal), icons, art (ảnh minh họa SVG)
 │           └── pages/         # script riêng từng trang
 ├── admin/                     # Giai đoạn 3 – trang quản trị
-├── server/                    # Giai đoạn 2 – backend API
-├── tools/generate-catalog.mjs # Sinh dữ liệu sản phẩm mẫu (dùng lại làm seed DB)
+├── supabase/                  # Giai đoạn 2 – database: migrations, seed, kiểm thử
+├── server/                    # (dự phòng) dịch vụ server riêng nếu cần: thanh toán, email
+├── tools/generate-catalog.mjs # Sinh dữ liệu sản phẩm mẫu
+├── tools/build-seed.mjs       # Sinh supabase/seed.sql từ dữ liệu frontend
 └── docs/                      # Tài liệu kiến trúc, lộ trình
 ```
 
@@ -68,6 +70,10 @@ npx http-server -p 8080     # hoặc: python3 -m http.server 8080
 ```
 
 Có thể deploy ngay lên GitHub Pages / Netlify / Vercel (static) hoặc hosting thường.
+
+## Kết nối cơ sở dữ liệu
+
+Mặc định website chạy **chế độ demo** (dữ liệu lưu trên trình duyệt). Làm theo `supabase/README.md` để tạo database Supabase, rồi dán URL + anon key vào `frontend/assets/js/backend-config.js` – đơn hàng, tài khoản, form báo giá, đánh giá sẽ được lưu tập trung.
 
 ## Tùy chỉnh nhanh
 

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dịch vụ vệ sinh, lắp đặt, sửa chữa máy lạnh | D&T Điện Lạnh</title>
+  <meta name="description" content="Dịch vụ vệ sinh máy lạnh từ 150K, lắp đặt, nạp gas, sửa chữa điện lạnh tại nhà. Thợ có mặt trong 2 giờ, bảo hành 30 ngày.">
+  <meta property="og:title" content="Dịch vụ vệ sinh, lắp đặt, sửa chữa máy lạnh | D&T Điện Lạnh">
+  <meta property="og:description" content="Dịch vụ vệ sinh máy lạnh từ 150K, lắp đặt, nạp gas, sửa chữa điện lạnh tại nhà. Thợ có mặt trong 2 giờ, bảo hành 30 ngày.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0b5ed7">
+  <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body data-page="services">
+  <div id="site-header"></div>
+  <main id="main">
+    <section class="page-banner"><div class="container"><h1>Dịch vụ điện lạnh chuyên nghiệp</h1><p>Vệ sinh, lắp đặt, nạp gas, sửa chữa máy lạnh - tủ lạnh - máy giặt tại nhà. Kỹ thuật viên có mặt trong 2 giờ, báo giá trước khi làm, bảo hành 30 ngày.</p></div></section>
+    <div class="container">
+      <div class="svc-book">
+        <div>
+          <div class="section-head" style="margin-top:4px"><h2>Bảng giá dịch vụ</h2></div>
+          <div class="svc-grid" id="svc-list" style="grid-template-columns:1fr 1fr"></div>
+          <div class="section-head" style="margin-top:24px"><h2>Quy trình làm việc</h2></div>
+          <div class="process">
+            <div><b>Đặt lịch</b><span class="muted">Qua website, hotline hoặc Zalo</span></div>
+            <div><b>Xác nhận</b><span class="muted">Gọi lại xác nhận trong 15 phút</span></div>
+            <div><b>Thực hiện</b><span class="muted">Kiểm tra, báo giá, thi công</span></div>
+            <div><b>Bàn giao</b><span class="muted">Nghiệm thu, thanh toán, bảo hành</span></div>
+          </div>
+        </div>
+        <form class="section-box" id="book-form" data-lead="service" data-success="Đặt lịch thành công!">
+          <h2 style="font-size:20px">Đặt lịch dịch vụ</h2>
+          <div class="field"><label>Dịch vụ <span class="req">*</span></label><select name="service" required></select></div>
+          <div class="form-row">
+            <div class="field"><label>Họ tên <span class="req">*</span></label><input name="name" required><div class="err">Bắt buộc</div></div>
+            <div class="field"><label>Số điện thoại <span class="req">*</span></label><input name="phone" type="tel" required data-validate="phone"><div class="err">SĐT không hợp lệ</div></div>
+          </div>
+          <div class="field"><label>Địa chỉ <span class="req">*</span></label><input name="address" required placeholder="Số nhà, đường, quận/huyện"><div class="err">Bắt buộc</div></div>
+          <div class="form-row">
+            <div class="field"><label>Ngày hẹn</label><input name="date" type="date"></div>
+            <div class="field"><label>Số lượng máy</label><input name="qty" type="number" min="1" value="1"></div>
+          </div>
+          <div class="field"><label>Mô tả tình trạng</label><textarea name="note" placeholder="VD: Máy lạnh Daikin 1HP chảy nước, kém lạnh…"></textarea></div>
+          <button class="btn btn-accent btn-block btn-lg">Đặt lịch ngay</button>
+          <p class="muted" style="text-align:center;margin:10px 0 0;font-size:13px">Hoặc gọi <a class="link" href="tel:19006868">1900 6868</a> để được hỗ trợ ngay</p>
+        </form>
+      </div>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="assets/js/data/catalog.js"></script>
+  <script src="assets/js/data/content.js"></script>
+  <script src="assets/js/core/utils.js"></script>
+  <script src="assets/js/components/icons.js"></script>
+  <script src="assets/js/core/api.js"></script>
+  <script src="assets/js/core/store.js"></script>
+  <script src="assets/js/components/art.js"></script>
+  <script src="assets/js/components/ui.js"></script>
+  <script src="assets/js/components/layout.js"></script>
+  <script src="assets/js/pages/info.js"></script>
+</body>
+</html>

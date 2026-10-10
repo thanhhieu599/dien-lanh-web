@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Danh mục sản phẩm | D&T Điện Lạnh</title>
+  <meta name="description" content="Sản phẩm điện lạnh chính hãng giá tốt.">
+  <meta property="og:title" content="Danh mục sản phẩm | D&T Điện Lạnh">
+  <meta property="og:description" content="Sản phẩm điện lạnh chính hãng giá tốt.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0b5ed7">
+  <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body data-page="category">
+  <div id="site-header"></div>
+  <main id="main">
+    <div id="crumb"></div>
+    <div class="container">
+      <div class="cat-hero"><div><h1 id="cat-title">Sản phẩm</h1><p id="cat-desc"></p></div></div>
+      <div class="sub-cats" id="sub-cats"></div>
+      <div class="listing">
+        <aside class="filters" id="filters" aria-label="Bộ lọc sản phẩm"></aside>
+        <div>
+          <div class="toolbar">
+            <span class="count" id="count"></span>
+            <div class="sorts">
+              <button class="btn btn-light btn-sm filter-open" id="filter-open">Bộ lọc</button>
+              <span>Sắp xếp:</span>
+              <select id="sort" class="sort-select" aria-label="Sắp xếp">
+                <option value="popular">Bán chạy nhất</option>
+                <option value="discount">Giảm giá nhiều</option>
+                <option value="price-asc">Giá thấp → cao</option>
+                <option value="price-desc">Giá cao → thấp</option>
+                <option value="newest">Mới nhất</option>
+                <option value="rating">Đánh giá cao</option>
+              </select>
+            </div>
+          </div>
+          <div class="active-filters" id="active-filters"></div>
+          <div id="results"></div>
+          <div id="pagination"></div>
+        </div>
+      </div>
+      <div id="seo"></div>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="assets/js/data/catalog.js"></script>
+  <script src="assets/js/data/content.js"></script>
+  <script src="assets/js/core/utils.js"></script>
+  <script src="assets/js/components/icons.js"></script>
+  <script src="assets/js/core/api.js"></script>
+  <script src="assets/js/core/store.js"></script>
+  <script src="assets/js/components/art.js"></script>
+  <script src="assets/js/components/ui.js"></script>
+  <script src="assets/js/components/layout.js"></script>
+  <script src="assets/js/pages/listing.js"></script>
+</body>
+</html>

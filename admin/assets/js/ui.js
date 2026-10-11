@@ -9,6 +9,10 @@ AD.PAY_STATUS = { unpaid: ['Chưa thanh toán', 'warn'], partial: ['Thanh toán 
 AD.PAYMENT = { cod: 'COD', bank: 'Chuyển khoản', card: 'Thẻ (VNPay)', wallet: 'Ví MoMo', installment: 'Trả góp' };
 AD.PAY_PROVIDER = { vnpay: 'VNPay', momo: 'MoMo', bank: 'Chuyển khoản (SePay)' };
 AD.TXN_STATUS = { pending: ['Đang chờ', 'warn'], paid: ['Thành công', 'ok'], failed: ['Thất bại', 'muted'], expired: ['Hết hạn', 'muted'] };
+// Ngày hôm nay theo giờ máy (Việt Nam), dạng YYYY-MM-DD (toISOString() là giờ UTC: 0h-7h sáng bị lùi 1 ngày)
+AD.today = () => { const x = new Date(); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
+// Sản phẩm theo id: ưu tiên dữ liệu database (kể cả sản phẩm tạo trong quản trị), không có thì catalog mẫu
+AD.product = (id) => AD.cache?.productMap?.get(String(id)) || DT.api.productById(Number(id)) || null;
 AD.NOTIFY_EVENT = { order_new: 'Đơn mới', order_status: 'Đổi trạng thái đơn', order_paid: 'Thanh toán', lead_new: 'Khách hàng tiềm năng', cart_reminder: 'Nhắc giỏ hàng bỏ dở', maintenance_reminder: 'Nhắc bảo trì định kỳ' };
 AD.NOTIFY_STATUS = { pending: ['Chờ gửi', 'warn'], processing: ['Đang gửi', 'info'], done: ['Đã gửi', 'ok'], failed: ['Lỗi', 'danger'] };
 AD.NOTIFY_CHANNEL = { zalo_staff: 'Zalo nhân viên', telegram_staff: 'Telegram', email_staff: 'Email nhân viên', email_customer: 'Email khách', zns_customer: 'Zalo ZNS khách' };
@@ -45,7 +49,7 @@ AD.ui = (() => {
       m.querySelector('#cf-ok').onclick = () => { closeModal(); resolve(true); };
     });
   }
-  const toast = (m, t) => DT.u.toast(esc(m), t);
+  const toast = (m, t) => DT.u.toast(m, t);  // DT.u.toast tự hiển thị dạng chữ
 
   // Chạy thao tác async, khóa nút, báo lỗi
   async function run(btn, fn, okMsg) {
@@ -269,7 +273,8 @@ AD.ui = (() => {
 
   // ---------- CSV
   function csv(filename, columns, rows) {
-    const cell = (v) => { const s = v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v); return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+    // Ô bắt đầu bằng = + - @ (dữ liệu khách nhập) -> thêm ' để Excel không chạy như công thức
+    const cell = (v) => { let s = v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v); if (/^[=+\-@\t\r]/.test(s) && typeof v !== 'number') s = `'${s}`; return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
     const text = '﻿' + [columns.map((c) => c.label).join(','), ...rows.map((r) => columns.map((c) => cell(c.value ? c.value(r) : r[c.key])).join(','))].join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));

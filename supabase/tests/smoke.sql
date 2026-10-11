@@ -111,7 +111,7 @@ begin
   r := public.place_order('[{"id":1014,"qty":1}]', '{"name":"Khách Một","phone":"0901111111"}', '{"method":"pickup","store":"Q7"}', 'bank');
   assert (r ->> 'shippingFee')::bigint = 0, 'nhận tại cửa hàng miễn phí ship';
   assert jsonb_array_length(public.my_orders()) = 1, 'khách 1 thấy 1 đơn';
-  assert (select count(*) from public.orders) = 1, 'RLS: chỉ thấy đơn của mình';
+  assert (select count(*) from public.orders) = 0, 'khách không đọc trực tiếp bảng đơn (ghi chú nội bộ), xem qua my_orders()';
   assert (select count(*) from public.leads) = 0, 'khách không đọc được leads';
   raise notice 'OK 6 - tài khoản khách hàng';
 end $$;

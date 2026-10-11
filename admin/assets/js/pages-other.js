@@ -13,7 +13,7 @@ AD.pages = AD.pages || {};
       <div class="ad-tabs">${[['pending', 'Chờ duyệt'], ['approved', 'Đã duyệt'], ['rejected', 'Từ chối'], ['', 'Tất cả']].map(([k, l]) => `<a href="#/reviews?status=${k}" class="${status === k ? 'active' : ''}">${l}</a>`).join('')}</div>
       <div id="list"><div class="ad-loading">Đang tải…</div></div>`;
     const { rows, count } = await AD.db.list('reviews', { filters: [['status', 'eq', status || undefined]], order: 'created_at.desc', limit: size, offset: (page - 1) * size });
-    const pname = (id) => DT.api.productById(id)?.name || (AD.cache.productNames || {})[id] || `#${id}`;
+    const pname = (id) => AD.product(id)?.name || `#${id}`;
     el.querySelector('#list').innerHTML = table([
       { label: 'Khách', render: (r) => `<b>${esc(r.name)}</b><small>${dt(r.created_at)}${r.verified ? ' • đã mua hàng' : ''}</small>` },
       { label: 'Sản phẩm', render: (r) => `<a href="../frontend/san-pham.html?id=${r.product_id}" target="_blank" rel="noopener">${esc(pname(r.product_id))}</a>` },

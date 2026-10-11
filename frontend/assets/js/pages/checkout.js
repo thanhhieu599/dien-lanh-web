@@ -36,7 +36,7 @@ DT.onReady(() => {
           </div>
           <div class="field"><label>Địa chỉ cụ thể <span class="req">*</span></label><input name="address" required placeholder="Số nhà, tên đường, phường/xã" value="${esc(addr?.address || '')}"><div class="err">Vui lòng nhập địa chỉ</div></div>
           <div class="form-row">
-            <div class="field"><label>Ngày giao mong muốn</label><input name="date" type="date" min="${new Date().toISOString().slice(0, 10)}"></div>
+            <div class="field"><label>Ngày giao mong muốn</label><input name="date" type="date" min="${DT.u.today()}"></div>
             <div class="field"><label>Khung giờ</label><select name="slot"><option>8:00 - 12:00</option><option>13:00 - 17:00</option><option>17:00 - 21:00</option></select></div>
           </div>
         </div>
@@ -168,7 +168,12 @@ DT.onReady(() => {
       DT.u.toast(err.message, 'error');
       return;
     }
-    if (!order) return;
+    if (!order) {
+      btn.disabled = false; btn.textContent = 'ĐẶT HÀNG';
+      DT.u.toast('Sản phẩm trong giỏ không còn kinh doanh, vui lòng kiểm tra lại giỏ hàng', 'error');
+      setTimeout(() => { location.href = 'gio-hang.html'; }, 1500);
+      return;
+    }
     DT.analytics?.purchase(order);
     const done = `dat-hang-thanh-cong.html?code=${order.code}`;
     // Thẻ / ví: chuyển thẳng sang cổng thanh toán; lỗi thì vẫn về trang đơn hàng (có nút thanh toán lại)

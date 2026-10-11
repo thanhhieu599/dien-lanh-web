@@ -94,7 +94,9 @@ function routes(data) {
 // ---------------------------------------------------------------- 4. Chụp trang
 async function snapshot(page, base, siteUrl, route) {
   await page.goto(base + route.src, { waitUntil: 'load', timeout: 60000 });
-  await page.evaluate(() => DT.ready.catch(() => {}));
+  // Máy chủ dữ liệu lỗi giữa chừng -> trang đang hiện dữ liệu mẫu: dừng build, không xuất bản dữ liệu giả
+  const offline = await page.evaluate(() => DT.ready.catch(() => {}).then(() => DT.backend.enabled && DT.backend.offline));
+  if (offline) throw new Error(`Không nạp được dữ liệu từ Supabase khi dựng ${route.out} – dừng build để không xuất bản dữ liệu mẫu`);
   await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(100);
   if (route.og) {
@@ -140,8 +142,8 @@ async function snapshot(page, base, siteUrl, route) {
 const xmlEsc = (s) => String(s).replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
 
 function writeSitemap(siteUrl, list) {
-  const today = new Date().toISOString().slice(0, 10);
-  const urls = list.map((r) => `  <url><loc>${xmlEsc(new URL(r.out === 'index.html' ? './' : r.out, siteUrl).href)}</loc><lastmod>${String(r.lastmod || today).slice(0, 10)}</lastmod><priority>${r.priority}</priority></url>`);
+  // lastmod chỉ ghi khi biết ngày cập nhật thật (sản phẩm, bài viết, dự án) – không ghi "hôm nay" cho mọi trang
+  const urls = list.map((r) => `  <url><loc>${xmlEsc(new URL(r.out === 'index.html' ? './' : r.out, siteUrl).href)}</loc>${r.lastmod ? `<lastmod>${String(r.lastmod).slice(0, 10)}</lastmod>` : ''}<priority>${r.priority}</priority></url>`);
   fs.writeFileSync(path.join(OUT, 'frontend/sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`);
   const robots = `User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /frontend/gio-hang.html\nDisallow: /frontend/thanh-toan.html\nDisallow: /frontend/tai-khoan.html\n\nSitemap: ${new URL('sitemap.xml', siteUrl).href}\n`;
   // robots.txt chỉ có hiệu lực ở thư mục gốc tên miền (khi dùng tên miền riêng trỏ vào repo)
@@ -188,7 +190,8 @@ async function main() {
   const browser = await chromium.launch();
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'vi-VN', timezoneId: 'Asia/Ho_Chi_Minh' });
   // Mỗi trang như khách mới: không giỏ hàng, không "sản phẩm đã xem"
-  await context.addInitScript(() => { try { localStorage.clear(); sessionStorage.clear(); } catch { /* bỏ qua */ } });
+  // (giữ sessionStorage: dữ liệu catalog chỉ tải 1 lần cho cả lượt build)
+  await context.addInitScript(() => { try { localStorage.clear(); } catch { /* bỏ qua */ } });
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(`${page.url()}: ${e.message}`));
@@ -197,6 +200,7 @@ async function main() {
   const data = await page.evaluate(async () => {
     await DT.ready.catch(() => {});
     return {
+      configured: DT.backend.enabled,
       backend: DT.backend.enabled && !DT.backend.offline,
       config: DT.config,
       categories: DT.categories.map((c) => ({ id: c.id, name: c.name, subs: c.subs.map((s) => ({ id: s.id, name: s.name })) })),
@@ -208,6 +212,7 @@ async function main() {
       policyTitles: Object.fromEntries(Object.entries(DT.policies).map(([k, v]) => [k, v.title])),
     };
   });
+  if (data.configured && !data.backend) throw new Error('Đã cấu hình Supabase nhưng không nạp được dữ liệu – dừng build để không xuất bản dữ liệu mẫu');
   console.log(`Nguồn dữ liệu: ${data.backend ? 'Supabase' : 'dữ liệu mẫu (chế độ demo)'} – ${data.products.length} sản phẩm, ${data.categories.length} danh mục, ${data.posts.length} bài viết`);
 
   // Ảnh chia sẻ mặc định (banner trang chủ)

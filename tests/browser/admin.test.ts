@@ -72,7 +72,8 @@ try {
   check((await page.locator('.ad-table').textContent())!.includes(o1), 'tìm theo SĐT');
   // Đơn đặt lúc 1 giờ sáng (giờ VN) hôm nay phải nằm trong bộ lọc "hôm nay"
   sql(`update public.orders set created_at = date_trunc('day', now() at time zone 'Asia/Ho_Chi_Minh') at time zone 'Asia/Ho_Chi_Minh' + interval '1 hour' where code = '${o2}'`);
-  const today = new Date(); const ymd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  // Ngày hôm nay theo giờ Việt Nam (trình duyệt kiểm thử chạy múi giờ VN; máy chạy test có thể là UTC)
+  const ymd = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date());
   await go(page, `orders?from=${ymd}&to=${ymd}`, '#list .ad-table, #list .ad-empty');
   check(await page.locator('.ad-table tbody tr').count() === 2, 'lọc theo ngày hôm nay thấy đủ đơn (múi giờ VN)');
   await go(page, 'orders?payment=bank', '.ad-table');

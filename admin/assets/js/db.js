@@ -9,6 +9,8 @@ AD.PK = {
   services: 'id', policies: 'key', settings: 'key', projects: 'slug', faqs: 'id', orders: 'id', leads: 'id', reviews: 'id', profiles: 'id',
   payments: 'id', notifications: 'id',
 };
+// Bảng có cột riêng tư không cấp quyền đọc (số điện thoại người đánh giá): chỉ đọc các cột công khai
+AD.COLS = { reviews: 'id,product_id,user_id,name,rating,text,status,verified,created_at' };
 
 // ======================================================================= Supabase
 AD.supabase = (cfg) => {
@@ -60,9 +62,9 @@ AD.supabase = (cfg) => {
   }
 
   // Bộ lọc: [[cột, toán tử, giá trị]] với toán tử eq|neq|gt|gte|lt|lte|in|is|ilike
-  function query({ select = '*', filters = [], search, order, limit, offset } = {}) {
+  function query({ select, filters = [], search, order, limit, offset } = {}, table) {
     const p = new URLSearchParams();
-    p.set('select', select);
+    p.set('select', select || AD.COLS[table] || '*');
     filters.forEach(([c, op, v]) => {
       if (v === undefined || v === '' || v === null && op !== 'is') return;
       p.append(c, op === 'in' ? `in.(${v.map((x) => `"${x}"`).join(',')})` : `${op}.${op === 'ilike' ? `*${v}*` : v}`);
@@ -122,7 +124,7 @@ AD.supabase = (cfg) => {
       let rows = []; let count = null;
       while (rows.length < want) {
         const n = Math.min(PAGE, want - rows.length);
-        const { data, res } = await http(`/rest/v1/${table}?${query({ ...opts, limit: n, offset: start + rows.length })}`, { headers: { Prefer: 'count=exact' }, raw: true });
+        const { data, res } = await http(`/rest/v1/${table}?${query({ ...opts, limit: n, offset: start + rows.length }, table)}`, { headers: { Prefer: 'count=exact' }, raw: true });
         const total = Number((res.headers.get('content-range') || '').split('/')[1]);
         if (count === null) count = Number.isFinite(total) ? total : null;
         rows = rows.concat(data);
@@ -130,16 +132,16 @@ AD.supabase = (cfg) => {
       }
       return { rows, count: count ?? rows.length };
     },
-    async get(table, id, select = '*') {
+    async get(table, id, select = AD.COLS[table] || '*') {
       const r = await http(`/rest/v1/${table}?${AD.PK[table]}=eq.${encodeURIComponent(id)}&select=${select}`);
       return r[0] || null;
     },
     async insert(table, row) {
-      const r = await http(`/rest/v1/${table}`, { method: 'POST', body: row, headers: { Prefer: 'return=representation' } });
+      const r = await http(`/rest/v1/${table}?select=${AD.COLS[table] || '*'}`, { method: 'POST', body: row, headers: { Prefer: 'return=representation' } });
       return r[0];
     },
     async update(table, id, patch) {
-      const r = await http(`/rest/v1/${table}?${AD.PK[table]}=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: patch, headers: { Prefer: 'return=representation' } });
+      const r = await http(`/rest/v1/${table}?${AD.PK[table]}=eq.${encodeURIComponent(id)}&select=${AD.COLS[table] || '*'}`, { method: 'PATCH', body: patch, headers: { Prefer: 'return=representation' } });
       if (!r.length) throw new Error('Không cập nhật được (không có quyền hoặc bản ghi không tồn tại)');
       return r[0];
     },
@@ -241,7 +243,8 @@ AD.demo = () => {
     const rv = read(REVIEWS, {});
     const st = db.overlay.reviews || {};
     db.reviews = Object.entries(rv).flatMap(([pid, list]) => list.map((r, i) => {
-      const id = `${pid}-${i}-${r.date}`;
+      // Mã không phụ thuộc vị trí trong danh sách (đánh giá mới thêm vào đầu danh sách)
+      const id = `${pid}-${r.date}-${[...`${r.name}|${r.text}`].reduce((h, ch) => (h * 31 + ch.codePointAt(0)) >>> 0, 7).toString(36)}`;
       return { id, product_id: Number(pid), name: r.name, rating: r.rating, text: r.text, status: st[id] || 'approved', verified: !!r.verified, created_at: r.date };
     })).filter((r) => r.status !== 'deleted');
   }

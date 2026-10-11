@@ -6,9 +6,9 @@ DT.onReady(() => {
   function summaryHtml(t, cta) {
     return `<div class="summary">
       <h3>Thông tin đơn hàng</h3>
-      ${t.coupon ? `<div class="coupon-applied"><span>${DT.icon('tag')} <b>${t.coupon.code}</b> - ${esc(t.coupon.desc)}</span><button class="btn-link" id="rm-coupon" aria-label="Bỏ mã">${DT.icon('close')}</button></div>`
+      ${t.coupon ? `<div class="coupon-applied"><span>${DT.icon('tag')} <b>${esc(t.coupon.code)}</b> - ${esc(t.coupon.desc)}</span><button class="btn-link" id="rm-coupon" aria-label="Bỏ mã">${DT.icon('close')}</button></div>`
         : `<form class="coupon-form" id="coupon-form"><input name="code" placeholder="Nhập mã giảm giá" aria-label="Mã giảm giá"><button class="btn btn-outline btn-sm">Áp dụng</button></form>
-           <div class="coupon-list">${DT.coupons.map((c) => `<button class="coupon-chip" data-code="${c.code}" title="${esc(c.desc)}">${c.code}</button>`).join('')}</div>`}
+           <div class="coupon-list">${DT.coupons.map((c) => `<button class="coupon-chip" data-code="${esc(c.code)}" title="${esc(c.desc)}">${esc(c.code)}</button>`).join('')}</div>`}
       <div class="sum-row"><span>Tạm tính (${DT.store.cartCount()} sản phẩm)</span><span>${money(t.subtotal)}</span></div>
       ${t.install ? `<div class="sum-row"><span>Phí lắp đặt</span><span>${money(t.install)}</span></div>` : ''}
       <div class="sum-row"><span>Phí vận chuyển</span><span>${t.shipping ? money(t.shipping) : 'Miễn phí'}</span></div>
@@ -42,7 +42,7 @@ DT.onReady(() => {
             <div>
               <a class="ci-name" href="${DT.api.url(p)}">${esc(p.name)}</a>
               <div class="ci-meta">
-                <span>SKU: ${p.sku} • Bảo hành ${esc(p.warranty)}</span>
+                <span>SKU: ${esc(p.sku)} • Bảo hành ${esc(p.warranty)}</span>
                 ${p.gift ? `<span>${DT.icon('gift')} ${esc(p.gift)}</span>` : ''}
                 ${p.cat === 'may-lanh' ? (p.freeInstall ? `<span class="price">✓ Miễn phí lắp đặt</span>` : `<label class="check"><input type="checkbox" data-install ${install ? 'checked' : ''}> Lắp đặt chuẩn hãng (+${money(DT.config.installFee)}/bộ)</label>`) : ''}
               </div>

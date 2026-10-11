@@ -118,7 +118,7 @@ AD.pages = AD.pages || {};
     const next = idx >= 0 && idx < ORDER_FLOW.length - 1 ? ORDER_FLOW[idx + 1] : null;
     const s = o.shipping || {};
     const ops = AD.isOps();
-    const hasAc = (o.order_items || []).some((i) => DT.api.productById(i.product_id)?.cat === 'may-lanh' || /máy lạnh|điều hòa/i.test(i.name || ''));
+    const hasAc = (o.order_items || []).some((i) => AD.product(i.product_id)?.cat === 'may-lanh' || /máy lạnh|điều hòa/i.test(i.name || ''));
     const maint = ops && hasAc ? await AD.maintenanceOf(o) : null;
     const src = o.attribution ? [o.attribution.source, o.attribution.medium, o.attribution.campaign].filter(Boolean).join(' / ') : '';
     el.innerHTML = `<div class="ad-head"><div><a class="ad-back" href="#/orders">${ic('left')} Đơn hàng</a>
@@ -184,11 +184,14 @@ AD.pages = AD.pages || {};
     el.querySelector('#ops').addEventListener('submit', (e) => {
       e.preventDefault();
       const f = e.target;
-      const patch = { payment_status: f.payment_status.value };
+      // Chỉ gửi trường đã thay đổi (gửi lại trạng thái cũ sẽ chạy lại các xử lý theo trạng thái trên máy chủ)
+      const next = { payment_status: f.payment_status.value };
       if (ops) {
-        Object.assign(patch, { status: f.status.value, staff_note: f.staff_note.value.trim() || null });
-        if (f.maintenance_optin) patch.maintenance_optin = f.maintenance_optin.checked;
-      } else if (patch.payment_status === o.payment_status) { AD.ui.toast('Không có thay đổi'); return; }
+        Object.assign(next, { status: f.status.value, staff_note: f.staff_note.value.trim() || null });
+        if (f.maintenance_optin) next.maintenance_optin = f.maintenance_optin.checked;
+      }
+      const patch = Object.fromEntries(Object.entries(next).filter(([k, v]) => v !== (o[k] ?? (k === 'maintenance_optin' ? false : null))));
+      if (!Object.keys(patch).length) { AD.ui.toast('Không có thay đổi'); return; }
       save(patch, f.querySelector('button'), 'Đã lưu');
     });
   };

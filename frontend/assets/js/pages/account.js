@@ -11,7 +11,7 @@ DT.onReady(() => {
           <div class="field"><label>Số điện thoại</label><input name="phone" type="tel" required data-validate="phone" placeholder="0901 234 567"><div class="err">Số điện thoại không hợp lệ</div></div>
           <div class="field"><label>Mật khẩu</label><input name="password" type="password" required placeholder="••••••"><div class="err">Vui lòng nhập mật khẩu</div></div>
           <button class="btn btn-primary btn-block btn-lg">Đăng nhập</button>
-          <p class="muted" style="text-align:center;margin-top:14px">Quên mật khẩu? Gọi <a class="link" href="tel:${DT.u.tel(DT.config.hotline)}">${DT.config.hotline}</a></p>
+          <p class="muted" style="text-align:center;margin-top:14px">Quên mật khẩu? Gọi <a class="link" href="tel:${DT.u.tel(DT.config.hotline)}">${DT.u.esc(DT.config.hotline)}</a></p>
         </form>
         <form id="register-form" class="${tab === 'register' ? '' : 'hidden'}" novalidate>
           <div class="field"><label>Họ và tên <span class="req">*</span></label><input name="name" required><div class="err">Vui lòng nhập họ tên</div></div>
@@ -72,7 +72,7 @@ DT.onReady(() => {
     const st = DT.orderStatus[o.status];
     return `<div class="order-card"><div class="oc-head"><span>Mã đơn <b>${o.code}</b> • ${new Date(o.createdAt).toLocaleDateString('vi-VN')}</span><span class="status ${st.cls}">${st.label}</span></div>
       <div class="oc-body">${o.items.slice(0, 2).map((it) => `<div class="co-item"><span class="nm">${esc(it.name)} × ${it.qty}</span><b>${money(it.price * it.qty)}</b></div>`).join('')}${o.items.length > 2 ? `<small class="muted">+ ${o.items.length - 2} sản phẩm khác</small>` : ''}</div>
-      <div class="oc-foot"><span>Tổng tiền: <b class="price">${money(o.total)}</b></span><a class="btn btn-outline btn-sm" href="tra-cuu-don-hang.html?code=${o.code}&phone=${o.customer.phone}">Xem chi tiết</a></div></div>`;
+      <div class="oc-foot"><span>Tổng tiền: <b class="price">${money(o.total)}</b></span><a class="btn btn-outline btn-sm" href="tra-cuu-don-hang.html?code=${encodeURIComponent(o.code)}&phone=${encodeURIComponent(o.customer.phone)}">Xem chi tiết</a></div></div>`;
   }
 
   const currentTab = () => location.hash.slice(1) || 'overview';

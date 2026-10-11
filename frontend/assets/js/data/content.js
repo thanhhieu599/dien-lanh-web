@@ -43,6 +43,9 @@ DT.visionSlots = [
   { key: 'lanh-dao', label: 'Thông điệp lãnh đạo', hint: 'Chân dung Giám đốc', size: '900 × 1200 px (dọc)' },
 ];
 DT.VISION_DEMO_KEY = 'dt_vision_v1';
+// Ảnh trang Tầm nhìn chép sẵn vào assets/images/cong-ty/ (cách dự phòng, xem README trong thư mục đó):
+// khai báo tên file đã chép để website không phải dò file (tránh lỗi 404), vd ['hero.jpg', 'lanh-dao.webp']
+DT.visionFiles = [];
 // Bản demo: ảnh sản phẩm tải lên ở trang quản trị demo -> website demo (cùng trình duyệt) hiển thị
 DT.PRODUCT_IMG_DEMO_KEY = 'dt_product_images_v1';
 DT.visionImages = () => {

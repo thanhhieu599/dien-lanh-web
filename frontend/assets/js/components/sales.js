@@ -191,8 +191,8 @@ DT.sales = (() => {
       <div class="cp-body">
         <p class="cp-hi">Xin chào 👋 Bạn cần tư vấn sản phẩm, báo giá hay đặt lịch kỹ thuật? Chọn cách liên hệ thuận tiện nhất:</p>
         <div class="cp-channels">
-          ${c.zalo ? `<a class="cp-ch cp-zalo" href="${esc(c.zalo)}" target="_blank" rel="noopener"><span>Zalo</span>Chat Zalo</a>` : ''}
-          ${c.messenger ? `<a class="cp-ch cp-mess" href="${esc(c.messenger)}" target="_blank" rel="noopener">${DT.icon('chat')}Messenger</a>` : ''}
+          ${c.zalo ? `<a class="cp-ch cp-zalo" href="${esc(DT.u.safeUrl(c.zalo))}" target="_blank" rel="noopener"><span>Zalo</span>Chat Zalo</a>` : ''}
+          ${c.messenger ? `<a class="cp-ch cp-mess" href="${esc(DT.u.safeUrl(c.messenger))}" target="_blank" rel="noopener">${DT.icon('chat')}Messenger</a>` : ''}
           ${c.hotline ? `<a class="cp-ch cp-call" href="tel:${DT.u.tel(c.hotline)}">${DT.icon('phone')}${esc(c.hotline)}</a>` : ''}
         </div>
         <form class="cp-form" novalidate>

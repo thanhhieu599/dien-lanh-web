@@ -31,7 +31,7 @@ DT.trustUI = (() => {
     if (!list.length && !demo()) return '';
     const items = list.length ? list.map((l) => {
       const inner = isImg(l.image) ? `<img src="${esc(l.image)}" alt="${esc(l.name)}" loading="lazy">` : `<b>${esc(l.name)}</b>`;
-      return l.url ? `<a class="tr-logo" href="${esc(l.url)}" target="_blank" rel="noopener nofollow" title="${esc(l.name)}">${inner}</a>` : `<span class="tr-logo" title="${esc(l.name)}">${inner}</span>`;
+      return l.url ? `<a class="tr-logo" href="${esc(DT.u.safeUrl(l.url))}" target="_blank" rel="noopener nofollow" title="${esc(l.name)}">${inner}</a>` : `<span class="tr-logo" title="${esc(l.name)}">${inner}</span>`;
     }) : Array.from({ length: 6 }, () => '<span class="tr-logo tr-ph">LOGO KHÁCH HÀNG</span>');
     return `<div class="tr-block"><h3>Khách hàng &amp; đối tác tin tưởng</h3>${list.length ? '' : '<p class="tr-note">Khung chờ – thêm logo thật tại Quản trị › Uy tín &amp; đánh giá</p>'}<div class="tr-logos">${items.join('')}</div></div>`;
   }
@@ -55,7 +55,7 @@ DT.trustUI = (() => {
       <span class="g-logo" aria-hidden="true"><b style="color:#4285f4">G</b></span>
       <span class="g-main">${has ? `<b>${Number(g.rating).toFixed(1).replace('.', ',')}</b>${stars(Number(g.rating))}<small>${g.count ? `${fmt(g.count)} đánh giá trên Google` : 'trên Google'}</small>`
         : '<b>–,–</b>' + stars(0) + '<small>Điểm Google Maps (chưa cập nhật)</small>'}</span>
-      ${g.url || write ? `<span class="g-links">${g.url ? `<a href="${esc(g.url)}" target="_blank" rel="noopener">Xem trên Google Maps</a>` : ''}${write ? `<a href="${esc(write)}" target="_blank" rel="noopener">Viết đánh giá</a>` : ''}</span>` : ''}
+      ${g.url || write ? `<span class="g-links">${g.url ? `<a href="${esc(DT.u.safeUrl(g.url))}" target="_blank" rel="noopener">Xem trên Google Maps</a>` : ''}${write ? `<a href="${esc(write)}" target="_blank" rel="noopener">Viết đánh giá</a>` : ''}</span>` : ''}
     </div>`;
   }
 

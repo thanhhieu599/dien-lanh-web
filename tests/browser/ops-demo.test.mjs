@@ -127,7 +127,7 @@ try {
 
   console.log('Điện thoại');
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const h of ['maintenance', 'misa', 'products/1020', 'reports', 'customers']) {
+  for (const h of ['maintenance', 'misa', 'products/1020', 'reports', 'customers', 'trust', 'vision', 'settings']) {
     await go(h);
     const w = await page.evaluate(() => document.documentElement.scrollWidth);
     check(w <= 392, `quản trị #/${h}: không tràn ngang (${w}px)`);

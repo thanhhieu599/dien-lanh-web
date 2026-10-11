@@ -4,9 +4,9 @@ DT.orderView = (o) => {
   const st = DT.orderStatus[o.status];
   const pay = { cod: 'Thanh toán khi nhận hàng (COD)', bank: 'Chuyển khoản ngân hàng', card: 'Thẻ ATM / Visa / Master (VNPay)', wallet: 'Ví MoMo', installment: 'Trả góp 0%' }[o.payment];
   const ps = DT.paymentStatus[o.paymentStatus || 'unpaid'];
-  const flow = ['pending', 'confirmed', 'shipping', 'done'];
+  const flow = ['pending', 'confirmed', 'shipping', 'installing', 'done'];
   const idx = o.status === 'cancelled' ? -1 : flow.indexOf(o.status);
-  const labels = { pending: 'Đặt hàng thành công', confirmed: 'Đã xác nhận đơn', shipping: 'Đang giao hàng', done: 'Giao & lắp đặt hoàn tất' };
+  const labels = { pending: 'Đặt hàng thành công', confirmed: 'Đã xác nhận đơn', shipping: 'Đang giao hàng', installing: 'Đang lắp đặt', done: 'Giao & lắp đặt hoàn tất' };
   return `
     <div class="order-info">
       <div class="sum-row"><span>Mã đơn hàng</span><span class="price">${o.code}</span></div>
@@ -38,13 +38,13 @@ DT.onReady(() => {
 
   if (page === 'success') {
     let o = DT.store.findOrder(DT.u.param('code') || '');
-    if (!o) { $('#success').innerHTML = DT.ui.empty('Không tìm thấy đơn hàng', '', '<a class="btn btn-primary" href="index.html">Về trang chủ</a>'); return; }
+    if (!o) { $('#success').innerHTML = DT.ui.empty('Không tìm thấy đơn hàng', '', '<a class="btn btn-primary" href="index.html">Về trang chủ</a>', 'h1'); return; }
     const render = () => {
       $('#success').innerHTML = `<div class="success-ic">${DT.icon('check')}</div>
       <h1 style="font-size:24px">Đặt hàng thành công!</h1>
       <p class="muted">Cảm ơn ${DT.u.esc(o.customer.gender || '')} <b>${DT.u.esc(o.customer.name)}</b>. Nhân viên ${DT.u.esc(DT.config.name)} sẽ gọi xác nhận trong vòng 15 phút (giờ làm việc).</p>
       ${DT.orderView(o)}
-      <div class="qv-btns"><a class="btn btn-outline" href="index.html">Tiếp tục mua sắm</a><a class="btn btn-primary" href="tra-cuu-don-hang.html?code=${o.code}&phone=${o.customer.phone}">Theo dõi đơn hàng</a></div>`;
+      <div class="qv-btns"><a class="btn btn-outline" href="index.html">Tiếp tục mua sắm</a><a class="btn btn-primary" href="tra-cuu-don-hang.html?code=${encodeURIComponent(o.code)}&phone=${encodeURIComponent(o.customer.phone)}">Theo dõi đơn hàng</a></div>`;
       DT.payments.mount($('#success'));
     };
     render();

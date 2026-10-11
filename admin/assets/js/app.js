@@ -42,10 +42,11 @@ window.AD = window.AD || {};
 
   AD.loadCache = async (force) => {
     if (AD.cache.loaded && !force) return;
-    const [c, b, s] = await Promise.all([
+    const [c, b, s, p] = await Promise.all([
       AD.db.list('categories', { order: 'sort.asc' }), AD.db.list('brands', { order: 'sort.asc' }), AD.db.list('services', { order: 'sort.asc' }),
+      AD.db.list('products', { select: 'id,sku,name,cat,free_install', limit: 5000 }),
     ]);
-    Object.assign(AD.cache, { categories: c.rows, brands: b.rows, services: s.rows, loaded: true });
+    Object.assign(AD.cache, { categories: c.rows, brands: b.rows, services: s.rows, productMap: new Map(p.rows.map((x) => [String(x.id), { ...x, freeInstall: x.free_install }])), loaded: true });
     // Ảnh minh họa sản phẩm cần danh sách thương hiệu hiện hành
     DT.brands = b.rows;
   };

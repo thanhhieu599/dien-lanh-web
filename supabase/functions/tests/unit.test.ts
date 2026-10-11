@@ -160,3 +160,12 @@ test('Nhắc bảo trì định kỳ: nhân viên, email khách (link đặt l�
   const z = znsMessage(ev, { ...ctx, env: { ...ctx.env, ZNS_TEMPLATE_MAINT: '777', ZNS_PARAMS_MAINT: 'customer_name,months,order_code' } })!;
   assert.deepEqual(z, { phone: '0988777666', templateId: '777', data: { customer_name: 'Hùng <i>', months: 12, order_code: 'DT2610110001' }, trackingId: 'N31' });
 });
+
+test('Khách trả tiền thừa / trùng: chỉ báo nhân viên hoàn tiền, không gửi khách', () => {
+  const ev = { id: 41, event: 'order_paid' as const, attempts: 1, results: {}, order, data: { paymentStatus: 'duplicate', amount: 16600000, txnRef: 'DT2610111234P01', provider: 'vnpay', reason: 'already_paid' } };
+  const t = staffText(ev, ctx)!;
+  assert.match(t, /^❗ KHÁCH TRẢ TIỀN THỪA — ĐƠN DT2610111234 — CẦN HOÀN TIỀN/);
+  assert.match(t, /16\.600\.000₫ \(VNPAY, mã GD DT2610111234P01\)/);
+  assert.equal(customerEmail(ev, ctx), null, 'không email khách');
+  assert.equal(znsMessage(ev, ctx), null, 'không ZNS');
+});

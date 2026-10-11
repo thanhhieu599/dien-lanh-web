@@ -204,13 +204,16 @@ export async function startSupabase(opts: Options) {
       return send(200, out.rows, { 'Content-Range': range });
     }
     const repr = /return=representation/.test(prefer);
+    // Như PostgREST: cột trả về theo tham số select (chỉ hỗ trợ danh sách cột đơn), mặc định *
+    const sel = url.searchParams.get('select');
+    const ret = sel && /^[a-z_][a-z0-9_]*(,[a-z_][a-z0-9_]*)*$/.test(sel) ? sel.split(',').map((c) => `"${c}"`).join(', ') : '*';
     if (req.method === 'POST') {
       const body = JSON.parse(raw || '{}');
       const rows = Array.isArray(body) ? body : [body];
       const keys = [...new Set(rows.flatMap((r) => Object.keys(r)))];
       keys.forEach((k) => { if (!(k in cols)) throw Object.assign(new Error(`Could not find the '${k}' column of '${table}'`), { status: 400, code: 'PGRST204' }); });
       const values = rows.map((r) => `(${keys.map((k) => { params.push(toParam(r[k], cols[k])); return `$${params.length}::${cols[k]}`; }).join(', ')})`);
-      const sql = `insert into public."${table}" (${keys.map((k) => `"${k}"`).join(', ')}) values ${values.join(', ')}${repr ? ' returning *' : ''}`;
+      const sql = `insert into public."${table}" (${keys.map((k) => `"${k}"`).join(', ')}) values ${values.join(', ')}${repr ? ` returning ${ret}` : ''}`;
       const r = await tx(claims, (q) => q(sql, params));
       return repr ? send(201, r.rows) : send(201, undefined);
     }
@@ -221,7 +224,7 @@ export async function startSupabase(opts: Options) {
         params.push(toParam(v, cols[k]));
         return `"${k}" = $${params.length}::${cols[k]}`;
       });
-      const r = await tx(claims, (q) => q(`update public."${table}" t set ${sets.join(', ')}${where}${repr ? ' returning *' : ''}`, params));
+      const r = await tx(claims, (q) => q(`update public."${table}" t set ${sets.join(', ')}${where}${repr ? ` returning ${ret}` : ''}`, params));
       return repr ? send(200, r.rows) : send(204, undefined);
     }
     if (req.method === 'DELETE') {

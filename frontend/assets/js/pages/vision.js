@@ -2,10 +2,9 @@
 // Chèn ảnh: Quản trị › Trang Tầm nhìn & Sứ mệnh (hoặc chép file vào frontend/assets/images/cong-ty/, xem README.md).
 (() => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const EXTS = ['jpg', 'webp', 'png'];
 
-  // ---------- Ảnh: ưu tiên ảnh tải lên trong trang quản trị; chưa có thì thử file trong assets/images/cong-ty/
-  // (.jpg/.webp/.png); không có nữa thì hiện khung chờ ảnh
+  // ---------- Ảnh: ưu tiên ảnh tải lên trong trang quản trị; chưa có thì file khai báo trong DT.visionFiles
+  // (chép vào assets/images/cong-ty/); không có nữa thì hiện khung chờ ảnh
   const placeholder = (img) => {
     const ph = document.createElement('div');
     ph.className = 'vm-ph';
@@ -23,7 +22,9 @@
     const ph = placeholder(img);
     fig.append(ph);
     const key = img.dataset.img.split('/').pop();
-    const sources = [uploaded[key], ...EXTS.map((x) => `${img.dataset.img}.${x}`)].filter(Boolean);
+    const dir = img.dataset.img.slice(0, -key.length);
+    const local = (DT.visionFiles || []).filter((f) => String(f).replace(/\.\w+$/, '') === key).map((f) => dir + f);
+    const sources = [uploaded[key], ...local].filter(Boolean);
     let i = 0;
     const tryNext = () => {
       if (i >= sources.length) { img.removeAttribute('src'); return; }

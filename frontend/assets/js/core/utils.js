@@ -14,6 +14,18 @@ DT.u = {
     return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   },
 
+  // Ngày hôm nay theo giờ máy khách (YYYY-MM-DD). toISOString() là giờ UTC: 0h-7h sáng ở VN bị lùi 1 ngày
+  today() { const x = new Date(); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; },
+
+  // Link do quản trị nhập: chỉ cho http(s), tel, mailto, zalo hoặc đường dẫn nội bộ (chặn javascript:)
+  safeUrl(u) {
+    const s = String(u ?? '').trim();
+    if (!s) return '';
+    if (/^(https?:|tel:|mailto:|zalo:)/i.test(s)) return s;
+    if (/^[a-z][a-z0-9+.-]*:/i.test(s) || s.startsWith('//')) return '';
+    return s;
+  },
+
   // Trang pre-render (sp/<slug>.html...) không có query string: đọc từ <body data-q-id="..." data-q-cat="...">
   param(name) {
     return new URLSearchParams(location.search).get(name) ?? document.body?.dataset['q' + name[0].toUpperCase() + name.slice(1)] ?? null;
@@ -59,7 +71,9 @@ DT.u = {
     if (!box) { box = document.createElement('div'); box.id = 'toasts'; document.body.appendChild(box); }
     const el = document.createElement('div');
     el.className = `toast toast-${type}`;
-    el.innerHTML = `${DT.icon(type === 'error' ? 'alert' : 'check')}<span>${msg}</span>`;
+    // Nội dung hiển thị dạng chữ (thông báo có thể chứa dữ liệu từ máy chủ / quản trị)
+    el.innerHTML = `${DT.icon(type === 'error' ? 'alert' : 'check')}<span></span>`;
+    el.querySelector('span').textContent = String(msg ?? '');
     box.appendChild(el);
     requestAnimationFrame(() => el.classList.add('show'));
     setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 2800);

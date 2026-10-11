@@ -4,7 +4,9 @@
 Ảnh tự nén và hiển thị ngay trên website, không cần sửa code.
 
 Cách dự phòng (ảnh mặc định đi kèm mã nguồn): chép ảnh vào thư mục này **đúng tên file** bên dưới
-(đuôi `.jpg`, `.webp` hoặc `.png`). Ảnh tải lên trong quản trị luôn được ưu tiên hơn ảnh trong thư mục này.
+(đuôi `.jpg`, `.webp` hoặc `.png`), rồi **khai báo tên file** trong `frontend/assets/js/data/content.js`:
+`DT.visionFiles = ['hero.jpg', 'lanh-dao.webp'];` (website chỉ tải file đã khai báo, không dò file để tránh lỗi 404).
+Ảnh tải lên trong quản trị luôn được ưu tiên hơn ảnh trong thư mục này.
 
 | Tên file | Vị trí trên trang | Kích thước gợi ý |
 |---|---|---|

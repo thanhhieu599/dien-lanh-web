@@ -8,7 +8,8 @@ DT.onReady(() => {
   ['cat', 'sub'].forEach((k) => { if (!params.get(k) && DT.u.param(k)) params.set(k, DT.u.param(k)); });
   const prettyPage = !!document.body.dataset.qCat;
 
-  const cat = DT.api.category(params.get('cat'));
+  // Chỉ trang danh mục lấy danh mục từ URL; trang tìm kiếm / khuyến mãi coi ?cat= là bộ lọc
+  const cat = mode === 'category' ? DT.api.category(params.get('cat')) : null;
   if (mode === 'category' && !cat) { location.replace('404.html'); return; }
 
   // Trạng thái lọc đọc từ URL để có thể chia sẻ link / SEO
@@ -81,7 +82,7 @@ DT.onReady(() => {
     const scope = scopeProducts();
     const brandIds = [...new Set(scope.map((p) => p.brand))];
     const opt = (group, v, label, active) => `<button class="fopt ${active ? 'active' : ''}" data-group="${group}" data-v="${esc(v)}">${esc(label)}</button>`;
-    let h = `<div class="filters-head"><h3>${DT.icon('filter')} Bộ lọc</h3><button class="btn btn-link" id="f-close">${DT.icon('close')}</button></div>`;
+    let h = `<div class="filters-head"><h3>${DT.icon('filter')} Bộ lọc</h3><button class="btn btn-link" id="f-close" aria-label="Đóng bộ lọc">${DT.icon('close')}</button></div>`;
     if (!cat) {
       const cats = [...new Set(scope.map((p) => p.cat))];
       h += `<div class="filter-group"><h4>Danh mục</h4><div class="filter-opts">${cats.map((c) => opt('cat', c, DT.api.category(c).short, state.cat === c)).join('')}</div></div>`;

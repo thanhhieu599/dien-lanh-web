@@ -8,7 +8,7 @@ AD.pages = AD.pages || {};
   const pad = (n) => String(n).padStart(2, '0');
   const ymd = (x) => `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`;
   const localDay = (s, add = 0) => { const [y, m, dd] = s.split('-').map(Number); return new Date(y, m - 1, dd + add); };
-  const isAc = (i) => DT.api.productById(i.product_id ?? i.id)?.cat === 'may-lanh' || /máy lạnh|điều hòa/i.test(i.name || '');
+  const isAc = (i) => AD.product(i.product_id ?? i.id)?.cat === 'may-lanh' || /máy lạnh|điều hòa/i.test(i.name || '');
   const store = async () => (await AD.db.get('settings', 'store'))?.value || {};
   const tel = (p) => (p ? `<a href="tel:${esc(p)}">${esc(p)}</a> · <a href="https://zalo.me/${esc(String(p).replace(/^0/, '84'))}" target="_blank" rel="noopener">Zalo</a>` : '');
 
@@ -24,7 +24,8 @@ AD.pages = AD.pages || {};
     return rows.flatMap((o) => {
       const ac = (o.order_items || []).filter(isAc);
       if (!ac.length) return [];
-      const doneAt = new Date((o.order_status_history || []).filter((h) => h.status === 'done').pop()?.created_at || o.updated_at || o.created_at);
+      const hist = (o.order_status_history || []).slice().sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+      const doneAt = new Date(hist.filter((h) => h.status === 'done').pop()?.created_at || o.updated_at || o.created_at);
       return Array.from({ length: cycles }, (_, k) => {
         const due = new Date(doneAt.getFullYear(), doneAt.getMonth() + months * (k + 1), doneAt.getDate(), 9);
         return {
@@ -147,7 +148,9 @@ AD.pages = AD.pages || {};
     const sum = weights.reduce((s, w) => s + w, 0);
     if (!total || !sum) return weights.map(() => 0);
     let used = 0;
-    return weights.map((w, i) => { if (i === weights.length - 1) return total - used; const v = Math.round((total * w) / sum); used += v; return v; });
+    // Phần dư làm tròn dồn vào dòng cuối CÓ trọng số (không để dòng phí lắp đặt / vận chuyển nhận chiết khấu ±1₫)
+    const last = weights.reduce((k, w, i) => (w > 0 ? i : k), -1);
+    return weights.map((w, i) => { if (i === last) return total - used; if (!w) return 0; const v = Math.round((total * w) / sum); used += v; return v; });
   }
 
   // Đơn hàng -> các dòng chứng từ bán hàng
@@ -159,7 +162,8 @@ AD.pages = AD.pages || {};
       code: i.sku || `SP${i.product_id}`, name: i.name, unit: isAc(i) ? 'Bộ' : 'Cái', qty: i.qty, price: Number(i.price), gross: Number(i.price) * i.qty, acc: cfg.misaRevenueAcc, goods: true,
     }));
     if (Number(o.install_fee) > 0) {
-      const n = items.filter((i) => i.install).reduce((s, i) => s + i.qty, 0);
+      // Chỉ đếm máy có tính phí lắp (máy "miễn phí lắp đặt" không tính)
+      const n = items.filter((i) => i.install && !AD.product(i.product_id)?.freeInstall).reduce((s, i) => s + i.qty, 0);
       const qty = n && Number(o.install_fee) % n === 0 ? n : 1;
       lines.push({ code: 'DV-LAPDAT', name: 'Phí lắp đặt máy lạnh', unit: qty > 1 ? 'Bộ' : 'Lần', qty, price: Number(o.install_fee) / qty, gross: Number(o.install_fee), acc: cfg.misaServiceAcc, goods: false });
     }
@@ -196,7 +200,8 @@ AD.pages = AD.pages || {};
     const vouchers = []; const customers = new Map(); const goods = new Map();
     let net = 0; let tax = 0; let total = 0;
     orders.forEach((o) => {
-      const date = (opt.docDate === 'done' && (o.order_status_history || []).filter((h) => h.status === 'done').pop()?.created_at) || o.created_at;
+      const hist = (o.order_status_history || []).slice().sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+      const date = (opt.docDate === 'done' && hist.filter((h) => h.status === 'done').pop()?.created_at) || o.created_at;
       const day = ymd(new Date(date));
       const cu = customerOf(o);
       const [method, debit] = payInfo(o, cfg);

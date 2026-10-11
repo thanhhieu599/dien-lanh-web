@@ -79,6 +79,15 @@ export function staffText(ev: NotifyEvent, c: Ctx): string | null {
       `Xử lý: ${adminUrl(c.env)}#/orders/${o.id}`,
     ].join('\n');
   }
+  if (o && ev.event === 'order_paid' && ev.data?.paymentStatus === 'duplicate') {
+    return [
+      `❗ KHÁCH TRẢ TIỀN THỪA — ĐƠN ${o.code} — CẦN HOÀN TIỀN`,
+      `Số tiền nhận thêm: ${money(Number(ev.data.amount || 0))} (${ev.data.provider === 'bank' ? 'chuyển khoản' : String(ev.data.provider || '').toUpperCase()}, mã GD ${ev.data.txnRef || ''})`,
+      ev.data.reason === 'cancelled' ? 'Đơn đã HỦY nhưng khách vẫn thanh toán.' : `Đơn đã được thanh toán đủ ${money(o.total)} trước đó.`,
+      `Khách: ${o.customer?.name || ''} — ${o.customer?.phone || ''}`,
+      `Chi tiết: ${adminUrl(c.env)}#/orders/${o.id}`,
+    ].join('\n');
+  }
   if (o && ev.event === 'order_paid') {
     const partial = ev.data?.paymentStatus === 'partial';
     return [

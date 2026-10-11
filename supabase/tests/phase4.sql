@@ -67,7 +67,10 @@ begin
   assert exists (select 1 from public.notifications n join public.orders o on o.id = n.order_id
                  where o.code = c and n.event = 'order_paid'), 'phải có sự kiện order_paid';
   assert (select count(*) from public.notifications n join public.orders o on o.id = n.order_id
-          where o.code = c and n.event = 'order_paid') = 1, 'chỉ 1 sự kiện order_paid';
+          where o.code = c and n.event = 'order_paid' and n.data ->> 'paymentStatus' = 'paid') = 1, 'chỉ 1 sự kiện đã thanh toán';
+  -- Khách trả thêm bằng link cũ khi đơn đã thanh toán -> báo nhân viên hoàn tiền
+  assert (select count(*) from public.notifications n join public.orders o on o.id = n.order_id
+          where o.code = c and n.event = 'order_paid' and n.data ->> 'paymentStatus' = 'duplicate' and n.data ->> 'reason' = 'already_paid') = 1, 'báo thanh toán trùng';
   begin perform public.payment_start(c, '0912345678', 'vnpay'); raise exception 'đơn đã trả không được thanh toán lại';
   exception when others then assert sqlerrm like '%đã được thanh toán%', sqlerrm; end;
   assert public.payment_lookup(c || 'P02') ->> 'paymentStatus' = 'paid', 'tra cứu theo mã giao dịch';

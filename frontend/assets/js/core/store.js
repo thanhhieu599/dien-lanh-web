@@ -19,8 +19,9 @@ DT.store = (() => {
     const p = DT.api.productById(id);
     if (!p) return false;
     const item = state.cart.find((i) => i.id === id);
-    if (item) item.qty = Math.min(item.qty + qty, 99);
-    else state.cart.push({ id, qty, install: !!opts.install });
+    const n = Math.min(Math.max(1, Math.floor(Number(qty)) || 1), 99);
+    if (item) item.qty = Math.min(item.qty + n, 99);
+    else state.cart.push({ id, qty: n, install: !!opts.install });
     save();
     return true;
   }
@@ -38,6 +39,17 @@ DT.store = (() => {
   const removeFromCart = (id) => setQty(id, 0);
   const clearCart = () => { state.cart = []; state.coupon = null; save(); };
   const cartCount = () => state.cart.reduce((s, i) => s + i.qty, 0);
+  // Bỏ khỏi giỏ / yêu thích / so sánh các sản phẩm đã ngừng kinh doanh (admin ẩn hoặc xóa).
+  // Không chạy khi máy chủ lỗi (đang dùng dữ liệu dự phòng) để không xóa nhầm giỏ hàng của khách.
+  function prune() {
+    if (DT.backend?.offline) return;
+    const ok = (id) => !!DT.api.productById(id);
+    const before = JSON.stringify([state.cart, state.wishlist, state.compare]);
+    state.cart = state.cart.filter((i) => ok(i.id));
+    state.wishlist = (state.wishlist || []).filter(ok);
+    state.compare = (state.compare || []).filter(ok);
+    if (JSON.stringify([state.cart, state.wishlist, state.compare]) !== before) save();
+  }
 
   // Tính tổng tiền giỏ hàng, gồm phí lắp đặt, vận chuyển và mã giảm giá
   function totals() {
@@ -220,7 +232,7 @@ DT.store = (() => {
   }
 
   return {
-    get, save, addToCart, setQty, setInstall, removeFromCart, clearCart, cartCount, totals, applyCoupon, removeCoupon,
+    get, save, addToCart, setQty, setInstall, removeFromCart, clearCart, cartCount, prune, totals, applyCoupon, removeCoupon,
     toggleWishlist, toggleCompare, clearCompare, addViewed,
     register, login, logout, updateProfile, fullUser, saveAddresses,
     placeOrder, findOrder, rememberOrder, trackOrder, myOrders, syncMyOrders, cancelOrder,

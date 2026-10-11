@@ -88,7 +88,7 @@ DT.payments = (() => {
       c.momo && ['momo', 'Thanh toán bằng ví MoMo', 'Quét mã bằng ứng dụng MoMo']].filter(Boolean);
     if (!opts.length) {
       p.innerHTML = DT.backend?.enabled
-        ? `Nhân viên sẽ gọi hướng dẫn thanh toán. Cần hỗ trợ gấp: <a class="link" href="tel:${DT.u.tel(DT.config.hotline)}">${DT.config.hotline}</a>.`
+        ? `Nhân viên sẽ gọi hướng dẫn thanh toán. Cần hỗ trợ gấp: <a class="link" href="tel:${DT.u.tel(DT.config.hotline)}">${DT.u.esc(DT.config.hotline)}</a>.`
         : 'Chế độ demo: chưa kết nối cổng thanh toán (xem docs/PHASE4.md để kích hoạt VNPay / MoMo).';
       return;
     }

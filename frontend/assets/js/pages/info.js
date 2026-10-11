@@ -46,7 +46,7 @@ DT.onReady(() => {
       $('#book-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
     const d = $('input[name=date]');
-    if (d) d.min = new Date().toISOString().slice(0, 10);
+    if (d) d.min = DT.u.today();
   }
 
   if (page === 'stores') {
@@ -94,6 +94,6 @@ DT.onReady(() => {
     $('#policy').innerHTML = `<div class="policy-layout">
       <nav class="policy-nav">${Object.entries(DT.policies).map(([k, v]) => `<a href="${DT.api.policyUrl(k)}" class="${k === type ? 'active' : ''}">${esc(v.title)}</a>`).join('')}</nav>
       <article class="article"><h1>${esc(pol.title)}</h1><div class="rich">${pol.body}</div>
-      <p class="muted">Mọi thắc mắc vui lòng liên hệ hotline <a class="link" href="tel:${DT.u.tel(DT.config.hotline)}">${DT.config.hotline}</a> hoặc email ${DT.config.email}.</p></article></div>`;
+      <p class="muted">Mọi thắc mắc vui lòng liên hệ hotline <a class="link" href="tel:${DT.u.tel(DT.config.hotline)}">${esc(DT.config.hotline)}</a> hoặc email ${esc(DT.config.email)}.</p></article></div>`;
   }
 });

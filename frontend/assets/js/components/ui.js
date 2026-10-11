@@ -61,8 +61,8 @@ DT.ui = (() => {
     return `<div class="pgrid ${opts.cls || ''}">${products.map((p) => productCard(p, opts)).join('')}</div>`;
   }
 
-  function empty(title, sub = '', action = '') {
-    return `<div class="empty"><div class="empty-ic">${DT.icon('search')}</div><h3>${title}</h3><p>${sub}</p>${action}</div>`;
+  function empty(title, sub = '', action = '', tag = 'h3') {
+    return `<div class="empty"><div class="empty-ic">${DT.icon('search')}</div><${tag}>${title}</${tag}><p>${sub}</p>${action}</div>`;
   }
 
   function breadcrumb(items) {
@@ -78,14 +78,14 @@ DT.ui = (() => {
 
   function pagination(page, pages) {
     if (pages <= 1) return '';
-    const btn = (p, label = p, dis = false, act = false) =>
-      `<button class="pg ${act ? 'active' : ''}" data-page="${p}" ${dis ? 'disabled' : ''}>${label}</button>`;
-    let h = btn(page - 1, DT.icon('left'), page === 1);
+    const btn = (p, label = p, dis = false, act = false, aria = '') =>
+      `<button class="pg ${act ? 'active' : ''}" data-page="${p}" ${dis ? 'disabled' : ''}${aria ? ` aria-label="${aria}"` : ''}${act ? ' aria-current="page"' : ''}>${label}</button>`;
+    let h = btn(page - 1, DT.icon('left'), page === 1, false, 'Trang trước');
     for (let i = 1; i <= pages; i++) {
       if (i === 1 || i === pages || Math.abs(i - page) <= 1) h += btn(i, i, false, i === page);
       else if (Math.abs(i - page) === 2) h += '<span class="pg-gap">…</span>';
     }
-    return `<div class="pagination">${h + btn(page + 1, DT.icon('right'), page === pages)}</div>`;
+    return `<div class="pagination">${h + btn(page + 1, DT.icon('right'), page === pages, false, 'Trang sau')}</div>`;
   }
 
   // ---------- Modal
@@ -112,7 +112,7 @@ DT.ui = (() => {
     modal(`<div class="qv">
       <div class="qv-img">${DT.productImage(p, 0)}</div>
       <div class="qv-info">
-        <div class="qv-brand">${esc(DT.api.brand(p.brand).name)} • SKU: ${p.sku}</div>
+        <div class="qv-brand">${esc(DT.api.brand(p.brand).name)} • SKU: ${esc(p.sku)}</div>
         <h3>${esc(p.name)}</h3>
         <div class="pcard-meta">${stars(p.rating)}<span>${p.rating} (${p.reviews} đánh giá)</span></div>
         <div class="price-box"><strong>${money(p.price)}</strong>${p.oldPrice ? `<del>${money(p.oldPrice)}</del><span class="lbl lbl-sale">-${discount(p)}%</span>` : ''}</div>
@@ -145,7 +145,8 @@ DT.ui = (() => {
     if (act === 'add-cart' || act === 'buy-now') {
       const qtyInput = el.dataset.qty ? DT.u.$(el.dataset.qty) : null;
       const qty = qtyInput ? Math.max(1, parseInt(qtyInput.value, 10) || 1) : 1;
-      const install = !!DT.u.$('#opt-install')?.checked;
+      // Ô "lắp đặt" chỉ áp dụng cho sản phẩm chính của trang chi tiết (không áp cho sản phẩm liên quan / xem nhanh)
+      const install = el.closest('#pd, #sticky-buy') ? !!DT.u.$('#opt-install')?.checked : false;
       if (!DT.store.addToCart(id, qty, { install })) return;
       if (act === 'buy-now') { location.href = 'gio-hang.html'; return; }
       addedToCart(DT.api.productById(id));

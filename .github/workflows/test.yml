@@ -50,3 +50,5 @@ jobs:
         run: node --experimental-strip-types --no-warnings tests/browser/ops.test.ts
       - name: Vận hành & quản trị - chế độ demo
         run: node tests/browser/ops-demo.test.mjs
+      - name: Rà soát toàn bộ (lỗi đã sửa không tái phát)
+        run: node tests/browser/audit.test.mjs

@@ -5,7 +5,20 @@ DT.onReady(async () => {
   const box = $('#pay-result');
   const params = Object.fromEntries(new URLSearchParams(location.search));
   if (!params.vnp_TxnRef && !params.partnerCode) {
-    box.innerHTML = DT.ui.empty('Không có thông tin giao dịch', 'Bạn có thể tra cứu đơn hàng bằng mã đơn và số điện thoại.', '<a class="btn btn-primary" href="tra-cuu-don-hang.html">Tra cứu đơn hàng</a>');
+    // Tải lại trang sau khi đã xác nhận (URL chỉ còn ?code=): hiện trạng thái đơn mới nhất
+    const local = params.code && DT.store.findOrder(params.code);
+    if (local) {
+      let o = local;
+      if (DT.backend.enabled) { try { const fresh = await DT.store.trackOrder(local.code, local.customer.phone); if (fresh) o = DT.store.rememberOrder(fresh); } catch { /* giữ bản cũ */ } }
+      const paid = o.paymentStatus === 'paid';
+      box.innerHTML = `<div class="success-ic ${paid ? '' : 'fail'}">${DT.icon(paid ? 'check' : 'alert')}</div>
+        <h1 style="font-size:24px">${paid ? 'Đơn hàng đã được thanh toán' : 'Đơn hàng chưa được thanh toán'}</h1>
+        ${DT.orderView(o)}
+        <div class="qv-btns"><a class="btn btn-outline" href="index.html">Tiếp tục mua sắm</a><a class="btn btn-primary" href="tra-cuu-don-hang.html?code=${encodeURIComponent(o.code)}&phone=${encodeURIComponent(o.customer.phone)}">Theo dõi đơn hàng</a></div>`;
+      DT.payments.mount(box);
+      return;
+    }
+    box.innerHTML = DT.ui.empty('Không có thông tin giao dịch', 'Bạn có thể tra cứu đơn hàng bằng mã đơn và số điện thoại.', '<a class="btn btn-primary" href="tra-cuu-don-hang.html">Tra cứu đơn hàng</a>', 'h1');
     return;
   }
   box.innerHTML = '<p class="muted">Đang xác nhận kết quả thanh toán…</p>';
@@ -13,7 +26,7 @@ DT.onReady(async () => {
   try {
     r = await DT.payments.verifyReturn(params);
   } catch (e) {
-    box.innerHTML = DT.ui.empty('Chưa xác nhận được giao dịch', esc(e.message), `<a class="btn btn-primary" href="tra-cuu-don-hang.html">Tra cứu đơn hàng</a> <a class="btn btn-outline" href="tel:${DT.u.tel(DT.config.hotline)}">Gọi ${esc(DT.config.hotline)}</a>`);
+    box.innerHTML = DT.ui.empty('Chưa xác nhận được giao dịch', esc(e.message), `<a class="btn btn-primary" href="tra-cuu-don-hang.html">Tra cứu đơn hàng</a> <a class="btn btn-outline" href="tel:${DT.u.tel(DT.config.hotline)}">Gọi ${esc(DT.config.hotline)}</a>`, 'h1');
     return;
   }
   const code = r.order?.code || '';

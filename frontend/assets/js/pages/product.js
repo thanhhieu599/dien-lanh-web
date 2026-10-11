@@ -42,7 +42,7 @@ DT.onReady(() => {
       <h1>${esc(p.name)}</h1>
       <div class="pd-sub">
         <span>Thương hiệu: <a href="danh-muc.html?cat=${c.id}&brand=${brand.id}">${esc(brand.name)}</a></span><span class="sep"></span>
-        <span>SKU: ${p.sku}</span><span class="sep"></span>
+        <span>SKU: ${esc(p.sku)}</span><span class="sep"></span>
         <a href="#reviews">${stars(p.rating)} ${p.rating} (${p.reviews} đánh giá)</a><span class="sep"></span>
         <span>Đã bán ${DT.ui.sold(p.sold)}</span>
         <div class="actions">
@@ -79,7 +79,7 @@ DT.onReady(() => {
           ${p.freeInstall ? `<li><i>${p.gift ? 2 : 1}</i><span>Miễn phí công lắp đặt tiêu chuẩn (tiết kiệm ${money(DT.config.installFee)})</span></li>` : ''}
           <li><i>${DT.icon('check')}</i><span>Nhập mã <b>COOL10</b> giảm thêm 10% (tối đa 1 triệu) cho đơn từ 5 triệu</span></li>
           <li><i>${DT.icon('check')}</i><span>Trả góp 0% qua thẻ tín dụng, duyệt nhanh 15 phút</span></li>
-          <li><i>${DT.icon('check')}</i><span>Doanh nghiệp mua số lượng: <a class="link" href="bao-gia-du-an.html?sku=${p.sku}" data-quote>nhận báo giá riêng</a></span></li>
+          <li><i>${DT.icon('check')}</i><span>Doanh nghiệp mua số lượng: <a class="link" href="bao-gia-du-an.html?sku=${encodeURIComponent(p.sku)}" data-quote>nhận báo giá riêng</a></span></li>
         </ul>
       </div>
       <ul class="check-list">${p.highlights.map((h) => `<li>${DT.icon('check')}${esc(h)}</li>`).join('')}</ul>
@@ -114,7 +114,7 @@ DT.onReady(() => {
       </ul></div>
       <div class="aside-box"><h4>Còn hàng tại cửa hàng</h4><ul class="store-stock">${DT.stores.slice(0, 4).map((st, i) => `<li><span>${esc(st.name.replace(/^.* - /, ''))}<br><small class="muted">${esc(st.address)}</small></span><span class="ok">${(p.id + i) % 3 ? 'Còn hàng' : 'Sắp về'}</span></li>`).join('')}</ul>
         <a class="link" href="he-thong-cua-hang.html">Xem tất cả cửa hàng ${DT.icon('right')}</a></div>
-      <div class="aside-box"><h4>Khách hàng doanh nghiệp</h4><p class="muted">Mua từ 5 sản phẩm, dự án nhà xưởng, văn phòng: chiết khấu riêng, công nợ, xuất VAT.</p><a class="btn btn-primary btn-block" data-quote href="bao-gia-du-an.html?sku=${p.sku}">${DT.icon('file')} Yêu cầu báo giá</a></div>
+      <div class="aside-box"><h4>Khách hàng doanh nghiệp</h4><p class="muted">Mua từ 5 sản phẩm, dự án nhà xưởng, văn phòng: chiết khấu riêng, công nợ, xuất VAT.</p><a class="btn btn-primary btn-block" data-quote href="bao-gia-du-an.html?sku=${encodeURIComponent(p.sku)}">${DT.icon('file')} Yêu cầu báo giá</a></div>
     </aside>`;
 
   // Tabs nội dung
@@ -147,7 +147,7 @@ DT.onReady(() => {
         <details><summary>Giá đã bao gồm lắp đặt chưa?</summary><p>${p.freeInstall ? 'Sản phẩm được miễn phí công lắp đặt tiêu chuẩn. Vật tư phát sinh (ống đồng ngoài 3m, giá đỡ…) tính theo bảng giá niêm yết.' : 'Giá chưa gồm công lắp đặt. Bạn có thể chọn thêm dịch vụ lắp đặt khi đặt hàng.'}</p></details>
         <details><summary>Bao lâu thì nhận được hàng?</summary><p>Nội thành TP.HCM, Bình Dương, Đồng Nai giao trong 2 - 4 giờ. Tỉnh khác 2 - 5 ngày.</p></details>
         <details><summary>Có xuất hóa đơn VAT cho công ty không?</summary><p>Có. Nhập thông tin công ty ở bước thanh toán, hóa đơn điện tử được gửi qua email trong 24 giờ.</p></details>
-        <details><summary>Bảo hành như thế nào?</summary><p>Bảo hành chính hãng ${esc(p.warranty)}, kỹ thuật viên đến tận nơi. Gọi ${DT.config.hotline} để được hỗ trợ.</p></details>
+        <details><summary>Bảo hành như thế nào?</summary><p>Bảo hành chính hãng ${esc(p.warranty)}, kỹ thuật viên đến tận nơi. Gọi ${esc(DT.config.hotline)} để được hỗ trợ.</p></details>
       </section>
     </div>
     <div>
@@ -163,7 +163,7 @@ DT.onReady(() => {
   if (viewed.length) { $('#viewed').classList.remove('hidden'); $('#viewed-body').innerHTML = DT.ui.carousel(viewed.map((x) => DT.ui.productCard(x)).join(''), 'v-car'); }
 
   // Thanh mua cố định trên mobile
-  $('#sticky-buy').innerHTML = `<button class="btn btn-outline" data-action="add-cart" data-id="${p.id}" data-qty="#qty">${DT.icon('cart')}</button><button class="btn btn-accent" data-action="buy-now" data-id="${p.id}" data-qty="#qty">Mua ngay • ${money(p.price)}</button>`;
+  $('#sticky-buy').innerHTML = `<button class="btn btn-outline" data-action="add-cart" data-id="${p.id}" data-qty="#qty" aria-label="Thêm vào giỏ hàng">${DT.icon('cart')}</button><button class="btn btn-accent" data-action="buy-now" data-id="${p.id}" data-qty="#qty">Mua ngay • ${money(p.price)}</button>`;
 
   // ---------- Sự kiện
   $('.gallery-thumbs').addEventListener('click', (e) => {
@@ -240,7 +240,7 @@ DT.onReady(() => {
       return;
     }
     const all = (() => { try { return JSON.parse(localStorage.getItem(RKEY) || '{}'); } catch { return {}; } })();
-    const r = { name: d.name, rating, text: d.text, date: new Date().toISOString().slice(0, 10), verified: false };
+    const r = { name: d.name, rating, text: d.text, date: DT.u.today(), verified: false };
     all[p.id] = [r, ...(all[p.id] || [])];
     try { localStorage.setItem(RKEY, JSON.stringify(all)); } catch { /* bỏ qua */ }
     $('#review-list').insertAdjacentHTML('afterbegin', reviewHtml(r));

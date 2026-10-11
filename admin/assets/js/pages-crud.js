@@ -27,7 +27,7 @@ AD.pages.crudList = async (key, params, el) => {
   AD.bindPager(el, key, params);
   el.querySelector('#csv')?.addEventListener('click', async () => {
     const all = await AD.db.list(R.table, { ...opts, limit: 5000, offset: 0 });
-    AD.ui.csv(`${key}-${new Date().toISOString().slice(0, 10)}.csv`, R.csv.map((k) => ({ key: k, label: k })), all.rows);
+    AD.ui.csv(`${key}-${AD.today()}.csv`, R.csv.map((k) => ({ key: k, label: k })), all.rows);
   });
 };
 

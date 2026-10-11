@@ -13,7 +13,7 @@ DT.onReady(() => {
         <span class="slide-tag">${i === 2 ? 'Doanh nghiệp' : 'Ưu đãi tháng 10'}</span>
         <h2>${esc(b.title)}</h2>
         <p>${esc(b.sub)}</p>
-        <a class="btn btn-lg ${i === 2 ? 'btn-accent' : 'btn-light'}" href="${b.href}">${esc(b.cta)} ${DT.icon('right')}</a>
+        <a class="btn btn-lg ${i === 2 ? 'btn-accent' : 'btn-light'}" href="${esc(DT.u.safeUrl(b.href) || '#')}">${esc(b.cta)} ${DT.icon('right')}</a>
       </div>
       <div class="slide-art">${DT.art()}</div>
     </div>`).join('') +
@@ -102,7 +102,7 @@ DT.onReady(() => {
 
   // ---------- Thương hiệu
   // Bản demo: đủ 8 ô, ô trống hiển thị "Tên thương hiệu" chờ gắn logo thật
-  const brandTiles = DT.brands.slice(0, 16).map((b) => `<a class="brand-logo" style="color:${b.color}" href="danh-muc.html?brand=${encodeURIComponent(b.id)}">${esc(b.name.toUpperCase())}</a>`);
+  const brandTiles = DT.brands.slice(0, 16).map((b) => `<a class="brand-logo" style="color:${b.color}" href="tim-kiem.html?brand=${encodeURIComponent(b.id)}">${esc(b.name.toUpperCase())}</a>`);
   while (brandTiles.length < 8) brandTiles.push('<span class="brand-logo brand-empty">TÊN THƯƠNG HIỆU</span>');
   $('#brands').innerHTML = brandTiles.join('');
 
@@ -131,7 +131,7 @@ DT.onReady(() => {
 
   DT.u.jsonLd({
     '@context': 'https://schema.org', '@type': 'Store', name: DT.config.name, telephone: DT.config.hotline,
-    address: DT.config.address, openingHours: 'Mo-Su 07:30-21:30', url: DT.u.abs('./'), email: DT.config.email,
+    address: DT.config.address, openingHours: (() => { const { open, close } = DT.u.hours(); const f = (h) => `${String(Math.floor(h)).padStart(2, '0')}:${String(Math.round((h % 1) * 60)).padStart(2, '0')}`; return `Mo-Su ${f(open)}-${f(close)}`; })(), url: DT.u.abs('./'), email: DT.config.email,
     legalName: DT.config.company, taxID: DT.config.taxCode, priceRange: '₫₫',
     contactPoint: [{ '@type': 'ContactPoint', telephone: DT.config.hotline, contactType: 'customer service', areaServed: 'VN', availableLanguage: 'vi' },
       { '@type': 'ContactPoint', telephone: DT.config.hotlineB2B, contactType: 'sales', areaServed: 'VN', availableLanguage: 'vi' }],

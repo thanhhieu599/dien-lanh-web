@@ -8,14 +8,34 @@ window.AD = window.AD || {};
 
   const NAV = [
     { group: null, items: [['dashboard', 'home', 'Tổng quan']] },
-    { group: 'Bán hàng', items: [['orders', 'cart', 'Đơn hàng', 'orders'], ['leads', 'chat', 'Khách hàng tiềm năng', 'leads'], ['customers', 'user', 'Khách hàng']] },
+    { group: 'Bán hàng', items: [['orders', 'cart', 'Đơn hàng', 'orders'], ['leads', 'chat', 'Khách hàng tiềm năng', 'leads'], ['customers', 'user', 'Khách hàng'], ['maintenance', 'wrench', 'Lịch bảo trì', 'maintenance']] },
     { group: 'Sản phẩm', items: [['products', 'box', 'Sản phẩm'], ['categories', 'grid', 'Danh mục'], ['brands', 'tag', 'Thương hiệu'], ['reviews', 'star', 'Đánh giá', 'reviews']] },
     { group: 'Marketing', items: [['coupons', 'percent', 'Mã giảm giá'], ['banners', 'zap', 'Banner'], ['posts', 'file', 'Bài viết'], ['vision', 'eye', 'Trang Tầm nhìn'], ['projects', 'building', 'Dự án tiêu biểu'], ['faqs', 'chat', 'Hỏi đáp (FAQ)'], ['trust', 'star', 'Uy tín & đánh giá']] },
     { group: 'Phân tích', items: [['reports', 'grid', 'Báo cáo'], ['notifications', 'mail', 'Nhật ký thông báo']] },
+    { group: 'Kế toán', items: [['misa', 'file', 'Xuất Excel MISA']] },
     { group: 'Cấu hình', items: [['settings', 'tool', 'Cài đặt cửa hàng'], ['stores', 'pin', 'Cửa hàng'], ['services', 'wrench', 'Dịch vụ'], ['policies', 'shield', 'Chính sách']] },
   ];
 
   AD.can = (R) => !R?.adminOnly || AD.me?.role === 'admin';
+
+  // Phân quyền theo vai trò (database cũng chặn bằng RLS, đây là lớp giao diện)
+  //  admin: toàn quyền • staff: vận hành (trừ cài đặt, trang Tầm nhìn, Uy tín)
+  //  sales: chỉ khách hàng tiềm năng được giao • accountant: đơn hàng & thanh toán, báo cáo doanh thu, xuất MISA
+  AD.ROLES = {
+    admin: { label: 'Quản trị viên', home: 'dashboard' },
+    staff: { label: 'Nhân viên vận hành', home: 'dashboard' },
+    sales: { label: 'Nhân viên kinh doanh', home: 'leads', pages: ['leads'] },
+    accountant: { label: 'Kế toán', home: 'orders', pages: ['orders', 'reports', 'misa'] },
+  };
+  AD.BACKOFFICE = Object.keys(AD.ROLES);
+  const ADMIN_ONLY = ['settings', 'vision', 'trust'];
+  AD.allowed = (key) => {
+    const role = AD.me?.role;
+    if (role === 'admin') return true;
+    if (role === 'staff') return AD.can(AD.resources[key]);   // Cài đặt, Tầm nhìn, Uy tín: chỉ xem (trang tự khóa)
+    return (AD.ROLES[role]?.pages || []).includes(key);
+  };
+  AD.isOps = () => ['admin', 'staff'].includes(AD.me?.role);
 
   // Hết phiên đăng nhập (refresh token hết hạn / bị thu hồi) -> về màn hình đăng nhập
   AD.handleError = (e) => { if (e?.expired) { loginView(e.message); return true; } return false; };
@@ -33,13 +53,17 @@ window.AD = window.AD || {};
   // Bộ đếm trên menu: đơn chờ xác nhận, lead mới, đánh giá chờ duyệt
   AD.refreshBadges = async () => {
     try {
-      const [o, l, r] = await Promise.all([
-        AD.db.list('orders', { select: 'id', filters: [['status', 'eq', 'pending']], limit: 1 }),
-        AD.db.list('leads', { select: 'id', filters: [['status', 'eq', 'new']], limit: 1 }),
-        AD.db.list('reviews', { select: 'id', filters: [['status', 'eq', 'pending']], limit: 1 }),
+      const none = Promise.resolve({ count: 0 });
+      const soon = new Date(Date.now() + 7 * 864e5).toISOString();
+      const [o, l, r, m] = await Promise.all([
+        AD.allowed('orders') ? AD.db.list('orders', { select: 'id', filters: [['status', 'eq', 'pending']], limit: 1 }) : none,
+        AD.allowed('leads') ? AD.db.list('leads', { select: 'id', filters: [['status', 'eq', 'new']], limit: 1 }) : none,
+        AD.allowed('reviews') ? AD.db.list('reviews', { select: 'id', filters: [['status', 'eq', 'pending']], limit: 1 }) : none,
+        AD.allowed('maintenance') && AD.db.mode === 'supabase'
+          ? AD.db.list('notifications', { select: 'id', filters: [['event', 'eq', 'maintenance_reminder'], ['status', 'eq', 'pending'], ['next_at', 'lte', soon]], limit: 1 }) : none,
       ]);
       const set = (k, n) => { const e = document.querySelector(`[data-badge="${k}"]`); if (e) { e.textContent = n; e.hidden = !n; } };
-      set('orders', o.count); set('leads', l.count); set('reviews', r.count);
+      set('orders', o.count); set('leads', l.count); set('reviews', r.count); set('maintenance', m.count);
       document.title = `${o.count + l.count ? `(${o.count + l.count}) ` : ''}Quản trị | ${DT.config.name}`;
     } catch (e) { AD.handleError(e); }
   };
@@ -75,7 +99,7 @@ window.AD = window.AD || {};
         <div class="ad-field"><label>Mật khẩu</label><input name="password" type="password" required autocomplete="current-password"></div>
         ${err ? `<div class="ad-alert ad-alert-err">${esc(err)}</div>` : ''}
         <button class="btn btn-primary btn-block btn-lg">Đăng nhập</button>
-        <p class="muted">Chỉ tài khoản có vai trò <b>nhân viên</b> hoặc <b>quản trị</b> mới truy cập được.</p></form>`}
+        <p class="muted">Chỉ tài khoản nội bộ (quản trị, nhân viên vận hành, kinh doanh, kế toán) mới truy cập được.</p></form>`}
       <a class="ad-login-back" href="../frontend/index.html">← Về website</a></div>`;
     if (demo) { $('#demo-enter').onclick = () => { sessionStorage.setItem('dt_admin_demo_in', '1'); start(); }; return; }
     $('#login').addEventListener('submit', async (e) => {
@@ -85,7 +109,7 @@ window.AD = window.AD || {};
       const btn = f.querySelector('button'); btn.disabled = true; btn.textContent = 'Đang đăng nhập…';
       try {
         const me = await AD.db.login(f.id.value.trim(), f.password.value);
-        if (!me || !['staff', 'admin'].includes(me.role)) { await AD.db.logout(); return loginView('Tài khoản không có quyền truy cập trang quản trị.'); }
+        if (!me || !AD.BACKOFFICE.includes(me.role)) { await AD.db.logout(); return loginView('Tài khoản không có quyền truy cập trang quản trị.'); }
         start();
       } catch (er) { loginView(er.message); }
     });
@@ -97,27 +121,28 @@ window.AD = window.AD || {};
     document.body.innerHTML = `
       <aside class="ad-side" id="side">
         <div class="ad-brand"><span class="logo-mark">${ic('snow')}</span><div><b>Tên thương hiệu</b><small>Quản trị${AD.db.mode === 'demo' ? ' • demo' : ''}</small></div></div>
-        <nav>${NAV.map((g) => `${g.group ? `<div class="ad-nav-group">${g.group}</div>` : ''}${g.items
-          .filter(([k]) => AD.can(AD.resources[k]) && (!['settings', 'vision', 'trust'].includes(k) || AD.me.role === 'admin'))
-          .map(([k, i, l, b]) => `<a href="#/${k}" data-nav="${k}">${ic(i)}<span>${l}</span>${b ? `<em data-badge="${b}" hidden></em>` : ''}</a>`).join('')}`).join('')}</nav>
+        <nav>${NAV.map((g) => { const items = g.items.filter(([k]) => AD.allowed(k) && (!ADMIN_ONLY.includes(k) || AD.me.role === 'admin')); return items.length ? `${g.group ? `<div class="ad-nav-group">${g.group}</div>` : ''}${items
+          .map(([k, i, l, b]) => `<a href="#/${k}" data-nav="${k}">${ic(i)}<span>${k === 'orders' && AD.me.role === 'accountant' ? 'Đơn hàng & thanh toán' : k === 'leads' && AD.me.role === 'sales' ? 'Khách hàng của tôi' : l}</span>${b ? `<em data-badge="${b}" hidden></em>` : ''}</a>`).join('')}` : ''; }).join('')}</nav>
         <div class="ad-side-foot"><a href="../frontend/index.html" target="_blank" rel="noopener">${ic('eye')} Xem website</a></div>
       </aside>
       <div class="ad-main">
         <header class="ad-top">
           <button class="ad-burger" id="burger" aria-label="Menu">${ic('menu')}</button>
-          <form class="ad-qsearch" id="qs"><input name="q" type="search" placeholder="Tìm mã đơn / số điện thoại…" aria-label="Tìm đơn hàng"></form>
+          ${AD.allowed('orders') ? '<form class="ad-qsearch" id="qs"><input name="q" type="search" placeholder="Tìm mã đơn / số điện thoại…" aria-label="Tìm đơn hàng"></form>' : '<span class="ad-qsearch"></span>'}
           <div class="ad-user"><span class="avatar">${esc(((AD.me.name || '?').replace(/\(.*\)/, '').trim().split(' ').pop() || '?')[0])}</span>
-            <div><b>${esc(AD.me.name || '')}</b><small>${AD.me.role === 'admin' ? 'Quản trị viên' : 'Nhân viên'}</small></div>
+            <div><b>${esc(AD.me.name || '')}</b><small>${AD.ROLES[AD.me.role]?.label || 'Nhân viên'}</small></div>
             <button class="btn btn-light btn-sm" id="logout" title="Đăng xuất">${ic('logout')}</button></div>
         </header>
-        ${AD.db.mode === 'demo' ? `<div class="ad-demo-bar">${ic('alert')} Chế độ demo: dữ liệu lưu trên trình duyệt. Sửa sản phẩm ở đây chưa đổi website demo. Kết nối Supabase để dùng thật (xem supabase/README.md). <button class="btn btn-link btn-sm" id="reset-demo">Khôi phục dữ liệu mẫu</button></div>` : ''}
+        ${AD.db.mode === 'demo' ? `<div class="ad-demo-bar">${ic('alert')} Chế độ demo: dữ liệu lưu trên trình duyệt. Sửa sản phẩm ở đây chưa đổi website demo. Kết nối Supabase để dùng thật (xem supabase/README.md). <button class="btn btn-link btn-sm" id="reset-demo">Khôi phục dữ liệu mẫu</button>
+          <label class="ad-demo-role">Xem với vai trò <select id="demo-role" aria-label="Vai trò demo">${Object.entries(AD.ROLES).map(([k, r]) => `<option value="${k}" ${AD.me.role === k ? 'selected' : ''}>${r.label}</option>`).join('')}</select></label></div>` : ''}
         <main id="view" class="ad-view"></main>
       </div>
       <div class="ad-overlay" id="ov"></div>`;
     $('#burger').onclick = () => document.body.classList.toggle('nav-open');
     $('#ov').onclick = () => document.body.classList.remove('nav-open');
     $('#logout').onclick = async () => { clearInterval(AD.badgeTimer); await AD.db.logout(); sessionStorage.removeItem('dt_admin_demo_in'); location.hash = ''; loginView(); };
-    $('#qs').addEventListener('submit', (e) => { e.preventDefault(); const q = e.target.q.value.trim(); if (q) location.hash = `#/orders?q=${encodeURIComponent(q)}`; e.target.reset(); });
+    $('#demo-role')?.addEventListener('change', (e) => { AD.db.setRole(e.target.value); location.hash = ''; start(); });
+    $('#qs')?.addEventListener('submit', (e) => { e.preventDefault(); const q = e.target.q.value.trim(); if (q) location.hash = `#/orders?q=${encodeURIComponent(q)}`; e.target.reset(); });
     $('#reset-demo')?.addEventListener('click', async () => {
       if (await AD.ui.confirm('Khôi phục sản phẩm, danh mục, mã giảm giá… về dữ liệu mẫu ban đầu? (Đơn hàng & form từ website không bị ảnh hưởng)')) { AD.db.reset(); await AD.loadCache(true); AD.route(); AD.ui.toast('Đã khôi phục dữ liệu mẫu'); }
     });
@@ -130,9 +155,15 @@ window.AD = window.AD || {};
     // Mỗi lần điều hướng vẽ vào một vùng mới; trang cũ tải xong muộn chỉ ghi vào vùng đã bị gỡ
     const view = document.createElement('div');
     root.replaceChildren(view);
-    const raw = location.hash.replace(/^#\/?/, '') || 'dashboard';
+    const raw = location.hash.replace(/^#\/?/, '') || AD.ROLES[AD.me?.role]?.home || 'dashboard';
     const [path, qs] = raw.split('?');
     const [key, id] = path.split('/').map(decodeURIComponent);
+    if (!AD.allowed(key) && (AD.resources[key] || ['dashboard', 'orders', 'leads', 'reviews', 'customers', 'reports', 'settings', 'vision', 'trust', 'notifications', 'maintenance', 'misa'].includes(key))) {
+      document.querySelectorAll('[data-nav]').forEach((a) => a.classList.remove('active'));
+      const home = AD.ROLES[AD.me?.role]?.home || 'dashboard';
+      view.innerHTML = `<div class="ad-empty">${ic('shield')}<p>Tài khoản <b>${esc(AD.ROLES[AD.me?.role]?.label || '')}</b> không có quyền xem mục này.</p><a class="btn btn-light" href="#/${home}">Về trang của tôi</a></div>`;
+      return;
+    }
     const params = Object.fromEntries(new URLSearchParams(qs || ''));
     document.querySelectorAll('[data-nav]').forEach((a) => a.classList.toggle('active', a.dataset.nav === key));
     document.body.classList.remove('nav-open');
@@ -150,6 +181,8 @@ window.AD = window.AD || {};
       else if (key === 'vision') await P.vision(params, view);
       else if (key === 'trust') await P.trust(params, view);
       else if (key === 'notifications') await P.notifications(params, view);
+      else if (key === 'maintenance') await P.maintenance(params, view);
+      else if (key === 'misa') await P.misa(params, view);
       else if (AD.resources[key]) {
         if (!AD.can(AD.resources[key])) throw new Error('Bạn không có quyền truy cập mục này');
         await (id ? P.crudForm(key, id, params, view) : P.crudList(key, params, view));
@@ -164,7 +197,7 @@ window.AD = window.AD || {};
     try {
       AD.me = await AD.db.me();
     } catch { AD.me = null; }
-    if (!AD.me || !['staff', 'admin'].includes(AD.me.role) || (AD.db.mode === 'demo' && !sessionStorage.getItem('dt_admin_demo_in'))) return loginView();
+    if (!AD.me || !AD.BACKOFFICE.includes(AD.me.role) || (AD.db.mode === 'demo' && !sessionStorage.getItem('dt_admin_demo_in'))) return loginView();
     try { await AD.loadCache(true); } catch (e) { if (AD.handleError(e)) return; throw e; }
     shell();
     window.onhashchange = AD.route;

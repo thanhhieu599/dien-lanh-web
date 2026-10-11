@@ -9,6 +9,7 @@ DT.onReady(() => {
   const brand = DT.api.brand(p.brand);
   const s = DT.store.get();
   DT.store.addViewed(p.id);
+  DT.analytics?.viewItem(p);
   // Ảnh chia sẻ (Zalo/Facebook): ảnh thật nếu có, không thì ảnh chụp sẵn khi build (og/<slug>.png)
   const ogImage = /^https?:/.test(p.images[0]) ? p.images[0] : DT.SEO?.prettyUrls ? `og/${p.slug}.png` : null;
   DT.u.setMeta({ title: p.name, description: `${p.name} chính hãng giá ${money(p.price)}. ${p.short}. Giao nhanh, lắp đặt, trả góp 0%.`, canonical: DT.api.url(p), image: ogImage, type: 'product' });

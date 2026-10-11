@@ -1190,3 +1190,12 @@ table { border-collapse: collapse; width: 100%; }
   .ba-pair { grid-template-columns: 1fr; }
   .b2b-cta-btns .btn { width: 100%; }
 }
+
+/* ---------- Hộp đồng ý cookie (đo lường GA4 / Meta Pixel) */
+.cookie-bar { position: fixed; left: 16px; bottom: 16px; z-index: 60; max-width: 420px; background: #fff; color: #344054; border: 1px solid #e4e7ec; border-radius: 14px; box-shadow: 0 12px 32px rgba(16, 24, 40, .18); padding: 14px 16px; font-size: 13px; line-height: 1.5; }
+.cookie-bar p { margin: 0 0 10px; }
+.cookie-btns { display: flex; justify-content: flex-end; gap: 8px; }
+.maint-opt { align-items: flex-start; margin-top: 4px; font-size: 13px; color: #475467; background: #f0f7ff; border: 1px solid #d6e6ff; border-radius: 10px; padding: 10px 12px; }
+@media (max-width: 768px) {
+  .cookie-bar { left: 12px; right: 12px; bottom: 76px; max-width: none; }
+}

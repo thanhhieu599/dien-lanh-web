@@ -159,8 +159,16 @@ DT.backend = (() => {
     return Object.fromEntries(keys.map((k, i) => [k, results[i]]));
   }
 
+  // Bản demo (chưa kết nối database): ảnh sản phẩm tải lên trong trang quản trị demo (cùng trình duyệt)
+  function demoImages() {
+    try {
+      const map = JSON.parse(localStorage.getItem(DT.PRODUCT_IMG_DEMO_KEY) || '{}');
+      DT.products.forEach((p) => { const imgs = map[p.id]; if (Array.isArray(imgs) && imgs.length) p.images = imgs.slice(0, 10); });
+    } catch { /* bỏ qua */ }
+  }
+
   async function load() {
-    if (!enabled) return;
+    if (!enabled) { demoImages(); return; }
     let data = null;
     try {
       const c = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');

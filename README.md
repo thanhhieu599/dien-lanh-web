@@ -107,3 +107,13 @@ Xem thêm `docs/ARCHITECTURE.md`.
 - Quản trị › **Uy tín & đánh giá**: logo khách hàng / đối tác, giấy chứng nhận, điểm & đánh giá Google (hiện ở trang chủ, Giới thiệu, Dự án, Cửa hàng).
 - Hướng dẫn đăng ký Google Search Console & Google Business Profile: `docs/GOOGLE-SEO-SETUP.md`.
 - Kế hoạch bài viết 12 tuần (3 bài/tuần, 4 cụm chủ đề): `docs/KE-HOACH-NOI-DUNG.md`.
+
+## Vận hành & quản trị
+
+- **Đo lường quảng cáo**: Google Analytics 4 + Meta Pixel (nhập mã trong Quản trị › Cài đặt cửa hàng), hộp đồng ý cookie theo Nghị định 13/2023, nguồn khách (UTM / gclid / fbclid) gắn vào lead & đơn hàng, báo cáo **Hiệu quả theo nguồn** có tính ROAS. Hướng dẫn: `docs/DO-LUONG-QUANG-CAO.md`.
+- **Phân quyền**: Quản trị, Nhân viên vận hành, **Kinh doanh** (chỉ thấy lead được giao), **Kế toán** (đơn hàng & thanh toán, xuất MISA). Chặn cả ở database (RLS).
+- **Xuất Excel MISA**: chứng từ bán hàng (tách VAT, phân bổ chiết khấu, tổng khớp từng đồng), danh mục khách hàng, hàng hóa.
+- **Lịch bảo trì định kỳ**: tự nhắc khách vệ sinh máy lạnh sau 6/12/18/24 tháng, đo tỷ lệ khách quay lại.
+- **Ảnh sản phẩm**: tải nhiều ảnh, kéo thả, tự nén, sắp xếp ngay trong quản trị.
+
+Chi tiết: `docs/VAN-HANH.md`.

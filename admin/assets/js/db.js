@@ -146,6 +146,7 @@ AD.supabase = (cfg) => {
     async remove(table, id) {
       await http(`/rest/v1/${table}?${AD.PK[table]}=eq.${encodeURIComponent(id)}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
     },
+    rpc: (fn, args = {}) => http(`/rest/v1/rpc/${fn}`, { method: 'POST', body: args }),
   };
 };
 
@@ -155,8 +156,18 @@ AD.demo = () => {
   const SHOP = 'dt_shop_v1';
   const LEADS = 'dt_leads_v1';
   const REVIEWS = 'dt_reviews_v1';
+  const ROLE_KEY = 'dt_admin_demo_role';
   const read = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || 'null') ?? d; } catch { return d; } };
-  const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* bỏ qua */ } };
+  const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } };
+  // Tài khoản nhân viên mẫu để thử phân quyền (đổi vai trò ở thanh demo phía trên trang quản trị)
+  const STAFF = [
+    { id: 'demo', name: 'Quản trị (demo)', role: 'admin', phone: '0900000001' },
+    { id: 'demo-staff', name: 'Nhân viên vận hành (demo)', role: 'staff', phone: '0900000002' },
+    { id: 'demo-sales-1', name: 'KD Minh (demo)', role: 'sales', phone: '0900000003' },
+    { id: 'demo-sales-2', name: 'KD Lan (demo)', role: 'sales', phone: '0900000004' },
+    { id: 'demo-acc', name: 'Kế toán Hoa (demo)', role: 'accountant', phone: '0900000005' },
+  ];
+  const me = () => { let r = 'admin'; try { r = sessionStorage.getItem(ROLE_KEY) || 'admin'; } catch { /* bỏ qua */ } return STAFF.find((x) => x.role === r) || STAFF[0]; };
 
   function seed() {
     const now = new Date().toISOString();
@@ -190,7 +201,14 @@ AD.demo = () => {
   if (!db) { db = seed(); write(KEY, db); }
   // Dữ liệu demo tạo từ phiên bản cũ: bổ sung bảng mới
   ['projects', 'faqs'].forEach((t) => { if (!db[t]) { db[t] = seed()[t]; write(KEY, db); } });
-  const persist = () => write(KEY, db);
+  const persist = () => {
+    if (!write(KEY, db)) throw new Error('Bộ nhớ trình duyệt (bản demo) đã đầy: hãy bớt ảnh hoặc dùng ảnh nhỏ hơn. Bản chính thức (kết nối Supabase) lưu ảnh trên máy chủ, không giới hạn như vậy.');
+  };
+  // Ảnh sản phẩm tải lên ở bản demo -> website demo cùng trình duyệt hiển thị (DT.PRODUCT_IMG_DEMO_KEY)
+  function syncProductImages() {
+    const map = Object.fromEntries((db.products || []).filter((p) => (p.images || []).some((u) => u && !String(u).startsWith('art:'))).map((p) => [p.id, p.images]));
+    if (!write(DT.PRODUCT_IMG_DEMO_KEY || 'dt_product_images_v1', map)) throw new Error('Bộ nhớ trình duyệt (bản demo) đã đầy: hãy bớt ảnh hoặc dùng ảnh nhỏ hơn.');
+  }
 
   // Đồng bộ dữ liệu khách tạo trên website demo (cùng tên miền -> cùng localStorage)
   function syncFromShop() {
@@ -203,6 +221,7 @@ AD.demo = () => {
         payment_status: ov.payment_status || o.paymentStatus || 'unpaid', invoice: o.invoice, note: o.note, staff_note: ov.staff_note || null,
         subtotal: o.subtotal, install_fee: o.install || 0, shipping_fee: o.shippingFee || 0, discount: o.discount || 0, coupon: o.coupon, total: o.total,
         user_id: o.userId || null,
+        maintenance_optin: ov.maintenance_optin ?? !!o.maintenance, attribution: o.attribution || null,
         order_items: (o.items || []).map((it, i) => ({ id: i + 1, product_id: it.id, sku: DT.api.productById(it.id)?.sku, name: it.name, price: it.price, qty: it.qty, install: !!it.install })),
         order_status_history: ov.history || [{ status: 'pending', created_at: o.createdAt }],
       };
@@ -212,10 +231,13 @@ AD.demo = () => {
       return {
         id: l.id, code: l.id, type: l.type, name: l.data?.name || null, phone: l.data?.phone || null, email: l.data?.email || null,
         company: l.data?.company || null, data: l.data || {}, status: l.status || 'new', staff_note: ov.staff_note || null,
-        assigned_to: null, created_at: l.createdAt, updated_at: ov.updated_at || l.createdAt,
+        assigned_to: ov.assigned_to || null, source_url: null, created_at: l.createdAt, updated_at: ov.updated_at || l.createdAt,
       };
     });
-    db.profiles = (shop.users || []).map((u) => ({ id: String(u.id), name: u.name, phone: u.phone, email: u.email, addresses: u.addresses || [], role: 'customer', created_at: u.createdAt }));
+    db.profiles = [
+      ...STAFF.map((x) => ({ ...x, email: `${x.id}@demo.local`, addresses: [], created_at: '2026-01-01T00:00:00.000Z' })),
+      ...(shop.users || []).map((u) => ({ id: String(u.id), name: u.name, phone: u.phone, email: u.email, addresses: u.addresses || [], role: 'customer', created_at: u.createdAt })),
+    ];
     const rv = read(REVIEWS, {});
     const st = db.overlay.reviews || {};
     db.reviews = Object.entries(rv).flatMap(([pid, list]) => list.map((r, i) => {
@@ -236,7 +258,7 @@ AD.demo = () => {
         ov.history = [...(ov.history || [{ status: 'pending', created_at: o.createdAt }]), { status: patch.status, created_at: now }];
         write(SHOP, shop);
       }
-      ['payment_status', 'staff_note'].forEach((k) => { if (k in patch) ov[k] = patch[k]; });
+      ['payment_status', 'staff_note', 'maintenance_optin'].forEach((k) => { if (k in patch) ov[k] = patch[k]; });
       // Trạng thái thanh toán hiện cho khách ở trang tra cứu đơn (website demo)
       if (o && 'payment_status' in patch && patch.payment_status !== o.paymentStatus) { o.paymentStatus = patch.payment_status; write(SHOP, shop); }
       ov.updated_at = now;
@@ -247,6 +269,7 @@ AD.demo = () => {
       if (l && patch.status) { l.status = patch.status; write(LEADS, leads); }
       const ov = (db.overlay.leads[id] = db.overlay.leads[id] || {});
       if ('staff_note' in patch) ov.staff_note = patch.staff_note;
+      if ('assigned_to' in patch) ov.assigned_to = patch.assigned_to;
       ov.updated_at = now;
     }
     if (table === 'reviews') {
@@ -273,13 +296,35 @@ AD.demo = () => {
       default: return true;
     }
   }
-  const live = (t) => { if (['orders', 'leads', 'profiles', 'reviews'].includes(t)) syncFromShop(); return db[t] || []; };
+  // Giả lập phân quyền như RLS trên database: kinh doanh chỉ thấy lead được giao; kế toán không thấy lead
+  const visible = (t, rows) => {
+    const u = me();
+    if (u.role === 'sales') {
+      if (t === 'leads') return rows.filter((l) => l.assigned_to === u.id);
+      if (['orders', 'payments', 'notifications', 'profiles'].includes(t)) return t === 'profiles' ? rows.filter((p) => p.id === u.id) : [];
+    }
+    if (u.role === 'accountant') {
+      if (['leads', 'notifications'].includes(t)) return [];
+      if (t === 'profiles') return rows.filter((p) => p.id === u.id);
+    }
+    return rows;
+  };
+  const live = (t) => { if (['orders', 'leads', 'profiles', 'reviews'].includes(t)) syncFromShop(); return visible(t, db[t] || []); };
+  const deny = () => { throw new Error('Tài khoản không có quyền thực hiện thao tác này'); };
+  function guard(table, id, patch) {
+    const u = me();
+    if (u.role === 'sales' && (table !== 'leads' || Object.keys(patch).some((k) => !['status', 'staff_note'].includes(k)) || !live('leads').some((l) => String(l.id) === String(id)))) deny();
+    if (u.role === 'accountant' && (table !== 'orders' || Object.keys(patch).some((k) => k !== 'payment_status'))) deny();
+  }
+  const writer = () => ['admin', 'staff'].includes(me().role);
 
   return {
     mode: 'demo',
-    async login() { return { id: 'demo', name: 'Quản trị (demo)', role: 'admin', phone: '' }; },
+    staff: STAFF,
+    async login() { return me(); },
     async logout() {},
-    async me() { return { id: 'demo', name: 'Quản trị (demo)', role: 'admin', phone: '' }; },
+    async me() { return { ...me() }; },
+    setRole(role) { try { sessionStorage.setItem(ROLE_KEY, role); } catch { /* bỏ qua */ } },
     async list(table, { filters = [], search, order, limit, offset = 0 } = {}) {
       let rows = live(table).filter((r) => filters.every((f) => match(r, f)));
       if (search?.q) rows = rows.filter((r) => search.cols.some((c) => DT.u.norm(val(r, c) ?? '').includes(DT.u.norm(search.q))));
@@ -300,6 +345,7 @@ AD.demo = () => {
       return r ? JSON.parse(JSON.stringify(r)) : null;
     },
     async insert(table, row) {
+      if (!writer()) deny();
       const pk = AD.PK[table];
       if (row[pk] == null || row[pk] === '') {
         row[pk] = Math.max(0, ...db[table].map((x) => Number(x[pk]) || 0)) + 1;
@@ -308,21 +354,27 @@ AD.demo = () => {
       if (db[table].some((x) => String(x[pk]) === String(row[pk]))) throw new Error('Mã / khóa đã tồn tại');
       row.created_at = row.created_at || new Date().toISOString();
       db[table].push(row); persist();
+      if (table === 'products') syncProductImages();
       return row;
     },
     async update(table, id, patch) {
+      guard(table, id, patch);
       if (['orders', 'leads', 'reviews'].includes(table)) { writeBack(table, id, patch); return this.get(table, id); }
+      if (table === 'profiles') throw new Error('Bản demo không sửa tài khoản');
       const r = db[table].find((x) => String(x[AD.PK[table]]) === String(id));
       if (!r) throw new Error('Bản ghi không tồn tại');
       Object.assign(r, patch, { updated_at: new Date().toISOString() }); persist();
+      if (table === 'products') syncProductImages();
       return r;
     },
     async remove(table, id) {
+      if (!writer()) deny();
       if (table === 'reviews') { writeBack('reviews', id, { status: 'deleted' }); return; }
       if (['orders', 'leads', 'profiles'].includes(table)) throw new Error('Chế độ demo không xóa dữ liệu khách hàng');
       db[table] = db[table].filter((x) => String(x[AD.PK[table]]) !== String(id)); persist();
+      if (table === 'products') syncProductImages();
     },
-    reset() { db = seed(); persist(); },
+    reset() { db = seed(); persist(); syncProductImages(); },
   };
 };
 

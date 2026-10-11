@@ -6,6 +6,9 @@ DT.onReady(() => {
   const full = DT.store.fullUser();
   const addr = full?.addresses?.find((a) => a.default) || full?.addresses?.[0];
 
+  // Đơn có máy lạnh: mời khách nhận nhắc lịch vệ sinh định kỳ (không tick sẵn - Nghị định 13/2023)
+  const hasAc = DT.store.totals().lines.some((l) => l.product.cat === 'may-lanh');
+  const maintMonths = Math.min(24, Math.max(1, parseInt(DT.config.maintenanceMonths, 10) || 6));
   const provinces = ['TP. Hồ Chí Minh', 'Bình Dương', 'Đồng Nai', 'Long An', 'Bà Rịa - Vũng Tàu', 'Tây Ninh', 'Hà Nội', 'Đà Nẵng', 'Cần Thơ', 'Tỉnh/thành khác'];
 
   $('#checkout').innerHTML = `<form id="co-form" class="cart-layout" novalidate>
@@ -41,6 +44,7 @@ DT.onReady(() => {
           <div class="field"><label>Chọn cửa hàng <span class="req">*</span></label><select name="store">${DT.stores.map((s) => `<option value="${s.id}">${esc(s.name)} - ${esc(s.address)}</option>`).join('')}</select></div>
         </div>
         <div class="field"><label>Ghi chú</label><textarea name="note" placeholder="Ví dụ: Gọi trước khi giao, tầng 3 không có thang máy…"></textarea></div>
+        ${hasAc ? `<label class="check maint-opt"><input type="checkbox" name="maintenance" id="maintenance"> <span><b>Nhắc tôi lịch vệ sinh máy lạnh định kỳ</b> (${maintMonths} tháng/lần) qua Zalo / email. Máy sạch chạy lạnh sâu, tiết kiệm điện và giữ điều kiện bảo hành.</span></label>` : ''}
       </section>
 
       <section class="co-section"><h2><span class="n">3</span>Phương thức thanh toán</h2>
@@ -156,6 +160,8 @@ DT.onReady(() => {
       payment: d.payment,
       invoice: d.needInvoice ? { company: d.company, taxCode: d.taxCode, address: d.companyAddress, email: d.invoiceEmail } : null,
       note: d.note,
+      maintenance: !!form.maintenance?.checked,
+      attribution: DT.analytics?.attribution() || null,
       });
     } catch (err) {
       btn.disabled = false; btn.textContent = 'ĐẶT HÀNG';
@@ -163,6 +169,7 @@ DT.onReady(() => {
       return;
     }
     if (!order) return;
+    DT.analytics?.purchase(order);
     const done = `dat-hang-thanh-cong.html?code=${order.code}`;
     // Thẻ / ví: chuyển thẳng sang cổng thanh toán; lỗi thì vẫn về trang đơn hàng (có nút thanh toán lại)
     const provider = DT.payments.PROVIDER[order.payment];

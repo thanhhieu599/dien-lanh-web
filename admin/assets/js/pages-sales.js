@@ -73,7 +73,8 @@ AD.pages = AD.pages || {};
       ['created_at', 'gte', params.from ? localDay(params.from) : undefined],
       ['created_at', 'lt', params.to ? localDay(params.to, 1) : undefined]];
     const search = params.q ? { q: params.q, cols: ['code', 'phone', 'customer->>name'] } : null;
-    el.innerHTML = `<div class="ad-head"><div><h1>Đơn hàng</h1></div><div class="ad-head-actions"><button class="btn btn-light" id="csv">${ic('file')} Xuất CSV</button></div></div>
+    const acc = AD.me.role === 'accountant';
+    el.innerHTML = `<div class="ad-head"><div><h1>${acc ? 'Đơn hàng & thanh toán' : 'Đơn hàng'}</h1>${acc ? '<small class="muted">Đối soát thanh toán, xác nhận đã thu tiền, xuất dữ liệu sang MISA</small>' : ''}</div><div class="ad-head-actions"><a class="btn btn-light" href="#/misa${params.from || params.to ? `?${new URLSearchParams({ from: params.from || '', to: params.to || '' })}` : ''}">${ic('file')} Xuất Excel MISA</a><button class="btn btn-light" id="csv">${ic('file')} Xuất CSV</button></div></div>
       <div class="ad-tabs">${[['', 'Tất cả'], ...Object.entries(AD.ORDER_STATUS).map(([k, [l]]) => [k, l])].map(([k, l]) => `<a href="#/orders${k ? `?status=${k}` : ''}" class="${(params.status || '') === k ? 'active' : ''}">${l}</a>`).join('')}</div>
       <form class="ad-toolbar" id="tb">
         <input type="hidden" name="status" value="${esc(params.status || '')}">
@@ -116,12 +117,16 @@ AD.pages = AD.pages || {};
     const idx = ORDER_FLOW.indexOf(o.status);
     const next = idx >= 0 && idx < ORDER_FLOW.length - 1 ? ORDER_FLOW[idx + 1] : null;
     const s = o.shipping || {};
+    const ops = AD.isOps();
+    const hasAc = (o.order_items || []).some((i) => DT.api.productById(i.product_id)?.cat === 'may-lanh' || /máy lạnh|điều hòa/i.test(i.name || ''));
+    const maint = ops && hasAc ? await AD.maintenanceOf(o) : null;
+    const src = o.attribution ? [o.attribution.source, o.attribution.medium, o.attribution.campaign].filter(Boolean).join(' / ') : '';
     el.innerHTML = `<div class="ad-head"><div><a class="ad-back" href="#/orders">${ic('left')} Đơn hàng</a>
         <h1>Đơn ${esc(o.code)} ${badge(AD.ORDER_STATUS, o.status)}</h1><small class="muted">Đặt lúc ${dt(o.created_at)}</small></div>
       <div class="ad-head-actions no-print">
         <button class="btn btn-light" onclick="window.print()">${ic('file')} In phiếu</button>
-        ${o.status !== 'cancelled' && o.status !== 'done' ? `<button class="btn btn-light txt-danger" data-status="cancelled">${ic('close')} Hủy đơn</button>` : ''}
-        ${next ? `<button class="btn btn-primary" data-status="${next}">${ic('check')} Chuyển sang: ${AD.ORDER_STATUS[next][0]}</button>` : ''}
+        ${ops && o.status !== 'cancelled' && o.status !== 'done' ? `<button class="btn btn-light txt-danger" data-status="cancelled">${ic('close')} Hủy đơn</button>` : ''}
+        ${ops && next ? `<button class="btn btn-primary" data-status="${next}">${ic('check')} Chuyển sang: ${AD.ORDER_STATUS[next][0]}</button>` : ''}
       </div></div>
       <div class="ad-steps no-print">${ORDER_FLOW.map((k, i) => `<div class="${o.status === 'cancelled' ? '' : i <= idx ? 'done' : ''} ${k === o.status ? 'cur' : ''}"><span>${i + 1}</span>${AD.ORDER_STATUS[k][0]}</div>`).join('')}</div>
       <div class="ad-cols ad-cols-wide">
@@ -139,11 +144,13 @@ AD.pages = AD.pages || {};
               ${o.discount ? `<div><span>Giảm giá ${o.coupon ? `(${esc(o.coupon)})` : ''}</span><b class="txt-ok">-${money(o.discount)}</b></div>` : ''}
               <div class="total"><span>Tổng thanh toán</span><b>${money(o.total)}</b></div>
             </div></section>
-          <section class="ad-card no-print"><h3>Xử lý nội bộ</h3>
+          <section class="ad-card no-print"><h3>${ops ? 'Xử lý nội bộ' : 'Xác nhận thanh toán'}</h3>
             <form id="ops" class="ad-grid">
               <div class="ad-field third"><label>Thanh toán</label><select name="payment_status">${Object.entries(AD.PAY_STATUS).map(([k, [l]]) => `<option value="${k}" ${o.payment_status === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-              <div class="ad-field third"><label>Trạng thái</label><select name="status">${Object.entries(AD.ORDER_STATUS).map(([k, [l]]) => `<option value="${k}" ${o.status === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+              ${ops ? `<div class="ad-field third"><label>Trạng thái</label><select name="status">${Object.entries(AD.ORDER_STATUS).map(([k, [l]]) => `<option value="${k}" ${o.status === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
               <div class="ad-field full"><label>Ghi chú nội bộ (khách không thấy)</label><textarea name="staff_note" rows="3" placeholder="VD: Đã gọi xác nhận 10h, hẹn lắp chiều mai, thợ Minh">${esc(o.staff_note || '')}</textarea></div>
+              ${hasAc ? `<label class="ad-check full"><input type="checkbox" name="maintenance_optin" ${o.maintenance_optin ? 'checked' : ''}> <span>Nhắc khách vệ sinh máy lạnh định kỳ (khách đã đồng ý)</span><small class="help">${maint ? esc(maint) : 'Lịch nhắc được xếp khi đơn chuyển sang "Hoàn thành".'}</small></label>` : ''}`
+              : `<div class="ad-field third"><label>Trạng thái đơn</label><div class="ad-ro">${badge(AD.ORDER_STATUS, o.status)}</div></div><p class="muted full">Kế toán chỉ cập nhật trạng thái thanh toán. Đổi trạng thái giao hàng do bộ phận vận hành thực hiện.</p>`}
               <div class="ad-field full"><button class="btn btn-primary">${ic('check')} Lưu thay đổi</button></div>
             </form></section>
         </div>
@@ -151,7 +158,8 @@ AD.pages = AD.pages || {};
           <section class="ad-card"><h3>Khách hàng</h3>
             <dl class="ad-dl"><dt>Họ tên</dt><dd>${esc(o.customer?.gender || '')} ${esc(o.customer?.name || '')}</dd>
             <dt>Điện thoại</dt><dd>${tel(o.phone)}</dd><dt>Email</dt><dd>${o.customer?.email ? `<a href="mailto:${esc(o.customer.email)}">${esc(o.customer.email)}</a>` : '-'}</dd>
-            <dt>Tài khoản</dt><dd>${o.user_id ? 'Thành viên' : 'Khách vãng lai'}</dd></dl></section>
+            <dt>Tài khoản</dt><dd>${o.user_id ? 'Thành viên' : 'Khách vãng lai'}</dd>
+            ${src ? `<dt>Nguồn khách</dt><dd>${esc(src)}${o.attribution.gclid ? ' <span class="st st-info">Google Ads</span>' : ''}${o.attribution.fbclid ? ' <span class="st st-info">Facebook</span>' : ''}</dd>` : ''}</dl></section>
           <section class="ad-card"><h3>Nhận hàng & thanh toán</h3>
             <dl class="ad-dl">${s.method === 'pickup' ? `<dt>Hình thức</dt><dd>Nhận tại cửa hàng</dd><dt>Cửa hàng</dt><dd>${esc(s.store || '')}</dd>`
               : `<dt>Hình thức</dt><dd>Giao tận nơi</dd><dt>Địa chỉ</dt><dd>${esc([s.address, s.district, s.province].filter(Boolean).join(', '))}</dd>${s.date ? `<dt>Hẹn giao</dt><dd>${d(s.date)} ${esc(s.slot || '')}</dd>` : ''}`}
@@ -176,7 +184,12 @@ AD.pages = AD.pages || {};
     el.querySelector('#ops').addEventListener('submit', (e) => {
       e.preventDefault();
       const f = e.target;
-      save({ payment_status: f.payment_status.value, status: f.status.value, staff_note: f.staff_note.value.trim() || null }, f.querySelector('button'), 'Đã lưu');
+      const patch = { payment_status: f.payment_status.value };
+      if (ops) {
+        Object.assign(patch, { status: f.status.value, staff_note: f.staff_note.value.trim() || null });
+        if (f.maintenance_optin) patch.maintenance_optin = f.maintenance_optin.checked;
+      } else if (patch.payment_status === o.payment_status) { AD.ui.toast('Không có thay đổi'); return; }
+      save(patch, f.querySelector('button'), 'Đã lưu');
     });
   };
 
@@ -184,30 +197,42 @@ AD.pages = AD.pages || {};
   const LEAD_FIELDS = {
     company: 'Công ty', name: 'Người liên hệ', position: 'Chức vụ', phone: 'Điện thoại', email: 'Email', projectType: 'Loại dự án',
     items: 'Sản phẩm / số lượng', budget: 'Ngân sách', service: 'Dịch vụ', address: 'Địa chỉ', date: 'Ngày hẹn', qty: 'Số lượng máy',
-    note: 'Mô tả', topic: 'Chủ đề', message: 'Nội dung',
+    note: 'Mô tả', topic: 'Chủ đề', message: 'Nội dung', sku: 'Mã SP', src: 'Nguồn truy cập',
+  };
+  // Nhân viên có thể nhận lead (vận hành, kinh doanh, quản trị) – dùng cho ô "Phụ trách"
+  AD.staffList = async () => {
+    if (!AD.isOps()) return [];
+    if (!AD.cache.staff) AD.cache.staff = (await AD.db.list('profiles', { select: 'id,name,role', filters: [['role', 'in', ['staff', 'admin', 'sales']]], order: 'name.asc' })).rows;
+    return AD.cache.staff;
   };
 
   AD.pages.leads = async (params, el) => {
     const size = 25; const page = Number(params.page) || 1;
-    const filters = [['type', 'eq', params.type], ['status', 'eq', params.status]];
+    const filters = [['type', 'eq', params.type], ['status', 'eq', params.status],
+      params.owner === 'none' ? ['assigned_to', 'is', null] : ['assigned_to', 'eq', params.owner]];
     const search = params.q ? { q: params.q, cols: ['code', 'name', 'phone', 'company', 'email'] } : null;
-    el.innerHTML = `<div class="ad-head"><div><h1>Khách hàng tiềm năng</h1><small class="muted">Yêu cầu báo giá dự án, đặt lịch dịch vụ, liên hệ, đăng ký nhận tin từ website</small></div>
+    const sales = AD.me.role === 'sales';
+    const staff = await AD.staffList();
+    const owner = (id) => staff.find((x) => x.id === id)?.name;
+    el.innerHTML = `<div class="ad-head"><div><h1>${sales ? 'Khách hàng của tôi' : 'Khách hàng tiềm năng'}</h1><small class="muted">${sales ? 'Các yêu cầu được giao cho bạn chăm sóc. Cập nhật trạng thái sau mỗi lần liên hệ.' : 'Yêu cầu báo giá dự án, đặt lịch dịch vụ, liên hệ, đăng ký nhận tin từ website'}</small></div>
         <div class="ad-head-actions"><button class="btn btn-light" id="csv">${ic('file')} Xuất CSV</button></div></div>
       <div class="ad-tabs">${[['', 'Tất cả'], ...Object.entries(AD.LEAD_TYPE)].map(([k, l]) => `<a href="#/leads${k ? `?type=${k}` : ''}" class="${(params.type || '') === k ? 'active' : ''}">${l}</a>`).join('')}</div>
       <form class="ad-toolbar" id="tb"><input type="hidden" name="type" value="${esc(params.type || '')}">
         <input name="q" type="search" placeholder="Tên, SĐT, công ty, mã…" value="${esc(params.q || '')}">
         <select name="status"><option value="">Trạng thái: tất cả</option>${Object.entries(AD.LEAD_STATUS).map(([k, [l]]) => `<option value="${k}" ${params.status === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+        ${staff.length ? `<select name="owner"><option value="">Phụ trách: tất cả</option><option value="none" ${params.owner === 'none' ? 'selected' : ''}>Chưa giao</option>${staff.map((x) => `<option value="${esc(x.id)}" ${params.owner === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>` : ''}
         <button class="btn btn-light">${ic('search')} Lọc</button></form>
       <div id="list"><div class="ad-loading">Đang tải…</div></div>`;
     AD.bindToolbar(el.querySelector('#tb'), 'leads', params);
     const { rows, count } = await AD.db.list('leads', { filters, search, order: 'created_at.desc', limit: size, offset: (page - 1) * size });
     el.querySelector('#list').innerHTML = table([
       { label: 'Mã / thời gian', render: (l) => `<b class="mono">${esc(l.code)}</b><small>${dt(l.created_at)}</small>` },
-      { label: 'Loại', render: (l) => esc(AD.LEAD_TYPE[l.type] || l.type) },
+      { label: 'Loại', render: (l) => `${esc(AD.LEAD_TYPE[l.type] || l.type)}${l.data?.src ? `<small>${esc(l.data.src)}</small>` : ''}` },
       { label: 'Khách hàng', render: (l) => `<b>${esc(l.company || l.name || l.email || '')}</b><small>${esc([l.company && l.name, l.phone].filter(Boolean).join(' • '))}</small>` },
       { label: 'Nội dung', render: (l) => `<span class="clamp">${esc(l.data?.items || l.data?.message || l.data?.note || (l.data?.service ? `Dịch vụ: ${l.data.service}` : '') || '')}</span>` },
+      ...(staff.length ? [{ label: 'Phụ trách', render: (l) => (l.assigned_to ? esc(owner(l.assigned_to) || '—') : '<span class="muted">Chưa giao</span>') }] : []),
       { label: 'Trạng thái', render: (l) => badge(AD.LEAD_STATUS, l.status) },
-    ], rows, { rowHref: (l) => `#/leads/${encodeURIComponent(l.id)}`, empty: 'Chưa có yêu cầu nào' }) + pager(page, count, size);
+    ], rows, { rowHref: (l) => `#/leads/${encodeURIComponent(l.id)}`, empty: sales ? 'Chưa có khách hàng nào được giao cho bạn' : 'Chưa có yêu cầu nào' }) + pager(page, count, size);
     AD.bindPager(el, 'leads', params);
     el.querySelector('#csv').onclick = async () => {
       const all = (await AD.db.list('leads', { filters, search, order: 'created_at.desc', limit: 5000 })).rows;
@@ -215,6 +240,7 @@ AD.pages = AD.pages || {};
         { label: 'Mã', key: 'code' }, { label: 'Ngày', value: (l) => dt(l.created_at) }, { label: 'Loại', value: (l) => AD.LEAD_TYPE[l.type] },
         { label: 'Công ty', key: 'company' }, { label: 'Người liên hệ', key: 'name' }, { label: 'SĐT', key: 'phone' }, { label: 'Email', key: 'email' },
         { label: 'Nội dung', value: (l) => Object.entries(l.data || {}).filter(([k]) => !['name', 'phone', 'email', 'company'].includes(k)).map(([k, v]) => `${LEAD_FIELDS[k] || k}: ${v}`).join(' | ') },
+        { label: 'Nguồn', value: (l) => l.data?.src || '' }, { label: 'Phụ trách', value: (l) => owner(l.assigned_to) || '' },
         { label: 'Trạng thái', value: (l) => AD.LEAD_STATUS[l.status]?.[0] }, { label: 'Ghi chú', key: 'staff_note' },
       ], all);
     };
@@ -223,7 +249,7 @@ AD.pages = AD.pages || {};
   AD.pages.leadDetail = async (id, params, el) => {
     const l = await AD.db.get('leads', id);
     if (!l) { el.innerHTML = '<div class="ad-empty"><p>Không tìm thấy.</p><a class="btn btn-light" href="#/leads">Quay lại</a></div>'; return; }
-    const staff = AD.db.mode === 'supabase' ? (await AD.db.list('profiles', { select: 'id,name,role', filters: [['role', 'in', ['staff', 'admin']]], order: 'name.asc' })).rows : [];
+    const staff = await AD.staffList();
     const svc = l.data?.service && (AD.cache.services || DT.services).find((x) => x.id === l.data.service);
     el.innerHTML = `<div class="ad-head"><div><a class="ad-back" href="#/leads">${ic('left')} Khách hàng tiềm năng</a>
         <h1>${esc(AD.LEAD_TYPE[l.type] || l.type)}: ${esc(l.company || l.name || l.email || '')} ${badge(AD.LEAD_STATUS, l.status)}</h1><small class="muted">Mã ${esc(l.code)} • ${dt(l.created_at)}</small></div>
@@ -236,7 +262,7 @@ AD.pages = AD.pages || {};
           ${l.source_url ? `<small class="muted">Gửi từ: ${esc(l.source_url)}</small>` : ''}</section>
         <section class="ad-card"><h3>Xử lý</h3><form id="lf" class="ad-grid">
           <div class="ad-field full"><label>Trạng thái</label><select name="status">${Object.entries(AD.LEAD_STATUS).map(([k, [lb]]) => `<option value="${k}" ${l.status === k ? 'selected' : ''}>${lb}</option>`).join('')}</select></div>
-          ${staff.length ? `<div class="ad-field full"><label>Phụ trách</label><select name="assigned_to"><option value="">-- Chưa giao --</option>${staff.map((s) => `<option value="${s.id}" ${l.assigned_to === s.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></div>` : ''}
+          ${staff.length ? `<div class="ad-field full"><label>Phụ trách</label><select name="assigned_to"><option value="">-- Chưa giao --</option>${staff.map((s) => `<option value="${esc(s.id)}" ${l.assigned_to === s.id ? 'selected' : ''}>${esc(s.name)}${s.role === 'sales' ? ' (kinh doanh)' : ''}</option>`).join('')}</select><small class="help">Nhân viên kinh doanh chỉ thấy khách hàng được giao cho mình.</small></div>` : ''}
           <div class="ad-field full"><label>Ghi chú chăm sóc</label><textarea name="staff_note" rows="6" placeholder="VD: 12/10 đã gọi, khách cần báo giá 20 bộ âm trần trước 15/10, gửi báo giá qua email">${esc(l.staff_note || '')}</textarea></div>
           <div class="ad-field full"><button class="btn btn-primary">${ic('check')} Lưu</button></div></form></section>
       </div>`;
@@ -268,8 +294,8 @@ AD.pages = AD.pages || {};
       <div class="ad-loading">Đang tải…</div>`;
     const filters = [['created_at', 'gte', from.toISOString()], ['created_at', 'lt', to ? to.toISOString() : undefined]];
     const [ord, leads, prods] = await Promise.all([
-      AD.db.list('orders', { select: 'id,created_at,status,total,payment,discount,order_items(product_id,name,price,qty)', filters, order: 'created_at.asc', limit: 10000 }),
-      AD.db.list('leads', { select: 'id,type,status', filters, limit: 10000 }),
+      AD.db.list('orders', { select: 'id,created_at,status,total,payment,discount,attribution,order_items(product_id,name,price,qty)', filters, order: 'created_at.asc', limit: 10000 }),
+      AD.me.role === 'accountant' ? Promise.resolve({ rows: [] }) : AD.db.list('leads', { select: 'id,type,status,data', filters, limit: 10000 }),
       AD.db.list('products', { select: 'id,cat,brand', limit: 10000 }),
     ]);
     const pmap = new Map(prods.rows.map((p) => [String(p.id), p]));
@@ -292,6 +318,17 @@ AD.pages = AD.pages || {};
     else { for (let m = from.getMonth(); m <= now.getMonth(); m++) series[`T${m + 1}`] = 0; ok.forEach((o) => { series[`T${new Date(o.created_at).getMonth() + 1}`] += Number(o.total); }); }
     const leadTypes = Object.keys(AD.LEAD_TYPE).map((t) => { const l = leads.rows.filter((x) => x.type === t); const won = l.filter((x) => x.status === 'won').length; return { type: AD.LEAD_TYPE[t], total: l.length, won, rate: l.length ? Math.round((won / l.length) * 100) : 0 }; });
     const cancel = all.length ? Math.round(((all.length - ok.length) / all.length) * 100) : 0;
+    // Hiệu quả theo nguồn khách: lead + đơn + doanh thu; nhập chi phí quảng cáo để tính ROAS, chi phí / lead
+    const showLeads = AD.me.role !== 'accountant';
+    const srcKey = (a) => (a?.source ? `${a.source} / ${a.medium || '(none)'}` : 'Trực tiếp / không rõ');
+    const srcMap = new Map();
+    const srcRow = (k) => { if (!srcMap.has(k)) srcMap.set(k, { k, leads: 0, orders: 0, revenue: 0 }); return srcMap.get(k); };
+    ok.forEach((o) => { const r = srcRow(srcKey(o.attribution)); r.orders++; r.revenue += Number(o.total); });
+    if (showLeads) leads.rows.filter((l) => l.type !== 'newsletter').forEach((l) => { const [a, b] = String(l.data?.src || '').split(' / '); srcRow(a ? `${a} / ${b || '(none)'}` : 'Trực tiếp / không rõ').leads++; });
+    const sources = [...srcMap.values()].sort((a, b) => b.revenue - a.revenue || b.leads - a.leads);
+    const SPEND_KEY = 'dt_ad_spend_v1';
+    const spendAll = (() => { try { return JSON.parse(localStorage.getItem(SPEND_KEY) || '{}'); } catch { return {}; } })();
+    const spend = spendAll[pk] || {};
 
     el.querySelector('.ad-loading').outerHTML = `
       <div class="kpis">
@@ -299,7 +336,7 @@ AD.pages = AD.pages || {};
         <div class="kpi"><span>Giá trị đơn trung bình</span><b>${money(ok.length ? revenue / ok.length : 0)}</b><small>&nbsp;</small></div>
         <div class="kpi"><span>Sản phẩm bán ra</span><b>${sum(items, (i) => i.qty)}</b><small>${top.length ? `Nhiều nhất: ${esc(top[0].label.slice(0, 28))}` : '&nbsp;'}</small></div>
         <div class="kpi"><span>Tỷ lệ hủy đơn</span><b>${cancel}%</b><small>${all.length - ok.length} / ${all.length} đơn</small></div>
-        <div class="kpi"><span>Khách hàng tiềm năng</span><b>${leads.rows.length}</b><small>${leads.rows.filter((x) => x.status === 'won').length} chốt đơn</small></div>
+        ${showLeads ? `<div class="kpi"><span>Khách hàng tiềm năng</span><b>${leads.rows.length}</b><small>${leads.rows.filter((x) => x.status === 'won').length} chốt đơn</small></div>` : ''}
       </div>
       <section class="ad-card"><div class="ad-card-head"><h3>Doanh thu theo ${days <= 92 ? 'ngày' : 'tháng'}</h3><button class="btn btn-light btn-sm" id="csv">${ic('file')} Xuất CSV</button></div><div id="ch-rev"></div></section>
       <div class="ad-cols">
@@ -311,13 +348,39 @@ AD.pages = AD.pages || {};
           { label: '#', render: (r) => top.indexOf(r) + 1, cls: 'num' }, { label: 'Sản phẩm', render: (r) => esc(r.label) },
           { label: 'SL', key: 'qty', cls: 'num' }, { label: 'Doanh thu', render: (r) => money(r.value), cls: 'num' }], top, { empty: 'Chưa có đơn hàng' })}</section>
         <section class="ad-card"><h3>Theo phương thức thanh toán</h3><div id="ch-pay"></div>
-          <h3 style="margin-top:20px">Chuyển đổi khách hàng tiềm năng</h3>${table([
-          { label: 'Loại', key: 'type' }, { label: 'Số yêu cầu', key: 'total', cls: 'num' }, { label: 'Chốt đơn', key: 'won', cls: 'num' }, { label: 'Tỷ lệ', render: (r) => `${r.rate}%`, cls: 'num' }], leadTypes)}</section>
-      </div>`;
+          ${showLeads ? `<h3 style="margin-top:20px">Chuyển đổi khách hàng tiềm năng</h3>${table([
+          { label: 'Loại', key: 'type' }, { label: 'Số yêu cầu', key: 'total', cls: 'num' }, { label: 'Chốt đơn', key: 'won', cls: 'num' }, { label: 'Tỷ lệ', render: (r) => `${r.rate}%`, cls: 'num' }], leadTypes)}` : ''}</section>
+      </div>
+      <section class="ad-card" id="sources"><div class="ad-card-head"><h3>Hiệu quả theo nguồn khách</h3><small class="muted">Nguồn ghi nhận từ link quảng cáo (UTM, gclid, fbclid) và trang giới thiệu. Nhập chi phí quảng cáo của kỳ để tính ROAS.</small></div>
+        ${table([
+          { label: 'Nguồn / kênh', render: (r) => `<b>${esc(r.k)}</b>` },
+          ...(showLeads ? [{ label: 'Lead', key: 'leads', cls: 'num' }] : []),
+          { label: 'Đơn', key: 'orders', cls: 'num' },
+          { label: 'Doanh thu', render: (r) => money(r.revenue), cls: 'num' },
+          { label: 'Chi phí QC (₫)', render: (r) => (r.k.startsWith('Trực tiếp') ? '<span class="muted">—</span>' : `<input type="number" min="0" step="10000" class="ad-spend" data-src="${esc(r.k)}" value="${spend[r.k] || ''}" aria-label="Chi phí quảng cáo ${esc(r.k)}">`), cls: 'num' },
+          { label: 'ROAS', render: (r) => `<span data-roas="${esc(r.k)}"></span>`, cls: 'num' },
+          ...(showLeads ? [{ label: 'Chi phí / lead', render: (r) => `<span data-cpl="${esc(r.k)}"></span>`, cls: 'num' }] : []),
+        ], sources, { empty: 'Chưa có dữ liệu trong kỳ' })}
+        <p class="muted" style="margin-top:8px">ROAS = doanh thu ÷ chi phí quảng cáo (ROAS 5 nghĩa là 1 đồng quảng cáo mang về 5 đồng doanh thu). Chi phí nhập ở đây chỉ lưu trên trình duyệt này. Số liệu chi tiết theo chiến dịch xem thêm trong Google Analytics 4 / Meta Ads Manager.</p>
+      </section>`;
     AD.chart.columns(el.querySelector('#ch-rev'), Object.entries(series).map(([k, v]) => ({ label: k.startsWith('T') ? `Tháng ${k.slice(1)}` : new Date(k).toLocaleDateString('vi-VN'), short: k.startsWith('T') ? k : k.slice(8) + '/' + k.slice(5, 7), value: v })), { labelEvery: days > 45 && days <= 92 ? 7 : days > 15 && days <= 92 ? 3 : 1, tableLabel: days <= 92 ? 'Ngày' : 'Tháng' });
     AD.chart.bars(el.querySelector('#ch-cat'), byCat.map((c) => ({ ...c, extra: `${c.qty} sản phẩm` })), { tableLabel: 'Danh mục' });
     AD.chart.bars(el.querySelector('#ch-brand'), byBrand.map((c) => ({ ...c, extra: `${c.qty} sản phẩm` })), { tableLabel: 'Thương hiệu' });
     AD.chart.bars(el.querySelector('#ch-pay'), byPay, { tableLabel: 'Thanh toán' });
+    const calc = () => sources.forEach((r) => {
+      const c = Number(spend[r.k] || 0);
+      const roas = el.querySelector(`[data-roas="${CSS.escape(r.k)}"]`); const cpl = el.querySelector(`[data-cpl="${CSS.escape(r.k)}"]`);
+      if (roas) roas.innerHTML = c > 0 ? `<b class="${r.revenue / c >= 3 ? 'txt-ok' : r.revenue / c < 1 ? 'txt-danger' : ''}">${(r.revenue / c).toFixed(1)}</b>` : '<span class="muted">—</span>';
+      if (cpl) cpl.textContent = c > 0 && r.leads ? money(Math.round(c / r.leads)) : '—';
+    });
+    calc();
+    el.querySelectorAll('.ad-spend').forEach((inp) => inp.addEventListener('input', () => {
+      const v = Math.max(0, Number(inp.value) || 0);
+      if (v) spend[inp.dataset.src] = v; else delete spend[inp.dataset.src];
+      spendAll[pk] = spend;
+      try { localStorage.setItem(SPEND_KEY, JSON.stringify(spendAll)); } catch { /* bỏ qua */ }
+      calc();
+    }));
     el.querySelector('#csv').onclick = () => AD.ui.csv(`doanh-thu-${pk}.csv`, [{ label: 'Thời gian', key: 'k' }, { label: 'Doanh thu', key: 'v' }], Object.entries(series).map(([k, v]) => ({ k, v })));
   };
 })();

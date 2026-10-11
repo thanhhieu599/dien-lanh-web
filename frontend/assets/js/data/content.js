@@ -43,6 +43,8 @@ DT.visionSlots = [
   { key: 'lanh-dao', label: 'Thông điệp lãnh đạo', hint: 'Chân dung Giám đốc', size: '900 × 1200 px (dọc)' },
 ];
 DT.VISION_DEMO_KEY = 'dt_vision_v1';
+// Bản demo: ảnh sản phẩm tải lên ở trang quản trị demo -> website demo (cùng trình duyệt) hiển thị
+DT.PRODUCT_IMG_DEMO_KEY = 'dt_product_images_v1';
 DT.visionImages = () => {
   if (DT.backend?.enabled) return DT.vision?.images || {};
   try { return JSON.parse(localStorage.getItem(DT.VISION_DEMO_KEY) || '{}').images || {}; } catch { return {}; }

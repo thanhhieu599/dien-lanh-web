@@ -142,3 +142,21 @@ test('Nhắc giỏ hàng bỏ dở: nhân viên, email khách, ZNS', () => {
   const z = znsMessage(ev, { ...ctx, env: { ...ctx.env, ZNS_TEMPLATE_CART: '555' } })!;
   assert.deepEqual(z, { phone: '0977000111', templateId: '555', data: { customer_name: 'Lan <b>', total: 17800000 }, trackingId: 'N21' });
 });
+
+test('Nhắc bảo trì định kỳ: nhân viên, email khách (link đặt lịch có UTM), ZNS', () => {
+  const ev = { id: 31, event: 'maintenance_reminder' as const, attempts: 1, results: {}, order: { id: 7, code: 'DT2610110001' },
+    data: { cycle: 2, months: 12, phone: '0988777666', name: 'Hùng <i>', gender: 'Anh', email: 'hung@example.com', units: 2, items: '2 x Máy lạnh 1HP', orderCode: 'DT2610110001', doneAt: '2026-10-11T03:00:00Z' } };
+  const t = staffText(ev, ctx)!;
+  assert.match(t, /^🔧 ĐẾN HẠN VỆ SINH MÁY LẠNH — lần 2 \(12 tháng sau lắp đặt\)/);
+  assert.match(t, /Anh Hùng <i> — 0988777666 — hung@example\.com/);
+  assert.match(t, /#\/orders\/7/);
+  const e = customerEmail(ev, ctx)!;
+  assert.equal(e.to, 'hung@example.com');
+  assert.match(e.subject, /vệ sinh máy lạnh định kỳ/);
+  assert.match(e.html, /Hùng &lt;i&gt;/, 'tên khách được escape');
+  assert.match(e.html, /dich-vu\.html\?svc=ve-sinh&amp;utm_source=nhac-bao-tri&amp;utm_medium=email/);
+  assert.equal(customerEmail({ ...ev, data: { ...ev.data, email: null } }, ctx), null, 'không có email thì không gửi');
+  assert.equal(znsMessage(ev, ctx), null, 'chưa cấu hình mẫu ZNS bảo trì thì không gửi');
+  const z = znsMessage(ev, { ...ctx, env: { ...ctx.env, ZNS_TEMPLATE_MAINT: '777', ZNS_PARAMS_MAINT: 'customer_name,months,order_code' } })!;
+  assert.deepEqual(z, { phone: '0988777666', templateId: '777', data: { customer_name: 'Hùng <i>', months: 12, order_code: 'DT2610110001' }, trackingId: 'N31' });
+});

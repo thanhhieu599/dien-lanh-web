@@ -97,6 +97,7 @@ supabase functions deploy notify --no-verify-jwt
 | `ZALO_APP_ID`, `ZALO_APP_SECRET`, `ZALO_OA_REFRESH_TOKEN` | ZNS | App Zalo liên kết OA; refresh token lần đầu (hệ thống tự làm mới, lưu trong database) |
 | `ZNS_TEMPLATE_ORDER`, `ZNS_TEMPLATE_STATUS`, `ZNS_TEMPLATE_PAID` | ZNS | ID mẫu đã duyệt: xác nhận đơn / đổi trạng thái / đã thanh toán (để trống mẫu nào thì không gửi mẫu đó) |
 | `ZNS_TEMPLATE_CART`, `ZNS_PARAMS_CART` | ZNS | (Tùy chọn) mẫu nhắc giỏ hàng bỏ dở; tham số mặc định `customer_name,total` (có thêm `product_name`, `item_count`). Để trống = chỉ nhắc qua email + báo nhân viên gọi |
+| `ZNS_TEMPLATE_MAINT`, `ZNS_PARAMS_MAINT` | ZNS | (Tùy chọn) mẫu nhắc vệ sinh máy lạnh định kỳ; tham số mặc định `customer_name,order_code` (có thêm `months`, `product_name`, `order_date`). Để trống = chỉ nhắc qua email + báo nhân viên gọi. Xem `docs/VAN-HANH.md` |
 | `ZNS_PARAMS` | Không | Tên tham số gửi vào mẫu, mặc định `customer_name,order_code,order_date,total,status`. Có thêm: `payment_status`, `payment_method` |
 
 ### Bước 5: Cổng VNPay

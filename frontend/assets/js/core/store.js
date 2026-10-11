@@ -155,6 +155,13 @@ DT.store = (() => {
         p_invoice: info.invoice || null, p_note: info.note || null, p_coupon: t.coupon?.code || null,
       });
       DT.backend.clearCache(); // tồn kho / đã bán thay đổi
+      // Đồng ý nhắc bảo trì + nguồn khách (quảng cáo): lỗi ở bước này không ảnh hưởng đơn đã đặt
+      if (info.maintenance || info.attribution) {
+        try {
+          const x = await DT.backend.rpc('order_extras', { p_code: order.code, p_phone: order.customer?.phone || info.customer.phone, p_maintenance: info.maintenance ? true : null, p_attribution: info.attribution || null });
+          order.maintenance = !!x?.maintenance;
+        } catch { /* bỏ qua */ }
+      }
     } else {
       const pickup = info.shipping.method === 'pickup';
       order = {
@@ -167,6 +174,8 @@ DT.store = (() => {
         subtotal: t.subtotal, install: t.install, shippingFee: pickup ? 0 : t.shipping, discount: t.discount, coupon: t.coupon?.code || null,
         total: t.total - (pickup ? t.shipping : 0),
         userId: state.user?.id || null,
+        maintenance: !!info.maintenance,
+        attribution: info.attribution || null,
       };
     }
     state.orders.unshift(order);

@@ -3,7 +3,7 @@
 //                    limit/offset, Prefer: count=exact (Content-Range), insert/update/delete, rpc; giới hạn 1000 dòng
 //   /auth/v1/*       GoTrue: signup, token (password / refresh_token), logout
 //   /functions/v1/*  Edge Functions thật (payments, notify)
-//   /storage/v1/*    Storage tối giản: tải lên / xóa (chỉ admin, như policy bucket 'media') và đọc công khai
+//   /storage/v1/*    Storage tối giản: tải lên / xóa (như policy bucket 'media': admin mọi thư mục, nhân viên products/ projects/) và đọc công khai
 // Mỗi request chạy trong 1 transaction với role (anon / authenticated / service_role) + request.jwt.claims như PostgREST,
 // nên RLS, quyền cột, trigger... đều là của database thật.
 import http from 'node:http';
@@ -129,9 +129,10 @@ export async function startSupabase(opts: Options) {
     if (!obj) return send(404, { message: 'not found' });
     if (obj[1] !== 'media') return send(400, { message: 'Bucket not found' });
     const claims = claimsOf(req);
-    const admin = await tx(claims, (q) => q('select public.is_admin() as ok'));
-    if (!admin.rows[0].ok) return send(403, { message: 'new row violates row-level security policy' });
     const key = decodeURIComponent(obj[2]);
+    // Như policy: admin ghi mọi thư mục; nhân viên chỉ thư mục products/, projects/
+    const perm = await tx(claims, (q) => q('select public.is_admin() or (public.is_staff() and ($1 like \'products/%\' or $1 like \'projects/%\')) as ok', [key]));
+    if (!perm.rows[0].ok) return send(403, { message: 'new row violates row-level security policy' });
     if (req.method === 'POST' || req.method === 'PUT') { files.set(key, { type: String(req.headers['content-type'] || 'application/octet-stream'), data: bytes }); return send(200, { Key: `media/${key}` }); }
     if (req.method === 'DELETE') { files.delete(key); return send(200, { message: 'deleted' }); }
     send(405, { message: 'method not allowed' });

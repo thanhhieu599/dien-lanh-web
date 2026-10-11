@@ -36,15 +36,22 @@ AD.pages = AD.pages || {};
   };
 
   // ======================================================================= Khách hàng
-  const ROLE = { customer: ['Khách hàng', 'muted'], staff: ['Nhân viên', 'info'], admin: ['Quản trị', 'ok'] };
+  const ROLE = { customer: ['Khách hàng', 'muted'], staff: ['Nhân viên vận hành', 'info'], sales: ['Kinh doanh', 'info'], accountant: ['Kế toán', 'info'], admin: ['Quản trị', 'ok'] };
+  const ROLE_NOTE = {
+    staff: 'Vận hành: đơn hàng, khách hàng tiềm năng, sản phẩm, nội dung (không sửa cài đặt).',
+    sales: 'Kinh doanh: CHỈ thấy khách hàng tiềm năng được giao cho mình (đổi trạng thái, ghi chú). Không thấy đơn hàng, doanh thu.',
+    accountant: 'Kế toán: xem đơn hàng & giao dịch, xác nhận đã thanh toán, báo cáo doanh thu, xuất Excel MISA. Không sửa đơn, không thấy khách hàng tiềm năng.',
+    admin: 'Quản trị: toàn quyền, kể cả cài đặt và phân quyền.',
+  };
   AD.pages.customers = async (params, el) => {
     const size = 25; const page = Number(params.page) || 1;
     const search = params.q ? { q: params.q, cols: ['name', 'phone', 'email'] } : null;
-    el.innerHTML = `<div class="ad-head"><div><h1>Khách hàng</h1><small class="muted">Tài khoản đăng ký trên website. Đơn của khách vãng lai xem ở mục Đơn hàng.</small></div>
+    el.innerHTML = `<div class="ad-head"><div><h1>Khách hàng</h1><small class="muted">Tài khoản đăng ký trên website và tài khoản nhân viên. Đơn của khách vãng lai xem ở mục Đơn hàng.</small></div>
         <div class="ad-head-actions"><button class="btn btn-light" id="csv">${ic('file')} Xuất CSV</button></div></div>
       <form class="ad-toolbar" id="tb"><input name="q" type="search" placeholder="Tên, SĐT, email…" value="${esc(params.q || '')}">
         <select name="role"><option value="">Vai trò: tất cả</option>${Object.entries(ROLE).map(([k, [l]]) => `<option value="${k}" ${params.role === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
         <button class="btn btn-light">${ic('search')} Lọc</button></form>
+      ${AD.me.role === 'admin' ? `<details class="ad-card ad-help"><summary>${ic('shield')} Phân quyền nhân viên</summary><p class="muted">Nhân viên tự đăng ký tài khoản trên website (bằng số điện thoại), sau đó quản trị viên đổi vai trò tại cột <b>Vai trò</b>:</p><ul>${Object.entries(ROLE_NOTE).map(([k, t]) => `<li>${t}</li>`).join('')}</ul></details>` : ''}
       <div id="list"><div class="ad-loading">Đang tải…</div></div>`;
     AD.bindToolbar(el.querySelector('#tb'), 'customers', params);
     const filters = [['role', 'eq', params.role]];
@@ -63,8 +70,9 @@ AD.pages = AD.pages || {};
     el.querySelectorAll('[data-role]').forEach((s) => s.addEventListener('change', async () => {
       const prev = rows.find((r) => r.id === s.dataset.role).role;
       const label = ROLE[s.value][0];
-      if (!(await confirm(`Đổi vai trò tài khoản này thành <b>${label}</b>?${s.value !== 'customer' ? '<br><small>Nhân viên / quản trị được truy cập trang quản trị và dữ liệu khách hàng.</small>' : ''}`))) { s.value = prev; return; }
+      if (!(await confirm(`Đổi vai trò tài khoản này thành <b>${label}</b>?${ROLE_NOTE[s.value] ? `<br><small>${ROLE_NOTE[s.value]}</small>` : ''}`))) { s.value = prev; return; }
       if (!(await run(s, () => AD.db.update('profiles', s.dataset.role, { role: s.value }), 'Đã cập nhật vai trò'))) s.value = prev;
+      else delete AD.cache.staff;
     }));
     el.querySelectorAll('[data-orders]').forEach((b) => b.addEventListener('click', async () => {
       const uid = b.dataset.orders;
@@ -111,14 +119,32 @@ AD.pages = AD.pages || {};
     { key: 'bankBin', label: 'Mã ngân hàng (BIN VietQR)', col: 'third' },
     { key: 'bankAccount', label: 'Số tài khoản', col: 'third' },
     { key: 'bankOwner', label: 'Chủ tài khoản (không dấu, như trên app ngân hàng)', col: 'full' },
+    { key: '_e', type: 'custom', render: () => '<h4 class="ad-sec">Đo lường quảng cáo (Google Analytics 4, Meta Pixel)</h4><p class="muted">Dán mã đo lường để biết khách đến từ đâu và mua bao nhiêu, từ đó tính hiệu quả trên chi phí quảng cáo (ROAS). Hướng dẫn lấy mã: <b>docs/DO-LUONG-QUANG-CAO.md</b>. Để trống = không đo.</p>', read: () => undefined, col: 'full' },
+    { key: 'ga4Id', label: 'GA4 Measurement ID', col: 'third', placeholder: 'G-XXXXXXXXXX', help: 'Google Analytics › Quản trị › Luồng dữ liệu › Web' },
+    { key: 'metaPixelId', label: 'Meta Pixel ID', col: 'third', placeholder: '123456789012345', help: 'Meta Events Manager › Nguồn dữ liệu' },
+    { key: 'cookieConsent', label: 'Hộp xin đồng ý cookie', type: 'select', required: true, col: 'third', options: [['true', 'Hiện (khuyến nghị, Nghị định 13/2023)'], ['false', 'Không hiện']], help: 'Pixel chỉ chạy sau khi khách bấm Đồng ý' },
+    { key: '_f', type: 'custom', render: () => '<h4 class="ad-sec">Nhắc bảo trì định kỳ</h4><p class="muted">Khách mua máy lạnh và đồng ý nhận nhắc: khi đơn <b>Hoàn thành</b>, hệ thống tự xếp lịch nhắc vệ sinh máy (email / Zalo ZNS + báo nhân viên gọi chăm sóc). Xem ở mục <b>Lịch bảo trì</b>.</p>', read: () => undefined, col: 'full' },
+    { key: 'maintenanceMonths', label: 'Chu kỳ nhắc (tháng)', type: 'number', col: 'third', def: 6, help: 'Khuyến nghị 6 tháng (gia đình), 3 tháng (nhà hàng, xưởng)' },
+    { key: 'maintenanceCycles', label: 'Số lần nhắc', type: 'number', col: 'third', def: 4, help: 'VD 4 lần x 6 tháng = nhắc trong 2 năm' },
+    { key: '_g', type: 'custom', render: () => '<h4 class="ad-sec">Kế toán – xuất Excel MISA</h4><p class="muted">Giá bán trên website là giá <b>đã gồm VAT</b>. Khi xuất sang MISA, hệ thống tách đơn giá trước thuế và tiền thuế theo thuế suất bên dưới. Kế toán kiểm tra lại tài khoản theo chế độ kế toán đang áp dụng (TT200 / TT133).</p>', read: () => undefined, col: 'full' },
+    { key: 'vatRate', label: 'Thuế suất GTGT (%)', type: 'select', required: true, col: 'third', options: [['10', '10%'], ['8', '8% (hàng được giảm thuế)'], ['5', '5%'], ['0', '0%'], ['-1', 'Không chịu thuế']] },
+    { key: 'misaDebitAcc', label: 'TK công nợ (chưa thu tiền)', col: 'third', placeholder: '131' },
+    { key: 'misaCashAcc', label: 'TK tiền mặt (đã thu COD)', col: 'third', placeholder: '1111' },
+    { key: 'misaBankAcc', label: 'TK tiền gửi ngân hàng (đã thu CK / thẻ / ví)', col: 'third', placeholder: '1121' },
+    { key: 'misaRevenueAcc', label: 'TK doanh thu bán hàng', col: 'third', placeholder: '5111' },
+    { key: 'misaServiceAcc', label: 'TK doanh thu dịch vụ (lắp đặt, vận chuyển)', col: 'third', placeholder: '5113' },
+    { key: 'misaVatAcc', label: 'TK thuế GTGT đầu ra', col: 'third', placeholder: '33311' },
+    { key: 'misaDiscountAcc', label: 'TK chiết khấu thương mại', col: 'third', placeholder: '5211', help: 'Theo TT133 không dùng 521: để trống, chiết khấu trừ thẳng vào doanh thu' },
+    { key: 'misaWarehouse', label: 'Mã kho trong MISA', col: 'third', placeholder: 'KHO01', help: 'Để trống nếu không lập kèm phiếu xuất kho' },
   ];
 
   AD.pages.settings = async (params, el) => {
     const row = await AD.db.get('settings', 'store');
     const v = row?.value || {};
     const canEdit = AD.me.role === 'admin';
+    const shown = { ...v, cookieConsent: v.cookieConsent === false ? 'false' : 'true', vatRate: v.vatRate == null ? '10' : String(v.vatRate), maintenanceMonths: v.maintenanceMonths ?? 6, maintenanceCycles: v.maintenanceCycles ?? 4 };
     el.innerHTML = `<div class="ad-head"><div><h1>Cài đặt cửa hàng</h1><small class="muted">Thông tin hiển thị trên website và phí dùng khi tính tiền đơn hàng</small></div></div>
-      <form class="ad-card ad-form" id="frm" novalidate><div class="ad-grid">${SETTINGS_FIELDS.map((f) => AD.ui.field(f, v[f.key], {})).join('')}</div>
+      <form class="ad-card ad-form" id="frm" novalidate><div class="ad-grid">${SETTINGS_FIELDS.map((f) => AD.ui.field(f, shown[f.key], {})).join('')}</div>
       ${canEdit ? `<div class="ad-form-foot"><button class="btn btn-primary">${ic('check')} Lưu cài đặt</button></div>` : '<p class="muted">Chỉ quản trị viên được sửa cài đặt.</p>'}</form>
       <div class="ad-links">
         <a class="ad-card ad-link" href="#/stores">${ic('pin')}<b>Hệ thống cửa hàng</b><small>Địa chỉ showroom, giờ mở cửa</small></a>
@@ -133,6 +159,14 @@ AD.pages = AD.pages || {};
       Object.keys(data).forEach((k) => k.startsWith('_') && delete data[k]);
       const badTime = ['openTime', 'closeTime'].find((k) => data[k] && !/^([01]?\d|2[0-3]):[0-5]\d$/.test(String(data[k]).trim()));
       if (badTime) { AD.ui.toast('Giờ mở / đóng cửa phải có dạng HH:MM, ví dụ 07:30', 'error'); return; }
+      if (data.ga4Id) data.ga4Id = String(data.ga4Id).trim().toUpperCase();
+      if (data.ga4Id && !/^G-[A-Z0-9]{4,20}$/.test(data.ga4Id)) { AD.ui.toast('Mã GA4 phải có dạng G-XXXXXXXXXX (Measurement ID, không phải mã UA- hay số thuộc tính)', 'error'); return; }
+      if (data.metaPixelId) data.metaPixelId = String(data.metaPixelId).replace(/\s/g, '');
+      if (data.metaPixelId && !/^\d{6,20}$/.test(data.metaPixelId)) { AD.ui.toast('Meta Pixel ID chỉ gồm chữ số', 'error'); return; }
+      data.cookieConsent = data.cookieConsent !== 'false';
+      if (data.maintenanceMonths != null && (data.maintenanceMonths < 1 || data.maintenanceMonths > 24 || !Number.isInteger(data.maintenanceMonths))) { AD.ui.toast('Chu kỳ nhắc bảo trì: số nguyên từ 1 đến 24 tháng', 'error'); return; }
+      if (data.maintenanceCycles != null && (data.maintenanceCycles < 1 || data.maintenanceCycles > 10 || !Number.isInteger(data.maintenanceCycles))) { AD.ui.toast('Số lần nhắc: số nguyên từ 1 đến 10', 'error'); return; }
+      data.vatRate = Number(data.vatRate);
       const value = { ...v, ...data };
       await run(e.target.querySelector('button'), () => (row ? AD.db.update('settings', 'store', { value }) : AD.db.insert('settings', { key: 'store', value })), 'Đã lưu cài đặt');
     });

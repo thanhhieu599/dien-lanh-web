@@ -70,7 +70,7 @@ window.AD = window.AD || {};
         { key: 'highlights', label: 'Đặc điểm nổi bật (mỗi dòng 1 ý)', type: 'lines', col: 'half', rows: 6 },
         { key: 'specs', label: 'Thông số kỹ thuật', type: 'kv', col: 'half' },
         { key: '_g4', type: 'custom', render: () => '<h4 class="ad-sec">Hình ảnh</h4>', read: () => undefined, col: 'full' },
-        { key: 'images', label: 'Ảnh sản phẩm (mỗi dòng 1 URL)', type: 'lines', col: 'half', rows: 4, help: 'Dán link ảnh (Supabase Storage, Cloudinary…). Để trống = hiển thị khung "Hình ảnh sản phẩm" mặc định' },
+        { key: 'images', label: 'Ảnh sản phẩm', type: 'gallery', folder: 'products', max: 10, col: 'full' },
         {
           key: 'art', label: 'Ảnh minh họa (khi chưa có ảnh thật)', type: 'custom', col: 'half',
           render: (v) => `<div class="ad-grid"><div class="ad-field half"><select data-art="type">${ARTS.map((a) => `<option ${v?.type === a ? 'selected' : ''}>${a}</option>`).join('')}</select></div>
@@ -234,7 +234,7 @@ window.AD = window.AD || {};
         { key: 'summary', label: 'Tóm tắt (hiện ở thẻ dự án & mô tả Google, 140-200 ký tự)', type: 'textarea', col: 'full', rows: 2 },
         { key: 'before_image', label: 'Ảnh TRƯỚC thi công', type: 'image', folder: 'projects', col: 'half' },
         { key: 'after_image', label: 'Ảnh SAU thi công (ảnh đại diện)', type: 'image', folder: 'projects', col: 'half' },
-        { key: 'images', label: 'Thư viện ảnh thêm (mỗi dòng 1 link ảnh)', type: 'lines', col: 'full', rows: 3 },
+        { key: 'images', label: 'Thư viện ảnh thêm', type: 'gallery', folder: 'projects', max: 12, col: 'full' },
         { key: 'content', label: 'Nội dung (HTML: <h2>Yêu cầu</h2>, <h2>Giải pháp</h2>, <h2>Kết quả</h2>…)', type: 'html', col: 'full', rows: 12 },
         { key: 'testimonial', label: 'Cảm nhận của khách hàng', type: 'textarea', col: 'full', rows: 2 },
         { key: 'testimonial_name', label: 'Người nhận xét', col: 'half' },

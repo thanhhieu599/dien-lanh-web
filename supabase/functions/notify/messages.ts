@@ -7,7 +7,7 @@ export type Json = Record<string, any>;
 
 export interface NotifyEvent {
   id: number;
-  event: 'order_new' | 'order_status' | 'order_paid' | 'lead_new' | 'cart_reminder';
+  event: 'order_new' | 'order_status' | 'order_paid' | 'lead_new' | 'cart_reminder' | 'maintenance_reminder';
   data: Json;
   attempts: number;
   results: Record<string, { ok: boolean; at?: string; error?: string }>;
@@ -42,6 +42,8 @@ const adminUrl = (env: Env) => (env.ADMIN_URL || siteUrl(env).replace(/frontend\
 const trackUrl = (env: Env, o: Json) => `${siteUrl(env)}tra-cuu-don-hang.html?code=${encodeURIComponent(o.code)}&phone=${encodeURIComponent(o.customer?.phone || '')}`;
 const shopName = (c: Ctx) => c.store.name || c.env.SHOP_NAME || 'Tên thương hiệu';
 const cartUrl = (env: Env) => `${siteUrl(env)}gio-hang.html`;
+// Link đặt lịch vệ sinh từ lời nhắc bảo trì (có UTM để đo số khách quay lại từ lời nhắc)
+export const maintUrl = (env: Env, channel: string) => `${siteUrl(env)}dich-vu.html?svc=ve-sinh&utm_source=nhac-bao-tri&utm_medium=${channel}&utm_campaign=bao-tri-dinh-ky#book-form`;
 const cartLines = (d: Json) => (d.items || []).map((i: Json) => `• ${i.qty} x ${i.name} — ${money(i.price * i.qty)}`);
 
 function shippingLine(o: Json): string {
@@ -101,6 +103,16 @@ export function staffText(ev: NotifyEvent, c: Ctx): string | null {
       'Khách đã vào trang thanh toán 2 giờ trước nhưng chưa đặt. Gọi tư vấn để chốt đơn.',
     ].join('\n');
   }
+  if (ev.event === 'maintenance_reminder') {
+    const d = ev.data || {};
+    return [
+      `🔧 ĐẾN HẠN VỆ SINH MÁY LẠNH — lần ${d.cycle || 1} (${d.months || 6} tháng sau lắp đặt)`,
+      `Khách: ${[d.gender, d.name].filter(Boolean).join(' ')} — ${d.phone || ''}${d.email ? ` — ${d.email}` : ''}`,
+      `Đơn ${d.orderCode || ev.order?.code || ''}: ${d.items || ''}`,
+      'Đã gửi lời nhắc cho khách (nếu có email / Zalo). Gọi chăm sóc, đặt lịch vệ sinh để giữ khách.',
+      ...(ev.order?.id ? [`Đơn hàng: ${adminUrl(c.env)}#/orders/${ev.order.id}`] : []),
+    ].join('\n');
+  }
   if (l && ev.event === 'lead_new') {
     const d: Json = { ...(l.data || {}), name: l.name || l.data?.name, phone: l.phone || l.data?.phone, email: l.email || l.data?.email, company: l.company || l.data?.company };
     const lines = Object.entries(LEAD_FIELDS).filter(([k]) => d[k]).map(([k, label]) => `${label}: ${String(d[k]).slice(0, 300)}`);
@@ -141,6 +153,19 @@ ${o.discount ? row(`Giảm giá${o.coupon ? ` (${esc(o.coupon)})` : ''}`, `-${mo
 const button = (href: string, label: string) => `<p style="text-align:center;margin:22px 0"><a href="${esc(href)}" style="background:#0b5ed7;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block">${label}</a></p>`;
 
 export function customerEmail(ev: NotifyEvent, c: Ctx) {
+  if (ev.event === 'maintenance_reminder') {
+    const d = ev.data || {};
+    if (!d.email) return null;
+    const name = [d.gender, d.name].filter(Boolean).join(' ') || 'Quý khách';
+    const html = `<p>Kính chào ${esc(name)},</p>
+<p>Đã ${esc(String(d.months || 6))} tháng kể từ khi <b>${esc(shopName(c))}</b> lắp đặt máy lạnh cho Quý khách (đơn <b>${esc(d.orderCode || '')}</b>: ${esc(d.items || '')}).</p>
+<p>Nhà sản xuất khuyến nghị <b>vệ sinh máy lạnh định kỳ 6 tháng/lần</b> để:</p>
+<ul style="font-size:14px;line-height:1.7;color:#374151"><li>Máy lạnh sâu, tiết kiệm điện (dàn bám bụi có thể làm tăng 15–30% điện năng)</li><li>Không khí sạch, hạn chế vi khuẩn, nấm mốc</li><li>Phát hiện sớm thiếu gas, chảy nước; giữ điều kiện bảo hành</li></ul>
+${button(maintUrl(c.env, 'email'), 'Đặt lịch vệ sinh')}
+<p style="font-size:13px;color:#4b5563">Hoặc gọi ${esc(c.store.hotline || '')} để được hẹn giờ phù hợp. Nếu không muốn nhận nhắc lịch, Quý khách chỉ cần trả lời email này.</p>`;
+    return { to: d.email, subject: `Đến lịch vệ sinh máy lạnh định kỳ — ${shopName(c)}`, html: layout(c, html),
+      text: `Đã ${d.months || 6} tháng từ khi lắp đặt máy lạnh (đơn ${d.orderCode || ''}). Đặt lịch vệ sinh: ${maintUrl(c.env, 'email')}` };
+  }
   if (ev.event === 'cart_reminder') {
     const d = ev.data || {};
     if (!d.email) return null;
@@ -192,6 +217,16 @@ export function znsMessage(ev: NotifyEvent, c: Ctx) {
     const all: Record<string, string | number> = { customer_name: String(d.name || 'Quý khách').slice(0, 30), total: Number(d.total || 0), product_name: String(d.items?.[0]?.name || '').slice(0, 100), item_count: (d.items || []).length };
     const keys = String(env0.ZNS_PARAMS_CART || 'customer_name,total').split(',').map((s) => s.trim()).filter((k) => k in all);
     return { phone: d.phone, templateId: env0.ZNS_TEMPLATE_CART, data: Object.fromEntries(keys.map((k) => [k, all[k]])), trackingId: `N${ev.id}` };
+  }
+  if (ev.event === 'maintenance_reminder') {
+    const d = ev.data || {};
+    if (!env0.ZNS_TEMPLATE_MAINT || !d.phone) return null;
+    const all: Record<string, string | number> = {
+      customer_name: String(d.name || 'Quý khách').slice(0, 30), order_code: String(d.orderCode || ''), months: Number(d.months || 6),
+      product_name: String(d.items || '').slice(0, 100), order_date: d.doneAt ? vnDate(d.doneAt, false) : '',
+    };
+    const keys = String(env0.ZNS_PARAMS_MAINT || 'customer_name,order_code').split(',').map((s) => s.trim()).filter((k) => k in all);
+    return { phone: d.phone, templateId: env0.ZNS_TEMPLATE_MAINT, data: Object.fromEntries(keys.map((k) => [k, all[k]])), trackingId: `N${ev.id}` };
   }
   const o = ev.order;
   if (!o?.customer?.phone) return null;

@@ -28,7 +28,7 @@ export function channelStatus(env: Env) {
     staffEmails: ch.staffEmails(env).length,
     zaloBot: ch.zaloBotEnabled(env),
     telegram: ch.telegramEnabled(env),
-    zns: ch.znsEnabled(env) && !!(env.ZNS_TEMPLATE_ORDER || env.ZNS_TEMPLATE_STATUS || env.ZNS_TEMPLATE_PAID || env.ZNS_TEMPLATE_CART),
+    zns: ch.znsEnabled(env) && !!(env.ZNS_TEMPLATE_ORDER || env.ZNS_TEMPLATE_STATUS || env.ZNS_TEMPLATE_PAID || env.ZNS_TEMPLATE_CART || env.ZNS_TEMPLATE_MAINT),
   };
 }
 

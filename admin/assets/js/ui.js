@@ -9,7 +9,7 @@ AD.PAY_STATUS = { unpaid: ['Chưa thanh toán', 'warn'], partial: ['Thanh toán 
 AD.PAYMENT = { cod: 'COD', bank: 'Chuyển khoản', card: 'Thẻ (VNPay)', wallet: 'Ví MoMo', installment: 'Trả góp' };
 AD.PAY_PROVIDER = { vnpay: 'VNPay', momo: 'MoMo', bank: 'Chuyển khoản (SePay)' };
 AD.TXN_STATUS = { pending: ['Đang chờ', 'warn'], paid: ['Thành công', 'ok'], failed: ['Thất bại', 'muted'], expired: ['Hết hạn', 'muted'] };
-AD.NOTIFY_EVENT = { order_new: 'Đơn mới', order_status: 'Đổi trạng thái đơn', order_paid: 'Thanh toán', lead_new: 'Khách hàng tiềm năng', cart_reminder: 'Nhắc giỏ hàng bỏ dở' };
+AD.NOTIFY_EVENT = { order_new: 'Đơn mới', order_status: 'Đổi trạng thái đơn', order_paid: 'Thanh toán', lead_new: 'Khách hàng tiềm năng', cart_reminder: 'Nhắc giỏ hàng bỏ dở', maintenance_reminder: 'Nhắc bảo trì định kỳ' };
 AD.NOTIFY_STATUS = { pending: ['Chờ gửi', 'warn'], processing: ['Đang gửi', 'info'], done: ['Đã gửi', 'ok'], failed: ['Lỗi', 'danger'] };
 AD.NOTIFY_CHANNEL = { zalo_staff: 'Zalo nhân viên', telegram_staff: 'Telegram', email_staff: 'Email nhân viên', email_customer: 'Email khách', zns_customer: 'Zalo ZNS khách' };
 AD.LEAD_STATUS = {
@@ -74,7 +74,7 @@ AD.ui = (() => {
   }
 
   // ---------- Form tự sinh theo cấu hình trường
-  // type: text | textarea | html | number | money | bool | select | json | lines | tags | kv | datetime | date | readonly | custom
+  // type: text | textarea | html | number | money | bool | select | json | lines | tags | kv | datetime | date | readonly | image | gallery | custom
   function field(f, v, ctx = {}) {
     const id = `f-${f.key}`;
     const req = f.required ? ' <span class="req">*</span>' : '';
@@ -111,6 +111,8 @@ AD.ui = (() => {
         input = `<div class="ad-ro">${f.render ? f.render(v, ctx) : esc(v ?? '-')}</div>`; break;
       case 'image':
         input = imageInput(f.key, v, f.folder || 'media', dis); break;
+      case 'gallery':
+        input = galleryInput(f.key, (v || []).filter((x) => x && !String(x).startsWith('art:')), f.folder || 'media', f.max || 10); break;
       case 'custom':
         input = f.render(v, ctx); break;
       default:
@@ -145,6 +147,82 @@ AD.ui = (() => {
     const input = e.target.closest('[data-img-field] input[type=file]');
     if (input?.files?.[0]) imagePicked(input.closest('[data-img-field]'), input.files[0]);
   });
+  // Thư viện nhiều ảnh (ảnh sản phẩm): tải nhiều ảnh cùng lúc (tự nén), kéo thả, sắp xếp, xóa, dán link.
+  // Ảnh đầu tiên là ảnh chính. Giá trị (mảng link) lưu ở input ẩn name=key dạng JSON.
+  function galleryInput(key, list, folder, max) {
+    return `<div class="ad-gal" data-gal="${esc(key)}" data-folder="${esc(folder)}" data-max="${max}">
+      <input type="hidden" name="${esc(key)}" value="${esc(JSON.stringify(list))}">
+      <div class="ad-gal-list">${list.map((u, i) => `<figure class="ad-gal-item" data-i="${i}">
+          <img src="${esc(u)}" alt="Ảnh ${i + 1}" loading="lazy">${i === 0 ? '<span class="ad-gal-main">Ảnh chính</span>' : ''}
+          <figcaption>
+            <button type="button" class="btn btn-light btn-sm" data-gal-move="-1" ${i === 0 ? 'disabled' : ''} aria-label="Đưa lên trước" title="Đưa lên trước">${ic('left')}</button>
+            <button type="button" class="btn btn-light btn-sm" data-gal-move="1" ${i === list.length - 1 ? 'disabled' : ''} aria-label="Đưa ra sau" title="Đưa ra sau">${ic('right')}</button>
+            <button type="button" class="btn btn-light btn-sm txt-danger" data-gal-del aria-label="Xóa ảnh" title="Xóa ảnh">${ic('trash')}</button>
+          </figcaption></figure>`).join('')}
+        ${list.length < max ? `<button type="button" class="ad-gal-add" data-gal-pick>${ic('plus')}<b>Tải ảnh lên</b><small>Chọn hoặc kéo thả nhiều ảnh<br>JPG, PNG, WEBP – tự nén</small></button>` : ''}
+      </div>
+      <div class="ad-gal-url"><input type="url" placeholder="Hoặc dán link ảnh (https://…)" data-gal-url aria-label="Link ảnh"><button type="button" class="btn btn-light btn-sm" data-gal-addurl>${ic('plus')} Thêm link</button></div>
+      <small class="help">${list.length}/${max} ảnh. Ảnh đầu tiên là ảnh chính (hiện ở danh sách, giỏ hàng, chia sẻ Zalo/Facebook). Nên dùng ảnh nền trắng, vuông, ≥ 800px.</small>
+      <input type="file" accept="image/*" multiple hidden>
+    </div>`;
+  }
+  const galList = (box) => { try { return JSON.parse(box.querySelector('input[type=hidden]').value || '[]'); } catch { return []; } };
+  const galSet = (box, list) => { box.outerHTML = galleryInput(box.dataset.gal, list, box.dataset.folder, Number(box.dataset.max)); };
+  async function galUpload(box, files) {
+    const max = Number(box.dataset.max);
+    const list = galList(box);
+    const imgs = [...files].filter((f) => /^image\//.test(f.type));
+    if (!imgs.length) { toast('Chỉ nhận file ảnh (JPG, PNG, WEBP)', 'error'); return; }
+    const room = max - list.length;
+    if (room <= 0) { toast(`Tối đa ${max} ảnh`, 'error'); return; }
+    if (imgs.length > room) toast(`Chỉ thêm được ${room} ảnh nữa (tối đa ${max})`, 'error');
+    const key = box.dataset.gal; const form = box.closest('form');
+    box.classList.add('busy');
+    const add = box.querySelector('[data-gal-pick] b');
+    let done = 0;
+    for (const f of imgs.slice(0, room)) {
+      if (add) add.textContent = `Đang tải ${done + 1}/${Math.min(imgs.length, room)}…`;
+      try { list.push(await AD.media.upload(f, box.dataset.folder, AD.db.mode === 'supabase' ? { max: 1600, quality: 0.85 } : { max: 900, quality: 0.72 })); done++; }
+      catch (e) { if (AD.handleError?.(e)) return; toast(`${f.name}: ${e.message}`, 'error'); }
+    }
+    galSet(form?.querySelector(`[data-gal="${key}"]`) || box, list);
+    if (done) toast(`Đã tải lên ${done} ảnh`);
+  }
+  document.addEventListener('click', (e) => {
+    const box = e.target.closest('[data-gal]');
+    if (!box || box.classList.contains('busy')) return;
+    const list = galList(box);
+    if (e.target.closest('[data-gal-pick]')) box.querySelector('input[type=file]').click();
+    const mv = e.target.closest('[data-gal-move]');
+    if (mv) {
+      const i = Number(mv.closest('[data-i]').dataset.i); const j = i + Number(mv.dataset.galMove);
+      if (j >= 0 && j < list.length) { [list[i], list[j]] = [list[j], list[i]]; galSet(box, list); }
+    }
+    const del = e.target.closest('[data-gal-del]');
+    if (del) { list.splice(Number(del.closest('[data-i]').dataset.i), 1); galSet(box, list); }
+    if (e.target.closest('[data-gal-addurl]')) {
+      const u = box.querySelector('[data-gal-url]').value.trim();
+      if (!/^https?:\/\/\S+$/i.test(u)) { toast('Link ảnh phải bắt đầu bằng http:// hoặc https://', 'error'); return; }
+      if (list.length >= Number(box.dataset.max)) { toast(`Tối đa ${box.dataset.max} ảnh`, 'error'); return; }
+      if (list.includes(u)) { toast('Ảnh này đã có', 'error'); return; }
+      galSet(box, [...list, u]);
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.matches('[data-gal-url]')) { e.preventDefault(); e.target.closest('[data-gal]').querySelector('[data-gal-addurl]').click(); }
+  });
+  document.addEventListener('change', (e) => {
+    const input = e.target.closest('[data-gal] input[type=file]');
+    if (input?.files?.length) galUpload(input.closest('[data-gal]'), input.files);
+  });
+  ['dragover', 'dragleave', 'drop'].forEach((ev) => document.addEventListener(ev, (e) => {
+    const box = e.target.closest?.('[data-gal]');
+    if (!box) return;
+    e.preventDefault();
+    box.classList.toggle('drag', ev === 'dragover');
+    if (ev === 'drop' && e.dataTransfer?.files?.length && !box.classList.contains('busy')) galUpload(box, e.dataTransfer.files);
+  }));
+
   const kvRow = (k, v) => `<div class="kv-row"><input placeholder="Tên thông số" value="${esc(k)}" data-k><input placeholder="Giá trị" value="${esc(v)}" data-v><button type="button" class="btn btn-light btn-sm" data-kv-del aria-label="Xóa">${ic('trash')}</button></div>`;
   document.addEventListener('click', (e) => {
     const add = e.target.closest('[data-kv-add]');
@@ -176,6 +254,7 @@ AD.ui = (() => {
           break;
         case 'datetime': v = el.value ? new Date(el.value).toISOString() : null; break;
         case 'custom': v = f.read ? f.read(form, ctx) : undefined; break;
+        case 'gallery': try { v = JSON.parse(el.value || '[]'); } catch { v = []; } break;
         default: v = el ? el.value.trim() : undefined; if (v === '' && !f.required) v = f.keepEmpty ? '' : null;
       }
       // Cột bắt buộc trong database có giá trị mặc định (thứ tự = 0, đã bán = 0…): bỏ trống thì dùng mặc định

@@ -46,3 +46,7 @@ jobs:
         run: node tests/browser/sales.test.mjs
       - name: Uy tín & SEO (dự án, hỏi đáp, đánh giá Google, quản trị)
         run: node tests/browser/trust.test.mjs
+      - name: Vận hành & quản trị (GA4/Pixel, phân quyền, MISA, bảo trì, ảnh sản phẩm)
+        run: node --experimental-strip-types --no-warnings tests/browser/ops.test.ts
+      - name: Vận hành & quản trị - chế độ demo
+        run: node tests/browser/ops-demo.test.mjs

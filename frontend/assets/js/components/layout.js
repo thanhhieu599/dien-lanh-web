@@ -30,11 +30,13 @@ DT.layout = (() => {
   function header() {
     return `
     <div class="topbar"><div class="container">
-      <div class="topbar-left">${DT.icon('zap')} <span>Miễn phí lắp đặt máy lạnh treo tường • Giao nhanh 2h nội thành • Trả góp 0%</span></div>
+      <div class="topbar-left">${DT.icon('zap')} <span>Miễn phí lắp đặt • Giao nhanh 2h • Trả góp 0%</span></div>
       <nav class="topbar-right">
+        <a href="tam-nhin-su-menh.html" class="about-link">${DT.icon('star')} Về chúng tôi</a>
         <a href="tra-cuu-don-hang.html">${DT.icon('truck')} Tra cứu đơn hàng</a>
         <a href="he-thong-cua-hang.html">${DT.icon('pin')} Hệ thống cửa hàng</a>
         <a href="dich-vu.html">${DT.icon('tool')} Dịch vụ điện lạnh</a>
+        <a href="tin-tuc.html">${DT.icon('file')} Tin tức</a>
         <a href="bao-gia-du-an.html" class="b2b-link">${DT.icon('building')} Khách hàng doanh nghiệp</a>
       </nav>
     </div></div>
@@ -58,7 +60,7 @@ DT.layout = (() => {
       <nav class="catnav"><div class="container">
         ${DT.categories.map((c) => `<a href="${DT.api.catUrl(c.id)}" data-nav="${c.id}">${DT.icon(c.icon)}${esc(c.short)}</a>`).join('')}
         <a href="khuyen-mai.html" class="hot" data-nav="khuyen-mai">${DT.icon('percent')}Khuyến mãi</a>
-        <a href="tin-tuc.html" data-nav="tin-tuc">${DT.icon('file')}Tin tức</a>
+        <a href="tam-nhin-su-menh.html" class="cn-vision" data-nav="vision"><span class="cn-dot" aria-hidden="true"></span>Tầm nhìn &amp; Sứ mệnh</a>
       </div></nav>
     </header>
     <div class="drawer" id="drawer" aria-hidden="true">
@@ -66,6 +68,7 @@ DT.layout = (() => {
         <div class="drawer-head">${logo}<button class="drawer-x" aria-label="Đóng">${DT.icon('close')}</button></div>
         <div class="drawer-user" id="drawer-user"></div>
         <div class="drawer-body">
+          <a class="drawer-vision" href="tam-nhin-su-menh.html"><span><small>Về ${esc(cfg.name)}</small><b>Tầm nhìn &amp; Sứ mệnh</b></span>${DT.icon('right')}</a>
           ${DT.categories.map((c) => `<details><summary>${DT.icon(c.icon)}${esc(c.name)}${DT.icon('down', 'arr')}</summary>
             <a href="${DT.api.catUrl(c.id)}">Tất cả ${esc(c.short.toLowerCase())}</a>
             ${c.subs.map((s) => `<a href="${DT.api.catUrl(c.id, s.id)}">${esc(s.name)}</a>`).join('')}</details>`).join('')}

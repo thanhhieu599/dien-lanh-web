@@ -161,3 +161,94 @@ DT.policies = {
   'bao-mat': { title: 'Chính sách bảo mật thông tin', body: `<p>Chúng tôi cam kết bảo mật thông tin khách hàng theo Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân. Thông tin chỉ được dùng để xử lý đơn hàng, giao hàng, bảo hành và chăm sóc khách hàng.</p>` },
   'thanh-toan': { title: 'Phương thức thanh toán', body: `<ul><li>Thanh toán khi nhận hàng (COD).</li><li>Chuyển khoản ngân hàng / QR.</li><li>Thẻ ATM, Visa, Master, JCB qua cổng thanh toán.</li><li>Ví điện tử MoMo, ZaloPay, VNPay.</li><li>Doanh nghiệp: công nợ theo hợp đồng, xuất hóa đơn VAT.</li></ul>` },
 };
+
+// ---------------------------------------------------------------- Uy tín & SEO
+// Dự án tiêu biểu: dữ liệu MẪU để trình diễn bố cục (sample: true -> hiện nhãn "Dự án mẫu").
+// Khi kết nối database, quản lý tại Quản trị › Dự án tiêu biểu (ảnh trước / sau, quy mô, cảm nhận khách hàng).
+DT.projects = [
+  {
+    slug: 'dieu-hoa-am-tran-nha-may-linh-kien-dien-tu', sample: true, featured: true,
+    title: 'Hệ thống điều hòa âm trần cho nhà máy linh kiện điện tử',
+    client: 'Nhà máy linh kiện điện tử (FDI)', industry: 'Nhà máy FDI', location: 'Khu công nghiệp tại Bình Dương', year: 2025,
+    units: 48, capacity: '144 HP', duration: '15 ngày',
+    summary: 'Thay hệ thống cũ cho khu lắp ráp 2.400 m²: 48 dàn âm trần Inverter, chia vùng nhiệt độ theo dây chuyền, thi công ngoài giờ không dừng sản xuất.',
+    content: '<h2>Yêu cầu</h2><p>Khu lắp ráp cần giữ nhiệt độ ổn định 24 – 26°C, độ ẩm thấp để bảo vệ linh kiện; thi công không ảnh hưởng ca sản xuất.</p><h2>Giải pháp</h2><ul><li>Khảo sát tải nhiệt từng khu, chia 6 vùng điều khiển độc lập.</li><li>48 dàn lạnh âm trần cassette Inverter, ống đồng bảo ôn dày, ống thoát nước có độ dốc chuẩn.</li><li>Thi công theo ca đêm và cuối tuần, che chắn bụi khu vực sản xuất.</li></ul><h2>Kết quả</h2><ul><li>Nhiệt độ ổn định theo yêu cầu, giảm tiếng ồn so với hệ cũ.</li><li>Bàn giao hồ sơ hoàn công, lịch bảo trì định kỳ 3 tháng / lần.</li></ul>',
+    testimonial: 'Đội thi công làm việc ngoài giờ rất chủ động, bàn giao đúng tiến độ và có lịch bảo trì rõ ràng.', testimonialName: 'Trưởng bộ phận Hành chính', testimonialRole: 'Nhà máy linh kiện điện tử',
+  },
+  {
+    slug: 'dieu-hoa-van-phong-6-tang', sample: true, featured: true,
+    title: 'Giải pháp điều hòa cho tòa văn phòng 6 tầng',
+    client: 'Công ty dịch vụ (văn phòng)', industry: 'Văn phòng', location: 'TP. Hồ Chí Minh', year: 2025,
+    units: 32, capacity: '78 HP', duration: '10 ngày',
+    summary: 'Kết hợp máy giấu trần ống gió cho phòng họp, âm trần cho khu làm việc mở; điều khiển theo tầng giúp tiết kiệm điện ngoài giờ.',
+    content: '<h2>Yêu cầu</h2><p>Văn phòng 6 tầng, mỗi tầng ~250 m², cần thẩm mỹ cao ở sảnh và phòng họp, chi phí điện hợp lý.</p><h2>Giải pháp</h2><ul><li>Máy giấu trần ống gió cho sảnh, phòng họp; âm trần cassette cho khu làm việc mở.</li><li>Toàn bộ dùng máy Inverter gas R32, điều khiển riêng từng tầng.</li></ul><h2>Kết quả</h2><ul><li>Không gian gọn đẹp, gió phân bổ đều.</li><li>Có hợp đồng bảo trì 6 tháng / lần.</li></ul>',
+    testimonial: 'Tư vấn đúng công suất, không bán thừa. Hóa đơn và hồ sơ đầy đủ cho kế toán.', testimonialName: 'Quản lý tòa nhà', testimonialRole: 'Công ty dịch vụ',
+  },
+  {
+    slug: 'may-lanh-tu-dung-chuoi-nha-hang', sample: true,
+    title: 'Máy lạnh tủ đứng cho chuỗi 3 nhà hàng',
+    client: 'Chuỗi nhà hàng', industry: 'Nhà hàng – F&B', location: 'TP. Hồ Chí Minh & Đồng Nai', year: 2024,
+    units: 18, capacity: '72 HP', duration: '3 ngày / cơ sở',
+    summary: 'Không gian mở cửa liên tục, nhiều nhiệt từ bếp: chọn máy tủ đứng công suất lớn, bố trí thổi gió dọc dãy bàn, lắp đặt trong 1 ngày nghỉ của mỗi cơ sở.',
+    content: '<h2>Yêu cầu</h2><p>Khu ăn uống đông khách, gần bếp, mở cửa thường xuyên; cần lắp nhanh để không ảnh hưởng kinh doanh.</p><h2>Giải pháp</h2><ul><li>Máy tủ đứng 4 – 5 HP, hướng gió dọc dãy bàn.</li><li>Lịch vệ sinh 2 tháng / lần do môi trường dầu mỡ.</li></ul><h2>Kết quả</h2><ul><li>Mỗi cơ sở hoàn thành trong 1 ngày nghỉ.</li></ul>',
+    testimonial: 'Lắp nhanh, gọn trong ngày, khách quay lại đều khen mát hơn hẳn.', testimonialName: 'Quản lý vận hành', testimonialRole: 'Chuỗi nhà hàng',
+  },
+  {
+    slug: 'quat-dieu-hoa-cong-nghiep-xuong-may', sample: true,
+    title: 'Làm mát nhà xưởng may bằng quạt điều hòa công nghiệp',
+    client: 'Xưởng may mặc', industry: 'Nhà xưởng', location: 'Long An', year: 2024,
+    units: 40, capacity: '40 quạt 18.000 m³/h', duration: '7 ngày',
+    summary: 'Xưởng mái tôn, thông thoáng, 300 công nhân: quạt điều hòa công nghiệp (làm mát bay hơi) giúp giảm nóng với chi phí điện thấp hơn nhiều so với máy lạnh.',
+    content: '<h2>Yêu cầu</h2><p>Xưởng 3.000 m² mái tôn, nóng vào buổi chiều, ngân sách điện hạn chế.</p><h2>Giải pháp</h2><ul><li>Khảo sát luồng gió, bố trí 40 quạt điều hòa công nghiệp kết hợp quạt hút.</li><li>Cấp nước tự động, lịch vệ sinh tấm làm mát định kỳ.</li></ul><h2>Kết quả</h2><ul><li>Không khí trong xưởng dễ chịu hơn rõ rệt vào giờ cao điểm nắng.</li></ul>',
+    testimonial: 'Chi phí đầu tư và tiền điện phù hợp, công nhân làm việc thoải mái hơn.', testimonialName: 'Giám đốc xưởng', testimonialRole: 'Xưởng may mặc',
+  },
+];
+
+// Hỏi đáp: hiển thị ở trang hoi-dap.html (kèm dữ liệu có cấu trúc FAQPage). Quản trị › Hỏi đáp khi có database.
+DT.faqs = [
+  ['Chọn mua máy lạnh', 'Máy lạnh 1 HP dùng cho phòng bao nhiêu m²?', 'Máy lạnh 1 HP (khoảng 9.000 BTU/h) phù hợp phòng <b>dưới 15 m²</b>, trần cao 2,7 – 3,2 m, ít nắng. Phòng nắng chiều, tầng mái hoặc đông người nên chọn 1.5 HP. Dùng <a href="tinh-cong-suat-may-lanh.html">công cụ tính công suất</a> để có kết quả theo phòng thực tế.'],
+  ['Chọn mua máy lạnh', '1 HP bằng bao nhiêu BTU? Quy đổi công suất máy lạnh thế nào?', 'Theo cách gọi phổ biến trên thị trường: 1 HP ≈ 9.000 BTU/h, 1.5 HP ≈ 12.000 BTU/h, 2 HP ≈ 18.000 BTU/h, 2.5 HP ≈ 24.000 BTU/h. Công suất chính xác của từng model xem trong bảng thông số kỹ thuật.'],
+  ['Chọn mua máy lạnh', 'Nên mua máy lạnh Inverter hay máy thường (Non-Inverter)?', 'Nếu dùng <b>từ 6 giờ/ngày trở lên</b>, nên chọn Inverter: máy nén điều chỉnh tốc độ theo nhiệt độ phòng nên thường tiết kiệm khoảng 30 – 50% điện, chạy êm và nhiệt độ ổn định hơn. Máy thường có giá mua thấp hơn, phù hợp phòng ít sử dụng.'],
+  ['Chọn mua máy lạnh', 'Gas R32 khác gas R410A thế nào?', 'Cả hai đều là môi chất lạnh không phá hủy tầng ozone. <b>R32</b> là gas đơn chất, hiệu suất truyền nhiệt cao hơn, lượng nạp ít hơn và chỉ số làm nóng toàn cầu (GWP) khoảng 675 – thấp hơn nhiều so với <b>R410A</b> (khoảng 2.088). R32 thuộc nhóm cháy nhẹ (A2L) nên phải lắp đặt, hút chân không đúng kỹ thuật. Lưu ý: máy thiết kế cho gas nào thì <b>chỉ được nạp đúng gas đó</b>, không nạp lẫn.'],
+  ['Chọn mua máy lạnh', 'Máy lạnh 1 chiều và 2 chiều khác nhau thế nào?', 'Máy 2 chiều có thêm chế độ sưởi ấm (bơm nhiệt), phù hợp miền Bắc, Tây Nguyên có mùa lạnh. Ở miền Nam, máy 1 chiều là đủ và có giá tốt hơn.'],
+  ['Chọn mua máy lạnh', 'Nhãn năng lượng 5 sao trên máy lạnh có ý nghĩa gì?', 'Nhãn năng lượng xác nhận mức hiệu suất của thiết bị, từ 1 đến 5 sao; càng nhiều sao càng tiết kiệm điện. Khi so sánh, xem thêm chỉ số hiệu suất (CSPF) – chỉ số càng cao càng tiết kiệm.'],
+  ['Lắp đặt', 'Lắp đặt một bộ máy lạnh treo tường mất bao lâu?', 'Thông thường 1,5 – 3 giờ cho một bộ treo tường ở vị trí thuận lợi. Máy âm trần, giấu trần ống gió hoặc công trình nhiều máy sẽ có tiến độ cụ thể sau khi khảo sát.'],
+  ['Lắp đặt', 'Lắp máy lạnh có bắt buộc hút chân không không?', 'Có. Hút chân không loại bỏ không khí và hơi ẩm trong đường ống trước khi xả gas; bỏ qua bước này làm máy kém lạnh, tăng áp suất, giảm tuổi thọ máy nén. Với máy dùng gas R32 hoặc R410A, đây là bước bắt buộc theo hướng dẫn của nhà sản xuất.'],
+  ['Lắp đặt', 'Vị trí đặt cục nóng thế nào là đúng?', 'Đặt nơi thông thoáng, hạn chế nắng chiếu trực tiếp lâu, đủ khoảng cách với tường và vật cản theo hướng dẫn của hãng để tản nhiệt tốt; giá đỡ chắc chắn, thuận tiện cho bảo trì. Chiều dài và chênh lệch độ cao đường ống phải nằm trong giới hạn của từng model.'],
+  ['Lắp đặt', 'Vật tư lắp đặt (ống đồng, dây điện) tính phí thế nào?', 'Vật tư như ống đồng, bảo ôn, dây điện, ống thoát nước thường được tính theo số mét thực tế tại công trình. Kỹ thuật viên sẽ báo rõ chi phí trước khi thi công để khách hàng duyệt.'],
+  ['Sử dụng & tiết kiệm điện', 'Để máy lạnh bao nhiêu độ là tiết kiệm điện?', 'Nên đặt khoảng <b>26 – 28°C</b> kết hợp quạt để tăng cảm giác mát. Mỗi độ C cài thấp hơn khiến máy chạy nhiều hơn và tốn điện hơn. Đóng kín cửa, che nắng và vệ sinh lưới lọc định kỳ cũng giúp giảm tiền điện đáng kể.'],
+  ['Sử dụng & tiết kiệm điện', 'Có nên tắt máy lạnh khi ra khỏi phòng một lúc?', 'Với máy Inverter, nếu chỉ ra ngoài ngắn (dưới khoảng 30 phút) không nên tắt – bật liên tục vì mỗi lần khởi động máy phải chạy công suất cao. Nếu đi lâu, hãy tắt máy hoặc dùng chế độ hẹn giờ.'],
+  ['Sử dụng & tiết kiệm điện', 'Vì sao máy lạnh chảy nước trong nhà?', 'Nguyên nhân thường gặp: ống thoát nước bị tắc hoặc lắp không đủ độ dốc, dàn lạnh bẩn, máy lắp nghiêng, hoặc thiếu gas khiến dàn lạnh đóng băng rồi tan chảy. Nên tắt máy và gọi kỹ thuật kiểm tra, vệ sinh để tránh hư hại trần, tường.'],
+  ['Bảo trì & sửa chữa', 'Bao lâu nên vệ sinh máy lạnh một lần?', 'Gia đình: <b>3 – 6 tháng/lần</b>. Văn phòng, nhà hàng, môi trường nhiều bụi hoặc dầu mỡ: <b>1 – 3 tháng/lần</b>. Lưới lọc bụi nên được rửa 2 – 4 tuần/lần.'],
+  ['Bảo trì & sửa chữa', 'Máy lạnh có cần nạp gas định kỳ không?', 'Không. Hệ thống gas là hệ kín, nếu lắp đúng kỹ thuật thì không hao hụt. Máy thiếu gas nghĩa là có điểm rò rỉ – cần tìm và xử lý chỗ rò trước khi nạp bổ sung.'],
+  ['Bảo trì & sửa chữa', 'Dấu hiệu nào cho thấy máy lạnh cần bảo dưỡng?', 'Máy kém lạnh, có mùi hôi, tiếng ồn lạ, chảy nước, đóng tuyết ở ống đồng hoặc tiền điện tăng bất thường. Bảo dưỡng sớm giúp tránh hỏng máy nén – bộ phận đắt nhất của máy lạnh.'],
+  ['Doanh nghiệp & dự án', 'Doanh nghiệp có được xuất hóa đơn VAT và công nợ không?', 'Có. Chúng tôi xuất hóa đơn GTGT cho mọi đơn hàng doanh nghiệp; điều khoản công nợ (thường 30 – 60 ngày) áp dụng theo hợp đồng. <a href="bao-gia-du-an.html">Gửi yêu cầu báo giá dự án</a> để được tư vấn.'],
+  ['Doanh nghiệp & dự án', 'Khảo sát và tư vấn thiết kế cho nhà xưởng, văn phòng có mất phí không?', 'Miễn phí. Kỹ thuật viên khảo sát thực tế, tính tải nhiệt, đề xuất phương án và báo giá chi tiết trước khi ký hợp đồng.'],
+  ['Doanh nghiệp & dự án', 'Nhà xưởng nên dùng máy lạnh hay quạt điều hòa công nghiệp?', 'Xưởng cần kiểm soát nhiệt độ và độ ẩm chặt chẽ (điện tử, dược phẩm, phòng sạch) nên dùng máy lạnh công nghiệp / âm trần / tủ đứng. Xưởng thông thoáng, mái cao, nhiều công nhân có thể dùng quạt điều hòa công nghiệp (làm mát bay hơi) – chi phí đầu tư và tiền điện thấp hơn nhiều, giảm nóng hiệu quả khi không khí không quá ẩm.'],
+  ['Doanh nghiệp & dự án', 'Có hợp đồng bảo trì định kỳ cho doanh nghiệp không?', 'Có. Hợp đồng bảo trì gồm lịch vệ sinh định kỳ, kiểm tra thông số vận hành, báo cáo tình trạng thiết bị sau mỗi lần và ưu tiên xử lý sự cố.'],
+  ['Mua hàng & bảo hành', 'Sản phẩm được bảo hành như thế nào?', 'Sản phẩm chính hãng được bảo hành theo chính sách của nhà sản xuất (thời hạn ghi trên trang sản phẩm). Công lắp đặt do chúng tôi thực hiện được bảo hành 12 tháng. Xem <a href="chinh-sach.html?type=bao-hanh">chính sách bảo hành</a>.'],
+  ['Mua hàng & bảo hành', 'Giao hàng và lắp đặt mất bao lâu?', 'Nội thành giao nhanh trong khoảng 2 giờ với sản phẩm có sẵn; lắp đặt theo lịch hẹn của khách hàng. Khu vực khác và đơn số lượng lớn sẽ được thông báo thời gian cụ thể khi xác nhận đơn.'],
+  ['Mua hàng & bảo hành', 'Có những hình thức thanh toán nào?', 'Thanh toán khi nhận hàng (COD), chuyển khoản / quét mã VietQR, thẻ ATM – Visa – Master qua VNPay, ví MoMo và trả góp 0% qua thẻ tín dụng hoặc công ty tài chính.'],
+  ['Mua hàng & bảo hành', 'Chính sách đổi trả ra sao?', 'Hỗ trợ 1 đổi 1 trong 30 ngày nếu sản phẩm lỗi do nhà sản xuất. Xem chi tiết tại <a href="chinh-sach.html?type=doi-tra">chính sách đổi trả</a>.'],
+].map(([category, question, answer], i) => ({ id: i + 1, category, question, answer, sort: i }));
+
+// Uy tín: logo khách hàng / đối tác, chứng nhận, đánh giá Google. Quản trị › Uy tín & đánh giá.
+// Chưa có dữ liệu -> trang hiện khung chờ (chế độ demo) hoặc ẩn khối (khi đã có database).
+DT.trust = {
+  logos: [],
+  certs: [
+    { title: 'Giấy chứng nhận đại lý ủy quyền', issuer: 'Nhà sản xuất', image: '' },
+    { title: 'Chứng nhận hệ thống quản lý chất lượng ISO 9001', issuer: 'Tổ chức chứng nhận', image: '' },
+    { title: 'Chứng chỉ kỹ thuật viên điện lạnh', issuer: 'Cơ sở đào tạo nghề', image: '' },
+  ],
+  google: { url: '', placeId: '', rating: null, count: null },
+  reviews: [],
+};
+DT.TRUST_DEMO_KEY = 'dt_trust_v1';
+// Dữ liệu uy tín đang dùng: database (khi đã kết nối) / bản quản trị demo lưu trên trình duyệt / dữ liệu mặc định
+DT.trustData = () => {
+  if (!DT.backend?.enabled) {
+    try { const d = JSON.parse(localStorage.getItem(DT.TRUST_DEMO_KEY) || 'null'); if (d) return { logos: [], certs: [], reviews: [], google: {}, ...d }; } catch { /* bỏ qua */ }
+  }
+  return DT.trust;
+};

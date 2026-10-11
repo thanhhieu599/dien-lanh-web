@@ -270,6 +270,44 @@ try {
   const visionUrl = sql(`select value->'images'->>'lanh-dao' from public.settings where key = 'vision'`);
   check(/\/storage\/v1\/object\/public\/media\/vision\/lanh-dao-\d+\.(webp|jpg)$/.test(visionUrl), 'database: lưu link ảnh công khai');
 
+  // Dự án tiêu biểu: tạo mới, tải ảnh trước / sau lên kho ảnh, đăng
+  await go(page, 'projects/new', '#frm');
+  await page.fill('#frm [name=title]', 'Điều hòa cho nhà máy Test Admin');
+  await page.fill('#frm [name=client]', 'Nhà máy Test');
+  await page.fill('#frm [name=units]', '12');
+  await page.fill('#frm [name=capacity]', '36 HP');
+  await page.check('#frm [name=published]');
+  for (const k of ['before_image', 'after_image']) {
+    await page.locator(`#frm [data-img-field="${k}"] input[type=file]`).setInputFiles({ name: `${k}.png`, mimeType: 'image/png', buffer: Buffer.from(png, 'base64') });
+    await page.waitForSelector(`#frm [data-img-field="${k}"] .ad-img-prev img`);
+  }
+  await page.click('#save');
+  check(await created(page, 'projects'), 'thêm dự án tiêu biểu');
+  const pj = JSON.parse(sql(`select row_to_json(p) from public.projects p where title = 'Điều hòa cho nhà máy Test Admin'`) || 'null');
+  check(pj?.slug === 'dieu-hoa-cho-nha-may-test-admin' && pj.published && pj.units === 12 && /\/media\/projects\//.test(pj.before_image) && /\/media\/projects\//.test(pj.after_image), 'database: dự án có slug, số máy, ảnh trước / sau trên kho ảnh');
+  // Hỏi đáp
+  await go(page, 'faqs/new', '#frm');
+  await page.fill('#frm [name=question]', 'Câu hỏi kiểm thử quản trị có hiện trên website không?');
+  await page.fill('#frm [name=answer]', 'Có, hiện ngay sau khi lưu.');
+  await page.click('#save');
+  check(await created(page, 'faqs'), 'thêm câu hỏi FAQ');
+  // Uy tín & đánh giá
+  await go(page, 'trust', '#trust-form');
+  await page.fill('#trust-form [name=g_rating]', '4.9');
+  await page.fill('#trust-form [name=g_count]', '128');
+  await page.fill('#trust-form [name=g_placeId]', 'ChIJTEST123');
+  await page.click('#trust-form [data-add="reviews"]');
+  await page.fill('#trust-form [data-list="reviews"] .tr-row:last-child [data-k=name]', 'Nguyễn Văn Khách');
+  await page.fill('#trust-form [data-list="reviews"] .tr-row:last-child [data-k=text]', 'Lắp đặt nhanh, kỹ thuật viên nhiệt tình.');
+  await page.click('#trust-form [data-add="logos"]');
+  await page.fill('#trust-form [data-list="logos"] .tr-row:last-child [data-k=name]', 'Đối tác Test');
+  await page.locator('#trust-form [data-list="logos"] .tr-row:last-child input[type=file]').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') });
+  await page.waitForSelector('#trust-form [data-list="logos"] .tr-row:last-child .ad-img-prev img');
+  await page.click('#trust-form .ad-form-foot .btn-primary');
+  check(await toast(page, 'Đã lưu mục Uy tín'), 'lưu mục Uy tín & đánh giá');
+  const tr = JSON.parse(sql(`select value from public.settings where key = 'trust'`));
+  check(tr.google.rating === 4.9 && tr.google.count === 128 && tr.reviews[0]?.name === 'Nguyễn Văn Khách' && /\/media\/trust\//.test(tr.logos[0]?.image), 'database: điểm Google, đánh giá, logo (ảnh trên kho)');
+
   section('Website nhận cấu hình mới');
   const shop = await T.newPage();
   await shop.goto(`${fe}index.html`);
@@ -282,6 +320,20 @@ try {
   await shop.goto(`${fe}tam-nhin-su-menh.html`);
   await shop.waitForSelector('.vm-media-portrait.has-img', { timeout: 5000 }).catch(() => {});
   check(await shop.locator('.vm-media-portrait.has-img img').getAttribute('src') === visionUrl, 'trang Tầm nhìn hiển thị ảnh tải lên từ quản trị');
+  await shop.goto(`${fe}du-an.html`);
+  await shop.waitForSelector('.pj-card');
+  check(await shop.locator('.pj-card').count() === 1 && (await shop.locator('.pj-card').textContent())!.includes('Test Admin') && await shop.locator('.pj-sample').count() === 0, 'trang Dự án: chỉ hiện dự án đã đăng (dự án mẫu ở dạng nháp không hiện)');
+  await shop.goto(`${fe}du-an-chi-tiet.html?slug=dieu-hoa-cho-nha-may-test-admin`);
+  await shop.waitForSelector('#ba');
+  check(await shop.locator('#ba img').count() === 2, 'chi tiết dự án: thanh so sánh ảnh trước / sau');
+  await shop.goto(`${fe}hoi-dap.html`);
+  await shop.waitForSelector('.faq-list details');
+  check((await shop.locator('.faq-list').textContent())!.includes('Câu hỏi kiểm thử quản trị'), 'trang Hỏi đáp đọc câu hỏi từ database');
+  await shop.goto(`${fe}index.html`);
+  await shop.waitForSelector('.trust-section');
+  const ts = (await shop.locator('.trust-section').textContent())!;
+  check(ts.includes('4,9') && ts.includes('128 đánh giá') && ts.includes('Nguyễn Văn Khách') && await shop.locator('.tr-logo img').count() === 1 && !ts.includes('Khung chờ'), 'trang chủ: điểm Google, đánh giá thật, logo đối tác (không còn khung chờ)');
+  check(await shop.locator('.g-links a[href*="writereview?placeid=ChIJTEST123"]').count() >= 1, 'link "Viết đánh giá" Google theo Place ID');
 
   section('Dữ liệu lớn (>1000 đơn): báo cáo không bị cắt');
   sql(`insert into public.orders (code, phone, customer, shipping, payment, subtotal, total, created_at)

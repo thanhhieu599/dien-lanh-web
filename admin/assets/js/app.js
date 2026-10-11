@@ -10,7 +10,7 @@ window.AD = window.AD || {};
     { group: null, items: [['dashboard', 'home', 'Tổng quan']] },
     { group: 'Bán hàng', items: [['orders', 'cart', 'Đơn hàng', 'orders'], ['leads', 'chat', 'Khách hàng tiềm năng', 'leads'], ['customers', 'user', 'Khách hàng']] },
     { group: 'Sản phẩm', items: [['products', 'box', 'Sản phẩm'], ['categories', 'grid', 'Danh mục'], ['brands', 'tag', 'Thương hiệu'], ['reviews', 'star', 'Đánh giá', 'reviews']] },
-    { group: 'Marketing', items: [['coupons', 'percent', 'Mã giảm giá'], ['banners', 'zap', 'Banner'], ['posts', 'file', 'Bài viết'], ['vision', 'eye', 'Trang Tầm nhìn']] },
+    { group: 'Marketing', items: [['coupons', 'percent', 'Mã giảm giá'], ['banners', 'zap', 'Banner'], ['posts', 'file', 'Bài viết'], ['vision', 'eye', 'Trang Tầm nhìn'], ['projects', 'building', 'Dự án tiêu biểu'], ['faqs', 'chat', 'Hỏi đáp (FAQ)'], ['trust', 'star', 'Uy tín & đánh giá']] },
     { group: 'Phân tích', items: [['reports', 'grid', 'Báo cáo'], ['notifications', 'mail', 'Nhật ký thông báo']] },
     { group: 'Cấu hình', items: [['settings', 'tool', 'Cài đặt cửa hàng'], ['stores', 'pin', 'Cửa hàng'], ['services', 'wrench', 'Dịch vụ'], ['policies', 'shield', 'Chính sách']] },
   ];
@@ -98,7 +98,7 @@ window.AD = window.AD || {};
       <aside class="ad-side" id="side">
         <div class="ad-brand"><span class="logo-mark">${ic('snow')}</span><div><b>Tên thương hiệu</b><small>Quản trị${AD.db.mode === 'demo' ? ' • demo' : ''}</small></div></div>
         <nav>${NAV.map((g) => `${g.group ? `<div class="ad-nav-group">${g.group}</div>` : ''}${g.items
-          .filter(([k]) => AD.can(AD.resources[k]) && (!['settings', 'vision'].includes(k) || AD.me.role === 'admin'))
+          .filter(([k]) => AD.can(AD.resources[k]) && (!['settings', 'vision', 'trust'].includes(k) || AD.me.role === 'admin'))
           .map(([k, i, l, b]) => `<a href="#/${k}" data-nav="${k}">${ic(i)}<span>${l}</span>${b ? `<em data-badge="${b}" hidden></em>` : ''}</a>`).join('')}`).join('')}</nav>
         <div class="ad-side-foot"><a href="../frontend/index.html" target="_blank" rel="noopener">${ic('eye')} Xem website</a></div>
       </aside>
@@ -148,6 +148,7 @@ window.AD = window.AD || {};
       else if (key === 'reports') await P.reports(params, view);
       else if (key === 'settings') await P.settings(params, view);
       else if (key === 'vision') await P.vision(params, view);
+      else if (key === 'trust') await P.trust(params, view);
       else if (key === 'notifications') await P.notifications(params, view);
       else if (AD.resources[key]) {
         if (!AD.can(AD.resources[key])) throw new Error('Bạn không có quyền truy cập mục này');

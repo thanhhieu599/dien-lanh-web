@@ -56,6 +56,19 @@ sql += insert('policies', ['key', 'title', 'body', 'sort'],
 sql += insert('coupons', ['code', 'type', 'value', 'max', 'min', 'description'],
   DT.coupons.map((c) => [lit(c.code), lit(c.type), c.value, lit(c.max ?? null), c.min, lit(c.desc)]), 'code');
 
+// Dự án mẫu: chèn ở trạng thái NHÁP (published = false) - khách không thấy cho tới khi quản trị nhập dự án thật và bật "Đăng"
+sql += insert('projects', ['slug', 'title', 'client', 'industry', 'location', 'year', 'units', 'capacity', 'duration', 'summary', 'content',
+  'testimonial', 'testimonial_name', 'testimonial_role', 'featured', 'published', 'sort'],
+  (DT.projects || []).map((p, i) => [lit(p.slug), lit(p.title), lit(p.client), lit(p.industry), lit(p.location), lit(p.year ?? null), lit(p.units ?? null),
+    lit(p.capacity), lit(p.duration), lit(p.summary), lit(p.content), lit(p.testimonial), lit(p.testimonialName), lit(p.testimonialRole), lit(!!p.featured), 'false', i]), 'slug');
+// Hỏi đáp: kiến thức chung, hiển thị ngay (chạy lại không tạo trùng câu hỏi)
+for (const f of DT.faqs || []) {
+  sql += `insert into public.faqs (category, question, answer, sort) select ${lit(f.category)}, ${lit(f.question)}, ${lit(f.answer)}, ${f.sort}
+  where not exists (select 1 from public.faqs where question = ${lit(f.question)});
+`;
+}
+sql += '\n';
+
 // Đồng bộ bộ đếm identity sau khi chèn id cố định
 sql += `select setval(pg_get_serial_sequence('public.stores', 'id'), greatest((select max(id) from public.stores), 1));\n`;
 sql += `select setval(pg_get_serial_sequence('public.banners', 'id'), greatest((select max(id) from public.banners), 1));\n`;

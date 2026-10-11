@@ -6,7 +6,7 @@ window.AD = window.AD || {};
 
 AD.PK = {
   products: 'id', categories: 'id', brands: 'id', coupons: 'code', posts: 'slug', banners: 'id', stores: 'id',
-  services: 'id', policies: 'key', settings: 'key', orders: 'id', leads: 'id', reviews: 'id', profiles: 'id',
+  services: 'id', policies: 'key', settings: 'key', projects: 'slug', faqs: 'id', orders: 'id', leads: 'id', reviews: 'id', profiles: 'id',
   payments: 'id', notifications: 'id',
 };
 
@@ -171,6 +171,12 @@ AD.demo = () => {
       brands: DT.brands.map((b, i) => ({ ...b, sort: i, active: true })),
       coupons: DT.coupons.map((c) => ({ code: c.code, type: c.type, value: c.value, max: c.max ?? null, min: c.min, description: c.desc, is_public: true, active: true, starts_at: null, ends_at: null, usage_limit: null, used_count: 0 })),
       posts: DT.posts.map((p) => ({ ...p, published: true })),
+      projects: (DT.projects || []).map((p, i) => ({
+        slug: p.slug, title: p.title, client: p.client, industry: p.industry, location: p.location, year: p.year, units: p.units, capacity: p.capacity,
+        duration: p.duration, summary: p.summary, content: p.content, before_image: p.beforeImage || null, after_image: p.afterImage || null, images: p.images || [],
+        testimonial: p.testimonial, testimonial_name: p.testimonialName, testimonial_role: p.testimonialRole, featured: !!p.featured, published: true, sort: i,
+      })),
+      faqs: (DT.faqs || []).map((f) => ({ ...f, active: true })),
       banners: DT.banners.map((b, i) => ({ id: i + 1, ...b, sort: i, active: true })),
       stores: DT.stores.map((s, i) => ({ ...s, sort: i, active: true })),
       services: DT.services.map((s, i) => ({ id: s.id, name: s.name, price: s.price, unit: s.unit, icon: s.icon, description: s.desc, sort: i, active: true })),
@@ -182,6 +188,8 @@ AD.demo = () => {
   }
   let db = read(KEY, null);
   if (!db) { db = seed(); write(KEY, db); }
+  // Dữ liệu demo tạo từ phiên bản cũ: bổ sung bảng mới
+  ['projects', 'faqs'].forEach((t) => { if (!db[t]) { db[t] = seed()[t]; write(KEY, db); } });
   const persist = () => write(KEY, db);
 
   // Đồng bộ dữ liệu khách tạo trên website demo (cùng tên miền -> cùng localStorage)

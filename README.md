@@ -59,6 +59,9 @@ dien-lanh-web/
 | Yêu thích / So sánh | `yeu-thich.html`, `so-sanh.html` | So sánh tối đa 4 SP, bảng thông số |
 | Dịch vụ | `dich-vu.html` | Bảng giá, quy trình, form đặt lịch |
 | Báo giá dự án (B2B) | `bao-gia-du-an.html` | Form RFQ doanh nghiệp |
+| Dự án tiêu biểu | `du-an.html`, `du-an-chi-tiet.html?slug=…` | Danh sách lọc theo lĩnh vực, ảnh trước / sau (thanh so sánh), quy mô, thời gian thi công, cảm nhận khách hàng; quản lý tại Quản trị › Dự án tiêu biểu |
+| Hỏi đáp | `hoi-dap.html` | 24 câu hỏi thường gặp, tìm không dấu, lọc nhóm, link từng câu, FAQPage cho Google & AI; quản lý tại Quản trị › Hỏi đáp |
+| Tính công suất | `tinh-cong-suat-may-lanh.html` | Gợi ý HP theo diện tích, tiền điện Inverter, sản phẩm phù hợp, đặt khảo sát |
 | Tin tức | `tin-tuc.html`, `bai-viet.html?slug=…` | Danh sách theo chuyên mục, bài viết, JSON-LD Article |
 | Khác | `gioi-thieu`, `lien-he`, `he-thong-cua-hang` (bản đồ), `chinh-sach?type=…`, `404` | |
 
@@ -98,3 +101,9 @@ Bật thanh toán online và thông báo tự động: xem **`docs/PHASE4.md`** 
 - Màu thương hiệu: biến `--primary`, `--accent` trong `assets/css/main.css`
 
 Xem thêm `docs/ARCHITECTURE.md`.
+
+## Uy tín & SEO
+
+- Quản trị › **Uy tín & đánh giá**: logo khách hàng / đối tác, giấy chứng nhận, điểm & đánh giá Google (hiện ở trang chủ, Giới thiệu, Dự án, Cửa hàng).
+- Hướng dẫn đăng ký Google Search Console & Google Business Profile: `docs/GOOGLE-SEO-SETUP.md`.
+- Kế hoạch bài viết 12 tuần (3 bài/tuần, 4 cụm chủ đề): `docs/KE-HOACH-NOI-DUNG.md`.

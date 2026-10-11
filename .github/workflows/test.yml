@@ -44,3 +44,5 @@ jobs:
         run: node tests/browser/demo.test.mjs
       - name: Công cụ bán hàng (báo giá DN, khung chat, tính công suất, combo)
         run: node tests/browser/sales.test.mjs
+      - name: Uy tín & SEO (dự án, hỏi đáp, đánh giá Google, quản trị)
+        run: node tests/browser/trust.test.mjs

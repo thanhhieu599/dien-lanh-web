@@ -109,6 +109,8 @@ AD.ui = (() => {
         input = `<input id="${id}" name="${f.key}" type="date" value="${v ? String(v).slice(0, 10) : ''}" ${dis}>`; break;
       case 'readonly':
         input = `<div class="ad-ro">${f.render ? f.render(v, ctx) : esc(v ?? '-')}</div>`; break;
+      case 'image':
+        input = imageInput(f.key, v, f.folder || 'media', dis); break;
       case 'custom':
         input = f.render(v, ctx); break;
       default:
@@ -116,6 +118,33 @@ AD.ui = (() => {
     }
     return `<div class="ad-field ${f.col || ''}" data-field="${f.key}"><label for="${id}">${f.label}${req}</label>${input}${help}<div class="err"></div></div>`;
   }
+  // Ô ảnh: tải ảnh lên (tự nén) hoặc dán link; giá trị lưu ở input ẩn name=key
+  function imageInput(key, v, folder, dis = '') {
+    return `<div class="ad-img" data-img-field="${esc(key)}" data-folder="${esc(folder)}">
+      <span class="ad-img-prev">${v ? `<img src="${esc(v)}" alt="">` : `${ic('plus')}<small>Chưa có ảnh</small>`}</span>
+      <span class="ad-img-act"><input type="hidden" name="${esc(key)}" value="${esc(v || '')}">
+        <button type="button" class="btn btn-light btn-sm" data-img-pick ${dis}>${ic('plus')} ${v ? 'Thay ảnh' : 'Tải ảnh lên'}</button>
+        ${v ? `<button type="button" class="btn btn-light btn-sm" data-img-clear ${dis}>${ic('trash')} Xóa</button>` : ''}
+        <input type="file" accept="image/*" hidden></span>
+    </div>`;
+  }
+  async function imagePicked(box, file) {
+    box.classList.add('busy');
+    try {
+      const url = await AD.media.upload(file, box.dataset.folder);
+      box.outerHTML = imageInput(box.dataset.imgField, url, box.dataset.folder);
+    } catch (e) { if (!AD.handleError?.(e)) toast(e.message, 'error'); box.classList.remove('busy'); }
+  }
+  document.addEventListener('click', (e) => {
+    const box = e.target.closest('[data-img-field]');
+    if (!box) return;
+    if (e.target.closest('[data-img-pick]')) box.querySelector('input[type=file]').click();
+    if (e.target.closest('[data-img-clear]')) box.outerHTML = imageInput(box.dataset.imgField, '', box.dataset.folder);
+  });
+  document.addEventListener('change', (e) => {
+    const input = e.target.closest('[data-img-field] input[type=file]');
+    if (input?.files?.[0]) imagePicked(input.closest('[data-img-field]'), input.files[0]);
+  });
   const kvRow = (k, v) => `<div class="kv-row"><input placeholder="Tên thông số" value="${esc(k)}" data-k><input placeholder="Giá trị" value="${esc(v)}" data-v><button type="button" class="btn btn-light btn-sm" data-kv-del aria-label="Xóa">${ic('trash')}</button></div>`;
   document.addEventListener('click', (e) => {
     const add = e.target.closest('[data-kv-add]');
@@ -177,5 +206,31 @@ AD.ui = (() => {
     return `<span class="ad-thumb">${DT.productImage(p, 0)}</span>`;
   }
 
-  return { esc, money, dt, d, badge, ic, modal, closeModal, confirm, toast, run, table, pager, field, read, csv, thumb };
+  return { esc, money, dt, d, badge, ic, modal, closeModal, confirm, toast, run, table, pager, field, read, csv, thumb, imageInput };
+})();
+
+// Ảnh: nén ngay trên trình duyệt (WebP, giới hạn cạnh dài) rồi lưu
+//  - Supabase: Storage bucket công khai 'media' -> link công khai
+//  - Demo: data URL (lưu cùng dữ liệu demo trên trình duyệt)
+AD.media = (() => {
+  async function compress(file, max, quality) {
+    const bmp = await createImageBitmap(file).catch(() => { throw new Error('File không phải ảnh hợp lệ (dùng JPG, PNG, WEBP)'); });
+    const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    const blob = (type) => new Promise((ok) => c.toBlob(ok, type, quality));
+    const webp = await blob('image/webp');
+    return webp?.type === 'image/webp' ? webp : blob('image/jpeg');
+  }
+  const toDataUrl = (blob) => new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+  async function upload(file, folder = 'media', { max, quality } = {}) {
+    const supa = AD.db.mode === 'supabase';
+    const blob = await compress(file, max || (supa ? 2000 : 1200), quality || (supa ? 0.85 : 0.75));
+    if (!supa) return toDataUrl(blob);
+    const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
+    const name = `${String(folder).replace(/[^a-z0-9-]/gi, '')}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+    return AD.db.upload(name, blob);
+  }
+  return { compress, toDataUrl, upload };
 })();

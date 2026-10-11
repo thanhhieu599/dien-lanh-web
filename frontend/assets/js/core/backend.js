@@ -8,7 +8,7 @@ DT.backend = (() => {
   const enabled = !!(cfg.url && cfg.anonKey);
   const base = (cfg.url || '').replace(/\/+$/, '');
   const SESSION_KEY = 'dt_auth_v1';
-  const CACHE_KEY = 'dt_catalog_cache_v2';
+  const CACHE_KEY = 'dt_catalog_cache_v3';
 
   let session = null;
   try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch { /* bỏ qua */ }
@@ -118,6 +118,14 @@ DT.backend = (() => {
     const setting = (k) => d.settings?.find((s) => s.key === k)?.value;
     if (setting('store')) Object.assign(DT.config, setting('store'));
     DT.vision = setting('vision') || {}; // ảnh trang Tầm nhìn & Sứ mệnh (quản trị tải lên)
+    if (setting('trust')) DT.trust = { logos: [], certs: [], reviews: [], google: {}, ...setting('trust') };
+    if (d.projects) {
+      DT.projects = d.projects.map((r) => ({
+        ...r, beforeImage: r.before_image, afterImage: r.after_image, images: r.images || [],
+        testimonialName: r.testimonial_name, testimonialRole: r.testimonial_role,
+      }));
+    }
+    if (d.faqs) DT.faqs = d.faqs;
     DT.categories = d.categories.map((c) => ({ ...c, subs: c.subs || [], filters: c.filters || [] }));
     DT.brands = d.brands;
     // Danh mục bị ẩn -> sản phẩm của danh mục đó cũng ẩn khỏi website
@@ -133,7 +141,7 @@ DT.backend = (() => {
 
   async function fetchCatalog() {
     const q = {
-      settings: 'key=in.(store,vision)&select=key,value',
+      settings: 'key=in.(store,vision,trust)&select=key,value',
       categories: 'select=id,name,short,icon,art,subs,filters&order=sort',
       brands: 'select=id,name,origin,color&order=sort',
       products: 'select=*&order=id',
@@ -143,6 +151,8 @@ DT.backend = (() => {
       services: 'select=id,name,price,unit,icon,description&order=sort',
       policies: 'select=key,title,body&order=sort',
       coupons: 'select=code,type,value,max,min,description',
+      projects: 'select=*&published=is.true&order=sort,year.desc',
+      faqs: 'select=id,category,question,answer,sort&active=is.true&order=sort,id',
     };
     const keys = Object.keys(q);
     const results = await Promise.all(keys.map((k) => select(k, q[k])));

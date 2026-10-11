@@ -75,7 +75,7 @@ function serve(dir) {
 function routes(data) {
   const r = [];
   // Trang có nội dung cố định: ghi đè tại chỗ
-  for (const f of ['index.html', 'khuyen-mai.html', 'tin-tuc.html', 'dich-vu.html', 'bao-gia-du-an.html', 'gioi-thieu.html', 'tam-nhin-su-menh.html', 'tinh-cong-suat-may-lanh.html', 'lien-he.html', 'he-thong-cua-hang.html']) {
+  for (const f of ['index.html', 'khuyen-mai.html', 'tin-tuc.html', 'dich-vu.html', 'bao-gia-du-an.html', 'gioi-thieu.html', 'tam-nhin-su-menh.html', 'tinh-cong-suat-may-lanh.html', 'du-an.html', 'hoi-dap.html', 'lien-he.html', 'he-thong-cua-hang.html']) {
     r.push({ src: f, out: f, priority: f === 'index.html' ? '1.0' : '0.6' });
   }
   for (const c of data.categories) {
@@ -86,6 +86,7 @@ function routes(data) {
     r.push({ src: `san-pham.html?id=${p.id}`, out: `sp/${p.slug}.html`, data: { qId: String(p.id) }, og: `og/${p.slug}.png`, ogSelector: '#g-main', priority: '0.8', lastmod: p.updated });
   }
   for (const p of data.posts) r.push({ src: `bai-viet.html?slug=${p.slug}`, out: `tin-tuc/${p.slug}.html`, data: { qSlug: p.slug }, priority: '0.7', lastmod: p.date });
+  for (const p of data.projects || []) r.push({ src: `du-an-chi-tiet.html?slug=${p.slug}`, out: `du-an/${p.slug}.html`, data: { qSlug: p.slug }, priority: '0.7', lastmod: p.updated });
   for (const k of data.policies) r.push({ src: `chinh-sach.html?type=${k}`, out: `chinh-sach/${k}.html`, data: { qType: k }, priority: '0.3' });
   return r;
 }
@@ -164,6 +165,9 @@ function writeLlms(siteUrl, d) {
     ...d.products.map((p) => `- [${p.name}](${u(`sp/${p.slug}.html`)}): ${money(p.price)}${p.oldPrice ? ` (giá gốc ${money(p.oldPrice)})` : ''}. ${p.short || ''}`), '',
     '## Bài viết tư vấn', '',
     ...d.posts.map((p) => `- [${p.title}](${u(`tin-tuc/${p.slug}.html`)}): ${p.excerpt || ''}`), '',
+    ...(d.projects?.length ? ['## Dự án tiêu biểu', '', ...d.projects.map((p) => `- [${p.title}](${u(`du-an/${p.slug}.html`)}): ${p.summary || ''}`), ''] : []),
+    ...(d.faqs?.length ? ['## Hỏi đáp thường gặp', '', `Trang hỏi đáp: ${u('hoi-dap.html')}`, '', ...d.faqs.flatMap((f) => [`### ${f.q}`, f.a, '']), ''] : []),
+    '## Công cụ', '', `- [Tính công suất máy lạnh theo diện tích phòng](${u('tinh-cong-suat-may-lanh.html')})`, '',
     '## Chính sách', '',
     ...d.policies.map((k) => `- [${d.policyTitles[k]}](${u(`chinh-sach/${k}.html`)})`), '',
   ];
@@ -198,6 +202,8 @@ async function main() {
       categories: DT.categories.map((c) => ({ id: c.id, name: c.name, subs: c.subs.map((s) => ({ id: s.id, name: s.name })) })),
       products: DT.products.map((p) => ({ id: p.id, slug: p.slug, name: p.name, price: p.price, oldPrice: p.oldPrice, short: p.short, updated: p.updatedAt || p.createdAt })),
       posts: DT.posts.map((p) => ({ slug: p.slug, title: p.title, excerpt: p.excerpt, date: p.date })),
+      projects: (DT.projects || []).map((p) => ({ slug: p.slug, title: p.title, summary: p.summary, updated: p.updated_at ? String(p.updated_at).slice(0, 10) : undefined })),
+      faqs: (DT.faqs || []).map((f) => ({ q: f.question, a: f.answer.replace(/<[^>]+>/g, '') })),
       policies: Object.keys(DT.policies),
       policyTitles: Object.fromEntries(Object.entries(DT.policies).map(([k, v]) => [k, v.title])),
     };

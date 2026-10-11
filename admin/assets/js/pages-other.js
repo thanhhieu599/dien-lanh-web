@@ -101,6 +101,7 @@ AD.pages = AD.pages || {};
     { key: 'messenger', label: 'Link Messenger (vd https://m.me/ten-fanpage)', col: 'third' },
     { key: 'facebook', label: 'Link Facebook', col: 'third' },
     { key: 'youtube', label: 'Link YouTube', col: 'third' },
+    { key: 'googleVerification', label: 'Mã xác minh Google Search Console', col: 'third', help: 'Chỉ dán phần content của thẻ meta google-site-verification' },
     { key: '_c', type: 'custom', render: () => '<h4 class="ad-sec">Phí & chính sách giá</h4><p class="muted">Áp dụng ngay cho tính tiền phía máy chủ khi khách đặt hàng.</p>', read: () => undefined, col: 'full' },
     { key: 'freeShipThreshold', label: 'Miễn phí ship cho đơn từ (₫)', type: 'money', required: true, col: 'third' },
     { key: 'shippingFee', label: 'Phí vận chuyển (₫)', type: 'money', required: true, col: 'third' },
@@ -141,17 +142,7 @@ AD.pages = AD.pages || {};
   // Nén ảnh ngay trên trình duyệt (giảm dung lượng, trang tải nhanh) rồi lưu:
   //  - Supabase: file lên Storage (bucket 'media'), link vào settings 'vision'
   //  - Demo: ảnh dạng data URL trong localStorage (website demo cùng tên miền đọc được)
-  async function compress(file, max, quality) {
-    const bmp = await createImageBitmap(file).catch(() => { throw new Error('File không phải ảnh hợp lệ (dùng JPG, PNG, WEBP)'); });
-    const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
-    const c = document.createElement('canvas');
-    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
-    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
-    const blob = (type) => new Promise((ok) => c.toBlob(ok, type, quality));
-    const webp = await blob('image/webp');
-    return webp?.type === 'image/webp' ? webp : blob('image/jpeg');
-  }
-  const toDataUrl = (blob) => new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+  const { compress, toDataUrl } = AD.media;
 
   AD.pages.vision = async (params, el) => {
     if (AD.me.role !== 'admin') throw new Error('Chỉ quản trị viên được sửa ảnh trang Tầm nhìn & Sứ mệnh');
@@ -241,6 +232,83 @@ AD.pages = AD.pages || {};
       d.classList.remove('over');
       const file = e.dataTransfer.files?.[0];
       if (file) upload(d.closest('.vs-card').dataset.key, file);
+    });
+  };
+
+  // ======================================================================= Uy tín & đánh giá
+  // Logo khách hàng / đối tác, giấy chứng nhận, liên kết & đánh giá Google (settings 'trust')
+  AD.pages.trust = async (params, el) => {
+    if (AD.me.role !== 'admin') throw new Error('Chỉ quản trị viên được sửa mục Uy tín & đánh giá');
+    const supa = AD.db.mode === 'supabase';
+    const empty = { logos: [], certs: [], reviews: [], google: {} };
+    let data;
+    if (supa) data = (await AD.db.get('settings', 'trust'))?.value;
+    else { try { data = JSON.parse(localStorage.getItem(DT.TRUST_DEMO_KEY) || 'null'); } catch { data = null; } }
+    data = { ...empty, ...(data || (supa ? {} : DT.trust)) };
+    const g = data.google || {};
+    const img = (k, v, folder) => AD.ui.imageInput(k, v, folder);
+    const LISTS = {
+      logos: { title: 'Logo khách hàng & đối tác', hint: 'Logo nền trong suốt hoặc nền trắng, tối thiểu 300 px chiều ngang. Chỉ đăng logo khi khách hàng / đối tác đồng ý.', add: 'Thêm logo',
+        row: (x) => `<div class="tr-row">${img('image', x.image, 'trust')}<div class="tr-f"><input data-k="name" placeholder="Tên khách hàng / đối tác *" value="${esc(x.name || '')}"><input data-k="url" placeholder="Website (không bắt buộc)" value="${esc(x.url || '')}"></div>${rowBtns}</div>` },
+      certs: { title: 'Giấy chứng nhận & chứng chỉ', hint: 'Giấy chứng nhận đại lý ủy quyền, ISO, chứng chỉ kỹ thuật viên… (ảnh chụp / scan rõ nét).', add: 'Thêm chứng nhận',
+        row: (x) => `<div class="tr-row">${img('image', x.image, 'trust')}<div class="tr-f"><input data-k="title" placeholder="Tên chứng nhận *" value="${esc(x.title || '')}"><input data-k="issuer" placeholder="Đơn vị cấp" value="${esc(x.issuer || '')}"><input data-k="year" placeholder="Năm / hiệu lực" value="${esc(x.year || '')}"></div>${rowBtns}</div>` },
+      reviews: { title: 'Đánh giá chọn lọc của khách hàng', hint: 'Chép nguyên văn đánh giá THẬT từ Google Maps (hoặc Facebook, Zalo). Không sửa nội dung, không tự tạo đánh giá.', add: 'Thêm đánh giá',
+        row: (x) => `<div class="tr-row tr-review"><div class="tr-f"><input data-k="name" placeholder="Tên người đánh giá *" value="${esc(x.name || '')}">
+          <select data-k="rating">${[5, 4, 3, 2, 1].map((n) => `<option value="${n}" ${Number(x.rating || 5) === n ? 'selected' : ''}>${'★'.repeat(n)} (${n})</option>`).join('')}</select>
+          <select data-k="source">${['Google', 'Facebook', 'Zalo'].map((n) => `<option ${x.source === n ? 'selected' : ''}>${n}</option>`).join('')}</select>
+          <input data-k="date" type="date" value="${esc(String(x.date || '').slice(0, 10))}">
+          <textarea data-k="text" rows="2" placeholder="Nội dung đánh giá *">${esc(x.text || '')}</textarea></div>${rowBtns}</div>` },
+    };
+    const rowBtns = `<span class="tr-btns"><button type="button" class="btn btn-light btn-sm" data-up aria-label="Lên">${ic('up')}</button><button type="button" class="btn btn-light btn-sm" data-del aria-label="Xóa">${ic('trash')}</button></span>`;
+    el.innerHTML = `<div class="ad-head"><div><h1>Uy tín & đánh giá</h1><small class="muted">Hiển thị ở trang chủ, Giới thiệu, Dự án tiêu biểu, Hệ thống cửa hàng.${supa ? '' : ' <b>Chế độ demo:</b> lưu trên trình duyệt này.'}</small></div></div>
+      <form id="trust-form" novalidate>
+        <section class="ad-card"><h3>Google Maps / Google Business Profile</h3>
+          <div class="ad-grid">
+            <div class="ad-field half"><label>Link trang Google Maps của doanh nghiệp</label><input name="g_url" value="${esc(g.url || '')}" placeholder="https://maps.app.goo.gl/..."></div>
+            <div class="ad-field half"><label>Place ID (để tạo link "Viết đánh giá")</label><input name="g_placeId" value="${esc(g.placeId || '')}" placeholder="ChIJ..."><small class="help">Tra Place ID tại developers.google.com/maps/documentation/places/web-service/place-id</small></div>
+            <div class="ad-field third"><label>Điểm đánh giá trên Google</label><input name="g_rating" type="number" min="1" max="5" step="0.1" value="${g.rating ?? ''}" placeholder="vd 4.8"></div>
+            <div class="ad-field third"><label>Số lượt đánh giá</label><input name="g_count" type="number" min="0" step="1" value="${g.count ?? ''}" placeholder="vd 126"></div>
+            <div class="ad-field third"><label>Cập nhật lúc</label><input name="g_updated" type="date" value="${esc(String(g.updated || '').slice(0, 10))}"><small class="help">Nhập đúng số đang hiện trên Google Maps</small></div>
+          </div>
+        </section>
+        ${Object.entries(LISTS).map(([k, L]) => `<section class="ad-card"><div class="ad-card-head"><h3>${L.title}</h3><button type="button" class="btn btn-light btn-sm" data-add="${k}">${ic('plus')} ${L.add}</button></div>
+          <p class="muted">${L.hint}</p><div class="tr-list" data-list="${k}">${(data[k] || []).map(L.row).join('')}</div></section>`).join('')}
+        <div class="ad-form-foot"><button class="btn btn-primary">${ic('check')} Lưu</button><a class="btn btn-light" href="../frontend/du-an.html" target="_blank" rel="noopener">${ic('eye')} Xem trang Dự án</a></div>
+      </form>`;
+    const form = el.querySelector('#trust-form');
+    form.addEventListener('click', (e) => {
+      const add = e.target.closest('[data-add]');
+      if (add) form.querySelector(`[data-list="${add.dataset.add}"]`).insertAdjacentHTML('beforeend', LISTS[add.dataset.add].row({}));
+      const row = e.target.closest('.tr-row');
+      if (row && e.target.closest('[data-del]')) row.remove();
+      if (row && e.target.closest('[data-up]') && row.previousElementSibling) row.parentElement.insertBefore(row, row.previousElementSibling);
+    });
+    const collect = (k, required) => [...form.querySelectorAll(`[data-list="${k}"] .tr-row`)].map((r) => {
+      const o = {};
+      r.querySelectorAll('[data-k]').forEach((x) => { o[x.dataset.k] = x.value.trim(); });
+      const im = r.querySelector('input[type=hidden][name=image]');
+      if (im) o.image = im.value;
+      if (o.rating) o.rating = Number(o.rating);
+      return o;
+    }).filter((o) => o[required]);
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const num = (n) => (form[n].value === '' ? null : Number(form[n].value));
+      const rating = num('g_rating'); const count = num('g_count');
+      if (rating != null && (rating < 1 || rating > 5)) { AD.ui.toast('Điểm đánh giá phải từ 1 đến 5', 'error'); return; }
+      const value = {
+        google: { url: form.g_url.value.trim(), placeId: form.g_placeId.value.trim(), rating, count, updated: form.g_updated.value || null },
+        logos: collect('logos', 'name'), certs: collect('certs', 'title'), reviews: collect('reviews', 'text').filter((r) => r.name),
+      };
+      if (value.google.url && !/^https?:\/\//.test(value.google.url)) { AD.ui.toast('Link Google Maps phải bắt đầu bằng https://', 'error'); return; }
+      await run(form.querySelector('.ad-form-foot .btn-primary'), async () => {
+        if (!supa) {
+          try { localStorage.setItem(DT.TRUST_DEMO_KEY, JSON.stringify(value)); } catch { throw new Error('Bộ nhớ trình duyệt đã đầy (chế độ demo). Hãy dùng ảnh nhỏ hơn.'); }
+          return;
+        }
+        const row = await AD.db.get('settings', 'trust');
+        await (row ? AD.db.update('settings', 'trust', { value }) : AD.db.insert('settings', { key: 'trust', value }));
+      }, 'Đã lưu mục Uy tín & đánh giá');
     });
   };
 

@@ -75,6 +75,8 @@ DT.layout = (() => {
           <div class="drawer-links">
             <a href="khuyen-mai.html">${DT.icon('percent')}Khuyến mãi hot</a>
             <a href="tinh-cong-suat-may-lanh.html">${DT.icon('snow')}Tính công suất máy lạnh</a>
+            <a href="du-an.html">${DT.icon('building')}Dự án tiêu biểu</a>
+            <a href="hoi-dap.html">${DT.icon('chat')}Hỏi đáp thường gặp</a>
             <a href="dich-vu.html">${DT.icon('tool')}Dịch vụ điện lạnh</a>
             <a href="bao-gia-du-an.html">${DT.icon('building')}Báo giá dự án</a>
             <a href="tra-cuu-don-hang.html">${DT.icon('truck')}Tra cứu đơn hàng</a>
@@ -116,12 +118,13 @@ DT.layout = (() => {
       </div>
       <div class="footer-col"><h4>Hỗ trợ khách hàng</h4>
         <a href="tinh-cong-suat-may-lanh.html">Tính công suất máy lạnh</a>
+        <a href="hoi-dap.html">Hỏi đáp thường gặp</a>
         <a href="${DT.api.policyUrl('bao-hanh')}">Chính sách bảo hành</a><a href="${DT.api.policyUrl('doi-tra')}">Chính sách đổi trả</a>
         <a href="${DT.api.policyUrl('van-chuyen')}">Vận chuyển & lắp đặt</a><a href="${DT.api.policyUrl('tra-gop')}">Hướng dẫn trả góp</a>
         <a href="${DT.api.policyUrl('thanh-toan')}">Phương thức thanh toán</a><a href="${DT.api.policyUrl('bao-mat')}">Bảo mật thông tin</a>
       </div>
       <div class="footer-col"><h4>Về ${esc(cfg.name)}</h4>
-        <a href="gioi-thieu.html">Giới thiệu công ty</a><a href="tam-nhin-su-menh.html">Tầm nhìn & Sứ mệnh</a><a href="he-thong-cua-hang.html">Hệ thống cửa hàng</a>
+        <a href="gioi-thieu.html">Giới thiệu công ty</a><a href="tam-nhin-su-menh.html">Tầm nhìn & Sứ mệnh</a><a href="du-an.html">Dự án tiêu biểu</a><a href="he-thong-cua-hang.html">Hệ thống cửa hàng</a>
         <a href="bao-gia-du-an.html">Giải pháp doanh nghiệp</a><a href="dich-vu.html">Dịch vụ điện lạnh</a>
         <a href="tin-tuc.html">Tin tức - Tư vấn</a><a href="lien-he.html">Liên hệ - Góp ý</a>
       </div>
@@ -223,6 +226,13 @@ DT.layout = (() => {
     const f = $('#site-footer');
     if (h) h.innerHTML = header();
     if (f) f.innerHTML = footer();
+    // Xác minh Google Search Console (Quản trị › Cài đặt › Mã xác minh): thẻ meta có trong trang build sẵn
+    const gv = String(cfg.googleVerification || '').replace(/^.*content="([^"]+)".*$/, '$1').trim();
+    if (gv && /^[\w-]{10,100}$/.test(gv)) {
+      let m = document.head.querySelector('meta[name="google-site-verification"]');
+      if (!m) { m = document.createElement('meta'); m.name = 'google-site-verification'; document.head.appendChild(m); }
+      m.content = gv;
+    }
     bindMega(document);
     bindSearch();
     bindDrawer();

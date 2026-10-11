@@ -118,6 +118,14 @@ DT.onReady(() => {
     $('#viewed-body').innerHTML = DT.ui.carousel(viewed.map((p) => DT.ui.productCard(p)).join(''), 'viewed-car');
   }
 
+  // ---------- Dự án tiêu biểu & uy tín (logo khách hàng, chứng nhận, đánh giá Google)
+  if (DT.trustUI) {
+    const featured = (DT.projects || []).filter((p) => p.featured).concat((DT.projects || []).filter((p) => !p.featured)).slice(0, 3);
+    $('#home-projects').hidden = !featured.length;
+    $('#home-projects-list').innerHTML = featured.map(DT.trustUI.projectCard).join('');
+    $('#home-trust').innerHTML = DT.trustUI.section();
+  }
+
   // ---------- Tin tức
   $('#news').innerHTML = DT.posts.slice(0, 3).map(DT.ui.newsCard).join('');
 

@@ -58,10 +58,25 @@ DT.onReady(() => {
       const list = DT.stores.filter((s) => !sel.value || s.city === sel.value);
       $('#store-list').innerHTML = list.map((s, i) => `<div class="store-card ${i === 0 ? 'active' : ''}" data-store="${s.id}"><span class="svc-ic">${DT.icon('pin')}</span><div>
         <h3>${esc(s.name)}</h3><p>${DT.icon('pin')}${esc(s.address)}, ${esc(s.city)}</p>${s.phone ? `<p>${DT.icon('phone')}<a href="tel:${DT.u.tel(s.phone)}">${esc(s.phone)}</a></p>` : ''}${s.hours ? `<p>${DT.icon('clock')}${esc(s.hours)} (cả CN)</p>` : ''}
-        <a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.address + ', ' + s.city)}">Chỉ đường ${DT.icon('right')}</a></div></div>`).join('');
+        <span class="store-links"><a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.address + ', ' + s.city)}">Chỉ đường ${DT.icon('right')}</a>
+        <a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${s.name}, ${s.address}, ${s.city}`)}">Xem &amp; đánh giá trên Google ${DT.icon('right')}</a></span></div></div>`).join('');
       if (list[0]) showMap(list[0]);
     };
     sel.addEventListener('change', render);
+    // SEO địa phương: mỗi cửa hàng là 1 doanh nghiệp điện lạnh (khớp với Google Business Profile: cùng tên, địa chỉ, SĐT)
+    const hm = (s) => { const m = String(s || '').match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/); return m ? [`${m[1].padStart(2, '0')}:${m[2]}`, `${m[3].padStart(2, '0')}:${m[4]}`] : null; };
+    DT.u.jsonLd({
+      '@context': 'https://schema.org', '@type': 'ItemList', name: `Hệ thống cửa hàng ${DT.config.name}`,
+      itemListElement: DT.stores.map((s, i) => ({
+        '@type': 'ListItem', position: i + 1,
+        item: {
+          '@type': 'HVACBusiness', name: s.name, telephone: s.phone || DT.config.hotline, url: DT.u.abs('he-thong-cua-hang.html'),
+          address: { '@type': 'PostalAddress', streetAddress: s.address, addressRegion: s.city, addressCountry: 'VN' },
+          ...(hm(s.hours) ? { openingHoursSpecification: [{ '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], opens: hm(s.hours)[0], closes: hm(s.hours)[1] }] } : {}),
+          parentOrganization: { '@type': 'Organization', name: DT.config.company || DT.config.name },
+        },
+      })),
+    });
     $('#store-list').addEventListener('click', (e) => {
       const c = e.target.closest('[data-store]');
       if (!c || e.target.closest('a')) return;

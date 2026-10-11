@@ -279,3 +279,17 @@ a.kpi:hover { border-color: var(--primary); }
 .vs-drop small { color: var(--muted); }
 .vs-info { display: grid; gap: 2px; }
 .vs-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+
+/* Ô ảnh trong form & mục Uy tín */
+.ad-img { display: flex; align-items: center; gap: 12px; position: relative; }
+.ad-img.busy { pointer-events: none; opacity: .6; }
+.ad-img-prev { width: 96px; height: 72px; flex: none; display: grid; place-items: center; text-align: center; border-radius: 8px; border: 1px dashed #c7d7f2; background: #f5f8ff; color: var(--primary); overflow: hidden; }
+.ad-img-prev img { width: 100%; height: 100%; object-fit: cover; }
+.ad-img-prev small { display: block; font-size: 11px; color: var(--muted); }
+.ad-img-act { display: flex; gap: 6px; flex-wrap: wrap; }
+.tr-list { display: grid; gap: 10px; }
+.tr-row { display: flex; gap: 12px; align-items: flex-start; padding: 10px; border: 1px solid var(--border); border-radius: 10px; }
+.tr-f { flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+.tr-f textarea { grid-column: 1 / -1; }
+.tr-btns { display: flex; flex-direction: column; gap: 6px; }
+@media (max-width: 640px) { .tr-row { flex-wrap: wrap; } }

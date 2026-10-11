@@ -208,6 +208,62 @@ window.AD = window.AD || {};
       pk: 'slug',
     },
 
+    projects: {
+      title: 'Dự án tiêu biểu', icon: 'building', table: 'projects', order: 'sort.asc', search: ['title', 'slug', 'client', 'industry'],
+      filters: [{ key: 'published', label: 'Trạng thái', options: [['true', 'Đã đăng'], ['false', 'Nháp']] }],
+      columns: [
+        { label: 'Dự án', render: (r) => `<b>${esc(r.title)}</b><small>${esc([r.client, r.location].filter(Boolean).join(' • '))}</small>` },
+        { label: 'Quy mô', render: (r) => esc([r.units ? `${r.units} máy` : '', r.capacity].filter(Boolean).join(' • ')) },
+        { label: 'Năm', key: 'year' },
+        { label: 'Trạng thái', render: (r) => `${r.published ? '<span class="st st-ok">Đã đăng</span>' : '<span class="st st-muted">Nháp</span>'}${r.featured ? ' <span class="st st-info">Trang chủ</span>' : ''}` },
+      ],
+      defaults: () => ({ published: false, featured: false, sort: 0, year: new Date().getFullYear(), images: [] }),
+      fields: [
+        { key: 'title', label: 'Tên dự án (H1, nên có loại máy + loại công trình)', required: true, col: 'full' },
+        { key: 'slug', label: 'Đường dẫn (slug)', readonlyOnEdit: true, col: 'third', validate: slugRule, help: 'Để trống = tự tạo từ tên' },
+        { key: 'client', label: 'Khách hàng', col: 'third', help: 'Có thể ghi chung "Nhà máy FDI" nếu khách không muốn công khai' },
+        { key: 'industry', label: 'Lĩnh vực', col: 'third', type: 'select', options: ['Nhà máy FDI', 'Nhà xưởng', 'Văn phòng', 'Nhà hàng – F&B', 'Bán lẻ – Showroom', 'Trường học – Bệnh viện', 'Nhà ở – Căn hộ', 'Khác'] },
+        { key: 'location', label: 'Địa điểm', col: 'third' },
+        { key: 'year', label: 'Năm', type: 'number', col: 'third' },
+        { key: 'sort', label: 'Thứ tự', type: 'number', col: 'third', def: 0 },
+        { key: 'units', label: 'Số máy / dàn lạnh', type: 'number', col: 'third' },
+        { key: 'capacity', label: 'Tổng công suất (vd 144 HP)', col: 'third' },
+        { key: 'duration', label: 'Thời gian thi công (vd 15 ngày)', col: 'third' },
+        { key: 'published', label: 'Đăng công khai', type: 'bool', col: 'third' },
+        { key: 'featured', label: 'Hiện ở trang chủ', type: 'bool', col: 'third' },
+        { key: 'summary', label: 'Tóm tắt (hiện ở thẻ dự án & mô tả Google, 140-200 ký tự)', type: 'textarea', col: 'full', rows: 2 },
+        { key: 'before_image', label: 'Ảnh TRƯỚC thi công', type: 'image', folder: 'projects', col: 'half' },
+        { key: 'after_image', label: 'Ảnh SAU thi công (ảnh đại diện)', type: 'image', folder: 'projects', col: 'half' },
+        { key: 'images', label: 'Thư viện ảnh thêm (mỗi dòng 1 link ảnh)', type: 'lines', col: 'full', rows: 3 },
+        { key: 'content', label: 'Nội dung (HTML: <h2>Yêu cầu</h2>, <h2>Giải pháp</h2>, <h2>Kết quả</h2>…)', type: 'html', col: 'full', rows: 12 },
+        { key: 'testimonial', label: 'Cảm nhận của khách hàng', type: 'textarea', col: 'full', rows: 2 },
+        { key: 'testimonial_name', label: 'Người nhận xét', col: 'half' },
+        { key: 'testimonial_role', label: 'Chức vụ / đơn vị', col: 'half' },
+      ],
+      beforeSave: (row, editing) => { if (!editing && !row.slug) row.slug = DT.u.slugify(row.title); },
+      preview: (row) => `../frontend/du-an-chi-tiet.html?slug=${row.slug}`,
+      pk: 'slug',
+    },
+
+    faqs: {
+      title: 'Hỏi đáp (FAQ)', icon: 'chat', table: 'faqs', order: 'sort.asc', search: ['question', 'category'],
+      filters: [{ key: 'active', label: 'Trạng thái', options: [['true', 'Hiện'], ['false', 'Ẩn']] }],
+      columns: [
+        { label: 'Câu hỏi', render: (r) => `<b>${esc(r.question)}</b><small>${esc(r.category)}</small>` },
+        { label: 'Thứ tự', key: 'sort' },
+        { label: 'Trạng thái', render: (r) => yes(r.active) },
+      ],
+      defaults: () => ({ active: true, sort: 0, category: 'Chọn mua máy lạnh' }),
+      fields: [
+        { key: 'question', label: 'Câu hỏi (viết đúng cách khách hay hỏi / tìm trên Google)', required: true, col: 'full' },
+        { key: 'category', label: 'Nhóm', col: 'third', type: 'select', required: true, options: ['Chọn mua máy lạnh', 'Lắp đặt', 'Sử dụng & tiết kiệm điện', 'Bảo trì & sửa chữa', 'Doanh nghiệp & dự án', 'Mua hàng & bảo hành', 'Chung'] },
+        { key: 'sort', label: 'Thứ tự', type: 'number', col: 'third', def: 0 },
+        { key: 'active', label: 'Hiện trên website', type: 'bool', col: 'third' },
+        { key: 'answer', label: 'Trả lời (2-5 câu, trả lời thẳng vào câu hỏi ở câu đầu; cho phép <b>, <a>, <ul>)', type: 'html', required: true, col: 'full', rows: 6 },
+      ],
+      preview: () => '../frontend/hoi-dap.html',
+    },
+
     stores: {
       title: 'Cửa hàng', icon: 'pin', table: 'stores', order: 'sort.asc', search: ['name', 'address', 'city'],
       columns: [

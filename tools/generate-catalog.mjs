@@ -9,25 +9,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, '../frontend/assets/js/data/catalog.js');
 
 // ---------------------------------------------------------------- Thương hiệu
+// Bản demo: chưa gắn thương hiệu thật. Khi có hàng thật, thêm thương hiệu trong trang quản trị.
 const brands = [
-  { id: 'daikin', name: 'Daikin', origin: 'Nhật Bản', color: '#0097e0' },
-  { id: 'panasonic', name: 'Panasonic', origin: 'Nhật Bản', color: '#0a3d91' },
-  { id: 'mitsubishi', name: 'Mitsubishi Electric', origin: 'Nhật Bản', color: '#e60012' },
-  { id: 'toshiba', name: 'Toshiba', origin: 'Nhật Bản', color: '#e60012' },
-  { id: 'lg', name: 'LG', origin: 'Hàn Quốc', color: '#a50034' },
-  { id: 'samsung', name: 'Samsung', origin: 'Hàn Quốc', color: '#1428a0' },
-  { id: 'casper', name: 'Casper', origin: 'Thái Lan', color: '#00a0e9' },
-  { id: 'gree', name: 'Gree', origin: 'Trung Quốc', color: '#004ea2' },
-  { id: 'aqua', name: 'Aqua', origin: 'Nhật Bản', color: '#0068b7' },
-  { id: 'sharp', name: 'Sharp', origin: 'Nhật Bản', color: '#e60012' },
-  { id: 'hitachi', name: 'Hitachi', origin: 'Nhật Bản', color: '#e60027' },
-  { id: 'electrolux', name: 'Electrolux', origin: 'Thụy Điển', color: '#041e50' },
-  { id: 'sanaky', name: 'Sanaky', origin: 'Việt Nam', color: '#0b6fb8' },
-  { id: 'alaska', name: 'Alaska', origin: 'Việt Nam', color: '#1b75bb' },
-  { id: 'ariston', name: 'Ariston', origin: 'Ý', color: '#00326e' },
-  { id: 'kangaroo', name: 'Kangaroo', origin: 'Việt Nam', color: '#00954c' },
-  { id: 'dt', name: 'D&T Supply', origin: 'Việt Nam', color: '#0b5ed7' },
+  { id: 'thuong-hieu', name: 'Tên thương hiệu', origin: '', color: '#475467' },
 ];
+const BRAND = brands[0].id;
 
 // ---------------------------------------------------------------- Danh mục
 const PRICE_RANGES = [
@@ -148,6 +134,7 @@ const slugify = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 const brandName = (id) => brands.find((b) => b.id === id).name;
 
 const products = [];
+const slugs = new Set();
 let idSeq = 1001;
 function add(p) {
   const id = idSeq++;
@@ -157,7 +144,7 @@ function add(p) {
   products.push({
     id,
     sku: `DT${id}`,
-    slug: slugify(name),
+    slug: slugs.has(slugify(name)) ? `${slugify(name)}-${id}` : (slugs.add(slugify(name)), slugify(name)),
     name,
     cat: p.cat,
     sub: p.sub,
@@ -175,7 +162,7 @@ function add(p) {
     attrs: p.attrs,
     specs: p.specs,
     art: { type: p.art, color: p.color || 'white' },
-    images: [0, 1, 2].map((v) => `art:${v}`),
+    images: [], // Bản demo: chưa có ảnh; ảnh thật upload trong trang quản trị
     short: p.short,
     highlights: p.highlights,
     warranty: p.warranty || '24 tháng',
@@ -188,35 +175,35 @@ function add(p) {
 const roomByHp = { '1 HP': 'Dưới 15 m²', '1.5 HP': '15 - 20 m²', '2 HP': '20 - 30 m²', '2.5 HP': '30 - 40 m²', '3 HP': 'Trên 40 m²', '4 HP': 'Trên 40 m²', '5 HP': 'Trên 40 m²' };
 const btuByHp = { '1 HP': 9000, '1.5 HP': 12000, '2 HP': 18000, '2.5 HP': 24000, '3 HP': 28000, '4 HP': 36000, '5 HP': 48000 };
 const acs = [
-  ['daikin', 'FTKB25YVMV', 'treo-tuong', '1 HP', true, '1 chiều', 10900000, ['hot'], true],
-  ['daikin', 'FTKB35YVMV', 'treo-tuong', '1.5 HP', true, '1 chiều', 13400000, ['hot'], true],
-  ['daikin', 'FTHF50VAVMV', 'treo-tuong', '2 HP', true, '2 chiều', 22900000, ['new']],
-  ['panasonic', 'CU/CS-XU9ZKH-8', 'treo-tuong', '1 HP', true, '1 chiều', 14990000, ['premium'], true],
-  ['panasonic', 'CU/CS-PU12AKH-8', 'treo-tuong', '1.5 HP', true, '1 chiều', 13590000, []],
-  ['mitsubishi', 'MSY-JW35VF', 'treo-tuong', '1.5 HP', true, '1 chiều', 14490000, ['hot']],
-  ['mitsubishi', 'MSZ-HT25VF', 'treo-tuong', '1 HP', true, '2 chiều', 12990000, []],
-  ['toshiba', 'RAS-H10C4KCVG-V', 'treo-tuong', '1 HP', true, '1 chiều', 9990000, [], true],
-  ['lg', 'V10WIN1', 'treo-tuong', '1 HP', true, '1 chiều', 9490000, ['bestseller'], true],
-  ['lg', 'V13APIUV', 'treo-tuong', '1.5 HP', true, '1 chiều', 13990000, ['new']],
-  ['samsung', 'AR10DYHZAWKNSV', 'treo-tuong', '1 HP', true, '1 chiều', 10490000, []],
-  ['samsung', 'AR13DYHZAWKNSV', 'treo-tuong', '1.5 HP', true, '1 chiều', 12890000, []],
-  ['casper', 'TC-09IS36', 'treo-tuong', '1 HP', true, '1 chiều', 6990000, ['bestseller'], true],
-  ['casper', 'KC-12FC32', 'treo-tuong', '1.5 HP', false, '1 chiều', 7490000, []],
-  ['gree', 'GWC09PB-K3D0P4', 'treo-tuong', '1 HP', false, '1 chiều', 6490000, [], true],
-  ['aqua', 'AQA-RV10QE', 'treo-tuong', '1 HP', true, '1 chiều', 8490000, []],
-  ['sharp', 'AH-XP13YMW', 'treo-tuong', '1.5 HP', true, '1 chiều', 11290000, []],
-  ['daikin', 'FCFC71DVM', 'am-tran', '3 HP', true, '1 chiều', 38900000, ['project']],
-  ['panasonic', 'S-3448PU3H', 'am-tran', '4 HP', true, '1 chiều', 45900000, ['project']],
-  ['lg', 'ZTNQ18GPLA0', 'am-tran', '2 HP', true, '1 chiều', 27900000, ['project']],
-  ['daikin', 'FVA100AMVM', 'tu-dung', '4 HP', true, '1 chiều', 52900000, ['project']],
-  ['gree', 'GVC24AG-K6NNC7A', 'tu-dung', '2.5 HP', false, '1 chiều', 26900000, []],
-  ['mitsubishi', 'PEY-SM50JA', 'ong-gio', '2 HP', true, '1 chiều', 31900000, ['project']],
-  ['daikin', 'FDBNQ48MV1', 'ong-gio', '5 HP', false, '1 chiều', 49900000, ['project']],
+  [BRAND, 'treo-tuong', '1 HP', true, '1 chiều', 10900000, ['hot'], true],
+  [BRAND, 'treo-tuong', '1.5 HP', true, '1 chiều', 13400000, ['hot'], true],
+  [BRAND, 'treo-tuong', '2 HP', true, '2 chiều', 22900000, ['new']],
+  [BRAND, 'treo-tuong', '1 HP', true, '1 chiều', 14990000, ['premium'], true],
+  [BRAND, 'treo-tuong', '1.5 HP', true, '1 chiều', 13590000, []],
+  [BRAND, 'treo-tuong', '1.5 HP', true, '1 chiều', 14490000, ['hot']],
+  [BRAND, 'treo-tuong', '1 HP', true, '2 chiều', 12990000, []],
+  [BRAND, 'treo-tuong', '1 HP', true, '1 chiều', 9990000, [], true],
+  [BRAND, 'treo-tuong', '1 HP', true, '1 chiều', 9490000, ['bestseller'], true],
+  [BRAND, 'treo-tuong', '1.5 HP', true, '1 chiều', 13990000, ['new']],
+  [BRAND, 'treo-tuong', '1 HP', true, '1 chiều', 10490000, []],
+  [BRAND, 'treo-tuong', '1.5 HP', true, '1 chiều', 12890000, []],
+  [BRAND, 'treo-tuong', '1 HP', true, '1 chiều', 6990000, ['bestseller'], true],
+  [BRAND, 'treo-tuong', '1.5 HP', false, '1 chiều', 7490000, []],
+  [BRAND, 'treo-tuong', '1 HP', false, '1 chiều', 6490000, [], true],
+  [BRAND, 'treo-tuong', '1 HP', true, '1 chiều', 8490000, []],
+  [BRAND, 'treo-tuong', '1.5 HP', true, '1 chiều', 11290000, []],
+  [BRAND, 'am-tran', '3 HP', true, '1 chiều', 38900000, ['project']],
+  [BRAND, 'am-tran', '4 HP', true, '1 chiều', 45900000, ['project']],
+  [BRAND, 'am-tran', '2 HP', true, '1 chiều', 27900000, ['project']],
+  [BRAND, 'tu-dung', '4 HP', true, '1 chiều', 52900000, ['project']],
+  [BRAND, 'tu-dung', '2.5 HP', false, '1 chiều', 26900000, []],
+  [BRAND, 'ong-gio', '2 HP', true, '1 chiều', 31900000, ['project']],
+  [BRAND, 'ong-gio', '5 HP', false, '1 chiều', 49900000, ['project']],
 ];
-acs.forEach(([brand, model, sub, hp, inv, type, base, badges, flash], i) => {
+acs.forEach(([brand, sub, hp, inv, type, base, badges, flash], i) => {
   const subName = { 'treo-tuong': 'Máy lạnh', 'am-tran': 'Máy lạnh âm trần', 'tu-dung': 'Máy lạnh tủ đứng', 'ong-gio': 'Máy lạnh giấu trần ống gió' }[sub];
   const art = { 'treo-tuong': 'ac', 'am-tran': 'ac-cassette', 'tu-dung': 'ac-floor', 'ong-gio': 'ac-duct' }[sub];
-  const name = `${subName} ${brandName(brand)} ${inv ? 'Inverter ' : ''}${hp} ${model}`;
+  const name = `${subName} ${brandName(brand)} ${inv ? 'Inverter ' : ''}${hp}`;
   add({
     cat: 'may-lanh', sub, brand, name, basePrice: base, art, badges, flashSale: !!flash,
     freeInstall: sub === 'treo-tuong',
@@ -228,7 +215,7 @@ acs.forEach(([brand, model, sub, hp, inv, type, base, badges, flash], i) => {
       inv ? 'Công nghệ Inverter tiết kiệm đến 60% điện năng' : 'Làm lạnh nhanh, vận hành bền bỉ',
       'Gas R32 thân thiện môi trường, hiệu suất cao',
       sub === 'treo-tuong' ? 'Chế độ ngủ đêm, hẹn giờ, tự làm sạch dàn lạnh' : 'Phù hợp văn phòng, nhà xưởng, showroom',
-      `Bảo hành máy nén ${brand === 'daikin' || brand === 'mitsubishi' ? '5' : '7'} năm chính hãng`,
+      `Bảo hành máy nén 5 năm chính hãng`,
     ],
     specs: {
       'Loại máy': `${type}, ${inv ? 'Inverter' : 'Non-Inverter'}`,
@@ -241,7 +228,7 @@ acs.forEach(([brand, model, sub, hp, inv, type, base, badges, flash], i) => {
       'Độ ồn dàn lạnh': `${19 + (i % 8)} - ${38 + (i % 6)} dB`,
       'Chế độ': 'Làm lạnh nhanh, Ngủ đêm, Hẹn giờ, Hút ẩm',
       'Xuất xứ': pick(['Việt Nam', 'Thái Lan', 'Malaysia']),
-      'Bảo hành': `Máy 24 tháng, máy nén ${brand === 'daikin' || brand === 'mitsubishi' ? '5' : '7'} năm`,
+      'Bảo hành': `Máy 24 tháng, máy nén 5 năm`,
     },
   });
 });
@@ -250,22 +237,22 @@ acs.forEach(([brand, model, sub, hp, inv, type, base, badges, flash], i) => {
 const familyByVol = (v) => (v < 150 ? '1 - 2 người' : v < 300 ? '3 - 4 người' : v < 450 ? '5 - 6 người' : 'Trên 6 người');
 const volRange = (v) => (v < 150 ? 'Dưới 150 lít' : v < 300 ? '150 - 300 lít' : v < 450 ? '300 - 450 lít' : v < 600 ? '450 - 600 lít' : 'Trên 600 lít');
 const fridges = [
-  ['samsung', 'RT22M4032BU/SV', 'ngan-da-tren', 236, true, 6490000, 'silver', ['bestseller'], true],
-  ['panasonic', 'NR-BV331BPKV', 'ngan-da-duoi', 306, true, 13990000, 'black', ['hot']],
-  ['lg', 'GR-B256JDS', 'ngan-da-tren', 264, true, 7990000, 'silver', []],
-  ['lg', 'GR-X257JS', 'side-by-side', 635, true, 28990000, 'silver', ['premium']],
-  ['samsung', 'RS62R5001B4/SV', 'side-by-side', 647, true, 24990000, 'black', ['hot'], true],
-  ['toshiba', 'GR-RT325WE-PMV', 'ngan-da-tren', 249, true, 6890000, 'silver', []],
-  ['aqua', 'AQR-T239FA(HB)', 'ngan-da-tren', 212, true, 5490000, 'silver', [], true],
-  ['hitachi', 'R-FW690PGV7', 'nhieu-cua', 540, true, 39900000, 'gold', ['premium']],
-  ['sharp', 'SJ-FX688VG-BK', 'nhieu-cua', 626, true, 31990000, 'black', ['new']],
-  ['electrolux', 'EBB3702K-H', 'ngan-da-duoi', 335, true, 13490000, 'black', []],
-  ['aqua', 'AQR-D99FA(BS)', 'mini', 90, false, 3490000, 'silver', []],
-  ['sanaky', 'VH-148HP', 'mini', 140, false, 4290000, 'silver', []],
+  [BRAND, 'ngan-da-tren', 236, true, 6490000, 'silver', ['bestseller'], true],
+  [BRAND, 'ngan-da-duoi', 306, true, 13990000, 'black', ['hot']],
+  [BRAND, 'ngan-da-tren', 264, true, 7990000, 'silver', []],
+  [BRAND, 'side-by-side', 635, true, 28990000, 'silver', ['premium']],
+  [BRAND, 'side-by-side', 647, true, 24990000, 'black', ['hot'], true],
+  [BRAND, 'ngan-da-tren', 249, true, 6890000, 'silver', []],
+  [BRAND, 'ngan-da-tren', 212, true, 5490000, 'silver', [], true],
+  [BRAND, 'nhieu-cua', 540, true, 39900000, 'gold', ['premium']],
+  [BRAND, 'nhieu-cua', 626, true, 31990000, 'black', ['new']],
+  [BRAND, 'ngan-da-duoi', 335, true, 13490000, 'black', []],
+  [BRAND, 'mini', 90, false, 3490000, 'silver', []],
+  [BRAND, 'mini', 140, false, 4290000, 'silver', []],
 ];
-fridges.forEach(([brand, model, sub, vol, inv, base, color, badges, flash]) => {
+fridges.forEach(([brand, sub, vol, inv, base, color, badges, flash]) => {
   const art = { 'side-by-side': 'fridge-sbs', 'nhieu-cua': 'fridge-multi', mini: 'fridge-mini' }[sub] || 'fridge';
-  const name = `Tủ lạnh ${brandName(brand)} ${inv ? 'Inverter ' : ''}${vol} lít ${model}`;
+  const name = `Tủ lạnh ${brandName(brand)} ${inv ? 'Inverter ' : ''}${vol} lít`;
   add({
     cat: 'tu-lanh', sub, brand, name, basePrice: base, art, color, badges, flashSale: !!flash,
     gift: base > 10e6 ? 'Tặng bộ hộp bảo quản thực phẩm cao cấp' : null,
@@ -293,16 +280,16 @@ fridges.forEach(([brand, model, sub, vol, inv, base, color, badges, flash]) => {
 
 // ---------------------------------------------------------------- Tủ đông / tủ mát
 const freezers = [
-  ['sanaky', 'VH-4099A4K', 'tu-dong', 400, true, 9990000, 'Cửa lật', ['bestseller']],
-  ['sanaky', 'VH-308K3L', 'tu-mat', 300, false, 7490000, 'Cửa kính', []],
-  ['alaska', 'BCD-5068C', 'tu-dong-mat', 500, false, 10490000, 'Cửa lật', []],
-  ['alaska', 'LC-633HI', 'tu-mat', 600, true, 15990000, 'Cửa kính', ['project']],
-  ['aqua', 'AQF-C4201E', 'tu-dong', 365, false, 7990000, 'Cửa lật', [], true],
-  ['sanaky', 'VH-8009K', 'tu-mat', 800, false, 22900000, 'Cửa trượt', ['project']],
+  [BRAND, 'tu-dong', 400, true, 9990000, 'Cửa lật', ['bestseller']],
+  [BRAND, 'tu-mat', 300, false, 7490000, 'Cửa kính', []],
+  [BRAND, 'tu-dong-mat', 500, false, 10490000, 'Cửa lật', []],
+  [BRAND, 'tu-mat', 600, true, 15990000, 'Cửa kính', ['project']],
+  [BRAND, 'tu-dong', 365, false, 7990000, 'Cửa lật', [], true],
+  [BRAND, 'tu-mat', 800, false, 22900000, 'Cửa trượt', ['project']],
 ];
-freezers.forEach(([brand, model, sub, vol, inv, base, door, badges, flash]) => {
+freezers.forEach(([brand, sub, vol, inv, base, door, badges, flash]) => {
   const subName = { 'tu-dong': 'Tủ đông', 'tu-mat': 'Tủ mát', 'tu-dong-mat': 'Tủ đông mát' }[sub];
-  const name = `${subName} ${brandName(brand)} ${inv ? 'Inverter ' : ''}${vol} lít ${model}`;
+  const name = `${subName} ${brandName(brand)} ${inv ? 'Inverter ' : ''}${vol} lít`;
   const range = vol < 200 ? 'Dưới 200 lít' : vol < 400 ? '200 - 400 lít' : vol < 600 ? '400 - 600 lít' : 'Trên 600 lít';
   add({
     cat: 'tu-dong-tu-mat', sub, brand, name, basePrice: base, art: sub === 'tu-mat' ? 'cooler-cabinet' : 'freezer', badges, flashSale: !!flash,
@@ -325,18 +312,18 @@ freezers.forEach(([brand, model, sub, vol, inv, base, door, badges, flash]) => {
 
 // ---------------------------------------------------------------- Máy giặt / sấy
 const washers = [
-  ['lg', 'FV1410S4B', 'cua-truoc', 10, true, 12990000, 'black', ['bestseller'], true],
-  ['samsung', 'WW90T634DLE/SV', 'cua-truoc', 9, true, 11490000, 'white', ['hot']],
-  ['electrolux', 'EWF9024P5WB', 'cua-truoc', 9, true, 10990000, 'white', []],
-  ['panasonic', 'NA-FD10VR1BV', 'cua-tren', 10, true, 10490000, 'silver', []],
-  ['toshiba', 'AW-M905BV(MK)', 'cua-tren', 8.5, false, 5490000, 'silver', [], true],
-  ['aqua', 'AQW-S80CT', 'cua-tren', 8, false, 4290000, 'white', ['bestseller']],
-  ['electrolux', 'EDV854J3WB', 'may-say', 8.5, false, 9990000, 'white', []],
-  ['lg', 'DVHP09B', 'may-say', 9, true, 17990000, 'black', ['premium']],
+  [BRAND, 'cua-truoc', 10, true, 12990000, 'black', ['bestseller'], true],
+  [BRAND, 'cua-truoc', 9, true, 11490000, 'white', ['hot']],
+  [BRAND, 'cua-truoc', 9, true, 10990000, 'white', []],
+  [BRAND, 'cua-tren', 10, true, 10490000, 'silver', []],
+  [BRAND, 'cua-tren', 8.5, false, 5490000, 'silver', [], true],
+  [BRAND, 'cua-tren', 8, false, 4290000, 'white', ['bestseller']],
+  [BRAND, 'may-say', 8.5, false, 9990000, 'white', []],
+  [BRAND, 'may-say', 9, true, 17990000, 'black', ['premium']],
 ];
-washers.forEach(([brand, model, sub, kg, inv, base, color, badges, flash]) => {
+washers.forEach(([brand, sub, kg, inv, base, color, badges, flash]) => {
   const subName = sub === 'may-say' ? 'Máy sấy' : 'Máy giặt';
-  const name = `${subName} ${brandName(brand)} ${inv ? 'Inverter ' : ''}${kg} kg ${model}`;
+  const name = `${subName} ${brandName(brand)} ${inv ? 'Inverter ' : ''}${kg} kg`;
   const range = kg < 8 ? 'Dưới 8 kg' : kg <= 9 ? (kg < 9 ? '8 - 9 kg' : '8 - 9 kg') : kg <= 10 ? '9 - 10 kg' : 'Trên 10 kg';
   add({
     cat: 'may-giat', sub, brand, name, basePrice: base, art: sub === 'cua-tren' ? 'washer-top' : 'washer', color, badges, flashSale: !!flash,
@@ -358,15 +345,15 @@ washers.forEach(([brand, model, sub, kg, inv, base, color, badges, flash]) => {
 
 // ---------------------------------------------------------------- Lọc không khí / hút ẩm
 [
-  ['sharp', 'FP-J30E-B', 'loc-khong-khi', 'Dưới 30 m²', 3490000, 'purifier', ['bestseller']],
-  ['daikin', 'MC55UVM6', 'loc-khong-khi', '30 - 50 m²', 8990000, 'purifier', ['hot']],
-  ['samsung', 'AX60R5080WD/SV', 'loc-khong-khi', 'Trên 50 m²', 9990000, 'purifier', ['premium']],
-  ['sharp', 'DW-D20A-W', 'hut-am', '30 - 50 m²', 7490000, 'dehumidifier', []],
-  ['kangaroo', 'KGDH20', 'hut-am', 'Dưới 30 m²', 3990000, 'dehumidifier', []],
-].forEach(([brand, model, sub, room, base, art, badges]) => {
+  [BRAND, 'loc-khong-khi', 'Dưới 30 m²', 3490000, 'purifier', ['bestseller']],
+  [BRAND, 'loc-khong-khi', '30 - 50 m²', 8990000, 'purifier', ['hot']],
+  [BRAND, 'loc-khong-khi', 'Trên 50 m²', 9990000, 'purifier', ['premium']],
+  [BRAND, 'hut-am', '30 - 50 m²', 7490000, 'dehumidifier', []],
+  [BRAND, 'hut-am', 'Dưới 30 m²', 3990000, 'dehumidifier', []],
+].forEach(([brand, sub, room, base, art, badges]) => {
   const subName = sub === 'hut-am' ? 'Máy hút ẩm' : 'Máy lọc không khí';
   add({
-    cat: 'loc-khong-khi', sub, brand, name: `${subName} ${brandName(brand)} ${model}`, basePrice: base, art, badges,
+    cat: 'loc-khong-khi', sub, brand, name: `${subName} ${brandName(brand)}`, basePrice: base, art, badges,
     attrs: { room },
     short: `Phòng ${room} • Lọc HEPA • Cảm biến bụi mịn PM2.5`,
     highlights: ['Màng lọc HEPA lọc 99.97% bụi mịn PM2.5', 'Cảm biến chất lượng không khí tự động', 'Vận hành êm chế độ ngủ', `Phù hợp phòng ${room}`],
@@ -376,14 +363,14 @@ washers.forEach(([brand, model, sub, kg, inv, base, color, badges, flash]) => {
 
 // ---------------------------------------------------------------- Máy nước nóng
 [
-  ['ariston', 'SL2 20 RS 2.5 FE', 'gian-tiep', '15 - 20 lít', 3490000, ['bestseller']],
-  ['ariston', 'AN2 30 LUX 2.5 FE', 'gian-tiep', '30 lít', 4990000, []],
-  ['panasonic', 'DH-4RL1VW', 'truc-tiep', 'Trực tiếp', 3990000, ['hot']],
-  ['kangaroo', 'KG69A3', 'gian-tiep', 'Trên 30 lít', 3290000, []],
-  ['alaska', 'ALT-45', 'truc-tiep', 'Trực tiếp', 2190000, [], true],
-].forEach(([brand, model, sub, volume, base, badges, flash]) => {
+  [BRAND, 'gian-tiep', '15 - 20 lít', 3490000, ['bestseller']],
+  [BRAND, 'gian-tiep', '30 lít', 4990000, []],
+  [BRAND, 'truc-tiep', 'Trực tiếp', 3990000, ['hot']],
+  [BRAND, 'gian-tiep', 'Trên 30 lít', 3290000, []],
+  [BRAND, 'truc-tiep', 'Trực tiếp', 2190000, [], true],
+].forEach(([brand, sub, volume, base, badges, flash]) => {
   add({
-    cat: 'may-nuoc-nong', sub, brand, name: `Máy nước nóng ${sub === 'truc-tiep' ? 'trực tiếp' : 'gián tiếp'} ${brandName(brand)} ${model}`,
+    cat: 'may-nuoc-nong', sub, brand, name: `Máy nước nóng ${sub === 'truc-tiep' ? 'trực tiếp' : 'gián tiếp'} ${brandName(brand)}`,
     basePrice: base, art: 'heater', badges, flashSale: !!flash, freeInstall: true,
     attrs: { volume },
     short: `${volume} • Chống giật ELCB • Tiết kiệm điện`,
@@ -394,13 +381,13 @@ washers.forEach(([brand, model, sub, kg, inv, base, color, badges, flash]) => {
 
 // ---------------------------------------------------------------- Quạt điều hòa
 [
-  ['kangaroo', 'KG50F79', 'gia-dinh', 'Dưới 30 lít', 2990000, ['bestseller'], true],
-  ['sanaky', 'SNK-4500A', 'gia-dinh', '30 - 60 lít', 4190000, []],
-  ['kangaroo', 'KG50F68', 'cong-nghiep', 'Trên 60 lít', 8990000, ['project']],
-  ['dt', 'DT-AC18000', 'cong-nghiep', 'Trên 60 lít', 12900000, ['project']],
-].forEach(([brand, model, sub, tank, base, badges, flash]) => {
+  [BRAND, 'gia-dinh', 'Dưới 30 lít', 2990000, ['bestseller'], true],
+  [BRAND, 'gia-dinh', '30 - 60 lít', 4190000, []],
+  [BRAND, 'cong-nghiep', 'Trên 60 lít', 8990000, ['project']],
+  [BRAND, 'cong-nghiep', 'Trên 60 lít', 12900000, ['project']],
+].forEach(([brand, sub, tank, base, badges, flash]) => {
   add({
-    cat: 'quat-dieu-hoa', sub, brand, name: `Quạt điều hòa ${sub === 'cong-nghiep' ? 'công nghiệp ' : ''}${brandName(brand)} ${model}`,
+    cat: 'quat-dieu-hoa', sub, brand, name: `Quạt điều hòa ${sub === 'cong-nghiep' ? 'công nghiệp ' : ''}${brandName(brand)}`,
     basePrice: base, art: 'cooler', badges, flashSale: !!flash,
     attrs: { tank },
     short: `Bình ${tank} • Làm mát bằng hơi nước • Tiết kiệm 80% điện`,
@@ -411,13 +398,13 @@ washers.forEach(([brand, model, sub, kg, inv, base, color, badges, flash]) => {
 
 // ---------------------------------------------------------------- Vật tư điện lạnh (B2B)
 [
-  ['dt', 'Ống đồng máy lạnh Thái Lan 6/10 (cuộn 15m)', 'ong-dong', 'Ống đồng', 1890000, 'pipe'],
-  ['dt', 'Ống đồng máy lạnh 6/12 dày 0.71mm (cuộn 15m)', 'ong-dong', 'Ống đồng', 2290000, 'pipe'],
-  ['dt', 'Gas lạnh R32 Chemours bình 9kg', 'gas', 'Gas lạnh', 2490000, 'gas'],
-  ['dt', 'Gas lạnh R410A Honeywell bình 11.3kg', 'gas', 'Gas lạnh', 3290000, 'gas'],
-  ['dt', 'Giá đỡ cục nóng máy lạnh 1-2.5HP inox', 'phu-kien', 'Giá đỡ', 390000, 'bracket'],
-  ['dt', 'Ống thoát nước ruột gà máy lạnh (cuộn 50m)', 'phu-kien', 'Ống thoát nước', 290000, 'pipe-drain'],
-  ['dt', 'Bộ đồng hồ nạp gas Value VMG-2-R32', 'phu-kien', 'Dụng cụ', 1590000, 'gauge'],
+  [BRAND, 'Ống đồng máy lạnh Thái Lan 6/10 (cuộn 15m)', 'ong-dong', 'Ống đồng', 1890000, 'pipe'],
+  [BRAND, 'Ống đồng máy lạnh 6/12 dày 0.71mm (cuộn 15m)', 'ong-dong', 'Ống đồng', 2290000, 'pipe'],
+  [BRAND, 'Gas lạnh R32 bình 9kg', 'gas', 'Gas lạnh', 2490000, 'gas'],
+  [BRAND, 'Gas lạnh R410A bình 11.3kg', 'gas', 'Gas lạnh', 3290000, 'gas'],
+  [BRAND, 'Giá đỡ cục nóng máy lạnh 1-2.5HP inox', 'phu-kien', 'Giá đỡ', 390000, 'bracket'],
+  [BRAND, 'Ống thoát nước ruột gà máy lạnh (cuộn 50m)', 'phu-kien', 'Ống thoát nước', 290000, 'pipe-drain'],
+  [BRAND, 'Bộ đồng hồ nạp gas R32', 'phu-kien', 'Dụng cụ', 1590000, 'gauge'],
 ].forEach(([brand, name, sub, kind, base, art]) => {
   add({
     cat: 'vat-tu-dien-lanh', sub, brand, name, basePrice: base, art, badges: ['b2b'], discount: 0.05,

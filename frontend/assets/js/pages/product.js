@@ -25,9 +25,11 @@ DT.onReady(() => {
   const reviews = () => (DT.backend.enabled ? [] : [...loadUserReviews(), ...DT.api.reviews(p)]);
 
   // Biến thể: cùng thương hiệu, cùng loại, khác công suất/dung tích
-  const variants = DT.products.filter((x) => x.cat === p.cat && x.sub === p.sub && x.brand === p.brand)
-    .sort((a, b) => a.price - b.price);
+  // (mỗi công suất/dung tích chỉ hiện 1 lựa chọn, ưu tiên chính sản phẩm đang xem)
   const variantLabel = (x) => x.attrs.capacity || x.attrs.volume || x.attrs.weight || x.sku;
+  const variants = [p, ...DT.products.filter((x) => x.id !== p.id && x.cat === p.cat && x.sub === p.sub && x.brand === p.brand)]
+    .filter((x, i, all) => all.findIndex((y) => variantLabel(y) === variantLabel(x)) === i)
+    .sort((a, b) => a.price - b.price);
 
   const isAC = p.cat === 'may-lanh';
   const pct = discount(p);
@@ -111,7 +113,7 @@ DT.onReady(() => {
       <section class="pd-section"><h2>Đặc điểm nổi bật</h2><div class="rich">
         <p><strong>${esc(p.name)}</strong> là sản phẩm thuộc dòng ${esc(sub.name.toLowerCase())} của thương hiệu ${esc(brand.name)}${brand.origin ? ` (${esc(brand.origin)})` : ''}. ${esc(p.short)}.</p>
         <ul>${p.highlights.map((h) => `<li>${esc(h)}</li>`).join('')}</ul>
-        <div class="article-cover">${DT.productImage(p, 1)}</div>
+        ${DT.hasImage(p) ? `<div class="article-cover">${DT.productImage(p, 1)}</div>` : ''}
         <h2>Vì sao nên mua tại ${esc(DT.config.name)}?</h2>
         <p>Sản phẩm chính hãng, được lắp đặt bởi đội ngũ kỹ thuật được hãng đào tạo, bảo hành tận nơi. Chúng tôi hỗ trợ khảo sát miễn phí để chọn đúng công suất, giúp tiết kiệm điện năng và kéo dài tuổi thọ thiết bị.</p>
       </div></section>

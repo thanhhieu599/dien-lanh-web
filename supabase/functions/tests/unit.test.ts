@@ -88,7 +88,7 @@ const order = {
   id: 7, code: 'DT2610111234', createdAt: '2026-10-11T03:00:00Z', status: 'pending', paymentStatus: 'unpaid', payment: 'bank',
   customer: { gender: 'Anh', name: 'Nguyễn Văn <An>', phone: '0901234567', email: 'an@example.com' },
   shipping: { method: 'delivery', province: 'TP. Hồ Chí Minh', district: 'Q7', address: '12 NTT', date: '2026-10-12', slot: '8:00 - 12:00' },
-  items: [{ id: 1001, name: 'Máy lạnh Daikin 1HP', price: 8000000, qty: 2, install: true }],
+  items: [{ id: 1001, name: 'Máy lạnh 1HP', price: 8000000, qty: 2, install: true }],
   subtotal: 16000000, install: 600000, shippingFee: 0, discount: 0, total: 16600000, invoice: { company: 'Cty ABC', taxCode: '0312345678' }, note: 'Gọi trước',
 };
 const ctx = { env: { SITE_URL: 'https://shop.vn/frontend/', ZNS_TEMPLATE_ORDER: '231' }, store: { name: 'D&T Điện Lạnh', bankBin: '970436', bankAccount: '0071000000000', bankOwner: 'CONG TY D T', bankName: 'Vietcombank' } };
@@ -96,7 +96,7 @@ const ctx = { env: { SITE_URL: 'https://shop.vn/frontend/', ZNS_TEMPLATE_ORDER: 
 test('Thông báo nhân viên: đơn mới, thanh toán, lead', () => {
   const t = staffText({ id: 1, event: 'order_new', data: {}, attempts: 1, results: {}, order }, ctx)!;
   assert.match(t, /^🛒 ĐƠN MỚI DT2610111234 — 16\.600\.000₫/);
-  assert.match(t, /2 x Máy lạnh Daikin 1HP \(\+ lắp đặt\)/);
+  assert.match(t, /2 x Máy lạnh 1HP \(\+ lắp đặt\)/);
   assert.match(t, /hẹn 12\/10\/2026 8:00 - 12:00/);
   assert.match(t, /Xuất VAT: Cty ABC — MST 0312345678/);
   assert.match(t, /https:\/\/shop\.vn\/admin\/#\/orders\/7/);

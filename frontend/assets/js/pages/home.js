@@ -15,7 +15,7 @@ DT.onReady(() => {
         <p>${esc(b.sub)}</p>
         <a class="btn btn-lg ${i === 2 ? 'btn-accent' : 'btn-light'}" href="${b.href}">${esc(b.cta)} ${DT.icon('right')}</a>
       </div>
-      <div class="slide-art">${DT.art(b.art, 'white', b.art === 'fridge-sbs' ? 'SAMSUNG' : 'DAIKIN')}</div>
+      <div class="slide-art">${DT.art()}</div>
     </div>`).join('') +
     `<button class="slider-nav prev" aria-label="Trước">${DT.icon('left')}</button><button class="slider-nav next" aria-label="Sau">${DT.icon('right')}</button>
      <div class="slider-dots">${DT.banners.map((_, i) => `<button class="${i === 0 ? 'active' : ''}" data-i="${i}" aria-label="Banner ${i + 1}"></button>`).join('')}</div>`;
@@ -53,9 +53,9 @@ DT.onReady(() => {
 
   // ---------- Danh mục nhanh
   $('#quick-cats').innerHTML = DT.categories.map((c) => {
-    const sample = DT.products.find((p) => p.cat === c.id);
-    // Danh mục mới chưa có sản phẩm: dùng ảnh minh họa của danh mục
-    return `<a class="qcat" href="${DT.api.catUrl(c.id)}"><div class="qcat-img">${sample ? DT.productImage(sample, 0) : DT.art(c.art || 'generic')}</div><b>${esc(c.short || c.name)}</b></a>`;
+    // Ảnh thật của 1 sản phẩm trong danh mục nếu có, chưa có ảnh thì dùng biểu tượng danh mục
+    const sample = DT.products.find((p) => p.cat === c.id && DT.hasImage(p));
+    return `<a class="qcat" href="${DT.api.catUrl(c.id)}"><div class="qcat-img${sample ? '' : ' qcat-icon'}">${sample ? DT.productImage(sample, 0) : DT.icon(c.icon || 'box')}</div><b>${esc(c.short || c.name)}</b></a>`;
   }).join('');
 
   // ---------- Flash sale + đếm ngược tới 24h
@@ -101,8 +101,10 @@ DT.onReady(() => {
   });
 
   // ---------- Thương hiệu
-  $('#brands').innerHTML = DT.brands.filter((b) => b.id !== 'dt').slice(0, 16)
-    .map((b) => `<a class="brand-logo" style="color:${b.color}" href="tim-kiem.html?q=${encodeURIComponent(b.name)}">${esc(b.name.toUpperCase())}</a>`).join('');
+  // Bản demo: đủ 8 ô, ô trống hiển thị "Tên thương hiệu" chờ gắn logo thật
+  const brandTiles = DT.brands.slice(0, 16).map((b) => `<a class="brand-logo" style="color:${b.color}" href="danh-muc.html?brand=${encodeURIComponent(b.id)}">${esc(b.name.toUpperCase())}</a>`);
+  while (brandTiles.length < 8) brandTiles.push('<span class="brand-logo brand-empty">TÊN THƯƠNG HIỆU</span>');
+  $('#brands').innerHTML = brandTiles.join('');
 
   // ---------- Dịch vụ
   $('#services').innerHTML = DT.services.map((s) => `

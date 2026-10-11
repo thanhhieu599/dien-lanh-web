@@ -365,6 +365,8 @@ table { border-collapse: collapse; width: 100%; }
 .qcat { background: #fff; border-radius: var(--radius); padding: 14px 8px; text-align: center; box-shadow: var(--shadow); transition: .2s; }
 .qcat:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); color: var(--primary); }
 .qcat-img { width: 76px; height: 76px; margin: 0 auto 8px; border-radius: 50%; overflow: hidden; }
+.qcat-icon { display: grid; place-items: center; background: var(--primary-soft); color: var(--primary); }
+.qcat-icon svg { width: 46%; height: 46%; }
 .qcat b { font-size: 13px; font-weight: 600; }
 .flash { background: linear-gradient(180deg, #e30019 0, #ff4d4d 120px, #fff 120px); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
 .flash-head { display: flex; align-items: center; gap: 20px; color: #fff; margin-bottom: 16px; flex-wrap: wrap; }
@@ -385,6 +387,8 @@ table { border-collapse: collapse; width: 100%; }
 .brand-strip { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; }
 .brand-logo { height: 64px; border: 1px solid var(--border); border-radius: 10px; display: grid; place-items: center; font-weight: 800; font-size: 15px; letter-spacing: .5px; background: #fff; transition: .2s; text-align: center; padding: 4px; }
 .brand-logo:hover { border-color: currentColor; box-shadow: var(--shadow); }
+.brand-empty { color: #98a2b3; border-style: dashed; font-size: 12px; font-weight: 700; }
+.brand-empty:hover { border-color: var(--border); box-shadow: none; }
 .b2b-banner { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: center; background: linear-gradient(120deg, #0f172a, #1e3a8a); color: #fff; border-radius: var(--radius); padding: 30px; overflow: hidden; }
 .b2b-banner h2 { font-size: 26px; }
 .b2b-banner p { opacity: .85; }

@@ -25,7 +25,7 @@ Trang quản trị (giai đoạn 3) ──(tài khoản role staff/admin)──�
 ## Cài đặt (khoảng 15 phút)
 
 1. **Tạo project**: vào https://supabase.com → *New project* → Region **Southeast Asia (Singapore)** → lưu lại mật khẩu database.
-2. **Tạo bảng**: mở *SQL Editor* → *New query* → dán và chạy **lần lượt** nội dung 6 file trong `migrations/` (theo thứ tự tên file), sau đó chạy `seed.sql`.
+2. **Tạo bảng**: mở *SQL Editor* → *New query* → dán và chạy **lần lượt** nội dung **tất cả** file trong `migrations/` (hiện có 11 file) (theo thứ tự tên file), sau đó chạy `seed.sql`.
    - Hoặc dùng Supabase CLI: `supabase link --project-ref <ref>` rồi `supabase db push` và chạy `seed.sql`.
 3. **Cấu hình đăng nhập**: *Authentication → Sign In / Providers → Email*: bật Email, **tắt "Confirm email"**.
    Khách đăng nhập bằng **số điện thoại + mật khẩu**; hệ thống tự ánh xạ thành email nội bộ `<sđt>@sdt.trangthietbi.vn` nên không gửi email xác nhận.

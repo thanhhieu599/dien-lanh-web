@@ -52,6 +52,9 @@ DT.onReady(() => {
       const sample = DT.products.find((p) => p.cat === cat.id && p.sub === s.id && DT.hasImage(p));
       return `<a class="sub-cat ${state.sub === s.id ? 'active' : ''}" href="${DT.api.catUrl(cat.id, s.id)}">${sample ? `<span class="sc-img">${DT.productImage(sample, 0)}</span>` : ''}${esc(s.name)}</a>`;
     }).join('');
+    // Máy lạnh: gợi ý công cụ tính công suất ngay đầu danh mục
+    $('.calc-hint-cat')?.remove(); // trang đã pre-render: không chèn trùng
+    if (cat.id === 'may-lanh') $('#sub-cats').insertAdjacentHTML('afterend', `<a class="calc-hint calc-hint-cat" href="tinh-cong-suat-may-lanh.html">${DT.icon('snow')}<span>Chưa biết chọn 1 HP, 1.5 HP hay 2 HP? <b>Tính công suất theo diện tích phòng – miễn phí, 1 giây có kết quả</b></span>${DT.icon('right')}</a>`);
   }
 
   // Bài viết SEO cuối trang danh mục

@@ -75,7 +75,7 @@ function serve(dir) {
 function routes(data) {
   const r = [];
   // Trang có nội dung cố định: ghi đè tại chỗ
-  for (const f of ['index.html', 'khuyen-mai.html', 'tin-tuc.html', 'dich-vu.html', 'bao-gia-du-an.html', 'gioi-thieu.html', 'tam-nhin-su-menh.html', 'lien-he.html', 'he-thong-cua-hang.html']) {
+  for (const f of ['index.html', 'khuyen-mai.html', 'tin-tuc.html', 'dich-vu.html', 'bao-gia-du-an.html', 'gioi-thieu.html', 'tam-nhin-su-menh.html', 'tinh-cong-suat-may-lanh.html', 'lien-he.html', 'he-thong-cua-hang.html']) {
     r.push({ src: f, out: f, priority: f === 'index.html' ? '1.0' : '0.6' });
   }
   for (const c of data.categories) {

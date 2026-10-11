@@ -123,9 +123,21 @@ try {
   await page.fill('[name=company]', 'Công ty TNHH FDI Test');
   await page.fill('[name=taxCode]', '0312345678');
   await page.fill('[name=note]', 'Gọi trước 30 phút');
+  // Nhắc giỏ hàng bỏ dở: tick đồng ý -> máy chủ lên lịch nhắc sau 2 giờ
+  await page.check('#remind');
+  const remindSql = `select status || '|' || (next_at > now() + interval '110 minutes') || '|' || jsonb_array_length(data->'items') from public.notifications where event = 'cart_reminder' and data->>'phone' = '0977123456' order by id desc limit 1`;
+  for (let i = 0; i < 30 && !sql(remindSql); i++) await page.waitForTimeout(200);
+  const cartLines = await page.evaluate(() => DT.store.get().cart.length);
+  check(sql(remindSql) === `pending|true|${cartLines}`, `nhắc giỏ hàng: lên lịch sau 2 giờ, đủ ${cartLines} sản phẩm trong giỏ (${sql(remindSql)})`);
+  await page.uncheck('#remind');
+  for (let i = 0; i < 30 && sql(remindSql); i++) await page.waitForTimeout(200);
+  check(sql(remindSql) === '', 'bỏ tick đồng ý → xóa lời nhắc');
+  await page.check('#remind');
+  for (let i = 0; i < 30 && !sql(remindSql); i++) await page.waitForTimeout(200);
   await page.click('#co-form button[type=submit]');
   await page.waitForURL(/dat-hang-thanh-cong\.html\?code=DT/);
   const code = new URL(page.url()).searchParams.get('code')!;
+  check(sql(`select status || '|' || (results->'converted'->>'order') from public.notifications where event = 'cart_reminder' and data->>'phone' = '0977123456' order by id desc limit 1`) === `done|${code}`, 'đặt hàng xong → tự hủy lời nhắc giỏ hàng');
   const o = JSON.parse(sql(`select row_to_json(o) from public.orders o where code = '${code}'`));
   check(o.total === shownTotal, `máy chủ tính lại giá khớp với website (${money(o.total)})`);
   check(o.coupon === 'GIAM300K' && o.discount === 300000, 'áp mã giảm giá trên máy chủ');
@@ -164,6 +176,37 @@ try {
   const g = JSON.parse(sql(`select row_to_json(o) from public.orders o where phone = '0388000111'`));
   check(g.total === pickTotal && g.shipping_fee === 0 && !g.user_id, `nhận tại cửa hàng: miễn phí ship, tổng khớp (${money(g.total)})`);
 
+  section('Báo giá doanh nghiệp, khung chat gọi lại, tính công suất (lưu vào CRM)');
+  await page.goto(`${fe}san-pham.html?id=1002`);
+  await page.waitForSelector('.btn-b2b');
+  await page.click('.btn-b2b');
+  await page.waitForSelector('.quote-form');
+  await page.fill('.quote-form [name=qty]', '40');
+  await page.fill('.quote-form [name=company]', 'Nhà máy Điện tử Test');
+  await page.fill('.quote-form [name=name]', 'Anh Quân');
+  await page.fill('.quote-form [name=phone]', '0988111222');
+  await page.check('.quote-form [name=consent]');
+  await page.click('.quote-form [type=submit]');
+  await page.waitForSelector('.modal .cb-text');
+  const q = JSON.parse(sql(`select row_to_json(l) from public.leads l where phone = '0988111222' order by id desc limit 1`) || 'null');
+  check(q?.type === 'b2b-quote' && q.company === 'Nhà máy Điện tử Test' && q.data.sku === 'DT1002' && q.data.qty === '40' && /Số lượng: 40/.test(q.data.items), 'báo giá DN từ trang sản phẩm → lead B2B đủ mã SP & số lượng');
+  check(sql(`select count(*) from public.notifications n join public.leads l on l.id = n.lead_id where l.phone = '0988111222' and n.event = 'lead_new'`) === '1', 'báo giá DN → báo nhân viên');
+  await page.keyboard.press('Escape');
+  await page.click('#fl-chat');
+  await page.waitForSelector('#chat-panel.show');
+  await page.fill('#chat-panel [name=phone]', '0988333444');
+  await page.click('#chat-panel [type=submit]');
+  await page.waitForSelector('#chat-panel .cp-done');
+  check(sql(`select type || '|' || (data->>'topic') from public.leads where phone = '0988333444'`) === 'contact|Tư vấn chọn máy lạnh / thiết bị', 'khung chat: để lại số gọi lại → lead');
+  await page.goto(`${fe}tinh-cong-suat-may-lanh.html`);
+  await page.waitForSelector('.calc-hp');
+  await page.fill('#calc-lead-form [name=name]', 'Chị Hoa');
+  await page.fill('#calc-lead-form [name=phone]', '0988555666');
+  await page.check('#calc-lead-form [name=consent]');
+  await page.click('#calc-lead-form [type=submit]');
+  await page.waitForSelector('.modal .cb-text');
+  check(/1\.5 HP/.test(sql(`select data->>'note' from public.leads where phone = '0988555666' and type = 'service'`)), 'tính công suất: đặt khảo sát kèm kết quả → lead');
+
   section('Form liên hệ, đặt lịch dịch vụ, báo giá B2B, nhận tin');
   await page.goto(`${fe}bao-gia-du-an.html?sku=DT1001`);
   await page.waitForSelector('form[data-lead] [name=company]');
@@ -201,7 +244,7 @@ try {
   await page.click('#newsletter-form button');
   await page.waitForTimeout(500);
   check(sql(`select type from public.leads where email = 'nhantin@example.com'`) === 'newsletter', 'đăng ký nhận tin → lead');
-  check(Number(sql(`select count(*) from public.notifications where event = 'lead_new'`)) === 4, '4 lead → 4 sự kiện thông báo');
+  check(sql(`select count(*) || '|' || (select count(*) from public.leads) from public.notifications where event = 'lead_new'`) === '7|7', 'mỗi lead (4 form + báo giá DN + chat + khảo sát) → 1 sự kiện thông báo');
 
   section('Yêu thích, so sánh, xem nhanh');
   await page.goto(`${fe}danh-muc.html?cat=may-lanh`);

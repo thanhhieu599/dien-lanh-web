@@ -26,6 +26,11 @@ DT.onReady(() => {
       return;
     }
     const need = DT.config.freeShipThreshold - t.subtotal;
+    // Phụ kiện thường mua kèm máy lạnh mà giỏ chưa có
+    const inCart = new Set(t.lines.map((l) => l.product.id));
+    const xsell = [...new Map(t.lines.flatMap((l) => DT.sales.bundle(l.product)).filter((b) => !inCart.has(b.product.id)).map((b) => [b.product.id, b])).values()];
+    // Mua nhiều / giá trị lớn -> gợi ý báo giá sỉ cho doanh nghiệp
+    const bulk = DT.store.cartCount() >= 3 || t.subtotal >= 30000000;
     root.innerHTML = `<div class="cart-layout">
       <div class="cart-box">
         <div class="cart-head"><h2>Giỏ hàng (${DT.store.cartCount()})</h2><button class="btn btn-link" id="clear-cart">${DT.icon('trash')} Xóa tất cả</button></div>
@@ -48,6 +53,10 @@ DT.onReady(() => {
               <button class="ci-remove" data-remove>${DT.icon('trash')} Xóa</button>
             </div>
           </div>`).join('')}
+        ${xsell.length ? `<div class="cart-xsell"><h3>${DT.icon('tool')} Thường được mua kèm khi lắp máy lạnh</h3>
+          <div class="xsell-list">${xsell.map((b) => `<div class="xsell"><span class="xs-img">${DT.productImage(b.product, 0)}</span><span class="xs-name"><b>${esc(b.product.name)}</b><small>${esc(b.note || '')}</small><b class="price">${money(b.product.price)}</b></span>
+            <button class="btn btn-outline btn-sm" data-xsell="${b.product.id}">${DT.icon('plus')} Thêm</button></div>`).join('')}</div></div>` : ''}
+        ${bulk ? `<div class="cart-b2b">${DT.icon('building')}<span><b>Mua cho công ty / dự án?</b><small>Nhận báo giá sỉ cho cả giỏ hàng, xuất VAT, công nợ 30 – 60 ngày.</small></span><button class="btn btn-primary btn-sm" id="cart-quote">Nhận báo giá sỉ</button></div>` : ''}
       </div>
       ${summaryHtml(t, `<a class="btn btn-accent btn-block btn-lg" href="thanh-toan.html">Tiến hành đặt hàng</a><a class="btn btn-link btn-block" href="index.html" style="margin-top:8px">← Tiếp tục mua sắm</a>`)}
     </div>`;
@@ -66,6 +75,9 @@ DT.onReady(() => {
     const chip = e.target.closest('[data-code]');
     if (chip) applyCoupon(chip.dataset.code);
     if (e.target.closest('#rm-coupon')) DT.store.removeCoupon();
+    const xs = e.target.closest('[data-xsell]');
+    if (xs && DT.store.addToCart(Number(xs.dataset.xsell), 1)) DT.u.toast('Đã thêm phụ kiện vào giỏ hàng');
+    if (e.target.closest('#cart-quote')) DT.sales.quote(DT.store.totals().lines.map((l) => ({ product: l.product, qty: l.qty })), { title: 'Báo giá sỉ cho cả giỏ hàng' });
   });
   root.addEventListener('change', (e) => {
     const item = e.target.closest('.cart-item');

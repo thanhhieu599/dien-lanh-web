@@ -28,7 +28,7 @@ export function channelStatus(env: Env) {
     staffEmails: ch.staffEmails(env).length,
     zaloBot: ch.zaloBotEnabled(env),
     telegram: ch.telegramEnabled(env),
-    zns: ch.znsEnabled(env) && !!(env.ZNS_TEMPLATE_ORDER || env.ZNS_TEMPLATE_STATUS || env.ZNS_TEMPLATE_PAID),
+    zns: ch.znsEnabled(env) && !!(env.ZNS_TEMPLATE_ORDER || env.ZNS_TEMPLATE_STATUS || env.ZNS_TEMPLATE_PAID || env.ZNS_TEMPLATE_CART),
   };
 }
 
@@ -53,7 +53,7 @@ export function deliveries(ev: NotifyEvent, c: Ctx, f: Fetch, db: Db): Delivery[
     if (ch.telegramEnabled(env)) out.push(['telegram_staff', () => ch.sendTelegram(env, f, text)]);
     const se = staffEmail(ev, c);
     if (se && ch.emailEnabled(env) && ch.staffEmails(env).length) {
-      const replyTo = ev.order?.customer?.email || ev.lead?.email || undefined;
+      const replyTo = ev.order?.customer?.email || ev.lead?.email || ev.data?.email || undefined;
       out.push(['email_staff', () => ch.sendEmail(env, f, { to: ch.staffEmails(env), ...se, replyTo })]);
     }
   }

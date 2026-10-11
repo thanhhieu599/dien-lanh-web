@@ -7,7 +7,7 @@ export type Json = Record<string, any>;
 
 export interface NotifyEvent {
   id: number;
-  event: 'order_new' | 'order_status' | 'order_paid' | 'lead_new';
+  event: 'order_new' | 'order_status' | 'order_paid' | 'lead_new' | 'cart_reminder';
   data: Json;
   attempts: number;
   results: Record<string, { ok: boolean; at?: string; error?: string }>;
@@ -41,6 +41,8 @@ const siteUrl = (env: Env) => (env.SITE_URL || 'https://thanhhieu599.github.io/d
 const adminUrl = (env: Env) => (env.ADMIN_URL || siteUrl(env).replace(/frontend\/$/, 'admin/')).replace(/\/?$/, '/');
 const trackUrl = (env: Env, o: Json) => `${siteUrl(env)}tra-cuu-don-hang.html?code=${encodeURIComponent(o.code)}&phone=${encodeURIComponent(o.customer?.phone || '')}`;
 const shopName = (c: Ctx) => c.store.name || c.env.SHOP_NAME || 'Tên thương hiệu';
+const cartUrl = (env: Env) => `${siteUrl(env)}gio-hang.html`;
+const cartLines = (d: Json) => (d.items || []).map((i: Json) => `• ${i.qty} x ${i.name} — ${money(i.price * i.qty)}`);
 
 function shippingLine(o: Json): string {
   const s = o.shipping || {};
@@ -90,6 +92,15 @@ export function staffText(ev: NotifyEvent, c: Ctx): string | null {
     return [`❌ ĐƠN ${o.code} ĐÃ HỦY — ${money(o.total)}`, `Khách: ${o.customer?.name || ''} — ${o.customer?.phone || ''}`,
       ...(o.paymentStatus === 'paid' ? ['❗ Đơn đã thanh toán → cần hoàn tiền'] : []), `Chi tiết: ${adminUrl(c.env)}#/orders/${o.id}`].join('\n');
   }
+  if (ev.event === 'cart_reminder') {
+    const d = ev.data || {};
+    return [
+      `🛒 GIỎ HÀNG CHƯA ĐẶT — ${money(d.total || 0)}`,
+      `Khách: ${[d.gender, d.name].filter(Boolean).join(' ') || '(chưa nhập tên)'} — ${d.phone || ''}${d.email ? ` — ${d.email}` : ''}`,
+      'Sản phẩm trong giỏ:', ...cartLines(d),
+      'Khách đã vào trang thanh toán 2 giờ trước nhưng chưa đặt. Gọi tư vấn để chốt đơn.',
+    ].join('\n');
+  }
   if (l && ev.event === 'lead_new') {
     const d: Json = { ...(l.data || {}), name: l.name || l.data?.name, phone: l.phone || l.data?.phone, email: l.email || l.data?.email, company: l.company || l.data?.company };
     const lines = Object.entries(LEAD_FIELDS).filter(([k]) => d[k]).map(([k, label]) => `${label}: ${String(d[k]).slice(0, 300)}`);
@@ -130,6 +141,17 @@ ${o.discount ? row(`Giảm giá${o.coupon ? ` (${esc(o.coupon)})` : ''}`, `-${mo
 const button = (href: string, label: string) => `<p style="text-align:center;margin:22px 0"><a href="${esc(href)}" style="background:#0b5ed7;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block">${label}</a></p>`;
 
 export function customerEmail(ev: NotifyEvent, c: Ctx) {
+  if (ev.event === 'cart_reminder') {
+    const d = ev.data || {};
+    if (!d.email) return null;
+    const name = [d.gender, d.name].filter(Boolean).join(' ') || 'Quý khách';
+    const rows = (d.items || []).map((i: Json) => `<tr><td style="padding:8px 0;border-bottom:1px solid #eee">${esc(i.name)} <b>x${i.qty}</b></td><td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right">${money(i.price * i.qty)}</td></tr>`).join('');
+    const html = `<p>Kính chào ${esc(name)},</p><p>Quý khách còn sản phẩm trong giỏ hàng tại <b>${esc(shopName(c))}</b> nhưng chưa hoàn tất đặt hàng. Chúng tôi đã giữ lại để Quý khách tiếp tục bất cứ lúc nào:</p>
+<table style="width:100%;border-collapse:collapse;font-size:14px">${rows}<tr><td style="padding:8px 0;color:#4b5563">Tạm tính</td><td style="padding:8px 0;text-align:right;font-weight:bold;color:#d70018">${money(d.total || 0)}</td></tr></table>
+${button(cartUrl(c.env), 'Hoàn tất đơn hàng')}<p style="font-size:13px;color:#4b5563">Cần tư vấn chọn công suất, lắp đặt hay báo giá số lượng? Gọi ${esc(c.store.hotline || '')} hoặc trả lời email này.</p>`;
+    return { to: d.email, subject: `Bạn còn sản phẩm trong giỏ hàng — ${shopName(c)}`, html: layout(c, html),
+      text: `Quý khách còn sản phẩm trong giỏ hàng (${money(d.total || 0)}). Hoàn tất đơn: ${cartUrl(c.env)}` };
+  }
   const o = ev.order;
   const to = o?.customer?.email;
   if (!o || !to) return null;
@@ -163,6 +185,14 @@ ${orderTable(o)}${pay}${track}`;
 
 // ZNS: chỉ gửi tham số có trong danh sách ZNS_PARAMS (phải trùng tên tham số của mẫu đã đăng ký với Zalo)
 export function znsMessage(ev: NotifyEvent, c: Ctx) {
+  const env0 = c.env;
+  if (ev.event === 'cart_reminder') {
+    const d = ev.data || {};
+    if (!env0.ZNS_TEMPLATE_CART || !d.phone) return null;
+    const all: Record<string, string | number> = { customer_name: String(d.name || 'Quý khách').slice(0, 30), total: Number(d.total || 0), product_name: String(d.items?.[0]?.name || '').slice(0, 100), item_count: (d.items || []).length };
+    const keys = String(env0.ZNS_PARAMS_CART || 'customer_name,total').split(',').map((s) => s.trim()).filter((k) => k in all);
+    return { phone: d.phone, templateId: env0.ZNS_TEMPLATE_CART, data: Object.fromEntries(keys.map((k) => [k, all[k]])), trackingId: `N${ev.id}` };
+  }
   const o = ev.order;
   if (!o?.customer?.phone) return null;
   const env = c.env;

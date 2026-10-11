@@ -32,6 +32,7 @@ DT.onReady(() => {
     .sort((a, b) => a.price - b.price);
 
   const isAC = p.cat === 'may-lanh';
+  const bundle = DT.sales.bundle(p);
   const pct = discount(p);
   const monthly = Math.round(p.price / 12 / 1000) * 1000;
 
@@ -69,6 +70,7 @@ DT.onReady(() => {
       </div>
       ${variants.length > 1 ? `<div class="pd-variants"><h4>${esc(c.filters[0]?.label || 'Phiên bản')}</h4><div class="variant-list">${variants.map((v) => `
         <a class="variant ${v.id === p.id ? 'active' : ''}" href="${DT.api.url(v)}"><b>${esc(variantLabel(v))}</b><small>${money(v.price)}</small></a>`).join('')}</div></div>` : ''}
+      ${isAC ? `<a class="calc-hint" href="tinh-cong-suat-may-lanh.html">${DT.icon('snow')}<span>Chưa chắc công suất phù hợp? <b>Tính công suất theo diện tích phòng</b></span>${DT.icon('right')}</a>` : ''}
       <div class="promo-box">
         <h4>${DT.icon('gift')} Khuyến mãi & ưu đãi</h4>
         <ul>
@@ -76,7 +78,7 @@ DT.onReady(() => {
           ${p.freeInstall ? `<li><i>${p.gift ? 2 : 1}</i><span>Miễn phí công lắp đặt tiêu chuẩn (tiết kiệm ${money(DT.config.installFee)})</span></li>` : ''}
           <li><i>${DT.icon('check')}</i><span>Nhập mã <b>COOL10</b> giảm thêm 10% (tối đa 1 triệu) cho đơn từ 5 triệu</span></li>
           <li><i>${DT.icon('check')}</i><span>Trả góp 0% qua thẻ tín dụng, duyệt nhanh 15 phút</span></li>
-          <li><i>${DT.icon('check')}</i><span>Doanh nghiệp mua số lượng: <a class="link" href="bao-gia-du-an.html?sku=${p.sku}">nhận báo giá riêng</a></span></li>
+          <li><i>${DT.icon('check')}</i><span>Doanh nghiệp mua số lượng: <a class="link" href="bao-gia-du-an.html?sku=${p.sku}" data-quote>nhận báo giá riêng</a></span></li>
         </ul>
       </div>
       <ul class="check-list">${p.highlights.map((h) => `<li>${DT.icon('check')}${esc(h)}</li>`).join('')}</ul>
@@ -90,7 +92,15 @@ DT.onReady(() => {
         <button class="btn btn-accent btn-buy" data-action="buy-now" data-id="${p.id}" data-qty="#qty">MUA NGAY<small>Giao nhanh 2h hoặc nhận tại cửa hàng</small></button>
         <button class="btn btn-outline btn-lg" data-action="add-cart" data-id="${p.id}" data-qty="#qty">${DT.icon('cart')} Thêm vào giỏ</button>
         <a class="btn btn-primary btn-buy" href="${DT.api.policyUrl('tra-gop')}">TRẢ GÓP 0%<small>Duyệt hồ sơ 15 phút</small></a>
+        <button type="button" class="btn btn-b2b" data-quote>${DT.icon('building')}<span>NHẬN BÁO GIÁ SỈ / DOANH NGHIỆP<small>Mua số lượng • Xuất VAT • Công nợ</small></span></button>
       </div>
+      ${bundle.length ? `<div class="bundle" id="bundle">
+        <h4>${DT.icon('tool')} Mua kèm để lắp đặt trọn gói</h4>
+        ${bundle.map((b) => `<label class="bundle-item"><input type="checkbox" value="${b.product.id}"><span class="bi-img">${DT.productImage(b.product, 0)}</span>
+          <span class="bi-name"><b>${esc(b.product.name)}</b><small>${esc(b.note || '')}</small></span><b class="price">+${money(b.product.price)}</b></label>`).join('')}
+        <div class="bundle-foot"><span>Tổng: <b class="price" id="bundle-total">${money(p.price)}</b><small id="bundle-count">1 sản phẩm</small></span>
+          <button type="button" class="btn btn-accent" id="bundle-add">${DT.icon('cart')} Thêm combo vào giỏ</button></div>
+      </div>` : ''}
       <div class="pd-hotline">Gọi đặt mua <a href="tel:${DT.u.tel(DT.config.hotline)}">${esc(DT.config.hotline)}</a> (${esc(DT.config.workingHours || '7:30 - 21:30')})</div>
     </div>
 
@@ -103,7 +113,7 @@ DT.onReady(() => {
       </ul></div>
       <div class="aside-box"><h4>Còn hàng tại cửa hàng</h4><ul class="store-stock">${DT.stores.slice(0, 4).map((st, i) => `<li><span>${esc(st.name.replace(/^.* - /, ''))}<br><small class="muted">${esc(st.address)}</small></span><span class="ok">${(p.id + i) % 3 ? 'Còn hàng' : 'Sắp về'}</span></li>`).join('')}</ul>
         <a class="link" href="he-thong-cua-hang.html">Xem tất cả cửa hàng ${DT.icon('right')}</a></div>
-      <div class="aside-box"><h4>Khách hàng doanh nghiệp</h4><p class="muted">Mua từ 5 sản phẩm, dự án nhà xưởng, văn phòng: chiết khấu riêng, công nợ, xuất VAT.</p><a class="btn btn-primary btn-block" href="bao-gia-du-an.html?sku=${p.sku}">${DT.icon('file')} Yêu cầu báo giá</a></div>
+      <div class="aside-box"><h4>Khách hàng doanh nghiệp</h4><p class="muted">Mua từ 5 sản phẩm, dự án nhà xưởng, văn phòng: chiết khấu riêng, công nợ, xuất VAT.</p><a class="btn btn-primary btn-block" data-quote href="bao-gia-du-an.html?sku=${p.sku}">${DT.icon('file')} Yêu cầu báo giá</a></div>
     </aside>`;
 
   // Tabs nội dung
@@ -167,6 +177,36 @@ DT.onReady(() => {
     const q = $('#qty');
     q.value = Math.min(99, Math.max(1, (parseInt(q.value, 10) || 1) + Number(b.dataset.q)));
   });
+  // Báo giá doanh nghiệp (mặc định số lượng 5 hoặc số đang chọn nếu lớn hơn)
+  $$('[data-quote]').forEach((b) => b.addEventListener('click', (e) => {
+    e.preventDefault();
+    DT.sales.quote([{ product: p, qty: Math.max(5, parseInt($('#qty').value, 10) || 1) }]);
+  }));
+  // Combo mua kèm: máy (theo số lượng đang chọn) + phụ kiện đã tick
+  if (bundle.length) {
+    const box = $('#bundle');
+    const picked = () => $$('input:checked', box).map((i) => DT.api.productById(Number(i.value))).filter(Boolean);
+    const qtyNow = () => Math.max(1, parseInt($('#qty').value, 10) || 1);
+    const refresh = () => {
+      const extra = picked();
+      $('#bundle-total').textContent = money(p.price * qtyNow() + extra.reduce((s, x) => s + x.price, 0));
+      $('#bundle-count').textContent = `${qtyNow()} máy${extra.length ? ` + ${extra.length} phụ kiện` : ''}`;
+      $('#bundle-add').disabled = !extra.length;
+    };
+    box.addEventListener('change', refresh);
+    $('#qty').addEventListener('input', refresh);
+    $('.buy-row').addEventListener('click', () => setTimeout(refresh));
+    $('#bundle-add').addEventListener('click', () => {
+      const extra = picked();
+      if (!extra.length) return;
+      if (!DT.store.addToCart(p.id, qtyNow(), { install: !!$('#opt-install')?.checked })) return;
+      extra.forEach((x) => DT.store.addToCart(x.id, 1));
+      DT.u.toast(`Đã thêm combo ${qtyNow()} máy + ${extra.length} phụ kiện vào giỏ hàng`);
+      $$('input:checked', box).forEach((i) => { i.checked = false; });
+      refresh();
+    });
+    refresh();
+  }
   $('#share').addEventListener('click', async () => {
     try {
       if (navigator.share) await navigator.share({ title: p.name, url: location.href });

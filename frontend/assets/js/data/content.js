@@ -10,10 +10,13 @@ DT.config = {
   hotlineB2B: '0909 000 000',
   email: 'email@tencongty.vn',
   zalo: 'https://zalo.me/0909000000',
+  messenger: '',      // link Messenger của fanpage, vd https://m.me/ten-fanpage (để trống = ẩn)
   facebook: 'https://facebook.com/',
   youtube: 'https://youtube.com/',
   address: 'TP. Hồ Chí Minh, Việt Nam',
   workingHours: '7:30 - 21:30 (Cả CN & ngày lễ)',
+  openTime: '07:30',   // giờ mở / đóng cửa: khung chat & form tự hẹn giờ gọi lại khi ngoài giờ
+  closeTime: '21:30',
   freeShipThreshold: 2000000,
   shippingFee: 50000,
   installFee: 300000,
@@ -44,6 +47,15 @@ DT.visionImages = () => {
   if (DT.backend?.enabled) return DT.vision?.images || {};
   try { return JSON.parse(localStorage.getItem(DT.VISION_DEMO_KEY) || '{}').images || {}; } catch { return {}; }
 };
+
+// Phụ kiện mua kèm máy lạnh (combo lắp đặt trọn gói), theo mã SKU sản phẩm vật tư.
+// subs: chỉ áp dụng loại máy; maxHp/minHp: theo công suất máy
+DT.bundleRules = [
+  { sku: 'DT1065', note: 'Đủ cho 1 bộ máy ≤ 1.5 HP', subs: ['treo-tuong'], maxHp: 1.5 },
+  { sku: 'DT1066', note: 'Dùng cho máy 2 HP', subs: ['treo-tuong'], minHp: 2, maxHp: 2 },
+  { sku: 'DT1069', note: 'Inox chống gỉ, chịu lực tốt', subs: ['treo-tuong'], maxHp: 2.5 },
+  { sku: 'DT1070', note: 'Thoát nước ngưng, chống đọng', subs: ['treo-tuong', 'am-tran', 'tu-dung', 'ong-gio'] },
+];
 
 // Mã giảm giá demo (giai đoạn 2 quản lý trong admin)
 DT.coupons = [

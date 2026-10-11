@@ -90,12 +90,15 @@ AD.pages = AD.pages || {};
     { key: 'company', label: 'Tên công ty (pháp lý)', col: 'third' },
     { key: 'taxCode', label: 'Mã số thuế', col: 'third' },
     { key: 'address', label: 'Địa chỉ', col: 'third' },
-    { key: 'workingHours', label: 'Giờ làm việc', col: 'third' },
+    { key: 'workingHours', label: 'Giờ làm việc (hiển thị)', col: 'third' },
+    { key: 'openTime', label: 'Giờ mở cửa (vd 07:30)', col: 'third', help: 'Khung chat & form hẹn giờ gọi lại theo giờ này' },
+    { key: 'closeTime', label: 'Giờ đóng cửa (vd 21:30)', col: 'third', help: 'Ngoài giờ: hẹn "gọi lại trước 9h sáng mai"' },
     { key: '_b', type: 'custom', render: () => '<h4 class="ad-sec">Liên hệ</h4>', read: () => undefined, col: 'full' },
     { key: 'hotline', label: 'Hotline', required: true, col: 'third' },
     { key: 'hotlineB2B', label: 'Hotline doanh nghiệp', col: 'third' },
     { key: 'email', label: 'Email', col: 'third' },
-    { key: 'zalo', label: 'Link Zalo', col: 'third' },
+    { key: 'zalo', label: 'Link Zalo (OA hoặc cá nhân)', col: 'third' },
+    { key: 'messenger', label: 'Link Messenger (vd https://m.me/ten-fanpage)', col: 'third' },
     { key: 'facebook', label: 'Link Facebook', col: 'third' },
     { key: 'youtube', label: 'Link YouTube', col: 'third' },
     { key: '_c', type: 'custom', render: () => '<h4 class="ad-sec">Phí & chính sách giá</h4><p class="muted">Áp dụng ngay cho tính tiền phía máy chủ khi khách đặt hàng.</p>', read: () => undefined, col: 'full' },
@@ -127,6 +130,8 @@ AD.pages = AD.pages || {};
       const data = AD.ui.read(e.target, SETTINGS_FIELDS, {});
       if (!data) return;
       Object.keys(data).forEach((k) => k.startsWith('_') && delete data[k]);
+      const badTime = ['openTime', 'closeTime'].find((k) => data[k] && !/^([01]?\d|2[0-3]):[0-5]\d$/.test(String(data[k]).trim()));
+      if (badTime) { AD.ui.toast('Giờ mở / đóng cửa phải có dạng HH:MM, ví dụ 07:30', 'error'); return; }
       const value = { ...v, ...data };
       await run(e.target.querySelector('button'), () => (row ? AD.db.update('settings', 'store', { value }) : AD.db.insert('settings', { key: 'store', value })), 'Đã lưu cài đặt');
     });

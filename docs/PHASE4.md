@@ -96,6 +96,7 @@ supabase functions deploy notify --no-verify-jwt
 | `EMAIL_REPLY_TO` | Không | Địa chỉ nhận khi khách bấm "Trả lời" email xác nhận |
 | `ZALO_APP_ID`, `ZALO_APP_SECRET`, `ZALO_OA_REFRESH_TOKEN` | ZNS | App Zalo liên kết OA; refresh token lần đầu (hệ thống tự làm mới, lưu trong database) |
 | `ZNS_TEMPLATE_ORDER`, `ZNS_TEMPLATE_STATUS`, `ZNS_TEMPLATE_PAID` | ZNS | ID mẫu đã duyệt: xác nhận đơn / đổi trạng thái / đã thanh toán (để trống mẫu nào thì không gửi mẫu đó) |
+| `ZNS_TEMPLATE_CART`, `ZNS_PARAMS_CART` | ZNS | (Tùy chọn) mẫu nhắc giỏ hàng bỏ dở; tham số mặc định `customer_name,total` (có thêm `product_name`, `item_count`). Để trống = chỉ nhắc qua email + báo nhân viên gọi |
 | `ZNS_PARAMS` | Không | Tên tham số gửi vào mẫu, mặc định `customer_name,order_code,order_date,total,status`. Có thêm: `payment_status`, `payment_method` |
 
 ### Bước 5: Cổng VNPay
@@ -201,3 +202,16 @@ Workflow `.github/workflows/test.yml` chạy toàn bộ kiểm thử trên GitHu
 - Mọi kết quả thanh toán đều kiểm chữ ký HMAC (SHA512 với VNPay, SHA256 với MoMo) và **so số tiền với database** trước khi ghi nhận; IPN gửi lặp không ghi trùng.
 - Website (khóa anon) không gọi được các hàm thanh toán / hàng đợi; chỉ Edge Function (service_role) gọi được. Bảng token Zalo chỉ service_role đọc được.
 - Khách tra cứu / thanh toán lại phải có đúng **mã đơn + số điện thoại**.
+
+
+## Công cụ tăng chuyển đổi (bổ sung)
+
+| Tính năng | Ở đâu | Dữ liệu đi về đâu |
+|---|---|---|
+| **Nhận báo giá doanh nghiệp** | Nút trên trang sản phẩm, link "nhận báo giá riêng", ô "Khách hàng doanh nghiệp"; giỏ hàng từ 3 sản phẩm / 30 triệu: báo giá cả giỏ | Lead loại "Báo giá dự án (B2B)" kèm mã SP + số lượng → CRM + thông báo nhân viên |
+| **Khung chat** | Nút chat nổi mọi trang: Zalo, Messenger (Quản trị › Cài đặt › Link Messenger), gọi hotline, để lại số gọi lại | Lead "Liên hệ" (nhu cầu, trang đang xem). Ngoài giờ (Cài đặt › Giờ mở / đóng cửa) tự hẹn "gọi lại trước 9h sáng mai" |
+| **Tính công suất máy lạnh** | `tinh-cong-suat-may-lanh.html` (link ở danh mục máy lạnh, trang SP máy lạnh, chân trang, menu điện thoại) | Gợi ý HP + sản phẩm; form khảo sát → lead "Dịch vụ" kèm kết quả tính. Có FAQ (dữ liệu có cấu trúc) cho SEO |
+| **Combo mua kèm** | Trang SP máy lạnh: ống đồng / giá đỡ / ống thoát nước theo công suất; giỏ hàng: gợi ý phụ kiện còn thiếu | Quy tắc ở `DT.bundleRules` (frontend/assets/js/data/content.js) theo mã SKU |
+| **Nhắc giỏ hàng bỏ dở** | Trang thanh toán (chỉ khi đã kết nối Supabase): khách tick "Nhắc tôi…" + nhập SĐT | Hàng đợi `notifications` sự kiện `cart_reminder`, gửi sau 2 giờ: email khách (nếu có), ZNS (nếu có mẫu), báo nhân viên gọi chốt đơn. Khách đặt hàng → tự hủy |
+
+Lưu ý: tin nhắn trả lời tự động **trong Zalo OA / Facebook Messenger** cài trong trang quản lý của Zalo OA / Meta Business Suite (Tin nhắn tự động / Trả lời ngoài giờ), không nằm trong mã nguồn website.

@@ -18,6 +18,7 @@ DT.onReady(() => {
           <div class="field"><label>Số điện thoại <span class="req">*</span></label><input name="phone" type="tel" required data-validate="phone" value="${esc(user?.phone || '')}"><div class="err">Số điện thoại không hợp lệ</div></div>
         </div>
         <div class="field"><label>Email (nhận hóa đơn & thông tin đơn hàng)</label><input name="email" type="email" value="${esc(user?.email || '')}"><div class="err">Email không hợp lệ</div></div>
+        ${DT.backend.enabled ? `<label class="check remind-opt"><input type="checkbox" name="remind" id="remind"> <span>Nhắc tôi qua Zalo / email nếu chưa hoàn tất đặt hàng (sau 2 giờ). Giỏ hàng được giữ nguyên để đặt tiếp.</span></label>` : ''}
       </section>
 
       <section class="co-section"><h2><span class="n">2</span>Hình thức nhận hàng</h2>
@@ -71,6 +72,31 @@ DT.onReady(() => {
   </form>`;
 
   const form = $('#co-form');
+
+  // Nhắc giỏ hàng bỏ dở: khách tick đồng ý + có SĐT hợp lệ -> máy chủ lên lịch nhắc sau 2 giờ
+  // (đặt hàng thành công thì máy chủ tự hủy lời nhắc; bỏ tick thì xóa)
+  let remindTimer = null; let remindSent = '';
+  function syncReminder() {
+    if (!DT.backend.enabled || !form.remind) return;
+    clearTimeout(remindTimer);
+    remindTimer = setTimeout(async () => {
+      const phone = form.phone.value.replace(/[\s.]/g, '');
+      if (!DT.u.validPhone(phone)) return;
+      const consent = form.remind.checked;
+      const items = DT.store.get().cart.map((i) => ({ id: i.id, qty: i.qty }));
+      const key = JSON.stringify([phone, consent, form.name.value.trim(), form.email.value.trim(), items]);
+      if (key === remindSent || (!consent && !remindSent)) return;
+      try {
+        await DT.backend.rpc('save_cart_reminder', {
+          p_contact: { phone, consent, name: form.name.value.trim(), email: DT.u.validEmail(form.email.value) ? form.email.value.trim() : '', gender: form.gender.value },
+          p_items: items,
+        });
+        remindSent = key;
+      } catch { /* không ảnh hưởng việc đặt hàng */ }
+    }, 1200);
+  }
+  ['phone', 'name', 'email'].forEach((n) => form[n].addEventListener('input', syncReminder));
+  form.remind?.addEventListener('change', syncReminder);
   // Cổng chưa kích hoạt: vẫn cho đặt, nhân viên gọi hướng dẫn thanh toán
   DT.payments.config().then((gw) => {
     $$('[data-gw]').forEach((el) => { if (!gw[el.dataset.gw]) el.textContent = 'Nhân viên sẽ liên hệ hướng dẫn thanh toán'; });

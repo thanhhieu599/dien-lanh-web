@@ -126,3 +126,19 @@ test('ZNS: chỉ gửi khi có mẫu, đúng tham số', () => {
   assert.deepEqual(z.data, { customer_name: 'Nguyễn Văn <An>', order_code: 'DT2610111234', order_date: '11/10/2026', total: 16600000, status: 'Chờ xác nhận' });
   assert.equal(znsMessage({ id: 5, event: 'order_paid', data: { paymentStatus: 'paid' }, attempts: 1, results: {}, order }, ctx), null, 'chưa cấu hình mẫu PAID');
 });
+
+test('Nhắc giỏ hàng bỏ dở: nhân viên, email khách, ZNS', () => {
+  const ev = { id: 21, event: 'cart_reminder' as const, attempts: 1, results: {}, data: { phone: '0977000111', name: 'Lan <b>', gender: 'Chị', email: 'lan@example.com', total: 17800000, items: [{ id: 1001, name: 'Máy lạnh 1HP', price: 8900000, qty: 2 }] } };
+  const t = staffText(ev, ctx)!;
+  assert.match(t, /^🛒 GIỎ HÀNG CHƯA ĐẶT — 17\.800\.000₫/);
+  assert.match(t, /Chị Lan <b> — 0977000111 — lan@example\.com/);
+  assert.match(t, /2 x Máy lạnh 1HP — 17\.800\.000₫/);
+  const e = customerEmail(ev, ctx)!;
+  assert.equal(e.to, 'lan@example.com');
+  assert.match(e.html, /Lan &lt;b&gt;/, 'tên khách được escape');
+  assert.match(e.html, /https:\/\/shop\.vn\/frontend\/gio-hang\.html/);
+  assert.equal(customerEmail({ ...ev, data: { ...ev.data, email: null } }, ctx), null, 'không có email thì không gửi');
+  assert.equal(znsMessage(ev, ctx), null, 'chưa cấu hình mẫu ZNS giỏ hàng thì không gửi');
+  const z = znsMessage(ev, { ...ctx, env: { ...ctx.env, ZNS_TEMPLATE_CART: '555' } })!;
+  assert.deepEqual(z, { phone: '0977000111', templateId: '555', data: { customer_name: 'Lan <b>', total: 17800000 }, trackingId: 'N21' });
+});

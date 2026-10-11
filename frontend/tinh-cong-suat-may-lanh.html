@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tính công suất máy lạnh theo diện tích phòng (BTU / HP) | Tên thương hiệu</title>
+  <meta name="description" content="Công cụ tính công suất máy lạnh miễn phí: nhập diện tích, chiều cao trần, hướng nắng, số người để biết nên mua máy 1 HP, 1.5 HP hay 2 HP, ước tính tiền điện Inverter và gợi ý sản phẩm phù hợp.">
+  <meta property="og:title" content="Tính công suất máy lạnh theo diện tích phòng (BTU / HP)">
+  <meta property="og:description" content="Nhập diện tích phòng để biết nên chọn máy lạnh 1 HP, 1.5 HP hay 2 HP. Kèm ước tính tiền điện và gợi ý sản phẩm.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0b5ed7">
+  <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/main.css?v=202610111533">
+</head>
+<body data-page="calculator">
+  <div id="site-header"></div>
+  <main id="main">
+    <section class="page-banner calc-banner"><div class="container">
+      <h1>Tính công suất máy lạnh theo diện tích phòng</h1>
+      <p>Nhập thông tin phòng, công cụ gợi ý ngay nên mua máy <b>1 HP, 1.5 HP hay 2 HP</b>, ước tính tiền điện mỗi tháng và các mẫu máy phù hợp. Miễn phí, kết quả trong 1 giây.</p>
+    </div></section>
+    <div class="container">
+      <div class="calc">
+        <form class="calc-form section-box" id="calc-form" novalidate>
+          <h2>Thông tin phòng</h2>
+          <div class="field"><label>Loại phòng</label>
+            <div class="seg" role="radiogroup" aria-label="Loại phòng">
+              <label><input type="radio" name="room" value="ngu" checked><span>Phòng ngủ</span></label>
+              <label><input type="radio" name="room" value="khach"><span>Phòng khách</span></label>
+              <label><input type="radio" name="room" value="vanphong"><span>Văn phòng</span></label>
+              <label><input type="radio" name="room" value="kinhdoanh"><span>Cửa hàng / quán ăn</span></label>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label for="c-area">Diện tích phòng (m²) <span class="req">*</span></label>
+              <input id="c-area" name="area" type="number" inputmode="decimal" min="3" max="500" step="0.5" value="18" required><div class="err">Nhập diện tích từ 3 đến 500 m²</div>
+              <input type="range" name="areaRange" min="5" max="120" step="1" value="18" aria-label="Kéo chọn diện tích"></div>
+            <div class="field"><label for="c-height">Chiều cao trần</label>
+              <select id="c-height" name="height"><option value="0.95">Dưới 2,7 m (căn hộ)</option><option value="1" selected>2,7 – 3,2 m (phổ biến)</option><option value="1.15">3,2 – 4 m</option><option value="1.35">Trên 4 m (thông tầng, nhà xưởng)</option></select></div>
+          </div>
+          <div class="field"><label>Mức độ nắng của phòng</label>
+            <div class="seg" role="radiogroup" aria-label="Mức độ nắng">
+              <label><input type="radio" name="sun" value="1" checked><span>Ít nắng</span></label>
+              <label><input type="radio" name="sun" value="1.1"><span>Nắng sáng / có cửa kính</span></label>
+              <label><input type="radio" name="sun" value="1.2"><span>Nắng chiều (hướng Tây)</span></label>
+              <label><input type="radio" name="sun" value="1.3"><span>Tầng mái / nhiều kính</span></label>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label for="c-people">Số người thường xuyên</label><input id="c-people" name="people" type="number" min="1" max="200" value="2"></div>
+            <div class="field"><label for="c-hours">Thời gian dùng mỗi ngày (giờ)</label><input id="c-hours" name="hours" type="number" min="1" max="24" value="8"></div>
+          </div>
+        </form>
+
+        <section class="calc-result" id="calc-result" aria-live="polite"></section>
+      </div>
+
+      <section class="section section-box" id="calc-products">
+        <div class="section-head"><h2 id="calc-products-title">Máy lạnh phù hợp</h2><a class="link" id="calc-products-more" href="danh-muc.html?cat=may-lanh">Xem tất cả →</a></div>
+        <div id="calc-products-list"></div>
+      </section>
+
+      <section class="section section-box calc-lead" id="calc-lead">
+        <div>
+          <h2>Nhận tư vấn &amp; khảo sát lắp đặt miễn phí</h2>
+          <p class="muted">Kỹ thuật viên đo đạc thực tế, kiểm tra vị trí cục nóng, đường ống và nguồn điện để chọn đúng công suất – tránh mua thừa tốn tiền hoặc thiếu không đủ lạnh.</p>
+          <ul class="check-list"><li>Tư vấn đúng nhu cầu, không bán thừa công suất</li><li>Báo giá trọn gói máy + vật tư + công lắp đặt</li><li>Doanh nghiệp: khảo sát nhiều phòng, xuất VAT, công nợ</li></ul>
+        </div>
+        <form id="calc-lead-form" novalidate>
+          <div class="form-row">
+            <div class="field"><label>Họ tên <span class="req">*</span></label><input name="name" required autocomplete="name"><div class="err">Vui lòng nhập họ tên</div></div>
+            <div class="field"><label>Số điện thoại <span class="req">*</span></label><input name="phone" type="tel" required data-validate="phone" autocomplete="tel"><div class="err">Số điện thoại không hợp lệ</div></div>
+          </div>
+          <div class="field"><label>Địa chỉ cần khảo sát</label><input name="address" placeholder="Quận / huyện, tỉnh / thành"></div>
+          <label class="check consent"><input type="checkbox" name="consent" required> <span>Tôi đồng ý để được liên hệ tư vấn theo <a class="link" href="chinh-sach.html?type=bao-mat" target="_blank">chính sách bảo mật</a></span></label>
+          <button class="btn btn-accent btn-block btn-lg" type="submit">Đặt lịch khảo sát miễn phí</button>
+        </form>
+      </section>
+
+      <article class="section section-box rich calc-guide">
+        <h2>Cách tính công suất máy lạnh theo diện tích</h2>
+        <p>Công suất làm lạnh được đo bằng <strong>BTU/h</strong>. Với phòng trần cao khoảng 2,7 – 3,2 m, ít nắng, mỗi m² cần khoảng <strong>600 BTU</strong>. Sau đó điều chỉnh theo các yếu tố thực tế:</p>
+        <ul>
+          <li><strong>Chiều cao trần:</strong> trần càng cao, thể tích không khí càng lớn, cần công suất tăng tương ứng.</li>
+          <li><strong>Nắng nóng:</strong> phòng hướng Tây, tầng mái hoặc nhiều kính cần thêm 10 – 30% công suất.</li>
+          <li><strong>Số người:</strong> mỗi người ngoài 2 người đầu tiên tỏa thêm khoảng 500 BTU/h.</li>
+          <li><strong>Mục đích sử dụng:</strong> văn phòng (máy tính, máy in), cửa hàng, quán ăn (mở cửa, bếp) cần thêm 15 – 30%.</li>
+        </ul>
+        <h3>Bảng tham khảo nhanh (trần 2,7 – 3,2 m, ít nắng)</h3>
+        <div class="table-wrap"><table class="spec-table">
+          <thead><tr><th>Diện tích phòng</th><th>Công suất nên chọn</th><th>BTU/h</th></tr></thead>
+          <tbody>
+            <tr><td>Dưới 15 m²</td><td>1 HP</td><td>9.000</td></tr>
+            <tr><td>15 – 20 m²</td><td>1.5 HP</td><td>12.000</td></tr>
+            <tr><td>20 – 30 m²</td><td>2 HP</td><td>18.000</td></tr>
+            <tr><td>30 – 40 m²</td><td>2.5 HP</td><td>24.000</td></tr>
+            <tr><td>40 – 45 m²</td><td>3 HP</td><td>28.000</td></tr>
+            <tr><td>Trên 45 m²</td><td>Máy âm trần / tủ đứng 4 – 5 HP hoặc nhiều máy</td><td>36.000 – 48.000+</td></tr>
+          </tbody>
+        </table></div>
+        <p class="muted">Kết quả mang tính tham khảo. Với nhà xưởng, văn phòng lớn hoặc công trình đặc thù, nên khảo sát thực tế để tính tải nhiệt chính xác.</p>
+        <h2>Câu hỏi thường gặp</h2>
+        <div class="faq" id="calc-faq">
+          <details><summary>Máy lạnh 1 HP dùng cho phòng bao nhiêu m²?</summary><p>Máy 1 HP (9.000 BTU) phù hợp phòng dưới 15 m², trần khoảng 2,7 m, ít nắng. Phòng nắng chiều hoặc nhiều người nên chọn 1.5 HP.</p></details>
+          <details><summary>Chọn máy lạnh công suất lớn hơn nhu cầu có tốt không?</summary><p>Không nên chọn quá lớn: máy đạt nhiệt độ nhanh rồi ngắt liên tục, hút ẩm kém, tốn tiền đầu tư. Nên chọn công suất bằng hoặc lớn hơn một bậc so với nhu cầu tính toán.</p></details>
+          <details><summary>Máy lạnh Inverter tiết kiệm điện bao nhiêu?</summary><p>Máy Inverter điều chỉnh tốc độ máy nén theo nhiệt độ phòng nên thường tiết kiệm khoảng 30 – 50% điện so với máy thường khi dùng nhiều giờ mỗi ngày (trên 6 – 8 giờ).</p></details>
+          <details><summary>Phòng 25 m² nên dùng máy lạnh bao nhiêu HP?</summary><p>Phòng 25 m² trần 2,7 – 3 m, ít nắng nên dùng máy 2 HP (18.000 BTU). Nếu phòng nắng chiều hoặc trần cao trên 3,2 m, nên khảo sát để cân nhắc 2.5 HP.</p></details>
+          <details><summary>Văn phòng, nhà xưởng lớn nên dùng loại máy nào?</summary><p>Không gian trên 40 – 50 m² nên dùng máy âm trần cassette, tủ đứng hoặc giấu trần ống gió để phân bổ gió đều; nhà xưởng có thể kết hợp quạt điều hòa công nghiệp để tiết kiệm chi phí.</p></details>
+        </div>
+      </article>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="assets/js/data/catalog.js?v=202610111533"></script>
+  <script src="assets/js/data/content.js?v=202610111533"></script>
+  <script src="assets/js/seo-config.js?v=202610111533"></script>
+  <script src="assets/js/backend-config.js?v=202610111533"></script>
+  <script src="assets/js/core/utils.js?v=202610111533"></script>
+  <script src="assets/js/components/icons.js?v=202610111533"></script>
+  <script src="assets/js/core/api.js?v=202610111533"></script>
+  <script src="assets/js/core/store.js?v=202610111533"></script>
+  <script src="assets/js/core/backend.js?v=202610111533"></script>
+  <script src="assets/js/components/art.js?v=202610111533"></script>
+  <script src="assets/js/components/ui.js?v=202610111533"></script>
+  <script src="assets/js/components/layout.js?v=202610111533"></script>
+  <script src="assets/js/components/sales.js?v=202610111533"></script>
+  <script src="assets/js/pages/calculator.js?v=202610111533"></script>
+</body>
+</html>

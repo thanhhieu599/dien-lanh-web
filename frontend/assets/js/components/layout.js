@@ -74,6 +74,7 @@ DT.layout = (() => {
             ${c.subs.map((s) => `<a href="${DT.api.catUrl(c.id, s.id)}">${esc(s.name)}</a>`).join('')}</details>`).join('')}
           <div class="drawer-links">
             <a href="khuyen-mai.html">${DT.icon('percent')}Khuyến mãi hot</a>
+            <a href="tinh-cong-suat-may-lanh.html">${DT.icon('snow')}Tính công suất máy lạnh</a>
             <a href="dich-vu.html">${DT.icon('tool')}Dịch vụ điện lạnh</a>
             <a href="bao-gia-du-an.html">${DT.icon('building')}Báo giá dự án</a>
             <a href="tra-cuu-don-hang.html">${DT.icon('truck')}Tra cứu đơn hàng</a>
@@ -114,6 +115,7 @@ DT.layout = (() => {
         </ul>
       </div>
       <div class="footer-col"><h4>Hỗ trợ khách hàng</h4>
+        <a href="tinh-cong-suat-may-lanh.html">Tính công suất máy lạnh</a>
         <a href="${DT.api.policyUrl('bao-hanh')}">Chính sách bảo hành</a><a href="${DT.api.policyUrl('doi-tra')}">Chính sách đổi trả</a>
         <a href="${DT.api.policyUrl('van-chuyen')}">Vận chuyển & lắp đặt</a><a href="${DT.api.policyUrl('tra-gop')}">Hướng dẫn trả góp</a>
         <a href="${DT.api.policyUrl('thanh-toan')}">Phương thức thanh toán</a><a href="${DT.api.policyUrl('bao-mat')}">Bảo mật thông tin</a>
@@ -141,10 +143,11 @@ DT.layout = (() => {
       <a href="tai-khoan.html" data-m="account">${DT.icon('user')}<span>Tài khoản</span></a>
     </nav>
     <div class="floating">
-      ${cfg.zalo ? `<a href="${esc(cfg.zalo)}" target="_blank" rel="noopener" class="fl-zalo" aria-label="Chat Zalo">Zalo</a>` : ''}
+      ${DT.sales ? DT.sales.chatButton() : cfg.zalo ? `<a href="${esc(cfg.zalo)}" target="_blank" rel="noopener" class="fl-zalo" aria-label="Chat Zalo">Zalo</a>` : ''}
       <a href="tel:${DT.u.tel(cfg.hotline)}" class="fl-phone" aria-label="Gọi hotline">${DT.icon('phone')}</a>
       <button class="fl-top" id="to-top" aria-label="Lên đầu trang">${DT.icon('up')}</button>
     </div>
+    ${DT.sales ? DT.sales.chatHtml() : ''}
     <div class="compare-bar" id="compare-bar"></div>`;
   }
 
@@ -246,8 +249,7 @@ DT.layout = (() => {
       e.preventDefault();
       const email = e.target.querySelector('input').value.trim();
       try {
-        if (DT.saveLead) await DT.saveLead('newsletter', { email });
-        else if (DT.backend.enabled) await DT.backend.rpc('submit_lead', { p_type: 'newsletter', p_data: { email }, p_source_url: location.href });
+        await DT.saveLead('newsletter', { email });
         e.target.reset();
         DT.u.toast('Đăng ký thành công! Chúng tôi sẽ gửi ưu đãi tới email của bạn.');
       } catch (err) { DT.u.toast(err.message, 'error'); }

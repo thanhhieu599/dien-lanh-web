@@ -1,15 +1,5 @@
 // Trang thông tin: liên hệ, dịch vụ, báo giá dự án, hệ thống cửa hàng, chính sách.
-// Các form lưu "lead" vào localStorage (giai đoạn 2 gửi về API -> CRM trong trang quản trị).
-DT.saveLead = async (type, data) => {
-  if (DT.backend.enabled) return DT.backend.rpc('submit_lead', { p_type: type, p_data: data, p_source_url: location.href });
-  const KEY = 'dt_leads_v1';
-  let leads = [];
-  try { leads = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { /* bỏ qua */ }
-  const lead = { id: 'L' + Date.now().toString().slice(-8), type, data, createdAt: new Date().toISOString(), status: 'new' };
-  leads.unshift(lead);
-  try { localStorage.setItem(KEY, JSON.stringify(leads)); } catch { /* bỏ qua */ }
-  return lead;
-};
+// Các form gửi "lead" qua DT.saveLead (components/sales.js) -> CRM trong trang quản trị.
 
 DT.onReady(() => {
   const { $, $$, esc, money } = DT.u;
@@ -28,10 +18,7 @@ DT.onReady(() => {
       let lead;
       try { lead = await DT.saveLead(form.dataset.lead, d); } catch (err) { DT.u.toast(err.message, 'error'); return; } finally { btn.disabled = false; }
       form.reset();
-      DT.ui.modal(`<div style="text-align:center"><div class="success-ic">${DT.icon('check')}</div>
-        <h3>${esc(form.dataset.success || 'Gửi yêu cầu thành công!')}</h3>
-        <p class="muted">Mã yêu cầu: <b>${lead.code || lead.id}</b>. Chúng tôi sẽ liên hệ lại trong vòng 30 phút (giờ làm việc). Cần gấp vui lòng gọi <a class="link" href="tel:${DT.u.tel(DT.config.hotline)}">${DT.config.hotline}</a>.</p>
-        <button class="btn btn-primary" data-close>Đóng</button></div>`);
+      DT.sales.leadSuccess(lead, form.dataset.success || 'Gửi yêu cầu thành công!');
     });
   });
 

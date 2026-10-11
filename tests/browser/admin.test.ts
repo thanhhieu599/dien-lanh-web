@@ -24,6 +24,12 @@ async function login(page: any, id: string, pw: string) {
   await page.fill('#login [name=password]', pw);
   await page.click('#login button');
 }
+// Sau khi thêm mới, ứng dụng tự mở trang bản ghi vừa tạo -> chờ xong rồi mới thao tác tiếp
+const created = async (page: any, key: string) => {
+  const ok = await toast(page, 'Đã lưu');
+  if (ok) await page.waitForURL((u: URL) => new RegExp(`#/${key}/(?!new)[^?]+$`).test(u.hash), { timeout: 10000 });
+  return ok;
+};
 const go = async (page: any, hash: string, sel = '.ad-head h1') => { await page.goto(`${admin}#/${hash}`); await page.waitForSelector(sel); await page.waitForTimeout(150); };
 
 try {
@@ -108,8 +114,7 @@ try {
   await page.fill('#frm [name=price]', '12345678');
   await page.fill('#frm [name=stock]', '7');
   await page.click('#save');
-  await page.waitForURL(/#\/products\/\d+/);
-  check(await toast(page, 'Đã lưu'), 'thêm sản phẩm mới (bỏ trống các trường không bắt buộc)');
+  check(await created(page, 'products'), 'thêm sản phẩm mới (bỏ trống các trường không bắt buộc)');
   const pid = Number(page.url().split('/').pop());
   check(sql(`select slug || '|' || sold || '|' || price from public.products where id = ${pid}`) === 'may-lanh-test-admin-1-5hp|0|12345678', 'database: slug tự tạo, đã bán = 0, giá lẻ đúng (không bị làm tròn 1.000)');
   await page.fill('#frm [name=old_price]', '1000');
@@ -127,12 +132,13 @@ try {
   await page.fill('#frm [name=sku]', 'TEST-ADM-02');
   await page.click('#save');
   await page.waitForURL((u: URL) => /#\/products\/\d+$/.test(u.href) && !u.href.endsWith(`/${pid}`));
+  await toast(page, 'Đã lưu');
   check(Number(sql(`select count(*) from public.products where sku like 'TEST-ADM-%'`)) === 2, 'nhân bản sản phẩm');
   await page.click('a:has-text("Nhân bản")');
   await page.waitForSelector('#frm');
   await page.fill('#frm [name=sku]', 'TEST-ADM-03');
   await page.click('#save');
-  check(await toast(page, 'Đã lưu'), 'nhân bản lần 2 (slug không bị trùng)');
+  check(await created(page, 'products'), 'nhân bản lần 2 (slug không bị trùng)');
   sql(`update public.products set stock = 2 where sku = 'TEST-ADM-02'`);
   await go(page, 'products?stock=5', '.ad-table');
   check((await page.locator('.ad-table').textContent())!.includes('TEST-ADM-02'), 'lọc sắp hết hàng');
@@ -148,7 +154,7 @@ try {
   await page.fill('#frm [name=name]', 'Hãng Mới Test');
   await page.fill('#frm [name=sort]', '');
   await page.click('#save');
-  check(await toast(page, 'Đã lưu'), 'thêm thương hiệu (bỏ trống thứ tự)');
+  check(await created(page, 'brands'), 'thêm thương hiệu (bỏ trống thứ tự)');
   await go(page, 'categories/new', '#frm');
   await page.fill('#frm [name=id]', 'dieu-hoa-trung-tam');
   await page.fill('#frm [name=name]', 'Điều hòa trung tâm');
@@ -156,25 +162,25 @@ try {
   await page.selectOption('#frm [name=icon]', '');
   await page.fill('#frm [name=sort]', '');
   await page.click('#save');
-  check(await toast(page, 'Đã lưu'), 'thêm danh mục (bỏ trống biểu tượng, thứ tự)');
+  check(await created(page, 'categories'), 'thêm danh mục (bỏ trống biểu tượng, thứ tự)');
   await go(page, 'coupons/new', '#frm');
   await page.fill('#frm [name=code]', 'fdi2026');
   await page.fill('#frm [name=value]', '5');
   await page.fill('#frm [name=min]', '0');
   await page.click('#save');
-  check(await toast(page, 'Đã lưu'), 'thêm mã giảm giá (gõ chữ thường tự đổi IN HOA)');
+  check(await created(page, 'coupons'), 'thêm mã giảm giá (gõ chữ thường tự đổi IN HOA)');
   check(sql(`select count(*) from public.coupons where code = 'FDI2026'`) === '1', 'database: FDI2026');
   await go(page, 'banners/new', '#frm');
   await page.fill('#frm [name=title]', 'Banner test');
   await page.fill('#frm [name=sort]', '');
   await page.click('#save');
-  check(await toast(page, 'Đã lưu'), 'thêm banner');
+  check(await created(page, 'banners'), 'thêm banner');
   await go(page, 'posts/new', '#frm');
   await page.fill('#frm [name=title]', 'Cách bảo trì điều hòa nhà xưởng');
   await page.fill('#frm [name=date]', '');
   await page.fill('#frm [name=content]', '<p>Nội dung</p>');
   await page.click('#save');
-  check(await toast(page, 'Đã lưu'), 'thêm bài viết (bỏ trống ngày)');
+  check(await created(page, 'posts'), 'thêm bài viết (bỏ trống ngày)');
   check(sql(`select slug from public.posts where title = 'Cách bảo trì điều hòa nhà xưởng'`) === 'cach-bao-tri-dieu-hoa-nha-xuong', 'database: slug bài viết');
   await go(page, 'stores/new', '#frm');
   await page.fill('#frm [name=name]', 'D&T Long An');
@@ -182,14 +188,14 @@ try {
   await page.fill('#frm [name=address]', '1 Hùng Vương');
   await page.fill('#frm [name=sort]', '');
   await page.click('#save');
-  check(await toast(page, 'Đã lưu'), 'thêm cửa hàng');
+  check(await created(page, 'stores'), 'thêm cửa hàng');
   await go(page, 'services/new', '#frm');
   await page.fill('#frm [name=id]', 'bao-duong-chiller');
   await page.fill('#frm [name=name]', 'Bảo dưỡng chiller');
   await page.fill('#frm [name=price]', '');
   await page.fill('#frm [name=sort]', '');
   await page.click('#save');
-  check(await toast(page, 'Đã lưu'), 'thêm dịch vụ (giá trống = báo giá)');
+  check(await created(page, 'services'), 'thêm dịch vụ (giá trống = báo giá)');
   await go(page, 'categories/may-lanh', '#frm');
   await page.click('#del');
   await page.click('#cf-ok');

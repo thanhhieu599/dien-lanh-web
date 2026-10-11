@@ -197,7 +197,7 @@ try {
   check(await created(page, 'posts'), 'thêm bài viết (bỏ trống ngày)');
   check(sql(`select slug from public.posts where title = 'Cách bảo trì điều hòa nhà xưởng'`) === 'cach-bao-tri-dieu-hoa-nha-xuong', 'database: slug bài viết');
   await go(page, 'stores/new', '#frm');
-  await page.fill('#frm [name=name]', 'D&T Long An');
+  await page.fill('#frm [name=name]', 'Chi nhánh Long An');
   await page.fill('#frm [name=city]', 'Long An');
   await page.fill('#frm [name=address]', '1 Hùng Vương');
   await page.fill('#frm [name=sort]', '');

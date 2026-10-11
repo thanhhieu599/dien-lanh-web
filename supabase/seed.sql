@@ -2,7 +2,7 @@
 -- Chạy sau các file trong supabase/migrations/
 
 insert into public.settings (key, value) values
-  ('store', '{"name":"D&T Điện Lạnh","slogan":"Mát lạnh chính hãng - Lắp đặt tận tâm","company":"CÔNG TY TNHH TMDV PHÁT TRIỂN KỸ THUẬT D & T","taxCode":"0300000000","hotline":"1900 6868","hotlineB2B":"0909 000 000","email":"sales@trangthietbi.vn","zalo":"https://zalo.me/0909000000","facebook":"https://facebook.com/","youtube":"https://youtube.com/","address":"TP. Hồ Chí Minh, Việt Nam","workingHours":"7:30 - 21:30 (Cả CN & ngày lễ)","freeShipThreshold":2000000,"shippingFee":50000,"installFee":300000,"bankName":"Vietcombank - CN TP.HCM","bankBin":"970436","bankAccount":"0071000000000","bankOwner":"CONG TY TNHH TMDV PHAT TRIEN KY THUAT D VA T"}'::jsonb)
+  ('store', '{"name":"Tên thương hiệu","slogan":"Mát lạnh chính hãng - Lắp đặt tận tâm","company":"TÊN CÔNG TY","taxCode":"0300000000","hotline":"1900 6868","hotlineB2B":"0909 000 000","email":"email@tencongty.vn","zalo":"https://zalo.me/0909000000","facebook":"https://facebook.com/","youtube":"https://youtube.com/","address":"TP. Hồ Chí Minh, Việt Nam","workingHours":"7:30 - 21:30 (Cả CN & ngày lễ)","freeShipThreshold":2000000,"shippingFee":50000,"installFee":300000,"bankName":"Vietcombank - CN TP.HCM","bankBin":"970436","bankAccount":"0071000000000","bankOwner":"TEN CONG TY"}'::jsonb)
 on conflict (key) do nothing;
 
 insert into public.categories (id, name, short, icon, art, subs, filters, sort) values
@@ -80,15 +80,15 @@ insert into public.products (id, sku, slug, name, cat, sub, brand, price, old_pr
 on conflict (id) do nothing;
 
 insert into public.stores (id, name, city, address, phone, hours, map, sort) values
-  (1, 'D&T Điện Lạnh - Quận 7', 'TP. Hồ Chí Minh', '123 Nguyễn Thị Thập, P. Tân Phú, Quận 7', '028 3700 0001', '8:00 - 21:00', 'Nguyễn Thị Thập Quận 7', 0),
-  (2, 'D&T Điện Lạnh - Thủ Đức', 'TP. Hồ Chí Minh', '456 Võ Văn Ngân, P. Bình Thọ, TP. Thủ Đức', '028 3700 0002', '8:00 - 21:00', 'Võ Văn Ngân Thủ Đức', 1),
-  (3, 'D&T Điện Lạnh - Tân Bình', 'TP. Hồ Chí Minh', '789 Cộng Hòa, P. 13, Q. Tân Bình', '028 3700 0003', '8:00 - 21:00', 'Cộng Hòa Tân Bình', 2),
-  (4, 'D&T Điện Lạnh - Biên Hòa', 'Đồng Nai', '12 Phạm Văn Thuận, P. Tân Mai, TP. Biên Hòa', '0251 370 0004', '8:00 - 20:30', 'Phạm Văn Thuận Biên Hòa', 3),
-  (5, 'D&T Điện Lạnh - Thủ Dầu Một', 'Bình Dương', '34 Đại lộ Bình Dương, P. Phú Hòa, TP. Thủ Dầu Một', '0274 370 0005', '8:00 - 20:30', 'Đại lộ Bình Dương Thủ Dầu Một', 4)
+  (1, 'Tên thương hiệu - Quận 7', 'TP. Hồ Chí Minh', '123 Nguyễn Thị Thập, P. Tân Phú, Quận 7', '028 3700 0001', '8:00 - 21:00', 'Nguyễn Thị Thập Quận 7', 0),
+  (2, 'Tên thương hiệu - Thủ Đức', 'TP. Hồ Chí Minh', '456 Võ Văn Ngân, P. Bình Thọ, TP. Thủ Đức', '028 3700 0002', '8:00 - 21:00', 'Võ Văn Ngân Thủ Đức', 1),
+  (3, 'Tên thương hiệu - Tân Bình', 'TP. Hồ Chí Minh', '789 Cộng Hòa, P. 13, Q. Tân Bình', '028 3700 0003', '8:00 - 21:00', 'Cộng Hòa Tân Bình', 2),
+  (4, 'Tên thương hiệu - Biên Hòa', 'Đồng Nai', '12 Phạm Văn Thuận, P. Tân Mai, TP. Biên Hòa', '0251 370 0004', '8:00 - 20:30', 'Phạm Văn Thuận Biên Hòa', 3),
+  (5, 'Tên thương hiệu - Thủ Dầu Một', 'Bình Dương', '34 Đại lộ Bình Dương, P. Phú Hòa, TP. Thủ Dầu Một', '0274 370 0005', '8:00 - 20:30', 'Đại lộ Bình Dương Thủ Dầu Một', 4)
 on conflict (id) do nothing;
 
 insert into public.posts (slug, title, cat, date, author, art, excerpt, content) values
-  ('cach-chon-cong-suat-may-lanh-theo-dien-tich', 'Cách chọn công suất máy lạnh theo diện tích phòng (bảng tra chuẩn)', 'Tư vấn chọn mua', '2026-09-28', 'Kỹ thuật D&T', 'ac', 'Chọn sai công suất khiến máy lạnh chạy quá tải, tốn điện và nhanh hỏng. Bảng tra BTU theo m² dưới đây giúp bạn chọn đúng ngay lần đầu.', '<p>Công suất máy lạnh (HP hoặc BTU) quyết định khả năng làm lạnh và mức tiêu thụ điện. Nguyên tắc cơ bản: <strong>1 m² cần khoảng 600 BTU</strong> với phòng tiêu chuẩn cao 3m, ít nắng.</p>
+  ('cach-chon-cong-suat-may-lanh-theo-dien-tich', 'Cách chọn công suất máy lạnh theo diện tích phòng (bảng tra chuẩn)', 'Tư vấn chọn mua', '2026-09-28', 'Phòng Kỹ thuật', 'ac', 'Chọn sai công suất khiến máy lạnh chạy quá tải, tốn điện và nhanh hỏng. Bảng tra BTU theo m² dưới đây giúp bạn chọn đúng ngay lần đầu.', '<p>Công suất máy lạnh (HP hoặc BTU) quyết định khả năng làm lạnh và mức tiêu thụ điện. Nguyên tắc cơ bản: <strong>1 m² cần khoảng 600 BTU</strong> với phòng tiêu chuẩn cao 3m, ít nắng.</p>
 <h2>Bảng tra nhanh</h2>
 <table><thead><tr><th>Diện tích phòng</th><th>Công suất đề xuất</th></tr></thead><tbody>
 <tr><td>Dưới 15 m²</td><td>1 HP (9.000 BTU)</td></tr>
@@ -100,20 +100,20 @@ insert into public.posts (slug, title, cat, date, author, art, excerpt, content)
 <ul><li>Phòng hướng Tây, mái tôn, nhiều kính: cộng thêm 15 - 20%.</li><li>Phòng đông người (văn phòng, quán ăn): cộng 500 BTU/người từ người thứ 3.</li><li>Có thiết bị tỏa nhiệt (máy chủ, bếp): khảo sát thực tế.</li></ul>
 <h2>Nên chọn Inverter hay thường?</h2>
 <p>Nếu dùng trên 6 giờ/ngày, Inverter giúp tiết kiệm 30 - 60% điện, thời gian hoàn vốn chênh lệch giá thường dưới 2 năm.</p>'),
-  ('ve-sinh-may-lanh-bao-lau-mot-lan', 'Bao lâu nên vệ sinh máy lạnh một lần? Dấu hiệu cần vệ sinh ngay', 'Mẹo sử dụng', '2026-09-20', 'Kỹ thuật D&T', 'ac', 'Máy lạnh bẩn tiêu tốn thêm 15 - 25% điện năng và là nơi vi khuẩn phát triển. Đây là lịch vệ sinh khuyến nghị cho gia đình và văn phòng.', '<p>Lịch vệ sinh khuyến nghị: <strong>gia đình 3 - 6 tháng/lần</strong>, <strong>văn phòng, nhà hàng 2 - 3 tháng/lần</strong>, nhà xưởng nhiều bụi 1 - 2 tháng/lần.</p>
+  ('ve-sinh-may-lanh-bao-lau-mot-lan', 'Bao lâu nên vệ sinh máy lạnh một lần? Dấu hiệu cần vệ sinh ngay', 'Mẹo sử dụng', '2026-09-20', 'Phòng Kỹ thuật', 'ac', 'Máy lạnh bẩn tiêu tốn thêm 15 - 25% điện năng và là nơi vi khuẩn phát triển. Đây là lịch vệ sinh khuyến nghị cho gia đình và văn phòng.', '<p>Lịch vệ sinh khuyến nghị: <strong>gia đình 3 - 6 tháng/lần</strong>, <strong>văn phòng, nhà hàng 2 - 3 tháng/lần</strong>, nhà xưởng nhiều bụi 1 - 2 tháng/lần.</p>
 <h2>Dấu hiệu cần vệ sinh ngay</h2><ul><li>Máy làm lạnh yếu, chạy lâu mới mát.</li><li>Có mùi hôi khi bật máy.</li><li>Chảy nước ở dàn lạnh.</li><li>Tiền điện tăng bất thường.</li></ul>
-<p>D&T cung cấp dịch vụ vệ sinh chỉ từ 150.000₫/máy, có mặt trong 2 giờ tại nội thành, bảo hành 30 ngày.</p>'),
-  ('so-sanh-tu-lanh-inverter-va-thuong', 'Tủ lạnh Inverter và tủ lạnh thường: Có đáng để trả thêm tiền?', 'Tư vấn chọn mua', '2026-09-12', 'Biên tập D&T', 'fridge', 'Phân tích chi phí điện năng thực tế trong 5 năm giữa tủ lạnh Inverter và tủ lạnh thường cùng dung tích.', '<p>Tủ lạnh chạy 24/7 nên điện năng là chi phí lớn nhất trong vòng đời sản phẩm. Với tủ 300 lít, bản Inverter tiêu thụ khoảng 0.9 kWh/ngày so với 1.4 kWh/ngày của bản thường.</p>
+<p>Chúng tôi cung cấp dịch vụ vệ sinh chỉ từ 150.000₫/máy, có mặt trong 2 giờ tại nội thành, bảo hành 30 ngày.</p>'),
+  ('so-sanh-tu-lanh-inverter-va-thuong', 'Tủ lạnh Inverter và tủ lạnh thường: Có đáng để trả thêm tiền?', 'Tư vấn chọn mua', '2026-09-12', 'Ban biên tập', 'fridge', 'Phân tích chi phí điện năng thực tế trong 5 năm giữa tủ lạnh Inverter và tủ lạnh thường cùng dung tích.', '<p>Tủ lạnh chạy 24/7 nên điện năng là chi phí lớn nhất trong vòng đời sản phẩm. Với tủ 300 lít, bản Inverter tiêu thụ khoảng 0.9 kWh/ngày so với 1.4 kWh/ngày của bản thường.</p>
 <h2>Tính toán 5 năm</h2><p>Chênh lệch 0.5 kWh × 365 ngày × 5 năm × 3.000₫ ≈ <strong>2.7 triệu đồng</strong> - thường lớn hơn chênh lệch giá mua.</p>
 <h2>Kết luận</h2><p>Nên chọn Inverter cho gia đình từ 3 người trở lên hoặc tủ trên 250 lít.</p>'),
-  ('giai-phap-dieu-hoa-cho-nha-xuong', 'Giải pháp làm mát nhà xưởng: Điều hòa trung tâm, âm trần hay quạt hơi nước?', 'Giải pháp doanh nghiệp', '2026-09-05', 'Phòng Dự án D&T', 'ac-cassette', 'So sánh chi phí đầu tư, vận hành và hiệu quả của 3 giải pháp làm mát phổ biến cho nhà xưởng, kho bãi tại Việt Nam.', '<p>Lựa chọn giải pháp làm mát nhà xưởng cần cân bằng giữa <strong>chi phí đầu tư (CAPEX)</strong>, <strong>chi phí vận hành (OPEX)</strong> và yêu cầu nhiệt độ của quy trình sản xuất.</p>
+  ('giai-phap-dieu-hoa-cho-nha-xuong', 'Giải pháp làm mát nhà xưởng: Điều hòa trung tâm, âm trần hay quạt hơi nước?', 'Giải pháp doanh nghiệp', '2026-09-05', 'Phòng Dự án', 'ac-cassette', 'So sánh chi phí đầu tư, vận hành và hiệu quả của 3 giải pháp làm mát phổ biến cho nhà xưởng, kho bãi tại Việt Nam.', '<p>Lựa chọn giải pháp làm mát nhà xưởng cần cân bằng giữa <strong>chi phí đầu tư (CAPEX)</strong>, <strong>chi phí vận hành (OPEX)</strong> và yêu cầu nhiệt độ của quy trình sản xuất.</p>
 <table><thead><tr><th>Giải pháp</th><th>Phù hợp</th><th>Chi phí đầu tư</th></tr></thead><tbody>
 <tr><td>Quạt điều hòa công nghiệp</td><td>Xưởng thông thoáng, cần giảm 3-5°C</td><td>Thấp</td></tr>
 <tr><td>Máy lạnh âm trần / tủ đứng</td><td>Văn phòng xưởng, phòng QC, khu đóng gói</td><td>Trung bình</td></tr>
 <tr><td>VRV/VRF, Chiller</td><td>Phòng sạch, nhà máy điện tử, kiểm soát nhiệt ẩm</td><td>Cao</td></tr></tbody></table>
-<p>Liên hệ phòng dự án D&T để được khảo sát và đề xuất phương án miễn phí.</p>'),
-  ('gas-r32-va-r410a-khac-nhau-the-nao', 'Gas R32 và R410A khác nhau thế nào? Lưu ý khi nạp gas', 'Kiến thức kỹ thuật', '2026-08-27', 'Kỹ thuật D&T', 'gas', 'R32 đang thay thế R410A trên hầu hết dòng máy mới. Hiểu sự khác biệt để bảo dưỡng đúng cách và an toàn.', '<p>R32 có chỉ số làm nóng toàn cầu (GWP) khoảng 675, chỉ bằng 1/3 R410A (2088), hiệu suất truyền nhiệt cao hơn.</p><h2>Lưu ý</h2><ul><li>Không nạp lẫn các loại gas.</li><li>R32 dễ cháy nhẹ (A2L) - cần thợ có chứng chỉ và dụng cụ phù hợp.</li><li>Dùng đồng hồ nạp gas đúng chuẩn.</li></ul>'),
-  ('meo-tiet-kiem-dien-mua-nong', '7 mẹo dùng máy lạnh tiết kiệm điện mùa nóng', 'Mẹo sử dụng', '2026-08-15', 'Biên tập D&T', 'ac', 'Để máy ở 26 - 27°C, kết hợp quạt và vệ sinh định kỳ có thể giảm 20 - 30% tiền điện mỗi tháng.', '<ol><li>Đặt nhiệt độ 26 - 27°C.</li><li>Kết hợp quạt để lưu thông khí.</li><li>Đóng kín cửa, dùng rèm cản nắng.</li><li>Vệ sinh lưới lọc 2 tuần/lần.</li><li>Dùng chế độ ngủ ban đêm.</li><li>Không bật/tắt liên tục.</li><li>Đặt dàn nóng nơi thoáng, tránh nắng trực tiếp.</li></ol>')
+<p>Liên hệ phòng dự án của chúng tôi để được khảo sát và đề xuất phương án miễn phí.</p>'),
+  ('gas-r32-va-r410a-khac-nhau-the-nao', 'Gas R32 và R410A khác nhau thế nào? Lưu ý khi nạp gas', 'Kiến thức kỹ thuật', '2026-08-27', 'Phòng Kỹ thuật', 'gas', 'R32 đang thay thế R410A trên hầu hết dòng máy mới. Hiểu sự khác biệt để bảo dưỡng đúng cách và an toàn.', '<p>R32 có chỉ số làm nóng toàn cầu (GWP) khoảng 675, chỉ bằng 1/3 R410A (2088), hiệu suất truyền nhiệt cao hơn.</p><h2>Lưu ý</h2><ul><li>Không nạp lẫn các loại gas.</li><li>R32 dễ cháy nhẹ (A2L) - cần thợ có chứng chỉ và dụng cụ phù hợp.</li><li>Dùng đồng hồ nạp gas đúng chuẩn.</li></ul>'),
+  ('meo-tiet-kiem-dien-mua-nong', '7 mẹo dùng máy lạnh tiết kiệm điện mùa nóng', 'Mẹo sử dụng', '2026-08-15', 'Ban biên tập', 'ac', 'Để máy ở 26 - 27°C, kết hợp quạt và vệ sinh định kỳ có thể giảm 20 - 30% tiền điện mỗi tháng.', '<ol><li>Đặt nhiệt độ 26 - 27°C.</li><li>Kết hợp quạt để lưu thông khí.</li><li>Đóng kín cửa, dùng rèm cản nắng.</li><li>Vệ sinh lưới lọc 2 tuần/lần.</li><li>Dùng chế độ ngủ ban đêm.</li><li>Không bật/tắt liên tục.</li><li>Đặt dàn nóng nơi thoáng, tránh nắng trực tiếp.</li></ol>')
 on conflict (slug) do nothing;
 
 insert into public.banners (id, title, sub, cta, href, theme, art, sort) values
@@ -133,16 +133,16 @@ insert into public.services (id, name, price, unit, icon, description, sort) val
 on conflict (id) do nothing;
 
 insert into public.policies (key, title, body, sort) values
-  ('bao-hanh', 'Chính sách bảo hành', '<p>Tất cả sản phẩm tại D&T là hàng chính hãng, được bảo hành theo tiêu chuẩn của nhà sản xuất.</p><ul><li>Bảo hành tại nhà đối với máy lạnh, tủ lạnh, máy giặt.</li><li>Tiếp nhận bảo hành qua hotline 1900 6868 hoặc tại showroom.</li><li>Thời gian xử lý: 24 - 72 giờ làm việc.</li></ul><p>Không bảo hành với các trường hợp: hư hỏng do thiên tai, sử dụng sai hướng dẫn, tự ý tháo dỡ sửa chữa.</p>', 0),
+  ('bao-hanh', 'Chính sách bảo hành', '<p>Tất cả sản phẩm tại cửa hàng là hàng chính hãng, được bảo hành theo tiêu chuẩn của nhà sản xuất.</p><ul><li>Bảo hành tại nhà đối với máy lạnh, tủ lạnh, máy giặt.</li><li>Tiếp nhận bảo hành qua hotline 1900 6868 hoặc tại showroom.</li><li>Thời gian xử lý: 24 - 72 giờ làm việc.</li></ul><p>Không bảo hành với các trường hợp: hư hỏng do thiên tai, sử dụng sai hướng dẫn, tự ý tháo dỡ sửa chữa.</p>', 0),
   ('doi-tra', 'Chính sách đổi trả', '<ul><li><strong>1 đổi 1 trong 30 ngày</strong> nếu lỗi do nhà sản xuất.</li><li>Đổi sang sản phẩm khác trong 7 ngày (sản phẩm còn nguyên hộp, chưa lắp đặt), phí 10%.</li><li>Hoàn tiền trong 3 - 5 ngày làm việc sau khi nhận lại hàng.</li></ul>', 1),
   ('van-chuyen', 'Chính sách vận chuyển & lắp đặt', '<ul><li>Miễn phí giao hàng nội thành cho đơn từ 2.000.000₫.</li><li>Giao nhanh trong 2 - 4 giờ tại TP.HCM, Bình Dương, Đồng Nai.</li><li>Miễn phí lắp đặt máy lạnh treo tường có biểu tượng "Miễn phí lắp đặt" (chưa bao gồm vật tư ống đồng ngoài 3m tiêu chuẩn).</li></ul>', 2),
   ('tra-gop', 'Hướng dẫn mua trả góp', '<ul><li>Trả góp 0% qua thẻ tín dụng của 25+ ngân hàng.</li><li>Trả góp qua công ty tài chính: chỉ cần CCCD, duyệt hồ sơ 15 phút.</li><li>Kỳ hạn 3 - 12 tháng, trả trước từ 0%.</li></ul>', 3),
-  ('bao-mat', 'Chính sách bảo mật thông tin', '<p>D&T cam kết bảo mật thông tin khách hàng theo Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân. Thông tin chỉ được dùng để xử lý đơn hàng, giao hàng, bảo hành và chăm sóc khách hàng.</p>', 4),
+  ('bao-mat', 'Chính sách bảo mật thông tin', '<p>Chúng tôi cam kết bảo mật thông tin khách hàng theo Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân. Thông tin chỉ được dùng để xử lý đơn hàng, giao hàng, bảo hành và chăm sóc khách hàng.</p>', 4),
   ('thanh-toan', 'Phương thức thanh toán', '<ul><li>Thanh toán khi nhận hàng (COD).</li><li>Chuyển khoản ngân hàng / QR.</li><li>Thẻ ATM, Visa, Master, JCB qua cổng thanh toán.</li><li>Ví điện tử MoMo, ZaloPay, VNPay.</li><li>Doanh nghiệp: công nợ theo hợp đồng, xuất hóa đơn VAT.</li></ul>', 5)
 on conflict (key) do nothing;
 
 insert into public.coupons (code, type, value, max, min, description) values
-  ('DTCOOL10', 'percent', 10, 1000000, 5000000, 'Giảm 10% tối đa 1 triệu cho đơn từ 5 triệu'),
+  ('COOL10', 'percent', 10, 1000000, 5000000, 'Giảm 10% tối đa 1 triệu cho đơn từ 5 triệu'),
   ('GIAM300K', 'fixed', 300000, null, 3000000, 'Giảm 300.000₫ cho đơn từ 3 triệu'),
   ('FREESHIP', 'ship', 0, null, 0, 'Miễn phí vận chuyển mọi đơn hàng')
 on conflict (code) do nothing;

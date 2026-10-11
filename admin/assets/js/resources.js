@@ -191,7 +191,7 @@ window.AD = window.AD || {};
         { label: 'Ngày', render: (r) => d(r.date) },
         { label: 'Trạng thái', render: (r) => (r.published ? '<span class="st st-ok">Đã đăng</span>' : '<span class="st st-muted">Nháp</span>') },
       ],
-      defaults: () => ({ published: false, date: new Date().toISOString().slice(0, 10), author: 'Biên tập D&T', art: 'ac', cat: 'Tư vấn chọn mua' }),
+      defaults: () => ({ published: false, date: new Date().toISOString().slice(0, 10), author: 'Ban biên tập', art: 'ac', cat: 'Tư vấn chọn mua' }),
       fields: [
         { key: 'title', label: 'Tiêu đề (H1, nên 50-65 ký tự, có từ khóa)', required: true, col: 'full' },
         { key: 'slug', label: 'Đường dẫn (slug)', readonlyOnEdit: true, col: 'third', validate: slugRule, help: 'Để trống = tự tạo từ tiêu đề' },

@@ -7,7 +7,7 @@ DT.layout = (() => {
 
   const logo = `<a href="index.html" class="logo" aria-label="${esc(cfg.name)} - Trang chủ">
     <span class="logo-mark">${DT.icon('snow')}</span>
-    <span class="logo-text"><b>D&amp;T</b><small>ĐIỆN LẠNH</small></span></a>`;
+    <span class="logo-text"><b>LOGO</b><small>TÊN THƯƠNG HIỆU</small></span></a>`;
 
   function megaMenu() {
     return `<div class="mega">

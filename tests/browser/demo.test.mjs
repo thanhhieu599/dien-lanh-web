@@ -23,8 +23,8 @@ try {
   await page.waitForSelector('.pd-title h1');
   await page.click('.buy-btns [data-action="add-cart"]');
   await page.goto(`${fe}gio-hang.html`);
-  await page.locator('.coupon-chip[data-code="DTCOOL10"]').click();
-  check(await toast('Đã áp dụng'), 'áp mã DTCOOL10');
+  await page.locator('.coupon-chip[data-code="COOL10"]').click();
+  check(await toast('Đã áp dụng'), 'áp mã COOL10');
   const cartTotal = Number((await page.locator('.summary .sum-total b').textContent()).replace(/\D/g, ''));
   await page.goto(`${fe}tai-khoan.html#register`);
   await page.fill('#register-form [name=name]', 'Khách Demo');

@@ -29,7 +29,7 @@ export async function createPayment(cfg: MomoConfig, o: { orderId: string; amoun
     method: 'POST',
     headers: { 'Content-Type': 'application/json; charset=UTF-8' },
     body: JSON.stringify({
-      partnerCode: cfg.partnerCode, partnerName: cfg.partnerName || 'D&T Dien Lanh', storeId: cfg.partnerCode,
+      partnerCode: cfg.partnerCode, partnerName: cfg.partnerName || 'Ten thuong hieu', storeId: cfg.partnerCode,
       requestId, amount: b.amount, orderId: b.orderId, orderInfo: b.orderInfo,
       redirectUrl: cfg.redirectUrl, ipnUrl: cfg.ipnUrl, lang: 'vi', requestType: cfg.requestType,
       autoCapture: true, extraData: '', orderGroupId: '', signature,

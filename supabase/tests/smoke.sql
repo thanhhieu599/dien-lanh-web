@@ -40,7 +40,7 @@ begin
     jsonb_build_array(jsonb_build_object('id', 1001, 'qty', 2, 'install', true, 'price', 1)),  -- price giả mạo bị bỏ qua
     '{"name":"Nguyễn Test","phone":"0901 234 567","gender":"Anh"}',
     '{"method":"delivery","province":"TP. Hồ Chí Minh","district":"Q7","address":"12 NTT"}',
-    'cod', null, 'gọi trước', 'dtcool10');
+    'cod', null, 'gọi trước', 'cool10');
   assert (r ->> 'subtotal')::bigint = p.price * 2, 'subtotal phải tính theo giá DB';
   assert (r ->> 'install')::bigint = case when p.free_install then 0 else 600000 end, 'phí lắp đặt sai';
   assert (r ->> 'discount')::bigint = least(p.price * 2 / 10, 1000000), 'giảm 10% tối đa 1tr';

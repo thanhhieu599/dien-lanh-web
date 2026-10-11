@@ -177,7 +177,7 @@ DT.ui = (() => {
 
   function newsCard(p) {
     return `<article class="news-card">
-      <a class="news-img" href="${DT.api.postUrl(p.slug)}" aria-label="${esc(p.title)}">${DT.art(p.art, 'white', 'D&amp;T')}</a>
+      <a class="news-img" href="${DT.api.postUrl(p.slug)}" aria-label="${esc(p.title)}">${DT.art(p.art)}</a>
       <div class="news-body"><span class="news-cat">${esc(p.cat)}</span>
         <h3><a href="${DT.api.postUrl(p.slug)}">${esc(p.title)}</a></h3><p>${esc(p.excerpt)}</p>
         <span class="news-meta">${DT.u.date(p.date)} • ${esc(p.author)}</span></div></article>`;

@@ -10,7 +10,7 @@ await sb.createUser('0900000002', 'staff123', 'Nhân Viên Bán Hàng', 'staff',
 await sb.createUser('0900000003', 'khach123', 'Khách Thường', 'customer', DOMAIN);
 
 // Dữ liệu: vài đơn, lead, đánh giá
-const order = (phone: string, name: string, pay = 'cod') => JSON.parse(sql(`select public.place_order('[{"id":1003,"qty":1,"install":true},{"id":1010,"qty":2}]',
+const order = (phone: string, name: string, pay = 'cod') => JSON.parse(sql(`select public.place_order('[{"id":1003,"qty":1,"install":true},{"id":1014,"qty":2}]',
   '{"name":"${name}","phone":"${phone}","email":"${phone}@example.com"}', '{"method":"delivery","province":"TP. Hồ Chí Minh","district":"Q7","address":"1 NTT"}', '${pay}')`)).code;
 const o1 = order('0911000001', 'Nguyễn Văn Một');
 const o2 = order('0911000002', 'Trần Thị Hai', 'bank');
@@ -95,14 +95,14 @@ try {
   check(sql(`select payment_status || '|' || staff_note || '|' || (paid_at is not null) from public.orders where id = ${id1}`) === 'paid|Khách đã chuyển khoản, giao chiều nay|true', 'database: đã thanh toán (có thời điểm), ghi chú');
   await page.waitForSelector('.ad-timeline li');
   check(await page.locator('.ad-timeline li').count() === 2, 'lịch sử trạng thái 2 mốc');
-  const stock = Number(sql(`select stock from public.products where id = 1010`));
+  const stock = Number(sql(`select stock from public.products where id = 1014`));
   const id2 = sql(`select id from public.orders where code = '${o2}'`);
   await go(page, `orders/${id2}`, '#ops');
   await page.click('[data-status="cancelled"]');
   await page.click('#cf-ok');
   check(await toast(page, 'Đã chuyển đơn sang'), 'hủy đơn');
   await page.waitForTimeout(300);
-  check(Number(sql(`select stock from public.products where id = 1010`)) === stock + 2, 'hủy đơn → hoàn tồn kho');
+  check(Number(sql(`select stock from public.products where id = 1014`)) === stock + 2, 'hủy đơn → hoàn tồn kho');
 
   section('Khách hàng tiềm năng (CRM)');
   await go(page, 'leads', '.ad-table');

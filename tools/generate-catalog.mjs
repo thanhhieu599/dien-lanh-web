@@ -323,7 +323,8 @@ const washers = [
 ];
 washers.forEach(([brand, sub, kg, inv, base, color, badges, flash]) => {
   const subName = sub === 'may-say' ? 'Máy sấy' : 'Máy giặt';
-  const name = `${subName} ${brandName(brand)} ${inv ? 'Inverter ' : ''}${kg} kg`;
+  const door = { 'cua-truoc': 'cửa trước ', 'cua-tren': 'cửa trên ' }[sub] || '';
+  const name = `${subName} ${door}${brandName(brand)} ${inv ? 'Inverter ' : ''}${kg} kg`;
   const range = kg < 8 ? 'Dưới 8 kg' : kg <= 9 ? (kg < 9 ? '8 - 9 kg' : '8 - 9 kg') : kg <= 10 ? '9 - 10 kg' : 'Trên 10 kg';
   add({
     cat: 'may-giat', sub, brand, name, basePrice: base, art: sub === 'cua-tren' ? 'washer-top' : 'washer', color, badges, flashSale: !!flash,
@@ -353,7 +354,7 @@ washers.forEach(([brand, sub, kg, inv, base, color, badges, flash]) => {
 ].forEach(([brand, sub, room, base, art, badges]) => {
   const subName = sub === 'hut-am' ? 'Máy hút ẩm' : 'Máy lọc không khí';
   add({
-    cat: 'loc-khong-khi', sub, brand, name: `${subName} ${brandName(brand)}`, basePrice: base, art, badges,
+    cat: 'loc-khong-khi', sub, brand, name: `${subName} ${brandName(brand)} ${room}`, basePrice: base, art, badges,
     attrs: { room },
     short: `Phòng ${room} • Lọc HEPA • Cảm biến bụi mịn PM2.5`,
     highlights: ['Màng lọc HEPA lọc 99.97% bụi mịn PM2.5', 'Cảm biến chất lượng không khí tự động', 'Vận hành êm chế độ ngủ', `Phù hợp phòng ${room}`],
@@ -370,7 +371,7 @@ washers.forEach(([brand, sub, kg, inv, base, color, badges, flash]) => {
   [BRAND, 'truc-tiep', 'Trực tiếp', 2190000, [], true],
 ].forEach(([brand, sub, volume, base, badges, flash]) => {
   add({
-    cat: 'may-nuoc-nong', sub, brand, name: `Máy nước nóng ${sub === 'truc-tiep' ? 'trực tiếp' : 'gián tiếp'} ${brandName(brand)}`,
+    cat: 'may-nuoc-nong', sub, brand, name: `Máy nước nóng ${sub === 'truc-tiep' ? 'trực tiếp' : 'gián tiếp'} ${brandName(brand)}${sub === 'truc-tiep' ? '' : ` ${volume}`}`,
     basePrice: base, art: 'heater', badges, flashSale: !!flash, freeInstall: true,
     attrs: { volume },
     short: `${volume} • Chống giật ELCB • Tiết kiệm điện`,
@@ -387,7 +388,7 @@ washers.forEach(([brand, sub, kg, inv, base, color, badges, flash]) => {
   [BRAND, 'cong-nghiep', 'Trên 60 lít', 12900000, ['project']],
 ].forEach(([brand, sub, tank, base, badges, flash]) => {
   add({
-    cat: 'quat-dieu-hoa', sub, brand, name: `Quạt điều hòa ${sub === 'cong-nghiep' ? 'công nghiệp ' : ''}${brandName(brand)}`,
+    cat: 'quat-dieu-hoa', sub, brand, name: `Quạt điều hòa ${sub === 'cong-nghiep' ? 'công nghiệp ' : ''}${brandName(brand)} bình ${tank.toLowerCase()}`,
     basePrice: base, art: 'cooler', badges, flashSale: !!flash,
     attrs: { tank },
     short: `Bình ${tank} • Làm mát bằng hơi nước • Tiết kiệm 80% điện`,
@@ -415,6 +416,13 @@ washers.forEach(([brand, sub, kg, inv, base, color, badges, flash]) => {
     warranty: '12 tháng',
   });
 });
+
+// ---------------------------------------------------------------- Gộp sản phẩm trùng tên
+// Bản demo không có thương hiệu / mã model -> nhiều mẫu cùng tên: giữ mẫu đầu tiên (giữ nguyên mã SP)
+const seenNames = new Set();
+const unique = products.filter((p) => !seenNames.has(p.name) && seenNames.add(p.name));
+products.length = 0;
+products.push(...unique);
 
 // ---------------------------------------------------------------- Ghi file
 const header = `// FILE TỰ SINH bởi tools/generate-catalog.mjs - không sửa tay.\n// Giai đoạn 2: dữ liệu này sẽ được thay bằng API từ backend/admin.\nwindow.DT = window.DT || {};\n`;

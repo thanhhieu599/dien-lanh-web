@@ -9,7 +9,7 @@
   const placeholder = (img) => {
     const ph = document.createElement('div');
     ph.className = 'vm-ph';
-    ph.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="4"/></svg>
+    ph.innerHTML = `<svg width="44" height="44" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="4"/></svg>
       <b>${DT.u.esc(img.dataset.hint || 'Hình ảnh công ty')}</b>
       <span>${DT.u.esc(img.dataset.size || '')}</span>
       <small>Chèn ảnh tại Quản trị › Trang Tầm nhìn</small>`;

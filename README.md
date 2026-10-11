@@ -35,6 +35,7 @@ dien-lanh-web/
 ├── tools/generate-catalog.mjs # Sinh dữ liệu sản phẩm mẫu
 ├── tools/build-seed.mjs       # Sinh supabase/seed.sql từ dữ liệu frontend
 ├── tools/prerender.mjs        # Giai đoạn 4 – build website chuẩn SEO (trang HTML đầy đủ cho từng sản phẩm)
+├── tools/asset-version.mjs    # Gắn ?v=phiên bản cho CSS/JS (tránh trình duyệt dùng CSS cũ) – bản build tự gắn
 ├── tests/browser/             # Kiểm thử trên trình duyệt thật (thanh toán, bản build SEO)
 ├── .github/workflows/         # Tự build & đăng GitHub Pages (6 giờ/lần), chạy kiểm thử
 └── docs/                      # Tài liệu kiến trúc, hướng dẫn giai đoạn 4 (PHASE4.md)

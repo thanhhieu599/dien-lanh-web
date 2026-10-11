@@ -15,6 +15,7 @@
 //   frontend/*.html                          trang chủ, khuyến mãi, tin tức… (đã có sẵn nội dung)
 //   frontend/og/*.png                        ảnh chia sẻ Zalo / Facebook
 //   frontend/sitemap.xml, robots.txt, llms.txt (tóm tắt cho công cụ AI)
+import { newVersion, stampAssets } from './asset-version.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
@@ -220,6 +221,9 @@ async function main() {
     if (++n % 20 === 0) console.log(`  ${n}/${list.length} trang`);
   }
   writeSitemap(siteUrl, list);
+  // Phiên bản CSS/JS mới cho mỗi lần build: khách không bị lẫn HTML mới với CSS cũ trong bộ nhớ đệm
+  const version = process.env.GITHUB_SHA?.slice(0, 8) || newVersion();
+  console.log(`Gắn phiên bản tài nguyên ?v=${version} cho ${stampAssets(OUT, version)} trang`);
   writeLlms(siteUrl, data);
   await browser.close();
   server.close();

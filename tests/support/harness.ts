@@ -30,7 +30,7 @@ export async function setup(dbName: string, opts: { env?: Record<string, string>
     const ctx = await browser.newContext({ viewport, acceptDownloads: true, locale: 'vi-VN', timezoneId: 'Asia/Ho_Chi_Minh' });
     await blockExternal(ctx, [sb.url]);
     await ctx.route('**/img.vietqr.io/**', (r: any) => r.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>' }));
-    await ctx.route('**/assets/js/backend-config.js', (r: any) => r.fulfill({
+    await ctx.route(/\/assets\/js\/backend-config\.js(\?.*)?$/, (r: any) => r.fulfill({
       contentType: 'text/javascript',
       body: `window.DT = window.DT || {}; DT.BACKEND = { url: '${sb.url}', anonKey: '${sb.anonKey}', phoneEmailDomain: '${DOMAIN}', cacheMinutes: 5 };`,
     }));

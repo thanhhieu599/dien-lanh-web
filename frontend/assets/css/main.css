@@ -430,6 +430,10 @@ table { border-collapse: collapse; width: 100%; }
 .b2b-stats div { background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .12); border-radius: 12px; padding: 16px; }
 .b2b-stats b { font-size: 28px; display: block; color: var(--yellow); }
 .svc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.svc-grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.svc-book > * { min-width: 0; }
+.two-col.stores-layout { grid-template-columns: 420px minmax(0, 1fr); }
+.value-grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .svc { display: flex; gap: 14px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; transition: .2s; }
 .svc:hover { border-color: var(--primary); box-shadow: var(--shadow); }
 .svc-ic { width: 52px; height: 52px; border-radius: 12px; background: var(--primary-soft); color: var(--primary); display: grid; place-items: center; flex: none; }
@@ -800,7 +804,7 @@ table { border-collapse: collapse; width: 100%; }
   .filters { position: fixed; inset: 0 auto 0 0; width: 86%; max-width: 340px; max-height: none; top: 0; z-index: 120; border-radius: 0; transform: translateX(-100%); transition: .25s; }
   .filters.open { transform: none; box-shadow: 0 0 0 100vmax rgba(15, 23, 42, .5); }
   .filter-open { display: inline-flex; }
-  .pd-tabs-wrap, .cart-layout, .two-col, .blog-layout, .svc-book { grid-template-columns: 1fr; }
+  .pd-tabs-wrap, .cart-layout, .two-col, .two-col.stores-layout, .blog-layout, .svc-book { grid-template-columns: 1fr; }
   .summary, .gallery, .map-box { position: static; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
   .benefits .container { grid-template-columns: repeat(3, 1fr); }
@@ -855,7 +859,7 @@ table { border-collapse: collapse; width: 100%; }
   .qcat b { font-size: 11.5px; }
   .promo-strip { grid-template-columns: 1fr; }
   .brand-strip { grid-template-columns: repeat(3, 1fr); }
-  .svc-grid, .news-grid, .value-grid { grid-template-columns: 1fr; }
+  .svc-grid, .svc-grid.cols-2, .news-grid, .value-grid, .value-grid.cols-2 { grid-template-columns: 1fr; }
   .b2b-points { grid-template-columns: 1fr; }
   .benefits .container { grid-template-columns: 1fr 1fr; }
   .footer-grid { grid-template-columns: 1fr; gap: 20px; }

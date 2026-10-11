@@ -51,7 +51,7 @@ function restGet(u: URL): string {
 const browser = await chromium();
 const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
 await blockExternal(context, [SB, 'https://sandbox.vnpayment.vn', 'https://test-payment.momo.vn', 'https://img.vietqr.io']);
-await context.route('**/assets/js/backend-config.js', (r) => r.fulfill({ contentType: 'text/javascript', body: `window.DT = window.DT || {}; DT.BACKEND = { url: '${SB}', anonKey: 'anon-key', phoneEmailDomain: 'sdt.test', cacheMinutes: 5 };` }));
+await context.route(/\/assets\/js\/backend-config\.js(\?.*)?$/, (r) => r.fulfill({ contentType: 'text/javascript', body: `window.DT = window.DT || {}; DT.BACKEND = { url: '${SB}', anonKey: 'anon-key', phoneEmailDomain: 'sdt.test', cacheMinutes: 5 };` }));
 await context.route(`${SB}/**`, async (route) => {
   const req = route.request();
   const u = new URL(req.url());

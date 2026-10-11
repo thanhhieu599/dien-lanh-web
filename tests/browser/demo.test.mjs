@@ -97,7 +97,7 @@ try {
   await blockExternal(m);
   const mp = await m.newPage();
   mp.on('pageerror', (e) => errors.push(`mobile ${mp.url()}: ${e.message}`));
-  for (const u of ['frontend/index.html', 'frontend/danh-muc.html?cat=may-lanh', 'frontend/san-pham.html?id=1003', 'frontend/gio-hang.html', 'frontend/thanh-toan.html', 'admin/index.html']) {
+  for (const u of ['frontend/index.html', 'frontend/danh-muc.html?cat=may-lanh', 'frontend/san-pham.html?id=1003', 'frontend/gio-hang.html', 'frontend/thanh-toan.html', 'frontend/tam-nhin-su-menh.html', 'admin/index.html']) {
     await mp.goto(base + u);
     await mp.waitForTimeout(300);
     const overflow = await mp.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

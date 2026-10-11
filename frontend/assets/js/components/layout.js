@@ -116,7 +116,7 @@ DT.layout = (() => {
         <a href="${DT.api.policyUrl('thanh-toan')}">Phương thức thanh toán</a><a href="${DT.api.policyUrl('bao-mat')}">Bảo mật thông tin</a>
       </div>
       <div class="footer-col"><h4>Về ${esc(cfg.name)}</h4>
-        <a href="gioi-thieu.html">Giới thiệu công ty</a><a href="he-thong-cua-hang.html">Hệ thống cửa hàng</a>
+        <a href="gioi-thieu.html">Giới thiệu công ty</a><a href="tam-nhin-su-menh.html">Tầm nhìn & Sứ mệnh</a><a href="he-thong-cua-hang.html">Hệ thống cửa hàng</a>
         <a href="bao-gia-du-an.html">Giải pháp doanh nghiệp</a><a href="dich-vu.html">Dịch vụ điện lạnh</a>
         <a href="tin-tuc.html">Tin tức - Tư vấn</a><a href="lien-he.html">Liên hệ - Góp ý</a>
       </div>

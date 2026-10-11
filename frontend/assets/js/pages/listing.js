@@ -49,7 +49,7 @@ DT.onReady(() => {
   // Loại con (chip có ảnh)
   if (cat) {
     $('#sub-cats').innerHTML = `<a class="sub-cat ${!state.sub ? 'active' : ''}" href="${DT.api.catUrl(cat.id)}">Tất cả</a>` + cat.subs.map((s) => {
-      const sample = DT.products.find((p) => p.cat === cat.id && p.sub === s.id);
+      const sample = DT.products.find((p) => p.cat === cat.id && p.sub === s.id && DT.hasImage(p));
       return `<a class="sub-cat ${state.sub === s.id ? 'active' : ''}" href="${DT.api.catUrl(cat.id, s.id)}">${sample ? `<span class="sc-img">${DT.productImage(sample, 0)}</span>` : ''}${esc(s.name)}</a>`;
     }).join('');
   }
@@ -58,7 +58,7 @@ DT.onReady(() => {
   if (cat) {
     $('#seo').innerHTML = `<div class="section-box seo-box"><div class="rich">
       <h2>Mua ${esc(cat.name.toLowerCase())} chính hãng ở đâu uy tín, giá tốt?</h2>
-      <p>${esc(DT.config.name)} là đơn vị phân phối ${esc(cat.name.toLowerCase())} chính hãng từ các thương hiệu hàng đầu như ${[...new Set(DT.products.filter((p) => p.cat === cat.id).map((p) => DT.api.brand(p.brand).name))].slice(0, 6).join(', ')}. Sản phẩm có đầy đủ hóa đơn VAT, phiếu bảo hành chính hãng.</p>
+      <p>${esc(DT.config.name)} là đơn vị phân phối ${esc(cat.name.toLowerCase())} chính hãng từ các thương hiệu uy tín. Sản phẩm có đầy đủ hóa đơn VAT, phiếu bảo hành chính hãng.</p>
       <h2>Tiêu chí chọn mua ${esc(cat.short.toLowerCase())}</h2>
       <ul>${cat.filters.map((f) => `<li><strong>${esc(f.label)}:</strong> lựa chọn theo nhu cầu sử dụng thực tế (${f.options.slice(0, 4).map(esc).join(', ')}…).</li>`).join('')}
       <li><strong>Chi phí vận hành:</strong> ưu tiên sản phẩm Inverter / nhãn năng lượng 5 sao nếu sử dụng thường xuyên.</li></ul>

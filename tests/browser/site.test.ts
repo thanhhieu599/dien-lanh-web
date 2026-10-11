@@ -9,10 +9,10 @@ const money = (n: number) => `${Math.round(n).toLocaleString('vi-VN')}₫`;
 
 try {
   section('Trang chủ & dữ liệu từ database');
-  sql(`update public.products set name = 'Máy lạnh Daikin TEST DB', price = 9990000 where id = 1001`);
+  sql(`update public.products set name = 'Máy lạnh TEST DB', price = 9990000 where id = 1001`);
   await page.goto(`${fe}index.html`);
   await page.waitForSelector('.pcard');
-  check(await page.locator('.pcard', { hasText: 'Máy lạnh Daikin TEST DB' }).count() > 0, 'sản phẩm đọc từ database (tên đã sửa hiển thị)');
+  check(await page.locator('.pcard', { hasText: 'Máy lạnh TEST DB' }).count() > 0, 'sản phẩm đọc từ database (tên đã sửa hiển thị)');
   check(await page.locator('.mnav').count() === 1, 'khung trang dựng đủ');
 
   section('Danh mục, bộ lọc, sắp xếp, phân trang, tìm kiếm');
@@ -20,18 +20,18 @@ try {
   await page.waitForSelector('.pgrid .pcard');
   const total = Number(sql(`select count(*) from public.products where cat = 'may-lanh' and active`));
   check((await page.locator('#result-count, .result-count').first().textContent().catch(() => '') || '').includes(String(total)) || await page.locator('.pgrid .pcard').count() > 0, `danh mục máy lạnh (${total} sản phẩm)`);
-  await page.locator('#filters .fopt[data-group="brand"][data-v="daikin"]').click();
+  await page.locator('#filters .fopt[data-group="brand"][data-v="thuong-hieu"]').click();
   await page.waitForTimeout(200);
   const names = await page.locator('.pgrid .pcard .pcard-name').allTextContents();
-  check(names.length > 0 && names.every((n) => /Daikin/i.test(n)), `lọc thương hiệu Daikin (${names.length} sản phẩm)`);
-  check(page.url().includes('brand=daikin'), 'URL giữ bộ lọc');
+  check(names.length > 0 && names.every((n) => /Tên thương hiệu/i.test(n)), `lọc thương hiệu (${names.length} sản phẩm)`);
+  check(page.url().includes('brand=thuong-hieu'), 'URL giữ bộ lọc');
   await page.selectOption('#sort', 'price-asc');
   await page.waitForTimeout(200);
   const prices = (await page.locator('.pgrid .pcard .pcard-price strong, .pgrid .pcard .price-now, .pgrid .pcard strong').allTextContents()).map((t) => Number(t.replace(/\D/g, ''))).filter(Boolean);
   check(prices.length > 1 && prices.every((p, i) => !i || p >= prices[i - 1]), 'sắp xếp giá tăng dần');
-  await page.goto(`${fe}tim-kiem.html?q=tu lanh samsung`);
+  await page.goto(`${fe}tim-kiem.html?q=tu lanh ten thuong hieu`);
   await page.waitForSelector('.pgrid .pcard, .empty');
-  check(await page.locator('.pgrid .pcard').count() > 0, 'tìm kiếm không dấu "tu lanh samsung"');
+  check(await page.locator('.pgrid .pcard').count() > 0, 'tìm kiếm không dấu "tu lanh ten thuong hieu"');
 
   section('Trang sản phẩm, đánh giá');
   sql(`insert into public.reviews (product_id, name, rating, text, status) values (1002, 'Khách đã duyệt', 5, 'Máy chạy êm, lắp đặt nhanh', 'approved'), (1002, 'Khách chưa duyệt', 1, 'Spam', 'pending')`);

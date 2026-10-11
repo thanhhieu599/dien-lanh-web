@@ -12,7 +12,7 @@ Tài liệu này hướng dẫn **bật từng tính năng**. Phần nào chưa 
 | **Thanh toán lại** | Hủy / lỗi giữa chừng → nút "Thanh toán lại" ở trang kết quả, trang đơn hàng, trang tra cứu | Không mất đơn vì khách lỡ tay đóng cổng thanh toán |
 | **Thông báo nhân viên** (Zalo Bot, Telegram, Email) | – | Có đơn mới / tiền về / khách hủy / yêu cầu báo giá B2B → nhân viên nhận tin trên Zalo **trong 1 phút**, kèm link mở đơn trong trang quản trị |
 | **Thông báo khách** (Email, Zalo ZNS) | Email xác nhận đơn (kèm QR chuyển khoản), email biên nhận thanh toán, email/ZNS khi đơn được xác nhận, đang giao, hoàn thành | Giảm cuộc gọi hỏi "đơn tới đâu rồi", tăng uy tín |
-| **SEO pre-render** | Trang tải ra nội dung ngay | Mỗi sản phẩm / danh mục / bài viết có **trang HTML riêng, link đẹp** (`sp/may-lanh-daikin-....html`), đủ tiêu đề, mô tả, giá, thông số, dữ liệu có cấu trúc (Product, Article, Breadcrumb, Store) → Google, Cốc Cốc, Zalo/Facebook (xem trước link có ảnh) và các công cụ AI (ChatGPT, Perplexity, Gemini) đọc được mà **không cần chạy JavaScript**. Có `sitemap.xml`, `robots.txt`, `llms.txt` |
+| **SEO pre-render** | Trang tải ra nội dung ngay | Mỗi sản phẩm / danh mục / bài viết có **trang HTML riêng, link đẹp** (`sp/may-lanh-inverter-1-hp.html`), đủ tiêu đề, mô tả, giá, thông số, dữ liệu có cấu trúc (Product, Article, Breadcrumb, Store) → Google, Cốc Cốc, Zalo/Facebook (xem trước link có ảnh) và các công cụ AI (ChatGPT, Perplexity, Gemini) đọc được mà **không cần chạy JavaScript**. Có `sitemap.xml`, `robots.txt`, `llms.txt` |
 
 Khuyến nghị kinh doanh:
 - **Khách doanh nghiệp (đơn lớn)**: ưu tiên chuyển khoản VietQR. Không mất phí % như cổng thẻ, có SePay thì xác nhận tự động như cổng online.

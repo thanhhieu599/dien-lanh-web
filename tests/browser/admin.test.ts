@@ -123,7 +123,7 @@ try {
   await go(page, 'products/new', '#frm');
   await page.fill('#frm [name=name]', 'Máy lạnh Test Admin 1.5HP');
   await page.fill('#frm [name=sku]', 'TEST-ADM-01');
-  await page.selectOption('#frm [name=brand]', 'daikin');
+  await page.selectOption('#frm [name=brand]', 'thuong-hieu');
   await page.selectOption('#frm [name=cat]', 'may-lanh');
   await page.fill('#frm [name=price]', '12345678');
   await page.fill('#frm [name=stock]', '7');

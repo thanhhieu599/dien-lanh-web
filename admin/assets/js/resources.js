@@ -34,7 +34,7 @@ window.AD = window.AD || {};
         { label: 'Hiển thị', render: (r) => yes(r.active) },
       ],
       csv: ['id', 'sku', 'name', 'cat', 'sub', 'brand', 'price', 'old_price', 'stock', 'sold', 'active', 'flash_sale', 'free_install', 'warranty'],
-      defaults: () => ({ active: true, installment: true, stock: 0, rating: 5, reviews: 0, sold: 0, badges: [], attrs: {}, specs: {}, highlights: [], images: ['art:0', 'art:1', 'art:2'], art: { type: 'generic', color: 'white' }, cat: AD.cache.categories?.[0]?.id }),
+      defaults: () => ({ active: true, installment: true, stock: 0, rating: 5, reviews: 0, sold: 0, badges: [], attrs: {}, specs: {}, highlights: [], images: [], art: { type: 'generic', color: 'white' }, cat: AD.cache.categories?.[0]?.id }),
       fields: [
         { key: '_g1', type: 'custom', render: () => '<h4 class="ad-sec">Thông tin cơ bản</h4>', read: () => undefined, col: 'full' },
         { key: 'name', label: 'Tên sản phẩm', required: true, col: 'full' },
@@ -70,7 +70,7 @@ window.AD = window.AD || {};
         { key: 'highlights', label: 'Đặc điểm nổi bật (mỗi dòng 1 ý)', type: 'lines', col: 'half', rows: 6 },
         { key: 'specs', label: 'Thông số kỹ thuật', type: 'kv', col: 'half' },
         { key: '_g4', type: 'custom', render: () => '<h4 class="ad-sec">Hình ảnh</h4>', read: () => undefined, col: 'full' },
-        { key: 'images', label: 'Ảnh sản phẩm (mỗi dòng 1 URL)', type: 'lines', col: 'half', rows: 4, help: 'Dán link ảnh (Supabase Storage, Cloudinary…). "art:0" = ảnh minh họa tự vẽ' },
+        { key: 'images', label: 'Ảnh sản phẩm (mỗi dòng 1 URL)', type: 'lines', col: 'half', rows: 4, help: 'Dán link ảnh (Supabase Storage, Cloudinary…). Để trống = hiển thị khung "Hình ảnh sản phẩm" mặc định' },
         {
           key: 'art', label: 'Ảnh minh họa (khi chưa có ảnh thật)', type: 'custom', col: 'half',
           render: (v) => `<div class="ad-grid"><div class="ad-field half"><select data-art="type">${ARTS.map((a) => `<option ${v?.type === a ? 'selected' : ''}>${a}</option>`).join('')}</select></div>

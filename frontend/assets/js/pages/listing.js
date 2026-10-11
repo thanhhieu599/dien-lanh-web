@@ -4,6 +4,9 @@ DT.onReady(() => {
   const mode = document.body.dataset.page; // category | search | khuyen-mai
   const PER_PAGE = 12;
   const params = new URLSearchParams(location.search);
+  // Trang pre-render danh-muc/<cat>/<sub>.html: danh mục lấy từ <body data-q-cat / data-q-sub>
+  ['cat', 'sub'].forEach((k) => { if (!params.get(k) && DT.u.param(k)) params.set(k, DT.u.param(k)); });
+  const prettyPage = !!document.body.dataset.qCat;
 
   const cat = DT.api.category(params.get('cat'));
   if (mode === 'category' && !cat) { location.replace('404.html'); return; }
@@ -27,7 +30,7 @@ DT.onReady(() => {
   if (mode === 'category') {
     const sub = cat.subs.find((s) => s.id === state.sub);
     title = sub ? sub.name : cat.name;
-    crumbs = [{ label: cat.name, href: sub ? `danh-muc.html?cat=${cat.id}` : null }, ...(sub ? [{ label: sub.name }] : [])];
+    crumbs = [{ label: cat.name, href: sub ? `${DT.api.catUrl(cat.id)}` : null }, ...(sub ? [{ label: sub.name }] : [])];
     desc = `${title} chính hãng giá tốt, trả góp 0%, miễn phí giao hàng & lắp đặt tại TP.HCM, Bình Dương, Đồng Nai.`;
   } else if (mode === 'search') {
     title = state.q ? `Kết quả tìm kiếm "${state.q}"` : 'Tìm kiếm sản phẩm';
@@ -38,16 +41,16 @@ DT.onReady(() => {
     crumbs = [{ label: 'Khuyến mãi' }];
     desc = 'Tổng hợp ưu đãi máy lạnh, tủ lạnh, máy giặt giảm đến 25%, quà tặng hấp dẫn.';
   }
-  DT.u.setMeta({ title, description: desc });
+  DT.u.setMeta({ title, description: desc, canonical: mode === 'category' ? DT.api.catUrl(cat.id, state.sub || undefined) : null });
   $('#crumb').outerHTML = DT.ui.breadcrumb(crumbs);
   $('#cat-title').textContent = title;
   $('#cat-desc').textContent = desc;
 
   // Loại con (chip có ảnh)
   if (cat) {
-    $('#sub-cats').innerHTML = `<a class="sub-cat ${!state.sub ? 'active' : ''}" href="danh-muc.html?cat=${cat.id}">Tất cả</a>` + cat.subs.map((s) => {
+    $('#sub-cats').innerHTML = `<a class="sub-cat ${!state.sub ? 'active' : ''}" href="${DT.api.catUrl(cat.id)}">Tất cả</a>` + cat.subs.map((s) => {
       const sample = DT.products.find((p) => p.cat === cat.id && p.sub === s.id);
-      return `<a class="sub-cat ${state.sub === s.id ? 'active' : ''}" href="danh-muc.html?cat=${cat.id}&sub=${s.id}">${sample ? `<span class="sc-img">${DT.productImage(sample, 0)}</span>` : ''}${esc(s.name)}</a>`;
+      return `<a class="sub-cat ${state.sub === s.id ? 'active' : ''}" href="${DT.api.catUrl(cat.id, s.id)}">${sample ? `<span class="sc-img">${DT.productImage(sample, 0)}</span>` : ''}${esc(s.name)}</a>`;
     }).join('');
   }
 
@@ -124,8 +127,8 @@ DT.onReady(() => {
   function syncUrl() {
     const p = new URLSearchParams();
     if (state.q) p.set('q', state.q);
-    if (state.cat) p.set('cat', state.cat);
-    if (state.sub) p.set('sub', state.sub);
+    if (state.cat && !prettyPage) p.set('cat', state.cat);
+    if (state.sub && !prettyPage) p.set('sub', state.sub);
     if (state.brands.length) p.set('brand', state.brands.join(','));
     if (state.price) p.set('price', state.price);
     Object.entries(state.attrs).forEach(([k, v]) => v.length && p.set(k, v.join(',')));

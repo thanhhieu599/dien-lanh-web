@@ -36,4 +36,11 @@ Việc còn lại cho giai đoạn sau: thanh toán online (VNPay/MoMo cần ser
 - `pages-sales.js`: tổng quan, đơn hàng, CRM lead, báo cáo; `pages-other.js`: đánh giá, khách hàng, cài đặt; `charts.js`: biểu đồ SVG.
 - Quyền thật nằm ở RLS (migrations); giao diện chỉ ẩn mục không có quyền. Migration `20261011000001_admin.sql` thêm trigger hoàn/trừ kho khi đơn vào/ra trạng thái hủy.
 
-Việc tiếp theo đề xuất: thanh toán online (VNPay/MoMo qua Supabase Edge Functions), thông báo đơn mới qua email/Zalo OA (Database Webhooks), upload ảnh sản phẩm lên Supabase Storage ngay trong form, nhập/xuất Excel sản phẩm, pre-render trang sản phẩm cho SEO.
+## Giai đoạn 4 – Thanh toán, thông báo, SEO (đã triển khai, hướng dẫn: `docs/PHASE4.md`)
+
+- **Thanh toán**: Edge Function `payments` (Deno, chỉ dùng Web API) tạo link VNPay 2.1.0 / MoMo v2 sau khi `payment_start()` kiểm tra mã đơn + SĐT; nhận IPN, kiểm chữ ký HMAC, `payment_confirm()` so số tiền và chống ghi trùng. Chuyển khoản: VietQR trên website/email, webhook SePay → `payment_bank_transfer()` tìm mã đơn trong nội dung, cộng dồn.
+- **Thông báo**: trigger trên `orders` / `leads` ghi sự kiện vào bảng `notifications` (outbox). pg_cron gọi Edge Function `notify` mỗi phút; mỗi sự kiện gửi tới các kênh đã cấu hình, lưu kết quả từng kênh, kênh lỗi thử lại với độ trễ tăng dần, kênh đã gửi không gửi lại.
+- **SEO**: `tools/prerender.mjs` dùng Chromium chụp HTML sau khi JavaScript vẽ xong → trang tĩnh link đẹp. Trang con có `<base href="../">` và `<body data-q-*>` để script chạy lại như trang gốc (`DT.u.param` đọc từ đó). Link chưa build → `404.html` chuyển về trang động.
+- Logic Edge Function nằm ở `handler.ts` (thuần Web API) nên kiểm thử được bằng Node 22 với database PostgreSQL thật (`supabase/functions/tests/`).
+
+Việc tiếp theo đề xuất: upload ảnh sản phẩm lên Supabase Storage ngay trong form (ảnh thật tăng tỉ lệ chuyển đổi & SEO hình ảnh), nhập/xuất Excel sản phẩm, OTP xác minh số điện thoại, báo giá PDF tự động cho lead B2B.

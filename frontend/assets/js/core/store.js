@@ -177,6 +177,13 @@ DT.store = (() => {
     save();
     return order;
   }
+  // Lưu bản mới nhất từ máy chủ vào danh sách đơn trên trình duyệt (trang thành công / kết quả thanh toán)
+  function rememberOrder(o) {
+    const i = state.orders.findIndex((x) => x.code === o.code);
+    if (i >= 0) state.orders[i] = { ...state.orders[i], ...o }; else state.orders.unshift(o);
+    save();
+    return i >= 0 ? state.orders[i] : o;
+  }
   const normPhone = (p) => String(p || '').replace(/[\s.\-]/g, '');
   // Tra cứu trong bộ nhớ trình duyệt (trang đặt hàng thành công)
   const findOrder = (code, phone) => state.orders.find((o) => o.code === String(code).trim().toUpperCase() && (!phone || o.customer.phone === normPhone(phone)));
@@ -207,9 +214,16 @@ DT.store = (() => {
     get, save, addToCart, setQty, setInstall, removeFromCart, clearCart, cartCount, totals, applyCoupon, removeCoupon,
     toggleWishlist, toggleCompare, clearCompare, addViewed,
     register, login, logout, updateProfile, fullUser, saveAddresses,
-    placeOrder, findOrder, trackOrder, myOrders, syncMyOrders, cancelOrder,
+    placeOrder, findOrder, rememberOrder, trackOrder, myOrders, syncMyOrders, cancelOrder,
   };
 })();
+
+DT.paymentStatus = {
+  unpaid: { label: 'Chưa thanh toán', cls: 'warn' },
+  partial: { label: 'Thanh toán một phần', cls: 'warn' },
+  paid: { label: 'Đã thanh toán', cls: 'ok' },
+  refunded: { label: 'Đã hoàn tiền', cls: 'muted' },
+};
 
 DT.orderStatus = {
   pending: { label: 'Chờ xác nhận', cls: 'warn' },

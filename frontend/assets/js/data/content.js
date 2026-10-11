@@ -17,6 +17,12 @@ DT.config = {
   freeShipThreshold: 2000000,
   shippingFee: 50000,
   installFee: 300000,
+  // Tài khoản nhận chuyển khoản (sửa trong Quản trị > Cài đặt cửa hàng). bankBin: mã ngân hàng theo chuẩn VietQR
+  // (Vietcombank 970436, Techcombank 970407, MB 970422, ACB 970416, BIDV 970418, VietinBank 970415, VPBank 970432)
+  bankName: 'Vietcombank - CN TP.HCM',
+  bankBin: '970436',
+  bankAccount: '0071000000000',
+  bankOwner: 'CONG TY TNHH TMDV PHAT TRIEN KY THUAT D VA T',
 };
 
 // Mã giảm giá demo (giai đoạn 2 quản lý trong admin)

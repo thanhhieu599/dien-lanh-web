@@ -87,10 +87,10 @@ DT.onReady(() => {
   if (page === 'policy') {
     const type = DT.policies[DT.u.param('type')] ? DT.u.param('type') : 'bao-hanh';
     const pol = DT.policies[type];
-    DT.u.setMeta({ title: pol.title, description: `${pol.title} khi mua hàng tại ${DT.config.name}.` });
+    DT.u.setMeta({ title: pol.title, description: `${pol.title} khi mua hàng tại ${DT.config.name}.`, canonical: DT.api.policyUrl(type) });
     $('#crumb').outerHTML = DT.ui.breadcrumb([{ label: 'Chính sách' }, { label: pol.title }]);
     $('#policy').innerHTML = `<div class="policy-layout">
-      <nav class="policy-nav">${Object.entries(DT.policies).map(([k, v]) => `<a href="chinh-sach.html?type=${k}" class="${k === type ? 'active' : ''}">${esc(v.title)}</a>`).join('')}</nav>
+      <nav class="policy-nav">${Object.entries(DT.policies).map(([k, v]) => `<a href="${DT.api.policyUrl(k)}" class="${k === type ? 'active' : ''}">${esc(v.title)}</a>`).join('')}</nav>
       <article class="article"><h1>${esc(pol.title)}</h1><div class="rich">${pol.body}</div>
       <p class="muted">Mọi thắc mắc vui lòng liên hệ hotline <a class="link" href="tel:${DT.config.hotline.replace(/\s/g, '')}">${DT.config.hotline}</a> hoặc email ${DT.config.email}.</p></article></div>`;
   }

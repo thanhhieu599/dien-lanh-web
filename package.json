@@ -1,0 +1,15 @@
+{
+  "name": "dien-lanh-web",
+  "private": true,
+  "type": "module",
+  "description": "D&T Điện Lạnh - website bán hàng điện lạnh (HTML/CSS/JS thuần + Supabase)",
+  "scripts": {
+    "build": "node tools/prerender.mjs --out dist",
+    "test:db": "./supabase/tests/run-local.sh",
+    "test:functions": "./supabase/functions/tests/run.sh",
+    "serve": "npx http-server -p 8080 -c-1"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}

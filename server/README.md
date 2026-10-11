@@ -1,3 +1,3 @@
-# Backend API (Giai đoạn 2)
+# Máy chủ riêng
 
-Chưa triển khai. Danh sách endpoint và mô hình dữ liệu xem `../docs/ARCHITECTURE.md` mục "Giai đoạn 2".
+Không cần: phần xử lý phía máy chủ (thanh toán VNPay/MoMo, webhook SePay, gửi email/Zalo) chạy bằng **Supabase Edge Functions** trong `supabase/functions/`. Xem `docs/PHASE4.md`.

@@ -2,12 +2,38 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8">
+  <meta name="robots" content="noindex">
   <title>Không tìm thấy trang | D&amp;T Điện Lạnh</title>
   <script>
-    // Link cũ không có /frontend/ -> chuyển vào thư mục frontend
-    var base = '/dien-lanh-web/';
-    var rest = location.pathname.indexOf(base) === 0 ? location.pathname.slice(base.length) : '';
-    location.replace(base + (rest && rest.indexOf('frontend/') !== 0 ? 'frontend/' + rest : 'frontend/404.html') + location.search);
+    // GitHub Pages trả trang này cho mọi đường dẫn không tồn tại.
+    // 1) Link SEO của sản phẩm / danh mục / bài viết mới (chưa build lại) -> chuyển về trang động tương ứng
+    // 2) Link cũ không có /frontend/ -> chuyển vào thư mục frontend
+    (function () {
+      var path = location.pathname;
+      // Thư mục gốc website: /dien-lanh-web/ (GitHub Pages) hoặc / (tên miền riêng)
+      var seg = path.split('/')[1] || '';
+      var base = seg && !/\.html$/.test(seg) && seg !== 'frontend' && seg !== 'admin' ? '/' + seg + '/' : '/';
+      var i = path.indexOf('/frontend/');
+      var target;
+      if (i >= 0) {
+        var fe = path.slice(0, i) + '/frontend/';
+        var rest = decodeURIComponent(path.slice(i + 10));
+        var m;
+        var q = function (s) { return encodeURIComponent(s); };
+        if ((m = rest.match(/^sp\/([^/]+)\.html$/))) target = fe + 'san-pham.html?slug=' + q(m[1]);
+        else if ((m = rest.match(/^danh-muc\/([^/]+)\/([^/]+)\.html$/))) target = fe + 'danh-muc.html?cat=' + q(m[1]) + '&sub=' + q(m[2]);
+        else if ((m = rest.match(/^danh-muc\/([^/]+)\.html$/))) target = fe + 'danh-muc.html?cat=' + q(m[1]);
+        else if ((m = rest.match(/^tin-tuc\/([^/]+)\.html$/))) target = fe + 'bai-viet.html?slug=' + q(m[1]);
+        else if ((m = rest.match(/^chinh-sach\/([^/]+)\.html$/))) target = fe + 'chinh-sach.html?type=' + q(m[1]);
+        else if (rest === '404.html') return;  // tránh vòng lặp nếu thiếu frontend/404.html
+        else target = fe + '404.html';
+        if (location.search && target.indexOf('404.html') < 0) target += '&' + location.search.slice(1);
+      } else {
+        var restRoot = path.indexOf(base) === 0 ? path.slice(base.length) : '';
+        target = base + 'frontend/' + (restRoot || '404.html') + location.search;
+      }
+      location.replace(target);
+    })();
   </script>
 </head>
 <body><a href="frontend/index.html">Về trang chủ</a></body>

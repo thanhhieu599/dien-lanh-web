@@ -9,10 +9,12 @@ DT.onReady(() => {
   const brand = DT.api.brand(p.brand);
   const s = DT.store.get();
   DT.store.addViewed(p.id);
-  DT.u.setMeta({ title: p.name, description: `${p.name} chính hãng giá ${money(p.price)}. ${p.short}. Giao nhanh, lắp đặt, trả góp 0%.` });
+  // Ảnh chia sẻ (Zalo/Facebook): ảnh thật nếu có, không thì ảnh chụp sẵn khi build (og/<slug>.png)
+  const ogImage = /^https?:/.test(p.images[0]) ? p.images[0] : DT.SEO?.prettyUrls ? `og/${p.slug}.png` : null;
+  DT.u.setMeta({ title: p.name, description: `${p.name} chính hãng giá ${money(p.price)}. ${p.short}. Giao nhanh, lắp đặt, trả góp 0%.`, canonical: DT.api.url(p), image: ogImage, type: 'product' });
   $('#crumb').outerHTML = DT.ui.breadcrumb([
-    { label: c.name, href: `danh-muc.html?cat=${c.id}` },
-    { label: sub.name, href: `danh-muc.html?cat=${c.id}&sub=${sub.id}` },
+    { label: c.name, href: `${DT.api.catUrl(c.id)}` },
+    { label: sub.name, href: `${DT.api.catUrl(c.id, sub.id)}` },
     { label: p.name },
   ]);
 
@@ -85,7 +87,7 @@ DT.onReady(() => {
       <div class="buy-btns">
         <button class="btn btn-accent btn-buy" data-action="buy-now" data-id="${p.id}" data-qty="#qty">MUA NGAY<small>Giao nhanh 2h hoặc nhận tại cửa hàng</small></button>
         <button class="btn btn-outline btn-lg" data-action="add-cart" data-id="${p.id}" data-qty="#qty">${DT.icon('cart')} Thêm vào giỏ</button>
-        <a class="btn btn-primary btn-buy" href="chinh-sach.html?type=tra-gop">TRẢ GÓP 0%<small>Duyệt hồ sơ 15 phút</small></a>
+        <a class="btn btn-primary btn-buy" href="${DT.api.policyUrl('tra-gop')}">TRẢ GÓP 0%<small>Duyệt hồ sơ 15 phút</small></a>
       </div>
       <div class="pd-hotline">Gọi đặt mua <a href="tel:${DT.config.hotline.replace(/\s/g, '')}">${DT.config.hotline}</a> (7:30 - 21:30)</div>
     </div>
@@ -139,7 +141,7 @@ DT.onReady(() => {
       <section class="pd-section"><h2>Thông số kỹ thuật</h2>
         <table class="spec-table">${Object.entries(p.specs).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table>
       </section>
-      <section class="pd-section"><h2>Bài viết tư vấn</h2><div class="side-list">${DT.posts.slice(0, 4).map((a) => `<a href="bai-viet.html?slug=${a.slug}"><span class="sl-img">${DT.art(a.art)}</span>${esc(a.title)}</a>`).join('')}</div></section>
+      <section class="pd-section"><h2>Bài viết tư vấn</h2><div class="side-list">${DT.posts.slice(0, 4).map((a) => `<a href="${DT.api.postUrl(a.slug)}"><span class="sl-img">${DT.art(a.art)}</span>${esc(a.title)}</a>`).join('')}</div></section>
     </div>`;
 
   // Sản phẩm liên quan & đã xem
@@ -205,10 +207,16 @@ DT.onReady(() => {
 
   // SEO: dữ liệu có cấu trúc Product
   DT.u.jsonLd({
-    '@context': 'https://schema.org', '@type': 'Product', name: p.name, sku: p.sku,
-    brand: { '@type': 'Brand', name: brand.name }, description: p.short, category: c.name,
-    aggregateRating: { '@type': 'AggregateRating', ratingValue: p.rating, reviewCount: p.reviews },
-    offers: { '@type': 'Offer', priceCurrency: 'VND', price: p.price, availability: 'https://schema.org/InStock', url: location.href },
+    '@context': 'https://schema.org', '@type': 'Product', name: p.name, sku: p.sku, mpn: p.sku,
+    brand: { '@type': 'Brand', name: brand.name }, description: [p.short, ...p.highlights].filter(Boolean).join('. '), category: `${c.name} > ${sub.name}`,
+    ...(ogImage ? { image: DT.u.abs(ogImage) } : {}),
+    additionalProperty: Object.entries(p.specs || {}).slice(0, 20).map(([name, value]) => ({ '@type': 'PropertyValue', name, value: String(value) })),
+    ...(p.reviews > 0 ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: p.rating, reviewCount: p.reviews } } : {}),
+    offers: {
+      '@type': 'Offer', priceCurrency: 'VND', price: p.price, url: DT.u.abs(DT.api.url(p)), itemCondition: 'https://schema.org/NewCondition',
+      availability: p.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      seller: { '@type': 'Organization', name: DT.config.company || DT.config.name },
+    },
   });
 
   function reviewHtml(r) {

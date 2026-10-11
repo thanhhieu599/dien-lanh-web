@@ -7,6 +7,7 @@ window.AD = window.AD || {};
 AD.PK = {
   products: 'id', categories: 'id', brands: 'id', coupons: 'code', posts: 'slug', banners: 'id', stores: 'id',
   services: 'id', policies: 'key', settings: 'key', orders: 'id', leads: 'id', reviews: 'id', profiles: 'id',
+  payments: 'id', notifications: 'id',
 };
 
 // ======================================================================= Supabase

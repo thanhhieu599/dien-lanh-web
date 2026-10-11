@@ -1,0 +1,52 @@
+# Build website chuẩn SEO (pre-render) rồi đăng lên GitHub Pages.
+# Cần bật 1 lần: Settings > Pages > Build and deployment > Source = "GitHub Actions".
+# Tên miền riêng: Settings > Secrets and variables > Actions > Variables > SITE_URL = https://ten-mien.vn/frontend/
+name: Deploy website (SEO pre-render)
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 */6 * * *'   # 6 giờ/lần: cập nhật giá, tồn kho, sản phẩm mới từ Supabase vào trang tĩnh
+  workflow_dispatch:          # bấm "Run workflow" để cập nhật ngay sau khi sửa sản phẩm trong quản trị
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Pre-render
+        run: node tools/prerender.mjs --out dist
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+      - name: Kiểm tra bản build trên trình duyệt
+        run: node tests/browser/prerender.test.mjs dist
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

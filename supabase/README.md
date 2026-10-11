@@ -15,13 +15,16 @@ Trang quản trị (giai đoạn 3) ──(tài khoản role staff/admin)──�
 | `migrations/20261010000002_functions.sql` | Hàm nghiệp vụ: `place_order`, `track_order`, `cancel_order`, `my_orders`, `validate_coupon`, `submit_lead` + trigger bảo vệ |
 | `migrations/20261010000003_security.sql` | RLS & phân quyền |
 | `migrations/20261011000001_admin.sql` | Hoàn / trừ tồn kho tự động khi hủy đơn (khách hoặc nhân viên) |
+| `migrations/20261012000001_payments_notify.sql` | Giao dịch thanh toán (VNPay, MoMo, chuyển khoản), hàng đợi thông báo, token Zalo – xem `docs/PHASE4.md` |
+| `functions/` | Edge Functions `payments`, `notify` (deploy bằng Supabase CLI) |
+| `setup/cron.sql` | Lịch gửi thông báo mỗi phút (chạy 1 lần sau khi deploy `notify`) |
 | `seed.sql` | Dữ liệu ban đầu (71 sản phẩm, bài viết, cửa hàng, mã giảm giá) – sinh bằng `node tools/build-seed.mjs` |
 | `tests/` | Bộ kiểm thử chạy trên PostgreSQL cục bộ (`tests/run-local.sh`) |
 
 ## Cài đặt (khoảng 15 phút)
 
 1. **Tạo project**: vào https://supabase.com → *New project* → Region **Southeast Asia (Singapore)** → lưu lại mật khẩu database.
-2. **Tạo bảng**: mở *SQL Editor* → *New query* → dán và chạy **lần lượt** nội dung 4 file trong `migrations/` (theo thứ tự tên file), sau đó chạy `seed.sql`.
+2. **Tạo bảng**: mở *SQL Editor* → *New query* → dán và chạy **lần lượt** nội dung 5 file trong `migrations/` (theo thứ tự tên file), sau đó chạy `seed.sql`.
    - Hoặc dùng Supabase CLI: `supabase link --project-ref <ref>` rồi `supabase db push` và chạy `seed.sql`.
 3. **Cấu hình đăng nhập**: *Authentication → Sign In / Providers → Email*: bật Email, **tắt "Confirm email"**.
    Khách đăng nhập bằng **số điện thoại + mật khẩu**; hệ thống tự ánh xạ thành email nội bộ `<sđt>@sdt.trangthietbi.vn` nên không gửi email xác nhận.
@@ -99,5 +102,6 @@ Thay đổi sản phẩm hiển thị trên website sau tối đa `cacheMinutes`
 ```bash
 # Cần PostgreSQL 15+
 PGHOST=localhost PGUSER=postgres ./supabase/tests/run-local.sh
-# Kết quả mong đợi: OK 1 … OK 10
+# Kết quả mong đợi: OK 1 … OK 17
+# Edge Functions (Node 22): ./supabase/functions/tests/run.sh
 ```

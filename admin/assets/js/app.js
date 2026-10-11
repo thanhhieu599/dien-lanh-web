@@ -11,7 +11,7 @@ window.AD = window.AD || {};
     { group: 'Bán hàng', items: [['orders', 'cart', 'Đơn hàng', 'orders'], ['leads', 'chat', 'Khách hàng tiềm năng', 'leads'], ['customers', 'user', 'Khách hàng']] },
     { group: 'Sản phẩm', items: [['products', 'box', 'Sản phẩm'], ['categories', 'grid', 'Danh mục'], ['brands', 'tag', 'Thương hiệu'], ['reviews', 'star', 'Đánh giá', 'reviews']] },
     { group: 'Marketing', items: [['coupons', 'percent', 'Mã giảm giá'], ['banners', 'zap', 'Banner'], ['posts', 'file', 'Bài viết']] },
-    { group: 'Phân tích', items: [['reports', 'grid', 'Báo cáo']] },
+    { group: 'Phân tích', items: [['reports', 'grid', 'Báo cáo'], ['notifications', 'mail', 'Nhật ký thông báo']] },
     { group: 'Cấu hình', items: [['settings', 'tool', 'Cài đặt cửa hàng'], ['stores', 'pin', 'Cửa hàng'], ['services', 'wrench', 'Dịch vụ'], ['policies', 'shield', 'Chính sách']] },
   ];
 
@@ -144,6 +144,7 @@ window.AD = window.AD || {};
       else if (key === 'customers') await P.customers(params, view);
       else if (key === 'reports') await P.reports(params, view);
       else if (key === 'settings') await P.settings(params, view);
+      else if (key === 'notifications') await P.notifications(params, view);
       else if (AD.resources[key]) {
         if (!AD.can(AD.resources[key])) throw new Error('Bạn không có quyền truy cập mục này');
         await (id ? P.crudForm(key, id, params, view) : P.crudList(key, params, view));

@@ -5,8 +5,13 @@ AD.ORDER_STATUS = {
   pending: ['Chờ xác nhận', 'warn'], confirmed: ['Đã xác nhận', 'info'], shipping: ['Đang giao', 'info'],
   installing: ['Đang lắp đặt', 'info'], done: ['Hoàn thành', 'ok'], cancelled: ['Đã hủy', 'muted'],
 };
-AD.PAY_STATUS = { unpaid: ['Chưa thanh toán', 'warn'], paid: ['Đã thanh toán', 'ok'], refunded: ['Đã hoàn tiền', 'muted'] };
-AD.PAYMENT = { cod: 'COD', bank: 'Chuyển khoản', card: 'Thẻ', wallet: 'Ví điện tử', installment: 'Trả góp' };
+AD.PAY_STATUS = { unpaid: ['Chưa thanh toán', 'warn'], partial: ['Thanh toán một phần', 'warn'], paid: ['Đã thanh toán', 'ok'], refunded: ['Đã hoàn tiền', 'muted'] };
+AD.PAYMENT = { cod: 'COD', bank: 'Chuyển khoản', card: 'Thẻ (VNPay)', wallet: 'Ví MoMo', installment: 'Trả góp' };
+AD.PAY_PROVIDER = { vnpay: 'VNPay', momo: 'MoMo', bank: 'Chuyển khoản (SePay)' };
+AD.TXN_STATUS = { pending: ['Đang chờ', 'warn'], paid: ['Thành công', 'ok'], failed: ['Thất bại', 'muted'], expired: ['Hết hạn', 'muted'] };
+AD.NOTIFY_EVENT = { order_new: 'Đơn mới', order_status: 'Đổi trạng thái đơn', order_paid: 'Thanh toán', lead_new: 'Khách hàng tiềm năng' };
+AD.NOTIFY_STATUS = { pending: ['Chờ gửi', 'warn'], processing: ['Đang gửi', 'info'], done: ['Đã gửi', 'ok'], failed: ['Lỗi', 'danger'] };
+AD.NOTIFY_CHANNEL = { zalo_staff: 'Zalo nhân viên', telegram_staff: 'Telegram', email_staff: 'Email nhân viên', email_customer: 'Email khách', zns_customer: 'Zalo ZNS khách' };
 AD.LEAD_STATUS = {
   new: ['Mới', 'warn'], contacted: ['Đã liên hệ', 'info'], quoted: ['Đã báo giá', 'info'],
   won: ['Chốt đơn', 'ok'], lost: ['Thất bại', 'muted'], spam: ['Spam', 'muted'],

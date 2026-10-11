@@ -108,7 +108,7 @@ AD.pages = AD.pages || {};
   };
 
   AD.pages.orderDetail = async (id, params, el) => {
-    const o = await AD.db.get('orders', id, '*,order_items(*),order_status_history(*)');
+    const o = await AD.db.get('orders', id, '*,order_items(*),order_status_history(*),payments(*)');
     if (!o) { el.innerHTML = '<div class="ad-empty"><p>Không tìm thấy đơn hàng.</p><a class="btn btn-light" href="#/orders">Quay lại</a></div>'; return; }
     const hist = (o.order_status_history || []).slice().sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
     const idx = ORDER_FLOW.indexOf(o.status);
@@ -155,6 +155,11 @@ AD.pages = AD.pages || {};
               : `<dt>Hình thức</dt><dd>Giao tận nơi</dd><dt>Địa chỉ</dt><dd>${esc([s.address, s.district, s.province].filter(Boolean).join(', '))}</dd>${s.date ? `<dt>Hẹn giao</dt><dd>${d(s.date)} ${esc(s.slot || '')}</dd>` : ''}`}
             <dt>Thanh toán</dt><dd>${AD.PAYMENT[o.payment] || o.payment} ${badge(AD.PAY_STATUS, o.payment_status)}</dd>
             ${o.note ? `<dt>Ghi chú khách</dt><dd>${esc(o.note)}</dd>` : ''}</dl></section>
+          ${o.payments?.length ? `<section class="ad-card"><h3>Giao dịch thanh toán</h3>${table([
+            { label: 'Cổng / mã GD', render: (p) => `<b>${esc(AD.PAY_PROVIDER[p.provider] || p.provider)}</b><small class="mono">${esc(p.txn_ref)}${p.provider_txn ? ` • ${esc(p.provider_txn)}` : ''}</small>` },
+            { label: 'Số tiền', render: (p) => money(p.amount), cls: 'num' },
+            { label: 'Kết quả', render: (p) => `${badge(AD.TXN_STATUS, p.status)}<small>${dt(p.paid_at || p.created_at)}${p.message ? ` • ${esc(p.message)}` : ''}</small>` },
+          ], o.payments.slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))))}</section>` : ''}
           ${o.invoice ? `<section class="ad-card"><h3>Xuất hóa đơn VAT</h3><dl class="ad-dl"><dt>Công ty</dt><dd>${esc(o.invoice.company || '')}</dd><dt>MST</dt><dd class="mono">${esc(o.invoice.taxCode || '')}</dd><dt>Địa chỉ</dt><dd>${esc(o.invoice.address || '-')}</dd><dt>Email HĐ</dt><dd>${esc(o.invoice.email || '-')}</dd></dl></section>` : ''}
           <section class="ad-card no-print"><h3>Lịch sử</h3><ul class="ad-timeline">${hist.map((h) => `<li><b>${AD.ORDER_STATUS[h.status]?.[0] || h.status}</b><small>${dt(h.created_at)}</small></li>`).join('') || '<li>Chưa có</li>'}</ul></section>
         </div>

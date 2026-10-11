@@ -45,13 +45,13 @@ DT.onReady(() => {
       <section class="co-section"><h2><span class="n">3</span>Phương thức thanh toán</h2>
         <div class="radio-cards">
           <label class="radio-card"><input type="radio" name="payment" value="cod" checked><span class="rc-ic">${DT.icon('home')}</span><span><b>Thanh toán khi nhận hàng (COD)</b><small>Kiểm tra hàng trước khi thanh toán</small></span></label>
-          <label class="radio-card"><input type="radio" name="payment" value="bank"><span class="rc-ic">${DT.icon('building')}</span><span><b>Chuyển khoản ngân hàng / QR</b><small>Xác nhận tự động trong 5 phút</small></span></label>
-          <label class="radio-card"><input type="radio" name="payment" value="card"><span class="rc-ic">${DT.icon('card')}</span><span><b>Thẻ ATM / Visa / Master / JCB</b><small>Qua cổng thanh toán VNPay</small></span></label>
-          <label class="radio-card"><input type="radio" name="payment" value="wallet"><span class="rc-ic">${DT.icon('phone')}</span><span><b>Ví MoMo / ZaloPay</b><small>Quét mã thanh toán</small></span></label>
+          <label class="radio-card"><input type="radio" name="payment" value="bank"><span class="rc-ic">${DT.icon('building')}</span><span><b>Chuyển khoản ngân hàng / QR</b><small>Quét mã VietQR bằng app ngân hàng bất kỳ</small></span></label>
+          <label class="radio-card"><input type="radio" name="payment" value="card"><span class="rc-ic">${DT.icon('card')}</span><span><b>Thẻ ATM / Visa / Master / JCB</b><small data-gw="vnpay">Thanh toán ngay qua cổng VNPay</small></span></label>
+          <label class="radio-card"><input type="radio" name="payment" value="wallet"><span class="rc-ic">${DT.icon('phone')}</span><span><b>Ví MoMo</b><small data-gw="momo">Quét mã bằng ứng dụng MoMo</small></span></label>
           <label class="radio-card"><input type="radio" name="payment" value="installment"><span class="rc-ic">${DT.icon('percent')}</span><span><b>Trả góp 0%</b><small>Qua thẻ tín dụng hoặc công ty tài chính</small></span></label>
         </div>
         <div class="bank-info" id="bank-info">
-          <b>Thông tin chuyển khoản</b><br>Ngân hàng: Vietcombank - CN TP.HCM<br>Số tài khoản: <b>0071 000 000 000</b><br>Chủ tài khoản: ${esc(DT.config.company)}<br>Nội dung: <b>Mã đơn hàng + SĐT</b> (hiển thị sau khi đặt)
+          <b>Thông tin chuyển khoản</b><br>Ngân hàng: ${esc(DT.config.bankName)}<br>Số tài khoản: <b>${esc(DT.config.bankAccount)}</b><br>Chủ tài khoản: ${esc(DT.config.bankOwner || DT.config.company)}<br>Nội dung: <b>Mã đơn hàng</b> – mã QR có sẵn số tiền & nội dung hiện ngay sau khi đặt hàng
         </div>
       </section>
 
@@ -71,6 +71,10 @@ DT.onReady(() => {
   </form>`;
 
   const form = $('#co-form');
+  // Cổng chưa kích hoạt: vẫn cho đặt, nhân viên gọi hướng dẫn thanh toán
+  DT.payments.config().then((gw) => {
+    $$('[data-gw]').forEach((el) => { if (!gw[el.dataset.gw]) el.textContent = 'Nhân viên sẽ liên hệ hướng dẫn thanh toán'; });
+  });
   function renderSummary() {
     const t = DT.store.totals();
     $('#co-summary').innerHTML = `<div class="summary">
@@ -82,7 +86,7 @@ DT.onReady(() => {
       ${t.discount ? `<div class="sum-row discount"><span>Giảm giá (${t.coupon.code})</span><span>-${money(t.discount)}</span></div>` : ''}
       <div class="sum-total"><span>Tổng thanh toán</span><b>${money(t.total - (form.method.value === 'pickup' ? t.shipping : 0))}</b></div>
       <div class="sum-note">(Đã bao gồm VAT nếu có)</div>
-      <label class="check" style="margin-bottom:14px;font-size:13px"><input type="checkbox" name="agree" checked> <span>Tôi đồng ý với <a class="link" href="chinh-sach.html?type=bao-mat" target="_blank">chính sách bảo mật</a> và <a class="link" href="chinh-sach.html?type=doi-tra" target="_blank">điều khoản mua hàng</a></span></label>
+      <label class="check" style="margin-bottom:14px;font-size:13px"><input type="checkbox" name="agree" checked> <span>Tôi đồng ý với <a class="link" href="${DT.api.policyUrl('bao-mat')}" target="_blank">chính sách bảo mật</a> và <a class="link" href="${DT.api.policyUrl('doi-tra')}" target="_blank">điều khoản mua hàng</a></span></label>
       <button type="submit" class="btn btn-accent btn-block btn-lg">ĐẶT HÀNG</button>
     </div>`;
   }
@@ -132,7 +136,15 @@ DT.onReady(() => {
       DT.u.toast(err.message, 'error');
       return;
     }
-    if (order) location.href = `dat-hang-thanh-cong.html?code=${order.code}`;
+    if (!order) return;
+    const done = `dat-hang-thanh-cong.html?code=${order.code}`;
+    // Thẻ / ví: chuyển thẳng sang cổng thanh toán; lỗi thì vẫn về trang đơn hàng (có nút thanh toán lại)
+    const provider = DT.payments.PROVIDER[order.payment];
+    if (provider && (await DT.payments.config())[provider]) {
+      btn.textContent = 'Đang chuyển tới cổng thanh toán…';
+      try { await DT.payments.redirect(order.code, order.customer.phone, provider); return; } catch (err) { DT.u.toast(err.message, 'error'); }
+    }
+    location.href = done;
   });
 
   renderSummary();

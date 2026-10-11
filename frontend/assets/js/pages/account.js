@@ -18,7 +18,7 @@ DT.onReady(() => {
           <div class="field"><label>Số điện thoại <span class="req">*</span></label><input name="phone" type="tel" required data-validate="phone"><div class="err">Số điện thoại không hợp lệ</div></div>
           <div class="field"><label>Email</label><input name="email" type="email"></div>
           <div class="field"><label>Mật khẩu <span class="req">*</span></label><input name="password" type="password" required minlength="6"><div class="err">Mật khẩu tối thiểu 6 ký tự</div></div>
-          <label class="check" style="margin-bottom:14px"><input type="checkbox" name="agree" required> <span>Tôi đồng ý với <a class="link" href="chinh-sach.html?type=bao-mat">chính sách bảo mật</a></span></label>
+          <label class="check" style="margin-bottom:14px"><input type="checkbox" name="agree" required> <span>Tôi đồng ý với <a class="link" href="${DT.api.policyUrl('bao-mat')}">chính sách bảo mật</a></span></label>
           <button class="btn btn-primary btn-block btn-lg">Tạo tài khoản</button>
         </form>
       </div>

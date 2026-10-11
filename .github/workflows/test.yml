@@ -1,0 +1,38 @@
+# Kiểm thử database (PostgreSQL), Edge Functions (thanh toán, thông báo) và luồng thanh toán trên trình duyệt.
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Database
+        run: ./supabase/tests/run-local.sh | tee db.log && ! grep -q ERROR db.log
+      - name: Edge Functions
+        run: ./supabase/functions/tests/run.sh
+      - name: Thanh toán trên trình duyệt
+        run: node --experimental-strip-types --no-warnings tests/browser/payments.test.ts

@@ -13,13 +13,13 @@ DT.layout = (() => {
     return `<div class="mega">
       <ul class="mega-list">${DT.categories.map((c, i) => `
         <li class="${i === 0 ? 'active' : ''}" data-cat="${c.id}">
-          <a href="danh-muc.html?cat=${c.id}">${DT.icon(c.icon)}<span>${esc(c.name)}</span>${DT.icon('right', 'arr')}</a>
+          <a href="${DT.api.catUrl(c.id)}">${DT.icon(c.icon)}<span>${esc(c.name)}</span>${DT.icon('right', 'arr')}</a>
         </li>`).join('')}
       </ul>
       <div class="mega-panels">${DT.categories.map((c, i) => {
         const brandIds = [...new Set(DT.products.filter((p) => p.cat === c.id).map((p) => p.brand))];
         return `<div class="mega-panel ${i === 0 ? 'active' : ''}" data-panel="${c.id}">
-          <div class="mega-col"><h4>Loại sản phẩm</h4>${c.subs.map((s) => `<a href="danh-muc.html?cat=${c.id}&sub=${s.id}">${esc(s.name)}</a>`).join('')}</div>
+          <div class="mega-col"><h4>Loại sản phẩm</h4>${c.subs.map((s) => `<a href="${DT.api.catUrl(c.id, s.id)}">${esc(s.name)}</a>`).join('')}</div>
           ${c.filters[0] ? `<div class="mega-col"><h4>${esc(c.filters[0].label)}</h4>${c.filters[0].options.slice(0, 7).map((o) => `<a href="danh-muc.html?cat=${c.id}&${c.filters[0].key}=${encodeURIComponent(o)}">${esc(o)}</a>`).join('')}</div>` : ''}
           <div class="mega-col"><h4>Thương hiệu</h4><div class="mega-brands">${brandIds.map((b) => `<a href="danh-muc.html?cat=${c.id}&brand=${b}">${esc(DT.api.brand(b).name)}</a>`).join('')}</div></div>
         </div>`;
@@ -56,7 +56,7 @@ DT.layout = (() => {
         <a class="h-action h-cart" href="gio-hang.html">${DT.icon('cart')}<em class="badge" id="cart-count">0</em><span><small>Giỏ hàng</small><b>Của bạn</b></span></a>
       </div>
       <nav class="catnav"><div class="container">
-        ${DT.categories.map((c) => `<a href="danh-muc.html?cat=${c.id}" data-nav="${c.id}">${DT.icon(c.icon)}${esc(c.short)}</a>`).join('')}
+        ${DT.categories.map((c) => `<a href="${DT.api.catUrl(c.id)}" data-nav="${c.id}">${DT.icon(c.icon)}${esc(c.short)}</a>`).join('')}
         <a href="khuyen-mai.html" class="hot" data-nav="khuyen-mai">${DT.icon('percent')}Khuyến mãi</a>
         <a href="tin-tuc.html" data-nav="tin-tuc">${DT.icon('file')}Tin tức</a>
       </div></nav>
@@ -67,8 +67,8 @@ DT.layout = (() => {
         <div class="drawer-user" id="drawer-user"></div>
         <div class="drawer-body">
           ${DT.categories.map((c) => `<details><summary>${DT.icon(c.icon)}${esc(c.name)}${DT.icon('down', 'arr')}</summary>
-            <a href="danh-muc.html?cat=${c.id}">Tất cả ${esc(c.short.toLowerCase())}</a>
-            ${c.subs.map((s) => `<a href="danh-muc.html?cat=${c.id}&sub=${s.id}">${esc(s.name)}</a>`).join('')}</details>`).join('')}
+            <a href="${DT.api.catUrl(c.id)}">Tất cả ${esc(c.short.toLowerCase())}</a>
+            ${c.subs.map((s) => `<a href="${DT.api.catUrl(c.id, s.id)}">${esc(s.name)}</a>`).join('')}</details>`).join('')}
           <div class="drawer-links">
             <a href="khuyen-mai.html">${DT.icon('percent')}Khuyến mãi hot</a>
             <a href="dich-vu.html">${DT.icon('tool')}Dịch vụ điện lạnh</a>
@@ -111,9 +111,9 @@ DT.layout = (() => {
         </ul>
       </div>
       <div class="footer-col"><h4>Hỗ trợ khách hàng</h4>
-        <a href="chinh-sach.html?type=bao-hanh">Chính sách bảo hành</a><a href="chinh-sach.html?type=doi-tra">Chính sách đổi trả</a>
-        <a href="chinh-sach.html?type=van-chuyen">Vận chuyển & lắp đặt</a><a href="chinh-sach.html?type=tra-gop">Hướng dẫn trả góp</a>
-        <a href="chinh-sach.html?type=thanh-toan">Phương thức thanh toán</a><a href="chinh-sach.html?type=bao-mat">Bảo mật thông tin</a>
+        <a href="${DT.api.policyUrl('bao-hanh')}">Chính sách bảo hành</a><a href="${DT.api.policyUrl('doi-tra')}">Chính sách đổi trả</a>
+        <a href="${DT.api.policyUrl('van-chuyen')}">Vận chuyển & lắp đặt</a><a href="${DT.api.policyUrl('tra-gop')}">Hướng dẫn trả góp</a>
+        <a href="${DT.api.policyUrl('thanh-toan')}">Phương thức thanh toán</a><a href="${DT.api.policyUrl('bao-mat')}">Bảo mật thông tin</a>
       </div>
       <div class="footer-col"><h4>Về ${esc(cfg.name)}</h4>
         <a href="gioi-thieu.html">Giới thiệu công ty</a><a href="he-thong-cua-hang.html">Hệ thống cửa hàng</a>
@@ -220,6 +220,13 @@ DT.layout = (() => {
     bindMega(document);
     bindSearch();
     bindDrawer();
+    // Liên kết "#id" cuộn trong trang (trang pre-render có <base href="../"> nên trình duyệt sẽ hiểu sai)
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('a[href^="#"]');
+      const id = a?.getAttribute('href').slice(1);
+      const target = id && document.getElementById(id);
+      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
     const page = document.body.dataset.page;
     const cat = DT.u.param('cat');
     $$(`.catnav [data-nav="${cat || page}"]`).forEach((a) => a.classList.add('active'));

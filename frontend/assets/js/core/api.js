@@ -18,7 +18,12 @@ DT.api = (() => {
   const product = (key) => { idx(); return byId.get(Number(key)) || bySlug.get(key); };
   const category = (id) => DT.categories.find((c) => c.id === id);
   const brand = (id) => DT.brands.find((b) => b.id === id);
-  const url = (p) => `san-pham.html?id=${p.id}&${p.slug}`;
+  // URL thân thiện SEO (sp/<slug>.html...) khi site được build bằng tools/prerender.mjs (DT.SEO.prettyUrls = true)
+  const pretty = () => !!DT.SEO?.prettyUrls;
+  const url = (p) => (pretty() ? `sp/${p.slug}.html` : `san-pham.html?id=${p.id}&${p.slug}`);
+  const catUrl = (cat, sub) => (pretty() ? `danh-muc/${cat}${sub ? `/${sub}` : ''}.html` : `danh-muc.html?cat=${cat}${sub ? `&sub=${sub}` : ''}`);
+  const postUrl = (slug) => (pretty() ? `tin-tuc/${slug}.html` : `bai-viet.html?slug=${slug}`);
+  const policyUrl = (type) => (pretty() ? `chinh-sach/${type}.html` : `chinh-sach.html?type=${type}`);
 
   function matchQuery(p, q) {
     const words = n(q).split(/\s+/).filter(Boolean);
@@ -103,5 +108,5 @@ DT.api = (() => {
     });
   }
 
-  return { productById, product, category, brand, url, list, related, suggest, reviews, fetchReviews };
+  return { productById, product, category, brand, url, catUrl, postUrl, policyUrl, list, related, suggest, reviews, fetchReviews };
 })();

@@ -1,0 +1,11 @@
+# project_id chỉ dùng cho CLI cục bộ; khi deploy dùng --project-ref của project thật.
+project_id = "dien-lanh-web"
+
+# Cấu hình Supabase CLI cho Edge Functions (supabase functions deploy).
+# Cổng thanh toán (VNPay/MoMo/SePay) và pg_cron gọi vào không kèm JWT của Supabase,
+# nên tắt verify_jwt; mỗi function tự kiểm tra chữ ký / khóa bí mật.
+[functions.payments]
+verify_jwt = false
+
+[functions.notify]
+verify_jwt = false

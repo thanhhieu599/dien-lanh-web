@@ -54,7 +54,7 @@ DT.onReady(() => {
   // ---------- Danh mục nhanh
   $('#quick-cats').innerHTML = DT.categories.map((c) => {
     const sample = DT.products.find((p) => p.cat === c.id);
-    return `<a class="qcat" href="danh-muc.html?cat=${c.id}"><div class="qcat-img">${DT.productImage(sample, 0)}</div><b>${esc(c.short)}</b></a>`;
+    return `<a class="qcat" href="${DT.api.catUrl(c.id)}"><div class="qcat-img">${DT.productImage(sample, 0)}</div><b>${esc(c.short)}</b></a>`;
   }).join('');
 
   // ---------- Flash sale + đếm ngược tới 24h
@@ -84,7 +84,7 @@ DT.onReady(() => {
       <div class="section-head">
         <h2>${esc(c.name)}</h2>
         <div class="tabs"><button class="tab active" data-sub="">Nổi bật</button>${c.subs.map((s) => `<button class="tab" data-sub="${s.id}">${esc(s.name.replace(/^(Máy lạnh|Máy giặt|Tủ lạnh) /, ''))}</button>`).join('')}</div>
-        <a class="link" href="danh-muc.html?cat=${id}">Xem tất cả ${DT.icon('right')}</a>
+        <a class="link" href="${DT.api.catUrl(id)}">Xem tất cả ${DT.icon('right')}</a>
       </div>
       <div class="block-body">${DT.ui.grid(DT.api.list({ cat: id, limit: 10 }).items)}</div>
     </section>`;
@@ -118,7 +118,11 @@ DT.onReady(() => {
 
   DT.u.jsonLd({
     '@context': 'https://schema.org', '@type': 'Store', name: DT.config.name, telephone: DT.config.hotline,
-    address: DT.config.address, openingHours: 'Mo-Su 07:30-21:30', url: location.origin,
+    address: DT.config.address, openingHours: 'Mo-Su 07:30-21:30', url: DT.u.abs('./'), email: DT.config.email,
+    legalName: DT.config.company, taxID: DT.config.taxCode, priceRange: '₫₫',
+    contactPoint: [{ '@type': 'ContactPoint', telephone: DT.config.hotline, contactType: 'customer service', areaServed: 'VN', availableLanguage: 'vi' },
+      { '@type': 'ContactPoint', telephone: DT.config.hotlineB2B, contactType: 'sales', areaServed: 'VN', availableLanguage: 'vi' }],
+    sameAs: [DT.config.facebook, DT.config.zalo, DT.config.youtube].filter((x) => /^https?:\/\/[^/]+\/./.test(x || '')),
   });
 });
 

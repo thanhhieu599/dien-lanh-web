@@ -102,6 +102,11 @@ AD.pages = AD.pages || {};
     { key: 'freeShipThreshold', label: 'Miễn phí ship cho đơn từ (₫)', type: 'money', required: true, col: 'third' },
     { key: 'shippingFee', label: 'Phí vận chuyển (₫)', type: 'money', required: true, col: 'third' },
     { key: 'installFee', label: 'Phí lắp đặt máy lạnh / bộ (₫)', type: 'money', required: true, col: 'third' },
+    { key: '_d', type: 'custom', render: () => '<h4 class="ad-sec">Tài khoản nhận chuyển khoản</h4><p class="muted">Dùng để tạo mã QR VietQR trên trang đơn hàng và email gửi khách. Mã ngân hàng (BIN): Vietcombank 970436, Techcombank 970407, MB 970422, ACB 970416, BIDV 970418, VietinBank 970415, VPBank 970432.</p>', read: () => undefined, col: 'full' },
+    { key: 'bankName', label: 'Ngân hàng (hiển thị)', col: 'third' },
+    { key: 'bankBin', label: 'Mã ngân hàng (BIN VietQR)', col: 'third' },
+    { key: 'bankAccount', label: 'Số tài khoản', col: 'third' },
+    { key: 'bankOwner', label: 'Chủ tài khoản (không dấu, như trên app ngân hàng)', col: 'full' },
   ];
 
   AD.pages.settings = async (params, el) => {
@@ -125,5 +130,35 @@ AD.pages = AD.pages || {};
       const value = { ...v, ...data };
       await run(e.target.querySelector('button'), () => (row ? AD.db.update('settings', 'store', { value }) : AD.db.insert('settings', { key: 'store', value })), 'Đã lưu cài đặt');
     });
+  };
+
+  // ======================================================================= Nhật ký thông báo (email / Zalo / ZNS)
+  AD.pages.notifications = async (params, el) => {
+    el.innerHTML = `<div class="ad-head"><div><h1>Nhật ký thông báo</h1><small class="muted">Thông báo tự động gửi nhân viên (Zalo, Telegram, email) và khách hàng (email, Zalo ZNS) khi có đơn mới, thanh toán, đổi trạng thái, yêu cầu báo giá</small></div></div>
+      <div id="list"><div class="ad-loading">Đang tải…</div></div>`;
+    if (AD.db.mode !== 'supabase') {
+      el.querySelector('#list').innerHTML = '<div class="ad-card"><p>Chế độ demo không gửi thông báo. Kết nối Supabase và cấu hình kênh gửi theo <b>docs/PHASE4.md</b> để bật tính năng này.</p></div>';
+      return;
+    }
+    const size = 30; const page = Number(params.page) || 1;
+    const status = params.status ?? '';
+    el.querySelector('.ad-head').insertAdjacentHTML('afterend', `<div class="ad-tabs">${[['', 'Tất cả'], ['failed', 'Lỗi'], ['pending', 'Chờ gửi'], ['done', 'Đã gửi']].map(([k, l]) => `<a href="#/notifications${k ? `?status=${k}` : ''}" class="${status === k ? 'active' : ''}">${l}</a>`).join('')}</div>`);
+    const { rows, count } = await AD.db.list('notifications', {
+      select: 'id,event,status,attempts,results,data,created_at,processed_at,order_id,lead_id,orders(code),leads(code)',
+      filters: [['status', 'eq', status || undefined]], order: 'id.desc', limit: size, offset: (page - 1) * size,
+    });
+    const channels = (r) => Object.entries(r.results || {}).map(([k, v]) => `<span class="st st-${v.ok ? 'ok' : 'danger'}" title="${esc(v.error || v.at || '')}">${esc(AD.NOTIFY_CHANNEL[k] || k)}</span>`).join(' ') || '<small class="muted">Chưa có kênh nào được cấu hình</small>';
+    el.querySelector('#list').innerHTML = table([
+      { label: 'Sự kiện', render: (r) => `<b>${esc(AD.NOTIFY_EVENT[r.event] || r.event)}${r.data?.status ? `: ${esc(AD.ORDER_STATUS[r.data.status]?.[0] || r.data.status)}` : ''}</b><small>${dt(r.created_at)}</small>` },
+      { label: 'Liên quan', render: (r) => (r.order_id ? `<a href="#/orders/${encodeURIComponent(r.order_id)}">${esc(r.orders?.code || `Đơn #${r.order_id}`)}</a>` : r.lead_id ? `<a href="#/leads/${encodeURIComponent(r.lead_id)}">${esc(r.leads?.code || `Lead #${r.lead_id}`)}</a>` : '-') },
+      { label: 'Kênh', render: channels },
+      { label: 'Trạng thái', render: (r) => `${badge(AD.NOTIFY_STATUS, r.status)}<small>${r.attempts} lần gửi</small>` },
+      { label: '', cls: 'actions', render: (r) => (r.status === 'failed' ? `<button class="btn btn-sm btn-light" data-retry="${esc(r.id)}">${ic('refresh')} Gửi lại</button>` : '') },
+    ], rows, { empty: 'Chưa có thông báo' }) + pager(page, count, size)
+      + '<p class="muted" style="margin-top:12px">Di chuột lên tên kênh để xem lỗi. Lỗi thường gặp: khóa API sai/hết hạn, khách không có email, mẫu ZNS chưa được duyệt. Hệ thống tự thử lại 6 lần (2 → 64 phút).</p>';
+    AD.bindPager(el, 'notifications', { ...params, status });
+    el.querySelectorAll('[data-retry]').forEach((b) => b.addEventListener('click', async () => {
+      if (await run(b, () => AD.db.update('notifications', b.dataset.retry, { status: 'pending', next_at: new Date().toISOString() }), 'Đã đưa vào hàng đợi, sẽ gửi trong 1 phút')) AD.route();
+    }));
   };
 })();

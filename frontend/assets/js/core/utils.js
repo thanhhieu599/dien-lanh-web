@@ -14,8 +14,14 @@ DT.u = {
     return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   },
 
+  // Trang pre-render (sp/<slug>.html...) không có query string: đọc từ <body data-q-id="..." data-q-cat="...">
   param(name) {
-    return new URLSearchParams(location.search).get(name);
+    return new URLSearchParams(location.search).get(name) ?? document.body?.dataset['q' + name[0].toUpperCase() + name.slice(1)] ?? null;
+  },
+
+  // URL tuyệt đối theo địa chỉ website chính thức (canonical, og:url, JSON-LD)
+  abs(rel) {
+    try { return new URL(rel, DT.SEO?.siteUrl || document.baseURI).href; } catch { return rel; }
   },
 
   slugify(s) {
@@ -77,18 +83,36 @@ DT.u = {
     return ok ? data : null;
   },
 
-  setMeta({ title, description }) {
+  setMeta({ title, description, canonical, image, type }) {
+    const head = document.head;
+    const meta = (attr, key, val) => {
+      if (!val) return;
+      let m = head.querySelector(`meta[${attr}="${key}"]`);
+      if (!m) { m = document.createElement('meta'); m.setAttribute(attr, key); head.appendChild(m); }
+      m.content = val;
+    };
     if (title) document.title = `${title} | ${DT.config.name}`;
-    if (description) {
-      let m = document.querySelector('meta[name="description"]');
-      if (!m) { m = document.createElement('meta'); m.name = 'description'; document.head.appendChild(m); }
-      m.content = description;
+    meta('name', 'description', description);
+    meta('property', 'og:title', title && document.title);
+    meta('property', 'og:description', description);
+    meta('property', 'og:type', type);
+    if (canonical) {
+      const href = DT.u.abs(canonical);
+      let l = head.querySelector('link[rel="canonical"]');
+      if (!l) { l = document.createElement('link'); l.rel = 'canonical'; head.appendChild(l); }
+      l.href = href;
+      meta('property', 'og:url', href);
     }
+    if (image) meta('property', 'og:image', DT.u.abs(image));
   },
 
+  // Mỗi loại dữ liệu có cấu trúc chỉ 1 thẻ (trang pre-render chạy lại script không bị nhân đôi)
   jsonLd(obj) {
+    const key = String(obj['@type'] || 'x');
+    document.head.querySelector(`script[type="application/ld+json"][data-ld="${key}"]`)?.remove();
     const s = document.createElement('script');
     s.type = 'application/ld+json';
+    s.dataset.ld = key;
     s.textContent = JSON.stringify(obj);
     document.head.appendChild(s);
   },

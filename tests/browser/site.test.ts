@@ -167,6 +167,8 @@ try {
   section('Form liên hệ, đặt lịch dịch vụ, báo giá B2B, nhận tin');
   await page.goto(`${fe}bao-gia-du-an.html?sku=DT1001`);
   await page.waitForSelector('form[data-lead] [name=company]');
+  // ô sản phẩm được điền sau khi nạp xong dữ liệu từ database
+  await page.waitForFunction(() => (document.querySelector('[name=items]') as HTMLTextAreaElement).value.includes('DT1001'), null, { timeout: 5000 }).catch(() => {});
   check((await page.locator('[name=items]').inputValue()).includes('DT1001'), 'điền sẵn sản phẩm từ link báo giá');
   await page.fill('[name=company]', 'Nhà máy Điện tử ABC');
   await page.fill('form[data-lead] [name=name]', 'Anh Hùng');

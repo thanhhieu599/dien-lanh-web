@@ -3,6 +3,7 @@
 //                    limit/offset, Prefer: count=exact (Content-Range), insert/update/delete, rpc; giới hạn 1000 dòng
 //   /auth/v1/*       GoTrue: signup, token (password / refresh_token), logout
 //   /functions/v1/*  Edge Functions thật (payments, notify)
+//   /storage/v1/*    Storage tối giản: tải lên / xóa (chỉ admin, như policy bucket 'media') và đọc công khai
 // Mỗi request chạy trong 1 transaction với role (anon / authenticated / service_role) + request.jwt.claims như PostgREST,
 // nên RLS, quyền cột, trigger... đều là của database thật.
 import http from 'node:http';
@@ -51,7 +52,8 @@ export async function startSupabase(opts: Options) {
     if (req.method === 'OPTIONS') return send(204, undefined);
     const chunks: Buffer[] = [];
     for await (const c of req) chunks.push(c as Buffer);
-    const raw = Buffer.concat(chunks).toString();
+    const bytes = Buffer.concat(chunks);
+    const raw = bytes.toString();
     const url = new URL(req.url!, base);
     try {
       if (url.pathname.startsWith('/functions/v1/')) {
@@ -65,6 +67,7 @@ export async function startSupabase(opts: Options) {
       }
       if (url.pathname.startsWith('/auth/v1/')) return await auth(url, req, raw, send);
       if (url.pathname.startsWith('/rest/v1/')) return await rest(url, req, raw, send);
+      if (url.pathname.startsWith('/storage/v1/')) return await storage(url, req, bytes, send, res, cors);
       send(404, { message: 'not found' });
     } catch (e) {
       const err = e as { code?: string; message: string; detail?: string; status?: number };
@@ -110,6 +113,28 @@ export async function startSupabase(opts: Options) {
     }
     if (path === 'logout') return send(204, undefined);
     send(404, { msg: 'not found' });
+  }
+
+  // ------------------------------------------------------------------ Storage (bucket 'media')
+  const files = new Map<string, { type: string; data: Buffer }>();
+  async function storage(url: URL, req: http.IncomingMessage, bytes: Buffer, send: (s: number, b: unknown, h?: Record<string, string>) => void, res: http.ServerResponse, cors: Record<string, string>) {
+    const pub = url.pathname.match(/^\/storage\/v1\/object\/public\/media\/(.+)$/);
+    if (pub && req.method === 'GET') {
+      const f = files.get(decodeURIComponent(pub[1]));
+      if (!f) return send(404, { message: 'Object not found' });
+      res.writeHead(200, { ...cors, 'Content-Type': f.type });
+      return res.end(f.data);
+    }
+    const obj = url.pathname.match(/^\/storage\/v1\/object\/([^/]+)\/(.+)$/);
+    if (!obj) return send(404, { message: 'not found' });
+    if (obj[1] !== 'media') return send(400, { message: 'Bucket not found' });
+    const claims = claimsOf(req);
+    const admin = await tx(claims, (q) => q('select public.is_admin() as ok'));
+    if (!admin.rows[0].ok) return send(403, { message: 'new row violates row-level security policy' });
+    const key = decodeURIComponent(obj[2]);
+    if (req.method === 'POST' || req.method === 'PUT') { files.set(key, { type: String(req.headers['content-type'] || 'application/octet-stream'), data: bytes }); return send(200, { Key: `media/${key}` }); }
+    if (req.method === 'DELETE') { files.delete(key); return send(200, { message: 'deleted' }); }
+    send(405, { message: 'method not allowed' });
   }
 
   // ------------------------------------------------------------------ PostgREST

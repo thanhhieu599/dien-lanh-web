@@ -77,10 +77,10 @@
 .vm-ph svg { width: 44px; height: 44px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; opacity: .7; margin-bottom: 4px; }
 .vm-ph b { font-size: 15px; }
 .vm-ph span { font-size: 12.5px; opacity: .75; }
-.vm-ph code { font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: rgba(37, 99, 235, .1); }
+.vm-ph small { font-size: 11.5px; padding: 3px 10px; border-radius: 6px; background: rgba(37, 99, 235, .1); }
 .vm-hero .vm-media, .vm-sec-dark .vm-media { background: linear-gradient(135deg, rgba(59, 130, 246, .22), rgba(34, 211, 238, .12)); }
 .vm-hero .vm-ph, .vm-sec-dark .vm-ph { color: #e0f2fe; border-color: rgba(255, 255, 255, .3); }
-.vm-hero .vm-ph code, .vm-sec-dark .vm-ph code { background: rgba(255, 255, 255, .12); }
+.vm-hero .vm-ph small, .vm-sec-dark .vm-ph small { background: rgba(255, 255, 255, .12); }
 
 /* 2. Dải chữ chạy */
 .vm-marquee { overflow: hidden; background: linear-gradient(90deg, #1d4ed8, #0891b2); color: #fff; padding: 16px 0; mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }

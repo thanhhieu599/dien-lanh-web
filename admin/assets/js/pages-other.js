@@ -132,6 +132,113 @@ AD.pages = AD.pages || {};
     });
   };
 
+  // ======================================================================= Ảnh trang Tầm nhìn & Sứ mệnh
+  // Nén ảnh ngay trên trình duyệt (giảm dung lượng, trang tải nhanh) rồi lưu:
+  //  - Supabase: file lên Storage (bucket 'media'), link vào settings 'vision'
+  //  - Demo: ảnh dạng data URL trong localStorage (website demo cùng tên miền đọc được)
+  async function compress(file, max, quality) {
+    const bmp = await createImageBitmap(file).catch(() => { throw new Error('File không phải ảnh hợp lệ (dùng JPG, PNG, WEBP)'); });
+    const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    const blob = (type) => new Promise((ok) => c.toBlob(ok, type, quality));
+    const webp = await blob('image/webp');
+    return webp?.type === 'image/webp' ? webp : blob('image/jpeg');
+  }
+  const toDataUrl = (blob) => new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+
+  AD.pages.vision = async (params, el) => {
+    if (AD.me.role !== 'admin') throw new Error('Chỉ quản trị viên được sửa ảnh trang Tầm nhìn & Sứ mệnh');
+    const supa = AD.db.mode === 'supabase';
+    const loadImages = async () => {
+      if (!supa) { try { return JSON.parse(localStorage.getItem(DT.VISION_DEMO_KEY) || '{}').images || {}; } catch { return {}; } }
+      return (await AD.db.get('settings', 'vision'))?.value?.images || {};
+    };
+    const saveImages = async (images) => {
+      if (!supa) {
+        try { localStorage.setItem(DT.VISION_DEMO_KEY, JSON.stringify({ images })); } catch { throw new Error('Bộ nhớ trình duyệt đã đầy (chế độ demo). Hãy dùng ảnh nhỏ hơn hoặc xóa bớt ảnh.'); }
+        return;
+      }
+      const row = await AD.db.get('settings', 'vision');
+      const value = { ...(row?.value || {}), images };
+      await (row ? AD.db.update('settings', 'vision', { value }) : AD.db.insert('settings', { key: 'vision', value }));
+    };
+    let images = await loadImages();
+
+    const card = (s) => {
+      const url = images[s.key];
+      return `<div class="ad-card vs-card" data-key="${s.key}">
+        <label class="vs-drop ${url ? 'has' : ''}" title="Bấm hoặc kéo thả ảnh vào đây">
+          ${url ? `<img src="${esc(url)}" alt="${esc(s.label)}">` : `<span>${ic('plus')}<b>Chọn ảnh</b><small>hoặc kéo thả vào đây</small></span>`}
+          <input type="file" accept="image/*" hidden>
+        </label>
+        <div class="vs-info"><b>${esc(s.label)}</b><small class="muted">${esc(s.hint)} • ${esc(s.size)}</small>
+          <div class="vs-actions">
+            <button type="button" class="btn btn-light btn-sm" data-pick>${ic('plus')} ${url ? 'Thay ảnh' : 'Tải ảnh lên'}</button>
+            ${url ? `<button type="button" class="btn btn-light btn-sm" data-del>${ic('trash')} Xóa</button>` : ''}
+          </div>
+        </div>
+      </div>`;
+    };
+    const render = () => {
+      el.innerHTML = `<div class="ad-head"><div><h1>Ảnh trang Tầm nhìn & Sứ mệnh</h1><small class="muted">Tải ảnh lên là trang hiển thị ngay, không cần sửa code. Ảnh tự nén để trang tải nhanh.${supa ? '' : ' <b>Chế độ demo:</b> ảnh chỉ lưu trên trình duyệt này.'}</small></div>
+        <div class="ad-head-actions"><a class="btn btn-light" href="../frontend/tam-nhin-su-menh.html" target="_blank" rel="noopener">${ic('eye')} Xem trang</a></div></div>
+        <div class="vs-grid">${DT.visionSlots.map(card).join('')}</div>`;
+    };
+    render();
+
+    const upload = async (key, file) => {
+      const box = el.querySelector(`.vs-card[data-key="${key}"]`);
+      box.classList.add('busy');
+      try {
+        const blob = await compress(file, supa ? 2000 : 1400, supa ? 0.85 : 0.78);
+        const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
+        const old = images[key];
+        const url = supa ? await AD.db.upload(`vision/${key}-${Date.now()}.${ext}`, blob) : await toDataUrl(blob);
+        await saveImages({ ...images, [key]: url });
+        images = { ...images, [key]: url };
+        if (supa) AD.db.removeFile(old);
+        AD.ui.toast('Đã cập nhật ảnh. Khách thấy ảnh mới trong vài phút.');
+        render();
+      } catch (e) {
+        if (!AD.handleError(e)) AD.ui.toast(e.message, 'error');
+        box.classList.remove('busy');
+      }
+    };
+
+    el.addEventListener('change', (e) => {
+      const input = e.target.closest('input[type=file]');
+      const file = input?.files?.[0];
+      if (file) upload(input.closest('.vs-card').dataset.key, file);
+    });
+    el.addEventListener('click', async (e) => {
+      const card = e.target.closest('.vs-card');
+      if (!card) return;
+      if (e.target.closest('[data-pick]')) card.querySelector('input[type=file]').click();
+      if (e.target.closest('[data-del]')) {
+        if (!(await confirm('Xóa ảnh này? Trang sẽ hiện lại khung chờ ảnh.', { ok: 'Xóa ảnh', danger: true }))) return;
+        const key = card.dataset.key;
+        const { [key]: old, ...rest } = images;
+        if (await run(e.target.closest('button'), () => saveImages(rest), 'Đã xóa ảnh')) {
+          images = rest;
+          if (supa) AD.db.removeFile(old);
+          render();
+        }
+      }
+    });
+    el.addEventListener('dragover', (e) => { const d = e.target.closest('.vs-drop'); if (d) { e.preventDefault(); d.classList.add('over'); } });
+    el.addEventListener('dragleave', (e) => e.target.closest('.vs-drop')?.classList.remove('over'));
+    el.addEventListener('drop', (e) => {
+      const d = e.target.closest('.vs-drop');
+      if (!d) return;
+      e.preventDefault();
+      d.classList.remove('over');
+      const file = e.dataTransfer.files?.[0];
+      if (file) upload(d.closest('.vs-card').dataset.key, file);
+    });
+  };
+
   // ======================================================================= Nhật ký thông báo (email / Zalo / ZNS)
   AD.pages.notifications = async (params, el) => {
     el.innerHTML = `<div class="ad-head"><div><h1>Nhật ký thông báo</h1><small class="muted">Thông báo tự động gửi nhân viên (Zalo, Telegram, email) và khách hàng (email, Zalo ZNS) khi có đơn mới, thanh toán, đổi trạng thái, yêu cầu báo giá</small></div></div>

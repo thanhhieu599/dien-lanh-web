@@ -1,36 +1,42 @@
 // Trang Tầm nhìn & Sứ mệnh: ảnh công ty (tự nhận file), hiệu ứng xuất hiện khi cuộn, đếm số, ánh sáng theo chuột.
-// Chèn ảnh: chép file vào frontend/assets/images/cong-ty/ đúng tên (vd hero.jpg) - xem README.md trong thư mục đó.
+// Chèn ảnh: Quản trị › Trang Tầm nhìn & Sứ mệnh (hoặc chép file vào frontend/assets/images/cong-ty/, xem README.md).
 (() => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const EXTS = ['jpg', 'webp', 'png'];
 
-  // ---------- Ảnh: thử lần lượt .jpg/.webp/.png, không có thì hiện khung chờ ảnh
+  // ---------- Ảnh: ưu tiên ảnh tải lên trong trang quản trị; chưa có thì thử file trong assets/images/cong-ty/
+  // (.jpg/.webp/.png); không có nữa thì hiện khung chờ ảnh
   const placeholder = (img) => {
     const ph = document.createElement('div');
     ph.className = 'vm-ph';
     ph.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="4"/></svg>
       <b>${DT.u.esc(img.dataset.hint || 'Hình ảnh công ty')}</b>
       <span>${DT.u.esc(img.dataset.size || '')}</span>
-      <code>${DT.u.esc(img.dataset.img.split('/').pop())}.jpg</code>`;
+      <small>Chèn ảnh tại Quản trị › Trang Tầm nhìn</small>`;
     return ph;
   };
-  const loadImage = (img) => {
+  const loadImage = (img, uploaded) => {
     const fig = img.closest('.vm-media');
     fig.querySelector('.vm-ph')?.remove(); // trang đã pre-render: dựng lại khung chờ
-    if (img.getAttribute('src')) { fig.classList.add('has-img'); return; } // đã gắn sẵn link ảnh
     fig.classList.remove('has-img');
+    img.removeAttribute('src'); // bỏ ảnh đã "nướng" sẵn khi build: luôn lấy ảnh mới nhất
     const ph = placeholder(img);
     fig.append(ph);
+    const key = img.dataset.img.split('/').pop();
+    const sources = [uploaded[key], ...EXTS.map((x) => `${img.dataset.img}.${x}`)].filter(Boolean);
     let i = 0;
     const tryNext = () => {
-      if (i >= EXTS.length) { img.removeAttribute('src'); return; }
-      img.src = `${img.dataset.img}.${EXTS[i++]}`;
+      if (i >= sources.length) { img.removeAttribute('src'); return; }
+      img.src = sources[i++];
     };
     img.onload = () => { fig.classList.add('has-img'); ph.remove(); };
     img.onerror = tryNext;
     tryNext();
   };
-  document.querySelectorAll('.vm img[data-img]').forEach(loadImage);
+  DT.onReady(() => {
+    const uploaded = DT.visionImages();
+    document.querySelectorAll('.vm img[data-img]').forEach((img) => loadImage(img, uploaded));
+  });
 
   // ---------- Đếm số
   const fmt = (n) => Math.round(n).toLocaleString('vi-VN');

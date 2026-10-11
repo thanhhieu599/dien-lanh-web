@@ -264,3 +264,18 @@ a.kpi:hover { border-color: var(--primary); }
   body { background: #fff; }
 }
 .ad-side nav a em[hidden] { display: none; }
+
+/* Ảnh trang Tầm nhìn & Sứ mệnh */
+.vs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.vs-card { display: grid; gap: 12px; margin: 0; padding: 12px; position: relative; }
+.vs-card.busy { pointer-events: none; }
+.vs-card.busy::after { content: 'Đang tải ảnh lên…'; position: absolute; inset: 0; display: grid; place-items: center; border-radius: 12px; background: rgba(255, 255, 255, .82); font-weight: 600; color: var(--primary); }
+.vs-drop { display: grid; place-items: center; aspect-ratio: 16 / 10; border-radius: 10px; border: 2px dashed #c7d7f2; background: #f5f8ff; cursor: pointer; overflow: hidden; transition: border-color .2s, background .2s; }
+.vs-drop:hover, .vs-drop.over { border-color: var(--primary); background: var(--primary-soft); }
+.vs-drop.has { border-style: solid; border-color: var(--border); background: #f2f4f7; }
+.vs-drop img { width: 100%; height: 100%; object-fit: cover; }
+.vs-drop span { display: grid; justify-items: center; gap: 4px; color: var(--primary); text-align: center; }
+.vs-drop span svg { width: 28px; height: 28px; }
+.vs-drop small { color: var(--muted); }
+.vs-info { display: grid; gap: 2px; }
+.vs-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }

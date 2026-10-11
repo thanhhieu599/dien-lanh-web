@@ -74,8 +74,34 @@ AD.supabase = (cfg) => {
     return p.toString();
   }
 
+  // Tải file lên Supabase Storage (bucket công khai 'media'), trả về link công khai
+  async function upload(path, blob) {
+    const t = await token();
+    let res;
+    try {
+      res = await fetch(`${base}/storage/v1/object/media/${path}`, {
+        method: 'POST', body: blob, headers: { apikey: cfg.anonKey, Authorization: `Bearer ${t || cfg.anonKey}`, 'Content-Type': blob.type, 'x-upsert': 'true' },
+      });
+    } catch { throw new Error(friendly(null, 0)); }
+    if (!res.ok) {
+      const d = await res.json().catch(() => null);
+      if (res.status === 401 && t) { save(null); throw expired(); }
+      throw new Error(/bucket not found/i.test(d?.message || '') ? 'Chưa tạo kho ảnh "media" trên Supabase (chạy migration mới nhất)' : friendly(d, res.status));
+    }
+    return `${base}/storage/v1/object/public/media/${path}`;
+  }
+  // Xóa file cũ trong kho ảnh (bỏ qua nếu không phải file của kho)
+  async function removeFile(url) {
+    const prefix = `${base}/storage/v1/object/public/media/`;
+    if (!url || !url.startsWith(prefix)) return;
+    const t = await token();
+    await fetch(`${base}/storage/v1/object/media/${url.slice(prefix.length)}`, { method: 'DELETE', headers: { apikey: cfg.anonKey, Authorization: `Bearer ${t}` } }).catch(() => {});
+  }
+
   return {
     mode: 'supabase',
+    upload,
+    removeFile,
     async login(id, password) {
       const email = id.includes('@') ? id.trim() : `${id.replace(/\D/g, '')}@${cfg.phoneEmailDomain || 'sdt.local'}`;
       const d = await http('/auth/v1/token?grant_type=password', { method: 'POST', auth: false, body: { email, password } });

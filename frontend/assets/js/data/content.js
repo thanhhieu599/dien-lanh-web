@@ -25,6 +25,26 @@ DT.config = {
   bankOwner: 'TEN CONG TY',
 };
 
+// Ảnh trang Tầm nhìn & Sứ mệnh: quản lý trong Quản trị > Trang Tầm nhìn & Sứ mệnh.
+// Có database: link ảnh lưu ở settings 'vision'. Chế độ demo: lưu trên trình duyệt (localStorage).
+DT.visionSlots = [
+  { key: 'hero', label: 'Ảnh lớn đầu trang', hint: 'Trụ sở / toàn cảnh công ty', size: '1200 × 1500 px (dọc)' },
+  { key: 'tam-nhin', label: 'Tầm nhìn - ảnh lớn', hint: 'Công trình / dự án tiêu biểu', size: '1200 × 1500 px (dọc)' },
+  { key: 'doi-ngu', label: 'Tầm nhìn - ảnh nhỏ', hint: 'Đội ngũ kỹ thuật', size: '800 × 800 px' },
+  { key: 'gia-tri', label: 'Giá trị cốt lõi', hint: 'Hoạt động / văn hóa công ty', size: '1600 × 1000 px (ngang)' },
+  { key: 'anh-1', label: 'Thư viện ảnh 1', hint: 'Showroom', size: '1600 × 1000 px' },
+  { key: 'anh-2', label: 'Thư viện ảnh 2', hint: 'Thi công công trình', size: '800 × 1000 px' },
+  { key: 'anh-3', label: 'Thư viện ảnh 3', hint: 'Đào tạo kỹ thuật', size: '800 × 800 px' },
+  { key: 'anh-4', label: 'Thư viện ảnh 4', hint: 'Ký kết hợp tác', size: '800 × 800 px' },
+  { key: 'anh-5', label: 'Thư viện ảnh 5', hint: 'Hoạt động cộng đồng', size: '1600 × 800 px' },
+  { key: 'lanh-dao', label: 'Thông điệp lãnh đạo', hint: 'Chân dung Giám đốc', size: '900 × 1200 px (dọc)' },
+];
+DT.VISION_DEMO_KEY = 'dt_vision_v1';
+DT.visionImages = () => {
+  if (DT.backend?.enabled) return DT.vision?.images || {};
+  try { return JSON.parse(localStorage.getItem(DT.VISION_DEMO_KEY) || '{}').images || {}; } catch { return {}; }
+};
+
 // Mã giảm giá demo (giai đoạn 2 quản lý trong admin)
 DT.coupons = [
   { code: 'COOL10', type: 'percent', value: 10, max: 1000000, min: 5000000, desc: 'Giảm 10% tối đa 1 triệu cho đơn từ 5 triệu' },

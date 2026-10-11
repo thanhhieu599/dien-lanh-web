@@ -263,6 +263,13 @@ try {
   await page.click('#save');
   check(await toast(page, 'Đã lưu'), 'admin sửa chính sách');
 
+  await go(page, 'vision', '.vs-card[data-key="lanh-dao"]');
+  const png = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = 900; c.height = 1200; const g = c.getContext('2d')!; g.fillStyle = '#0e7490'; g.fillRect(0, 0, 900, 1200); return c.toDataURL('image/png').split(',')[1]; });
+  await page.locator('.vs-card[data-key="lanh-dao"] input[type=file]').setInputFiles({ name: 'giam-doc.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') });
+  check(await toast(page, 'Đã cập nhật ảnh'), 'admin tải ảnh trang Tầm nhìn lên kho ảnh');
+  const visionUrl = sql(`select value->'images'->>'lanh-dao' from public.settings where key = 'vision'`);
+  check(/\/storage\/v1\/object\/public\/media\/vision\/lanh-dao-\d+\.(webp|jpg)$/.test(visionUrl), 'database: lưu link ảnh công khai');
+
   section('Website nhận cấu hình mới');
   const shop = await T.newPage();
   await shop.goto(`${fe}index.html`);
@@ -272,6 +279,9 @@ try {
   await shop.waitForSelector('.summary');
   check((await shop.locator('.summary').textContent())!.includes('35.000₫'), 'phí ship mới áp dụng ngay trên website');
   check(await shop.locator('footer').textContent().then((t: string | null) => !t!.includes('Doanh nghiệp:')), 'xóa hotline doanh nghiệp → ẩn khỏi footer (không lỗi)');
+  await shop.goto(`${fe}tam-nhin-su-menh.html`);
+  await shop.waitForSelector('.vm-media-portrait.has-img', { timeout: 5000 }).catch(() => {});
+  check(await shop.locator('.vm-media-portrait.has-img img').getAttribute('src') === visionUrl, 'trang Tầm nhìn hiển thị ảnh tải lên từ quản trị');
 
   section('Dữ liệu lớn (>1000 đơn): báo cáo không bị cắt');
   sql(`insert into public.orders (code, phone, customer, shipping, payment, subtotal, total, created_at)

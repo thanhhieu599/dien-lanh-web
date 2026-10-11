@@ -1,7 +1,10 @@
 # Ảnh công ty cho trang Tầm nhìn & Sứ mệnh
 
-Chép ảnh vào thư mục này **đúng tên file** bên dưới (đuôi `.jpg`, `.webp` hoặc `.png`).
-Trang `tam-nhin-su-menh.html` tự nhận ảnh; chưa có ảnh thì hiện khung chờ có ghi tên file cần chèn.
+**Cách khuyên dùng:** vào trang quản trị › **Marketing › Trang Tầm nhìn** › bấm/kéo thả ảnh vào từng vị trí.
+Ảnh tự nén và hiển thị ngay trên website, không cần sửa code.
+
+Cách dự phòng (ảnh mặc định đi kèm mã nguồn): chép ảnh vào thư mục này **đúng tên file** bên dưới
+(đuôi `.jpg`, `.webp` hoặc `.png`). Ảnh tải lên trong quản trị luôn được ưu tiên hơn ảnh trong thư mục này.
 
 | Tên file | Vị trí trên trang | Kích thước gợi ý |
 |---|---|---|

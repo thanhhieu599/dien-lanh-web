@@ -8,7 +8,7 @@ DT.backend = (() => {
   const enabled = !!(cfg.url && cfg.anonKey);
   const base = (cfg.url || '').replace(/\/+$/, '');
   const SESSION_KEY = 'dt_auth_v1';
-  const CACHE_KEY = 'dt_catalog_cache_v1';
+  const CACHE_KEY = 'dt_catalog_cache_v2';
 
   let session = null;
   try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch { /* bỏ qua */ }
@@ -115,7 +115,9 @@ DT.backend = (() => {
   });
 
   function apply(d) {
-    if (d.settings?.[0]) Object.assign(DT.config, d.settings[0].value);
+    const setting = (k) => d.settings?.find((s) => s.key === k)?.value;
+    if (setting('store')) Object.assign(DT.config, setting('store'));
+    DT.vision = setting('vision') || {}; // ảnh trang Tầm nhìn & Sứ mệnh (quản trị tải lên)
     DT.categories = d.categories.map((c) => ({ ...c, subs: c.subs || [], filters: c.filters || [] }));
     DT.brands = d.brands;
     // Danh mục bị ẩn -> sản phẩm của danh mục đó cũng ẩn khỏi website
@@ -131,7 +133,7 @@ DT.backend = (() => {
 
   async function fetchCatalog() {
     const q = {
-      settings: 'key=eq.store&select=value',
+      settings: 'key=in.(store,vision)&select=key,value',
       categories: 'select=id,name,short,icon,art,subs,filters&order=sort',
       brands: 'select=id,name,origin,color&order=sort',
       products: 'select=*&order=id',

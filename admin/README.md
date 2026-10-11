@@ -25,6 +25,7 @@
 | Đánh giá | Duyệt / từ chối / xóa |
 | Mã giảm giá | %, số tiền, miễn phí ship; đơn tối thiểu, giới hạn lượt, thời hạn, mã riêng (không công khai) |
 | Banner, Bài viết | Slider trang chủ; bài viết SEO (HTML), nháp / đăng |
+| Trang Tầm nhìn | Tải / thay / xóa 10 ảnh công ty của trang Tầm nhìn & Sứ mệnh (tự nén ảnh; lưu ở Supabase Storage bucket `media`) – chỉ quản trị viên |
 | Báo cáo | Doanh thu theo ngày/tháng, danh mục, thương hiệu, top sản phẩm, phương thức thanh toán, tỷ lệ hủy, chuyển đổi lead |
 | Cấu hình | Thông tin doanh nghiệp, hotline, phí ship, phí lắp đặt (áp dụng khi tính tiền đơn), cửa hàng, dịch vụ, chính sách |
 

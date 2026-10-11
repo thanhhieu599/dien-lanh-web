@@ -79,7 +79,7 @@ try {
   await page.fill('#frm [name=sold]', '');
   await page.click('#save');
   check(await toast('Đã lưu'), 'sửa sản phẩm demo (bỏ trống "Đã bán")');
-  for (const r of ['dashboard', 'customers', 'reviews', 'reports', 'settings', 'notifications', 'coupons', 'posts', 'categories']) {
+  for (const r of ['dashboard', 'customers', 'reviews', 'reports', 'settings', 'vision', 'notifications', 'coupons', 'posts', 'categories']) {
     await page.goto(`${admin}#/${r}`);
     await page.waitForSelector('.ad-head h1');
   }
@@ -91,6 +91,23 @@ try {
   const info = await page.locator('#track-result').textContent();
   check(info.includes('Đã xác nhận'), 'tra cứu: trạng thái "Đã xác nhận"');
   check(info.includes('Đã thanh toán'), 'tra cứu: "Đã thanh toán"');
+
+  console.log('Ảnh trang Tầm nhìn & Sứ mệnh tải lên từ quản trị');
+  await page.goto(`${admin}#/vision`);
+  await page.waitForSelector('.vs-card[data-key="hero"]');
+  const png = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = 600; c.height = 750; const g = c.getContext('2d'); g.fillStyle = '#0b5ed7'; g.fillRect(0, 0, 600, 750); return c.toDataURL('image/png').split(',')[1]; });
+  await page.locator('.vs-card[data-key="hero"] input[type=file]').setInputFiles({ name: 'tru-so.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') });
+  check(await toast('Đã cập nhật ảnh'), 'tải ảnh lên trong quản trị');
+  await page.waitForSelector('.vs-card[data-key="hero"] .vs-drop.has img');
+  await page.goto(`${fe}tam-nhin-su-menh.html`);
+  await page.waitForSelector('.vm-media-hero.has-img', { timeout: 5000 }).catch(() => {});
+  check(await page.locator('.vm-media-hero.has-img').count() === 1 && await page.locator('.vm-media-hero .vm-ph').count() === 0, 'website hiển thị ảnh vừa tải lên (không cần sửa code)');
+  check(await page.locator('.vm-media:not(.has-img) .vm-ph').count() === 9, 'các vị trí chưa có ảnh hiện khung chờ');
+  await page.goto(`${admin}#/vision`);
+  await page.waitForSelector('.vs-card[data-key="hero"] [data-del]');
+  await page.click('.vs-card[data-key="hero"] [data-del]');
+  await page.click('#cf-ok');
+  check(await toast('Đã xóa ảnh'), 'xóa ảnh trong quản trị');
 
   console.log('Điện thoại');
   const m = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });

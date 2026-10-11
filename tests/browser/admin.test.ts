@@ -141,7 +141,9 @@ try {
   check(await created(page, 'products'), 'nhân bản lần 2 (slug không bị trùng)');
   sql(`update public.products set stock = 2 where sku = 'TEST-ADM-02'`);
   await go(page, 'products?stock=5', '.ad-table');
-  check((await page.locator('.ad-table').textContent())!.includes('TEST-ADM-02'), 'lọc sắp hết hàng');
+  const lowOk = await page.waitForSelector('.ad-table >> text=TEST-ADM-02', { timeout: 8000 }).then(() => true, () => false);
+  if (!lowOk) console.log(`    URL ${page.url().split('#')[1]} | bảng: ${(await page.locator('#view').textContent())!.replace(/\s+/g, ' ').slice(0, 400)} | DB: ${sql(`select string_agg(sku || ':' || stock, ',') from public.products where stock <= 5`)}`);
+  check(lowOk, 'lọc sắp hết hàng');
   await go(page, `products/${pid}`, '#frm');
   await page.click('#del');
   await page.click('#cf-ok');

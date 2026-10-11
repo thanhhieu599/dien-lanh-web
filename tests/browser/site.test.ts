@@ -225,10 +225,12 @@ try {
   sql(`update public.brands set active = false where id = (select brand from public.products where id = 1005)`);
   sql(`update public.stores set phone = null where id = (select min(id) from public.stores)`);
   sql(`update public.categories set filters = '[]' where id = 'may-giat'`);
+  sql(`update public.categories set active = false where id = 'quat-dieu-hoa'`);
+  sql(`insert into public.categories (id, name, short) values ('chiller', 'Chiller công nghiệp', 'Chiller')`);
   const errsBefore = T.errors.length;
   const ctx2 = await T.newContext();
   const p2 = await T.newPage(ctx2);
-  for (const u of ['index.html', 'san-pham.html?id=1004', 'san-pham.html?id=1005', 'danh-muc.html?cat=may-lanh', 'he-thong-cua-hang.html', 'so-sanh.html', 'danh-muc.html?cat=may-giat']) {
+  for (const u of ['index.html', 'danh-muc.html?cat=chiller', 'san-pham.html?id=1004', 'san-pham.html?id=1005', 'danh-muc.html?cat=may-lanh', 'he-thong-cua-hang.html', 'so-sanh.html', 'danh-muc.html?cat=may-giat']) {
     await p2.goto(`${fe}${u}`);
     await p2.waitForTimeout(400);
   }

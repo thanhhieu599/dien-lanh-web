@@ -54,7 +54,8 @@ DT.onReady(() => {
   // ---------- Danh mục nhanh
   $('#quick-cats').innerHTML = DT.categories.map((c) => {
     const sample = DT.products.find((p) => p.cat === c.id);
-    return `<a class="qcat" href="${DT.api.catUrl(c.id)}"><div class="qcat-img">${DT.productImage(sample, 0)}</div><b>${esc(c.short)}</b></a>`;
+    // Danh mục mới chưa có sản phẩm: dùng ảnh minh họa của danh mục
+    return `<a class="qcat" href="${DT.api.catUrl(c.id)}"><div class="qcat-img">${sample ? DT.productImage(sample, 0) : DT.art(c.art || 'generic')}</div><b>${esc(c.short || c.name)}</b></a>`;
   }).join('');
 
   // ---------- Flash sale + đếm ngược tới 24h
@@ -77,7 +78,9 @@ DT.onReady(() => {
   tick(); setInterval(tick, 1000);
 
   // ---------- Khối sản phẩm theo danh mục (tab theo loại)
-  const blocks = ['may-lanh', 'tu-lanh', 'may-giat', 'tu-dong-tu-mat', 'vat-tu-dien-lanh'];
+  // Danh mục bị ẩn / chưa có sản phẩm thì bỏ qua khối đó
+  const blocks = ['may-lanh', 'tu-lanh', 'may-giat', 'tu-dong-tu-mat', 'vat-tu-dien-lanh']
+    .filter((id) => DT.api.category(id) && DT.products.some((p) => p.cat === id));
   $('#cat-sections').innerHTML = blocks.map((id) => {
     const c = DT.api.category(id);
     return `<section class="section section-box" data-block="${id}">

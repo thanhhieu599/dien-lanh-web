@@ -30,7 +30,21 @@ const created = async (page: any, key: string) => {
   if (ok) await page.waitForURL((u: URL) => new RegExp(`#/${key}/(?!new)[^?]+$`).test(u.hash), { timeout: 10000 });
   return ok;
 };
-const go = async (page: any, hash: string, sel = '.ad-head h1') => { await page.goto(`${admin}#/${hash}`); await page.waitForSelector(sel); await page.waitForTimeout(150); };
+// Chuyển trang trong quản trị và chờ MÀN HÌNH MỚI vẽ xong (mỗi lần điều hướng app tạo vùng #view > div mới)
+async function go(page: any, hash: string, sel = '.ad-head h1') {
+  await page.evaluate(() => document.querySelectorAll('#view > div').forEach((d) => d.setAttribute('data-old', '1'))).catch(() => {});
+  await page.goto(`${admin}#/${hash}`);
+  await page.waitForFunction((s: string) => {
+    if (document.querySelector('#login') && s.includes('#login')) return true;
+    const v = document.querySelector('#view > div:not([data-old])');
+    return !!v && !v.querySelector('.ad-loading') && !!v.querySelector(s.split(',').filter((x) => !x.includes('#login')).join(',') || '*');
+  }, sel, { timeout: 15000 });
+}
+// Bấm "Nhân bản" và chờ form nhân bản (SKU đuôi -COPY) hiện ra
+async function duplicate(page: any) {
+  await page.click('a:has-text("Nhân bản")');
+  await page.waitForFunction(() => location.hash.includes('new?from=') && (document.querySelector('#frm [name=sku]') as HTMLInputElement)?.value.endsWith('-COPY'));
+}
 
 try {
   section('Đăng nhập & phân quyền');
@@ -127,15 +141,13 @@ try {
   await page.click('#save');
   check(await toast(page, 'Đã lưu'), 'sửa sản phẩm (xóa trống "Đã bán")');
   check(sql(`select sub || '|' || sold from public.products where id = ${pid}`) === 'treo-tuong|0', 'database: loại đã lưu');
-  await page.click('a:has-text("Nhân bản")');
-  await page.waitForSelector('#frm');
+  await duplicate(page);
   await page.fill('#frm [name=sku]', 'TEST-ADM-02');
   await page.click('#save');
   await page.waitForURL((u: URL) => /#\/products\/\d+$/.test(u.href) && !u.href.endsWith(`/${pid}`));
   await toast(page, 'Đã lưu');
-  check(Number(sql(`select count(*) from public.products where sku like 'TEST-ADM-%'`)) === 2, 'nhân bản sản phẩm');
-  await page.click('a:has-text("Nhân bản")');
-  await page.waitForSelector('#frm');
+  check(sql(`select string_agg(sku, ',' order by sku) from public.products where sku like 'TEST-ADM-%'`) === 'TEST-ADM-01,TEST-ADM-02', 'nhân bản sản phẩm');
+  await duplicate(page);
   await page.fill('#frm [name=sku]', 'TEST-ADM-03');
   await page.click('#save');
   check(await created(page, 'products'), 'nhân bản lần 2 (slug không bị trùng)');

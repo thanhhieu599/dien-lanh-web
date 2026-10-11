@@ -17,7 +17,10 @@ DT.api = (() => {
   const productById = (id) => { idx(); return byId.get(Number(id)); };
   const product = (key) => { idx(); return byId.get(Number(key)) || bySlug.get(key); };
   const category = (id) => DT.categories.find((c) => c.id === id);
-  const brand = (id) => DT.brands.find((b) => b.id === id);
+  // Thương hiệu bị ẩn / xóa trong quản trị: vẫn hiển thị được sản phẩm (dùng mã thương hiệu làm tên)
+  const brand = (id) => DT.brands.find((b) => b.id === id) || { id, name: String(id || '').replace(/(^|-)(\w)/g, (m, s, c) => (s ? ' ' : '') + c.toUpperCase()), origin: '', color: '#344054' };
+  // Loại con của danh mục; sản phẩm chưa chọn loại thì dùng chính danh mục
+  const sub = (p) => category(p.cat)?.subs.find((s) => s.id === p.sub) || null;
   // URL thân thiện SEO (sp/<slug>.html...) khi site được build bằng tools/prerender.mjs (DT.SEO.prettyUrls = true)
   const pretty = () => !!DT.SEO?.prettyUrls;
   const url = (p) => (pretty() ? `sp/${p.slug}.html` : `san-pham.html?id=${p.id}&${p.slug}`);
@@ -108,5 +111,5 @@ DT.api = (() => {
     });
   }
 
-  return { productById, product, category, brand, url, catUrl, postUrl, policyUrl, list, related, suggest, reviews, fetchReviews };
+  return { productById, product, category, brand, sub, url, catUrl, postUrl, policyUrl, list, related, suggest, reviews, fetchReviews };
 })();

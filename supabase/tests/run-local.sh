@@ -6,7 +6,7 @@ cd "$(dirname "$0")/../.."
 DB="${1:-dt_test}"
 dropdb --if-exists "$DB"
 createdb "$DB"
-for f in supabase/tests/auth_stub.sql supabase/migrations/*.sql supabase/seed.sql supabase/tests/smoke.sql supabase/tests/phase4.sql; do
+for f in supabase/tests/auth_stub.sql supabase/migrations/*.sql supabase/seed.sql supabase/tests/smoke.sql supabase/tests/phase4.sql supabase/tests/fixes.sql; do
   echo "== $f"
   psql -d "$DB" -v ON_ERROR_STOP=1 -q -f "$f" 2>&1 | grep -E "NOTICE|ERROR|DETAIL|CONTEXT" || true
 done

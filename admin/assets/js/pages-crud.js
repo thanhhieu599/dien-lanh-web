@@ -79,7 +79,14 @@ AD.pages.crudForm = async (key, id, params, el) => {
     if (!data) { AD.ui.toast('Vui lòng kiểm tra các trường báo lỗi', 'error'); form.querySelector('.invalid')?.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
     Object.keys(data).forEach((k) => k.startsWith('_') && delete data[k]);
     R.beforeSave?.(data, editing);
-    const saved = await run(e.submitter || form.querySelector('#save'), () => (editing ? AD.db.update(R.table, id, data) : AD.db.insert(R.table, { ...data })),
+    const insert = async () => {
+      try { return await AD.db.insert(R.table, { ...data }); } catch (err) {
+        const retry = R.onDuplicate?.(data, err.raw || '');
+        if (retry) return AD.db.insert(R.table, retry);
+        throw err;
+      }
+    };
+    const saved = await run(e.submitter || form.querySelector('#save'), () => (editing ? AD.db.update(R.table, id, data) : insert()),
       AD.db.mode === 'supabase' ? 'Đã lưu. Website cập nhật sau tối đa vài phút.' : 'Đã lưu');
     if (!saved) return;
     await R.afterSave?.(saved);

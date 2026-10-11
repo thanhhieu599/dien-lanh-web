@@ -6,7 +6,7 @@ DT.onReady(() => {
     <aside>
       <div class="section-box"><h3>Bài viết mới</h3><div class="side-list">${DT.posts.filter((p) => p.slug !== exclude).slice(0, 5).map((a) => `<a href="${DT.api.postUrl(a.slug)}"><span class="sl-img">${DT.art(a.art)}</span>${esc(a.title)}</a>`).join('')}</div></div>
       <div class="section-box" style="margin-top:16px"><h3>Sản phẩm bán chạy</h3><div class="side-list">${DT.api.list({ sort: 'popular', limit: 4 }).items.map((p) => `<a href="${DT.api.url(p)}"><span class="sl-img">${DT.productImage(p, 0)}</span><span>${esc(p.name)}<br><b class="price">${DT.u.money(p.price)}</b></span></a>`).join('')}</div></div>
-      <div class="section-box" style="margin-top:16px;background:var(--primary);color:#fff"><h3>Cần tư vấn chọn máy?</h3><p>Kỹ thuật viên tư vấn miễn phí, khảo sát tận nơi.</p><a class="btn btn-light btn-block" href="tel:${DT.config.hotline.replace(/\s/g, '')}">${DT.icon('phone')} ${DT.config.hotline}</a></div>
+      <div class="section-box" style="margin-top:16px;background:var(--primary);color:#fff"><h3>Cần tư vấn chọn máy?</h3><p>Kỹ thuật viên tư vấn miễn phí, khảo sát tận nơi.</p><a class="btn btn-light btn-block" href="tel:${DT.u.tel(DT.config.hotline)}">${DT.icon('phone')} ${DT.config.hotline}</a></div>
     </aside>`;
 
   if (page === 'blog') {

@@ -67,9 +67,11 @@ AD.pages = AD.pages || {};
 
   AD.pages.orders = async (params, el) => {
     const size = 25; const page = Number(params.page) || 1;
+    // "2026-10-11" -> 00:00 giờ địa phương (new Date("2026-10-11") là 00:00 UTC = 7:00 sáng giờ VN)
+    const localDay = (s, add = 0) => { const [y, m, dd] = s.split('-').map(Number); return new Date(y, m - 1, dd + add).toISOString(); };
     const filters = [['status', 'eq', params.status], ['payment', 'eq', params.payment],
-      ['created_at', 'gte', params.from ? new Date(params.from).toISOString() : undefined],
-      ['created_at', 'lt', params.to ? new Date(new Date(params.to).getTime() + 86400000).toISOString() : undefined]];
+      ['created_at', 'gte', params.from ? localDay(params.from) : undefined],
+      ['created_at', 'lt', params.to ? localDay(params.to, 1) : undefined]];
     const search = params.q ? { q: params.q, cols: ['code', 'phone', 'customer->>name'] } : null;
     el.innerHTML = `<div class="ad-head"><div><h1>Đơn hàng</h1></div><div class="ad-head-actions"><button class="btn btn-light" id="csv">${ic('file')} Xuất CSV</button></div></div>
       <div class="ad-tabs">${[['', 'Tất cả'], ...Object.entries(AD.ORDER_STATUS).map(([k, [l]]) => [k, l])].map(([k, l]) => `<a href="#/orders${k ? `?status=${k}` : ''}" class="${(params.status || '') === k ? 'active' : ''}">${l}</a>`).join('')}</div>

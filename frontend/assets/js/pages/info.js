@@ -30,7 +30,7 @@ DT.onReady(() => {
       form.reset();
       DT.ui.modal(`<div style="text-align:center"><div class="success-ic">${DT.icon('check')}</div>
         <h3>${esc(form.dataset.success || 'Gửi yêu cầu thành công!')}</h3>
-        <p class="muted">Mã yêu cầu: <b>${lead.code || lead.id}</b>. Chúng tôi sẽ liên hệ lại trong vòng 30 phút (giờ làm việc). Cần gấp vui lòng gọi <a class="link" href="tel:${DT.config.hotline.replace(/\s/g, '')}">${DT.config.hotline}</a>.</p>
+        <p class="muted">Mã yêu cầu: <b>${lead.code || lead.id}</b>. Chúng tôi sẽ liên hệ lại trong vòng 30 phút (giờ làm việc). Cần gấp vui lòng gọi <a class="link" href="tel:${DT.u.tel(DT.config.hotline)}">${DT.config.hotline}</a>.</p>
         <button class="btn btn-primary" data-close>Đóng</button></div>`);
     });
   });
@@ -70,7 +70,7 @@ DT.onReady(() => {
     const render = () => {
       const list = DT.stores.filter((s) => !sel.value || s.city === sel.value);
       $('#store-list').innerHTML = list.map((s, i) => `<div class="store-card ${i === 0 ? 'active' : ''}" data-store="${s.id}"><span class="svc-ic">${DT.icon('pin')}</span><div>
-        <h3>${esc(s.name)}</h3><p>${DT.icon('pin')}${esc(s.address)}, ${esc(s.city)}</p><p>${DT.icon('phone')}<a href="tel:${s.phone.replace(/\s/g, '')}">${s.phone}</a></p><p>${DT.icon('clock')}${s.hours} (cả CN)</p>
+        <h3>${esc(s.name)}</h3><p>${DT.icon('pin')}${esc(s.address)}, ${esc(s.city)}</p>${s.phone ? `<p>${DT.icon('phone')}<a href="tel:${DT.u.tel(s.phone)}">${esc(s.phone)}</a></p>` : ''}${s.hours ? `<p>${DT.icon('clock')}${esc(s.hours)} (cả CN)</p>` : ''}
         <a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.address + ', ' + s.city)}">Chỉ đường ${DT.icon('right')}</a></div></div>`).join('');
       if (list[0]) showMap(list[0]);
     };
@@ -92,6 +92,6 @@ DT.onReady(() => {
     $('#policy').innerHTML = `<div class="policy-layout">
       <nav class="policy-nav">${Object.entries(DT.policies).map(([k, v]) => `<a href="${DT.api.policyUrl(k)}" class="${k === type ? 'active' : ''}">${esc(v.title)}</a>`).join('')}</nav>
       <article class="article"><h1>${esc(pol.title)}</h1><div class="rich">${pol.body}</div>
-      <p class="muted">Mọi thắc mắc vui lòng liên hệ hotline <a class="link" href="tel:${DT.config.hotline.replace(/\s/g, '')}">${DT.config.hotline}</a> hoặc email ${DT.config.email}.</p></article></div>`;
+      <p class="muted">Mọi thắc mắc vui lòng liên hệ hotline <a class="link" href="tel:${DT.u.tel(DT.config.hotline)}">${DT.config.hotline}</a> hoặc email ${DT.config.email}.</p></article></div>`;
   }
 });

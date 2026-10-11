@@ -17,6 +17,9 @@ window.AD = window.AD || {};
 
   AD.can = (R) => !R?.adminOnly || AD.me?.role === 'admin';
 
+  // Hết phiên đăng nhập (refresh token hết hạn / bị thu hồi) -> về màn hình đăng nhập
+  AD.handleError = (e) => { if (e?.expired) { loginView(e.message); return true; } return false; };
+
   AD.loadCache = async (force) => {
     if (AD.cache.loaded && !force) return;
     const [c, b, s] = await Promise.all([
@@ -38,7 +41,7 @@ window.AD = window.AD || {};
       const set = (k, n) => { const e = document.querySelector(`[data-badge="${k}"]`); if (e) { e.textContent = n; e.hidden = !n; } };
       set('orders', o.count); set('leads', l.count); set('reviews', r.count);
       document.title = `${o.count + l.count ? `(${o.count + l.count}) ` : ''}Quản trị | ${DT.config.name}`;
-    } catch { /* bỏ qua */ }
+    } catch (e) { AD.handleError(e); }
   };
 
   // Gắn form lọc / phân trang vào URL hash để giữ trạng thái khi quay lại
@@ -113,7 +116,7 @@ window.AD = window.AD || {};
       <div class="ad-overlay" id="ov"></div>`;
     $('#burger').onclick = () => document.body.classList.toggle('nav-open');
     $('#ov').onclick = () => document.body.classList.remove('nav-open');
-    $('#logout').onclick = async () => { await AD.db.logout(); sessionStorage.removeItem('dt_admin_demo_in'); location.hash = ''; loginView(); };
+    $('#logout').onclick = async () => { clearInterval(AD.badgeTimer); await AD.db.logout(); sessionStorage.removeItem('dt_admin_demo_in'); location.hash = ''; loginView(); };
     $('#qs').addEventListener('submit', (e) => { e.preventDefault(); const q = e.target.q.value.trim(); if (q) location.hash = `#/orders?q=${encodeURIComponent(q)}`; e.target.reset(); });
     $('#reset-demo')?.addEventListener('click', async () => {
       if (await AD.ui.confirm('Khôi phục sản phẩm, danh mục, mã giảm giá… về dữ liệu mẫu ban đầu? (Đơn hàng & form từ website không bị ảnh hưởng)')) { AD.db.reset(); await AD.loadCache(true); AD.route(); AD.ui.toast('Đã khôi phục dữ liệu mẫu'); }
@@ -150,6 +153,7 @@ window.AD = window.AD || {};
         await (id ? P.crudForm(key, id, params, view) : P.crudList(key, params, view));
       } else view.innerHTML = '<div class="ad-empty"><p>Không tìm thấy trang.</p><a class="btn btn-light" href="#/dashboard">Về tổng quan</a></div>';
     } catch (e) {
+      if (AD.handleError(e)) return;
       view.innerHTML = `<div class="ad-empty">${ic('alert')}<p>${esc(e.message)}</p><button class="btn btn-light" onclick="AD.route()">Thử lại</button></div>`;
     }
   };
@@ -159,12 +163,13 @@ window.AD = window.AD || {};
       AD.me = await AD.db.me();
     } catch { AD.me = null; }
     if (!AD.me || !['staff', 'admin'].includes(AD.me.role) || (AD.db.mode === 'demo' && !sessionStorage.getItem('dt_admin_demo_in'))) return loginView();
-    await AD.loadCache();
+    try { await AD.loadCache(true); } catch (e) { if (AD.handleError(e)) return; throw e; }
     shell();
     window.onhashchange = AD.route;
     AD.route();
     AD.refreshBadges();
-    setInterval(AD.refreshBadges, 60000);
+    clearInterval(AD.badgeTimer);
+    AD.badgeTimer = setInterval(AD.refreshBadges, 60000);
   }
 
   document.addEventListener('DOMContentLoaded', start);

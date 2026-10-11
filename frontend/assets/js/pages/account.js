@@ -11,7 +11,7 @@ DT.onReady(() => {
           <div class="field"><label>Số điện thoại</label><input name="phone" type="tel" required data-validate="phone" placeholder="0901 234 567"><div class="err">Số điện thoại không hợp lệ</div></div>
           <div class="field"><label>Mật khẩu</label><input name="password" type="password" required placeholder="••••••"><div class="err">Vui lòng nhập mật khẩu</div></div>
           <button class="btn btn-primary btn-block btn-lg">Đăng nhập</button>
-          <p class="muted" style="text-align:center;margin-top:14px">Quên mật khẩu? Gọi <a class="link" href="tel:${DT.config.hotline.replace(/\s/g, '')}">${DT.config.hotline}</a></p>
+          <p class="muted" style="text-align:center;margin-top:14px">Quên mật khẩu? Gọi <a class="link" href="tel:${DT.u.tel(DT.config.hotline)}">${DT.config.hotline}</a></p>
         </form>
         <form id="register-form" class="${tab === 'register' ? '' : 'hidden'}" novalidate>
           <div class="field"><label>Họ và tên <span class="req">*</span></label><input name="name" required><div class="err">Vui lòng nhập họ tên</div></div>
@@ -116,7 +116,9 @@ DT.onReady(() => {
   });
 
   async function handle(f, d) {
-    const next = DT.u.param('next');
+    // Chỉ chuyển tiếp tới trang trong website (chặn ?next=https://trang-la...)
+    const raw = DT.u.param('next') || '';
+    const next = /^[a-z0-9-]+\.html([?#].*)?$/i.test(raw) ? raw : '';
     if (f.id === 'login-form') {
       const r = await DT.store.login(d.phone.replace(/[\s.]/g, ''), d.password);
       if (!r.ok) return DT.u.toast(r.msg, 'error');

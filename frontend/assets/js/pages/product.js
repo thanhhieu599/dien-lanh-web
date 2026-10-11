@@ -5,7 +5,7 @@ DT.onReady(() => {
   if (!p) { location.replace('404.html'); return; }
 
   const c = DT.api.category(p.cat);
-  const sub = c.subs.find((s) => s.id === p.sub);
+  const sub = DT.api.sub(p) || { id: '', name: c.name };
   const brand = DT.api.brand(p.brand);
   const s = DT.store.get();
   DT.store.addViewed(p.id);
@@ -14,7 +14,7 @@ DT.onReady(() => {
   DT.u.setMeta({ title: p.name, description: `${p.name} chính hãng giá ${money(p.price)}. ${p.short}. Giao nhanh, lắp đặt, trả góp 0%.`, canonical: DT.api.url(p), image: ogImage, type: 'product' });
   $('#crumb').outerHTML = DT.ui.breadcrumb([
     { label: c.name, href: `${DT.api.catUrl(c.id)}` },
-    { label: sub.name, href: `${DT.api.catUrl(c.id, sub.id)}` },
+    ...(sub.id ? [{ label: sub.name, href: `${DT.api.catUrl(c.id, sub.id)}` }] : []),
     { label: p.name },
   ]);
 
@@ -53,7 +53,7 @@ DT.onReady(() => {
       <div class="gallery-main" id="g-main">${DT.productImage(p, 0)}</div>
       <div class="gallery-thumbs">${p.images.map((_, i) => `<button class="${i === 0 ? 'active' : ''}" data-img="${i}" aria-label="Ảnh ${i + 1}">${DT.productImage(p, i)}</button>`).join('')}</div>
       <div class="gallery-feats">
-        <div>${DT.icon('shield')}Chính hãng<br>${esc(brand.origin)}</div>
+        <div>${DT.icon('shield')}Chính hãng<br>${esc(brand.origin || brand.name)}</div>
         <div>${DT.icon('refresh')}1 đổi 1<br>30 ngày</div>
         <div>${DT.icon('tool')}Bảo hành<br>${esc(p.warranty)}</div>
       </div>
@@ -65,7 +65,7 @@ DT.onReady(() => {
         <div class="price-box"><strong>${money(p.price)}</strong>${p.oldPrice ? `<del>${money(p.oldPrice)}</del><span class="lbl lbl-sale">-${pct}%</span>` : ''}</div>
         ${p.installment ? `<small>Trả góp 0% chỉ từ <b class="price">${money(monthly)}</b>/tháng</small>` : ''}
       </div>
-      ${variants.length > 1 ? `<div class="pd-variants"><h4>${esc(c.filters[0].label)}</h4><div class="variant-list">${variants.map((v) => `
+      ${variants.length > 1 ? `<div class="pd-variants"><h4>${esc(c.filters[0]?.label || 'Phiên bản')}</h4><div class="variant-list">${variants.map((v) => `
         <a class="variant ${v.id === p.id ? 'active' : ''}" href="${DT.api.url(v)}"><b>${esc(variantLabel(v))}</b><small>${money(v.price)}</small></a>`).join('')}</div></div>` : ''}
       <div class="promo-box">
         <h4>${DT.icon('gift')} Khuyến mãi & ưu đãi</h4>
@@ -89,7 +89,7 @@ DT.onReady(() => {
         <button class="btn btn-outline btn-lg" data-action="add-cart" data-id="${p.id}" data-qty="#qty">${DT.icon('cart')} Thêm vào giỏ</button>
         <a class="btn btn-primary btn-buy" href="${DT.api.policyUrl('tra-gop')}">TRẢ GÓP 0%<small>Duyệt hồ sơ 15 phút</small></a>
       </div>
-      <div class="pd-hotline">Gọi đặt mua <a href="tel:${DT.config.hotline.replace(/\s/g, '')}">${DT.config.hotline}</a> (7:30 - 21:30)</div>
+      <div class="pd-hotline">Gọi đặt mua <a href="tel:${DT.u.tel(DT.config.hotline)}">${esc(DT.config.hotline)}</a> (${esc(DT.config.workingHours || '7:30 - 21:30')})</div>
     </div>
 
     <aside class="pd-aside">
@@ -109,7 +109,7 @@ DT.onReady(() => {
   $('#pd-content').innerHTML = `
     <div>
       <section class="pd-section"><h2>Đặc điểm nổi bật</h2><div class="rich">
-        <p><strong>${esc(p.name)}</strong> là sản phẩm thuộc dòng ${esc(sub.name.toLowerCase())} của thương hiệu ${esc(brand.name)} (${esc(brand.origin)}). ${esc(p.short)}.</p>
+        <p><strong>${esc(p.name)}</strong> là sản phẩm thuộc dòng ${esc(sub.name.toLowerCase())} của thương hiệu ${esc(brand.name)}${brand.origin ? ` (${esc(brand.origin)})` : ''}. ${esc(p.short)}.</p>
         <ul>${p.highlights.map((h) => `<li>${esc(h)}</li>`).join('')}</ul>
         <div class="article-cover">${DT.productImage(p, 1)}</div>
         <h2>Vì sao nên mua tại ${esc(DT.config.name)}?</h2>
@@ -208,7 +208,7 @@ DT.onReady(() => {
   // SEO: dữ liệu có cấu trúc Product
   DT.u.jsonLd({
     '@context': 'https://schema.org', '@type': 'Product', name: p.name, sku: p.sku, mpn: p.sku,
-    brand: { '@type': 'Brand', name: brand.name }, description: [p.short, ...p.highlights].filter(Boolean).join('. '), category: `${c.name} > ${sub.name}`,
+    brand: { '@type': 'Brand', name: brand.name }, description: [p.short, ...p.highlights].filter(Boolean).join('. '), category: sub.id ? `${c.name} > ${sub.name}` : c.name,
     ...(ogImage ? { image: DT.u.abs(ogImage) } : {}),
     additionalProperty: Object.entries(p.specs || {}).slice(0, 20).map(([name, value]) => ({ '@type': 'PropertyValue', name, value: String(value) })),
     ...(p.reviews > 0 ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: p.rating, reviewCount: p.reviews } } : {}),

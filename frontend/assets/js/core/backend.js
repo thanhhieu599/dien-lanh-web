@@ -116,9 +116,11 @@ DT.backend = (() => {
 
   function apply(d) {
     if (d.settings?.[0]) Object.assign(DT.config, d.settings[0].value);
-    DT.categories = d.categories;
+    DT.categories = d.categories.map((c) => ({ ...c, subs: c.subs || [], filters: c.filters || [] }));
     DT.brands = d.brands;
-    DT.products = d.products.map(mapProduct);
+    // Danh mục bị ẩn -> sản phẩm của danh mục đó cũng ẩn khỏi website
+    const cats = new Set(DT.categories.map((c) => c.id));
+    DT.products = d.products.map(mapProduct).filter((p) => cats.has(p.cat));
     DT.stores = d.stores;
     DT.posts = d.posts.map((p) => ({ ...p, date: String(p.date).slice(0, 10) }));
     DT.banners = d.banners;

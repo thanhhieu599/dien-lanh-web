@@ -51,7 +51,7 @@ AD.ui = (() => {
   async function run(btn, fn, okMsg) {
     if (btn) { if (btn.disabled) return; btn.disabled = true; }
     // Trả về kết quả, hoặc undefined nếu lỗi (đã báo lỗi cho người dùng)
-    try { const r = await fn(); if (okMsg) toast(okMsg); return r === undefined ? true : r; } catch (e) { toast(e.message, 'error'); return undefined; } finally { if (btn) btn.disabled = false; }
+    try { const r = await fn(); if (okMsg) toast(okMsg); return r === undefined ? true : r; } catch (e) { if (!AD.handleError?.(e)) toast(e.message, 'error'); return undefined; } finally { if (btn) btn.disabled = false; }
   }
 
   // ---------- Bảng
@@ -149,7 +149,10 @@ AD.ui = (() => {
         case 'custom': v = f.read ? f.read(form, ctx) : undefined; break;
         default: v = el ? el.value.trim() : undefined; if (v === '' && !f.required) v = f.keepEmpty ? '' : null;
       }
+      // Cột bắt buộc trong database có giá trị mặc định (thứ tự = 0, đã bán = 0…): bỏ trống thì dùng mặc định
+      if ((v === null || v === '') && f.def !== undefined) v = f.def;
       if (f.required && (v === null || v === '' || v === undefined)) { fail(f.key, 'Bắt buộc'); continue; }
+      if ((f.type === 'number' || f.type === 'money') && v != null && !Number.isFinite(v)) { fail(f.key, 'Số không hợp lệ'); continue; }
       if (f.validate) { const m = f.validate(v, out); if (m) { fail(f.key, m); continue; } }
       if (v !== undefined) out[f.key] = v;
     }

@@ -65,6 +65,9 @@ DT.u = {
     setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 2800);
   },
 
+  // Link gọi điện: bỏ khoảng trắng / dấu chấm; trả '' nếu không có số
+  tel: (s) => String(s || '').replace(/[^\d+]/g, ''),
+
   validPhone: (s) => /^(0|\+84)(3|5|7|8|9)\d{8}$/.test(String(s).replace(/[\s.]/g, '')),
   validEmail: (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s)),
 

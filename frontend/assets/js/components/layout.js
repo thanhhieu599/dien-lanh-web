@@ -51,7 +51,7 @@ DT.layout = (() => {
           <button type="submit" aria-label="Tìm kiếm">${DT.icon('search')}</button>
           <div class="suggest" id="suggest"></div>
         </form>
-        <a class="h-action h-hotline" href="tel:${cfg.hotline.replace(/\s/g, '')}">${DT.icon('headset')}<span><small>Tư vấn miễn phí</small><b>${cfg.hotline}</b></span></a>
+        <a class="h-action h-hotline" href="tel:${DT.u.tel(cfg.hotline)}">${DT.icon('headset')}<span><small>Tư vấn miễn phí</small><b>${cfg.hotline}</b></span></a>
         <a class="h-action" href="tai-khoan.html" id="h-account">${DT.icon('user')}<span><small>Tài khoản</small><b id="h-user">Đăng nhập</b></span></a>
         <a class="h-action h-cart" href="gio-hang.html">${DT.icon('cart')}<em class="badge" id="cart-count">0</em><span><small>Giỏ hàng</small><b>Của bạn</b></span></a>
       </div>
@@ -104,9 +104,9 @@ DT.layout = (() => {
         ${logo}
         <p>${esc(cfg.slogan)}. Chuyên cung cấp máy lạnh, tủ lạnh, máy giặt, thiết bị điện lạnh dân dụng & công nghiệp chính hãng cho gia đình và doanh nghiệp.</p>
         <ul class="contact-list">
-          <li>${DT.icon('phone')}Hotline: <a href="tel:${cfg.hotline.replace(/\s/g, '')}"><b>${cfg.hotline}</b></a></li>
-          <li>${DT.icon('building')}Doanh nghiệp: <a href="tel:${cfg.hotlineB2B.replace(/\s/g, '')}"><b>${cfg.hotlineB2B}</b></a></li>
-          <li>${DT.icon('mail')}<a href="mailto:${cfg.email}">${cfg.email}</a></li>
+          <li>${DT.icon('phone')}Hotline: <a href="tel:${DT.u.tel(cfg.hotline)}"><b>${cfg.hotline}</b></a></li>
+          ${cfg.hotlineB2B ? `<li>${DT.icon('building')}Doanh nghiệp: <a href="tel:${DT.u.tel(cfg.hotlineB2B)}"><b>${esc(cfg.hotlineB2B)}</b></a></li>` : ''}
+          ${cfg.email ? `<li>${DT.icon('mail')}<a href="mailto:${esc(cfg.email)}">${esc(cfg.email)}</a></li>` : ''}
           <li>${DT.icon('clock')}${cfg.workingHours}</li>
         </ul>
       </div>
@@ -123,7 +123,7 @@ DT.layout = (() => {
       <div class="footer-col"><h4>Thanh toán</h4>
         <div class="pay-logos"><span>COD</span><span>VISA</span><span>Master</span><span>JCB</span><span>MoMo</span><span>ZaloPay</span><span>VNPay</span><span>QR Bank</span></div>
         <h4>Kết nối với chúng tôi</h4>
-        <div class="socials"><a href="${cfg.facebook}" target="_blank" rel="noopener" aria-label="Facebook">f</a><a href="${cfg.zalo}" target="_blank" rel="noopener" aria-label="Zalo">Zalo</a><a href="${cfg.youtube}" target="_blank" rel="noopener" aria-label="YouTube">▶</a></div>
+        <div class="socials">${[[cfg.facebook, 'Facebook', 'f'], [cfg.zalo, 'Zalo', 'Zalo'], [cfg.youtube, 'YouTube', '▶']].filter(([u]) => u).map(([u, l, t]) => `<a href="${esc(u)}" target="_blank" rel="noopener" aria-label="${l}">${t}</a>`).join('')}</div>
       </div>
     </div>
     <div class="footer-bottom"><div class="container">
@@ -138,8 +138,8 @@ DT.layout = (() => {
       <a href="tai-khoan.html" data-m="account">${DT.icon('user')}<span>Tài khoản</span></a>
     </nav>
     <div class="floating">
-      <a href="${cfg.zalo}" target="_blank" rel="noopener" class="fl-zalo" aria-label="Chat Zalo">Zalo</a>
-      <a href="tel:${cfg.hotline.replace(/\s/g, '')}" class="fl-phone" aria-label="Gọi hotline">${DT.icon('phone')}</a>
+      ${cfg.zalo ? `<a href="${esc(cfg.zalo)}" target="_blank" rel="noopener" class="fl-zalo" aria-label="Chat Zalo">Zalo</a>` : ''}
+      <a href="tel:${DT.u.tel(cfg.hotline)}" class="fl-phone" aria-label="Gọi hotline">${DT.icon('phone')}</a>
       <button class="fl-top" id="to-top" aria-label="Lên đầu trang">${DT.icon('up')}</button>
     </div>
     <div class="compare-bar" id="compare-bar"></div>`;

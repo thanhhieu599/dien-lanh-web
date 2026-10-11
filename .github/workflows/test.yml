@@ -36,3 +36,9 @@ jobs:
         run: ./supabase/functions/tests/run.sh
       - name: Thanh toán trên trình duyệt
         run: node --experimental-strip-types --no-warnings tests/browser/payments.test.ts
+      - name: Website (đã kết nối database)
+        run: node --experimental-strip-types --no-warnings tests/browser/site.test.ts
+      - name: Trang quản trị (đã kết nối database)
+        run: node --experimental-strip-types --no-warnings tests/browser/admin.test.ts
+      - name: Chế độ demo + giao diện điện thoại
+        run: node tests/browser/demo.test.mjs

@@ -13,7 +13,7 @@ DT.onReady(async () => {
   try {
     r = await DT.payments.verifyReturn(params);
   } catch (e) {
-    box.innerHTML = DT.ui.empty('Chưa xác nhận được giao dịch', esc(e.message), `<a class="btn btn-primary" href="tra-cuu-don-hang.html">Tra cứu đơn hàng</a> <a class="btn btn-outline" href="tel:${DT.config.hotline.replace(/\s/g, '')}">Gọi ${esc(DT.config.hotline)}</a>`);
+    box.innerHTML = DT.ui.empty('Chưa xác nhận được giao dịch', esc(e.message), `<a class="btn btn-primary" href="tra-cuu-don-hang.html">Tra cứu đơn hàng</a> <a class="btn btn-outline" href="tel:${DT.u.tel(DT.config.hotline)}">Gọi ${esc(DT.config.hotline)}</a>`);
     return;
   }
   const code = r.order?.code || '';
@@ -34,7 +34,7 @@ DT.onReady(async () => {
   } else {
     box.innerHTML = `<div class="success-ic fail">${DT.icon('alert')}</div>
       <h1 style="font-size:24px">Thanh toán chưa thành công</h1>
-      <p class="muted">${esc(r.message || 'Giao dịch không thành công')}. Đơn hàng <b>${esc(code)}</b> vẫn được giữ, bạn có thể thanh toán lại hoặc chọn hình thức khác qua hotline <a class="link" href="tel:${DT.config.hotline.replace(/\s/g, '')}">${esc(DT.config.hotline)}</a>.</p>
+      <p class="muted">${esc(r.message || 'Giao dịch không thành công')}. Đơn hàng <b>${esc(code)}</b> vẫn được giữ, bạn có thể thanh toán lại hoặc chọn hình thức khác qua hotline <a class="link" href="tel:${DT.u.tel(DT.config.hotline)}">${esc(DT.config.hotline)}</a>.</p>
       ${order ? DT.orderView(order) : `<a class="btn btn-primary" href="${trackLink}">Tra cứu đơn hàng để thanh toán lại</a>`}`;
   }
   DT.payments.mount(box);

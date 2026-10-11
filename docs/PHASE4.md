@@ -50,7 +50,7 @@ GitHub Actions (mỗi lần push + 6 giờ/lần) ──► tools/prerender.mjs 
 
 ### Bước 1: Cập nhật database (5 phút)
 
-Supabase → *SQL Editor* → dán và chạy nội dung `supabase/migrations/20261012000001_payments_notify.sql`.
+Supabase → *SQL Editor* → dán và chạy lần lượt `supabase/migrations/20261012000001_payments_notify.sql` rồi `20261013000001_fixes.sql`.
 (Dùng CLI: `supabase db push`.)
 
 ### Bước 2: Tài khoản nhận chuyển khoản (2 phút)
@@ -173,7 +173,7 @@ Lưu ý: GitHub tự tắt lịch chạy định kỳ nếu repo không có comm
 ## 5. Kiểm thử
 
 ```bash
-# Database (PostgreSQL 15+): 17 nhóm kiểm thử
+# Database (PostgreSQL 15+): 20 nhóm kiểm thử
 PGHOST=localhost PGUSER=postgres ./supabase/tests/run-local.sh
 
 # Edge Functions: chữ ký VNPay/MoMo đối chiếu với code mẫu chính thức, IPN, SePay, hàng đợi thông báo (16 bài)
@@ -181,6 +181,13 @@ PGHOST=localhost PGUSER=postgres ./supabase/functions/tests/run.sh
 
 # Trình duyệt thật: đặt hàng → VNPay/MoMo/chuyển khoản → kết quả (24 kiểm tra)
 npm install && PGHOST=localhost PGUSER=postgres node --experimental-strip-types tests/browser/payments.test.ts
+
+# Website & quản trị trên database thật (REST/đăng nhập giả lập Supabase, RLS thật): mọi luồng mua hàng, tài khoản,
+# form, đơn hàng, CRM, sản phẩm, phân quyền nhân viên/quản trị, báo cáo >1000 đơn, hết phiên đăng nhập
+PGHOST=localhost PGUSER=postgres node --experimental-strip-types tests/browser/site.test.ts
+PGHOST=localhost PGUSER=postgres node --experimental-strip-types tests/browser/admin.test.ts
+# Chế độ demo + giao diện điện thoại
+node tests/browser/demo.test.mjs
 
 # Bản build SEO
 npm run build && node tests/browser/prerender.test.mjs dist

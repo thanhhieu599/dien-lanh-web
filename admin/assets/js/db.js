@@ -18,15 +18,20 @@ AD.supabase = (cfg) => {
   try { session = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { /* bỏ qua */ }
   const save = (s) => { session = s; try { s ? localStorage.setItem(KEY, JSON.stringify(s)) : localStorage.removeItem(KEY); } catch { /* bỏ qua */ } };
 
+  const UNIQUE = { products_sku_key: 'Mã SKU đã tồn tại', products_slug_key: 'Đường dẫn (slug) đã tồn tại', profiles_phone_key: 'Số điện thoại đã được dùng' };
   function friendly(d, status) {
-    const m = d && (d.message || d.msg || d.error_description || d.error);
-    if (/Invalid login credentials/i.test(m || '')) return 'Sai số điện thoại / email hoặc mật khẩu';
-    if (/row-level security|permission denied/i.test(m || '')) return 'Tài khoản không có quyền thực hiện thao tác này';
-    if (/duplicate key/i.test(m || '')) return 'Mã / khóa đã tồn tại';
-    if (/foreign key/i.test(m || '')) return 'Dữ liệu đang được sử dụng ở nơi khác, không thể xóa (hãy chuyển sang "ẩn")';
+    const m = String((d && (d.message || d.msg || d.error_description || d.error)) || '');
+    if (/Invalid login credentials/i.test(m)) return 'Sai số điện thoại / email hoặc mật khẩu';
+    if (/row-level security|permission denied/i.test(m)) return 'Tài khoản không có quyền thực hiện thao tác này';
+    if (/duplicate key/i.test(m)) { const k = m.match(/"([^"]+)"/)?.[1]; return UNIQUE[k] || 'Mã / khóa đã tồn tại, vui lòng chọn mã khác'; }
+    if (/foreign key/i.test(m)) return /insert|update/.test(m) && !/delete/.test(m) ? 'Giá trị tham chiếu không tồn tại (danh mục / thương hiệu…)' : 'Dữ liệu đang được sử dụng ở nơi khác, không thể xóa (hãy chuyển sang "ẩn")';
+    if (/not-null/i.test(m)) return `Thiếu thông tin bắt buộc${m.match(/column "([^"]+)"/) ? ` (${m.match(/column "([^"]+)"/)[1]})` : ''}`;
+    if (/check constraint|invalid input syntax|out of range/i.test(m)) return 'Giá trị nhập không hợp lệ, vui lòng kiểm tra lại';
+    if (/JWT expired|invalid JWT/i.test(m)) return 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại';
     if (status === 0) return 'Không kết nối được máy chủ';
     return m || `Lỗi máy chủ (${status})`;
   }
+  const expired = () => Object.assign(new Error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại'), { expired: true });
 
   async function token() {
     if (!session) return null;
@@ -35,7 +40,7 @@ AD.supabase = (cfg) => {
       const d = await http('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: session.refresh_token }, auth: false });
       save(toSession(d));
       return session.access_token;
-    } catch { save(null); return null; }
+    } catch { save(null); throw expired(); }
   }
   const toSession = (d) => ({ access_token: d.access_token, refresh_token: d.refresh_token, expires_at: d.expires_at || Math.floor(Date.now() / 1000) + (d.expires_in || 3600), user_id: d.user?.id });
 
@@ -47,7 +52,10 @@ AD.supabase = (cfg) => {
     const text = await res.text();
     let data = null;
     try { data = text ? JSON.parse(text) : null; } catch { data = text; }
-    if (!res.ok) throw new Error(friendly(data, res.status));
+    if (!res.ok) {
+      if (res.status === 401 && t) { save(null); throw expired(); }
+      throw Object.assign(new Error(friendly(data, res.status)), { raw: String(data?.message || data?.msg || ''), status: res.status });
+    }
     return raw ? { data, res } : data;
   }
 
@@ -80,10 +88,21 @@ AD.supabase = (cfg) => {
       const r = await http(`/rest/v1/profiles?id=eq.${session.user_id}&select=id,name,phone,email,role`);
       return r[0] || null;
     },
+    // Supabase trả tối đa 1000 dòng / lần: lấy nhiều hơn (báo cáo, xuất CSV) thì đọc theo từng trang
     async list(table, opts = {}) {
-      const { data, res } = await http(`/rest/v1/${table}?${query(opts)}`, { headers: { Prefer: 'count=exact' }, raw: true });
-      const total = Number((res.headers.get('content-range') || '').split('/')[1]);
-      return { rows: data, count: Number.isFinite(total) ? total : data.length };
+      const PAGE = 1000;
+      const want = opts.limit || PAGE;
+      const start = opts.offset || 0;
+      let rows = []; let count = null;
+      while (rows.length < want) {
+        const n = Math.min(PAGE, want - rows.length);
+        const { data, res } = await http(`/rest/v1/${table}?${query({ ...opts, limit: n, offset: start + rows.length })}`, { headers: { Prefer: 'count=exact' }, raw: true });
+        const total = Number((res.headers.get('content-range') || '').split('/')[1]);
+        if (count === null) count = Number.isFinite(total) ? total : null;
+        rows = rows.concat(data);
+        if (data.length < n || (count !== null && start + rows.length >= count)) break;
+      }
+      return { rows, count: count ?? rows.length };
     },
     async get(table, id, select = '*') {
       const r = await http(`/rest/v1/${table}?${AD.PK[table]}=eq.${encodeURIComponent(id)}&select=${select}`);
@@ -147,7 +166,7 @@ AD.demo = () => {
       return {
         id: o.code, code: o.code, created_at: o.createdAt, updated_at: ov.updated_at || o.createdAt, status: o.status,
         phone: o.customer?.phone, customer: o.customer, shipping: o.shipping, payment: o.payment,
-        payment_status: ov.payment_status || 'unpaid', invoice: o.invoice, note: o.note, staff_note: ov.staff_note || null,
+        payment_status: ov.payment_status || o.paymentStatus || 'unpaid', invoice: o.invoice, note: o.note, staff_note: ov.staff_note || null,
         subtotal: o.subtotal, install_fee: o.install || 0, shipping_fee: o.shippingFee || 0, discount: o.discount || 0, coupon: o.coupon, total: o.total,
         user_id: o.userId || null,
         order_items: (o.items || []).map((it, i) => ({ id: i + 1, product_id: it.id, sku: DT.api.productById(it.id)?.sku, name: it.name, price: it.price, qty: it.qty, install: !!it.install })),
@@ -184,6 +203,8 @@ AD.demo = () => {
         write(SHOP, shop);
       }
       ['payment_status', 'staff_note'].forEach((k) => { if (k in patch) ov[k] = patch[k]; });
+      // Trạng thái thanh toán hiện cho khách ở trang tra cứu đơn (website demo)
+      if (o && 'payment_status' in patch && patch.payment_status !== o.paymentStatus) { o.paymentStatus = patch.payment_status; write(SHOP, shop); }
       ov.updated_at = now;
     }
     if (table === 'leads') {

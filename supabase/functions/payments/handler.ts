@@ -39,7 +39,7 @@ function momoCfg(env: Env): momo.MomoConfig | null {
     requestType: env.MOMO_REQUEST_TYPE || 'captureWallet',
     redirectUrl: returnUrl(env),
     ipnUrl: `${(env.SUPABASE_URL || '').replace(/\/+$/, '')}/functions/v1/payments/momo-ipn`,
-    partnerName: env.SHOP_NAME || 'D&T Dien Lanh',
+    partnerName: env.SHOP_NAME || 'Ten thuong hieu',
   };
 }
 

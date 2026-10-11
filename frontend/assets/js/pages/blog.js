@@ -15,7 +15,7 @@ DT.onReady(() => {
       const list = DT.posts.filter((p) => !cat || p.cat === cat);
       $('#blog').innerHTML = `<div class="blog-layout"><div>
         <div class="cat-pills"><button class="tab ${!cat ? 'active' : ''}" data-c="">Tất cả</button>${cats.map((c) => `<button class="tab ${cat === c ? 'active' : ''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
-        <div class="blog-list">${list.map((p) => `<article class="blog-item"><a class="news-img" href="${DT.api.postUrl(p.slug)}" aria-label="${esc(p.title)}">${DT.art(p.art, 'white', 'D&amp;T')}</a>
+        <div class="blog-list">${list.map((p) => `<article class="blog-item"><a class="news-img" href="${DT.api.postUrl(p.slug)}" aria-label="${esc(p.title)}">${DT.art(p.art)}</a>
           <div class="news-body"><span class="news-cat">${esc(p.cat)}</span><h3><a href="${DT.api.postUrl(p.slug)}">${esc(p.title)}</a></h3><p>${esc(p.excerpt)}</p><span class="news-meta">${DT.u.date(p.date)} • ${esc(p.author)}</span></div></article>`).join('')}</div>
       </div>${sidebar()}</div>`;
     };
@@ -32,7 +32,7 @@ DT.onReady(() => {
     $('#article').innerHTML = `<div class="blog-layout"><div>
       <article class="article"><span class="news-cat">${esc(post.cat)}</span><h1>${esc(post.title)}</h1>
         <div class="news-meta">${DT.u.date(post.date)} • ${esc(post.author)}</div>
-        <div class="article-cover">${DT.art(post.art, 'white', 'D&amp;T', 1)}</div>
+        <div class="article-cover">${DT.art(post.art, 1)}</div>
         <p><strong>${esc(post.excerpt)}</strong></p>
         <div class="rich">${post.content}</div>
       </article>

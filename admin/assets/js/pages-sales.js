@@ -228,7 +228,7 @@ AD.pages = AD.pages || {};
     el.innerHTML = `<div class="ad-head"><div><a class="ad-back" href="#/leads">${ic('left')} Khách hàng tiềm năng</a>
         <h1>${esc(AD.LEAD_TYPE[l.type] || l.type)}: ${esc(l.company || l.name || l.email || '')} ${badge(AD.LEAD_STATUS, l.status)}</h1><small class="muted">Mã ${esc(l.code)} • ${dt(l.created_at)}</small></div>
       <div class="ad-head-actions">${l.phone ? `<a class="btn btn-light" href="tel:${esc(l.phone)}">${ic('phone')} Gọi</a><a class="btn btn-light" target="_blank" rel="noopener" href="https://zalo.me/${esc(String(l.phone).replace(/^0/, '84'))}">Zalo</a>` : ''}
-        ${l.email ? `<a class="btn btn-light" href="mailto:${esc(l.email)}?subject=${encodeURIComponent(`[D&T] Phản hồi yêu cầu ${l.code}`)}">${ic('mail')} Email</a>` : ''}</div></div>
+        ${l.email ? `<a class="btn btn-light" href="mailto:${esc(l.email)}?subject=${encodeURIComponent(`Phản hồi yêu cầu ${l.code}`)}">${ic('mail')} Email</a>` : ''}</div></div>
       <div class="ad-pipeline">${['new', 'contacted', 'quoted', 'won', 'lost'].map((k) => `<button class="${l.status === k ? 'active' : ''}" data-st="${k}">${AD.LEAD_STATUS[k][0]}</button>`).join('')}</div>
       <div class="ad-cols ad-cols-wide">
         <section class="ad-card"><h3>Nội dung yêu cầu</h3>

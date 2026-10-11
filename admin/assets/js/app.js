@@ -67,7 +67,7 @@ window.AD = window.AD || {};
     document.body.className = 'ad-login-page';
     const demo = AD.db.mode === 'demo';
     document.body.innerHTML = `<div class="ad-login">
-      <div class="ad-login-brand"><span class="logo-mark">${ic('snow')}</span><div><b>D&amp;T Điện Lạnh</b><small>Trang quản trị</small></div></div>
+      <div class="ad-login-brand"><span class="logo-mark">${ic('snow')}</span><div><b>Tên thương hiệu</b><small>Trang quản trị</small></div></div>
       ${demo ? `<div class="ad-alert">${ic('alert')}<div><b>Chế độ demo</b><br>Chưa kết nối Supabase. Dữ liệu lưu trên trình duyệt này; đơn hàng và form gửi từ website demo (cùng trình duyệt) sẽ hiện tại đây.</div></div>
         <button class="btn btn-primary btn-block btn-lg" id="demo-enter">Vào trang quản trị (demo)</button>`
       : `<form id="login" novalidate>
@@ -96,7 +96,7 @@ window.AD = window.AD || {};
     document.body.className = 'ad-app';
     document.body.innerHTML = `
       <aside class="ad-side" id="side">
-        <div class="ad-brand"><span class="logo-mark">${ic('snow')}</span><div><b>D&amp;T Điện Lạnh</b><small>Quản trị${AD.db.mode === 'demo' ? ' • demo' : ''}</small></div></div>
+        <div class="ad-brand"><span class="logo-mark">${ic('snow')}</span><div><b>Tên thương hiệu</b><small>Quản trị${AD.db.mode === 'demo' ? ' • demo' : ''}</small></div></div>
         <nav>${NAV.map((g) => `${g.group ? `<div class="ad-nav-group">${g.group}</div>` : ''}${g.items
           .filter(([k]) => AD.can(AD.resources[k]) && (k !== 'settings' || AD.me.role === 'admin'))
           .map(([k, i, l, b]) => `<a href="#/${k}" data-nav="${k}">${ic(i)}<span>${l}</span>${b ? `<em data-badge="${b}" hidden></em>` : ''}</a>`).join('')}`).join('')}</nav>

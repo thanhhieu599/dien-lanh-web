@@ -61,7 +61,7 @@ dien-lanh-web/
 | Tin tức | `tin-tuc.html`, `bai-viet.html?slug=…` | Danh sách theo chuyên mục, bài viết, JSON-LD Article |
 | Khác | `gioi-thieu`, `lien-he`, `he-thong-cua-hang` (bản đồ), `chinh-sach?type=…`, `404` | |
 
-Mã giảm giá demo: `DTCOOL10`, `GIAM300K`, `FREESHIP`.
+Mã giảm giá demo: `COOL10`, `GIAM300K`, `FREESHIP`.
 
 ## SEO
 

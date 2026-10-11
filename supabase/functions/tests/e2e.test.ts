@@ -132,7 +132,7 @@ test('MoMo: đơn trên 50 triệu bị chặn với hướng dẫn rõ ràng', 
 });
 
 test('SePay: xác thực khóa, đối soát chuyển khoản', async () => {
-  const o = placeOrder('bank', '0965555555', 1004);
+  const o = placeOrder('bank', '0965555555', 1014);
   const hook = (body: unknown, key = env.SEPAY_API_KEY) => payments(post('payments/sepay', body, { Authorization: `Apikey ${key}` }), env, deps);
   assert.equal((await hook({ id: 1 }, 'sai')).status, 401);
   const tx = { id: 92704, gateway: 'Vietcombank', transactionDate: '2026-10-11 10:00:00', accountNumber: '0071000000000', code: null,
@@ -152,7 +152,7 @@ test('notify: gửi đủ kênh, lỗi 1 kênh thì chỉ thử lại kênh đó
   assert.deepEqual(status, { email: true, staffEmails: 2, zaloBot: true, telegram: true, zns: true });
 
   sql(`update public.notifications set status = 'done'`);  // bỏ sự kiện từ các test trước
-  const o = placeOrder('cod', '0966666666', 1005, 'nguoimua@example.com');
+  const o = placeOrder('cod', '0966666666', 1015, 'nguoimua@example.com');
   sql(`select public.submit_lead('b2b-quote', '{"name":"Chị Lan","phone":"0977777777","company":"Cty FDI","items":"30 máy lạnh âm trần"}')`);
   calls.length = 0;
   failResend = true;

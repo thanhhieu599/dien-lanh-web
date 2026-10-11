@@ -40,7 +40,7 @@ const CUSTOMER_STATUS: Json = {
 const siteUrl = (env: Env) => (env.SITE_URL || 'https://thanhhieu599.github.io/dien-lanh-web/frontend/').replace(/\/?$/, '/');
 const adminUrl = (env: Env) => (env.ADMIN_URL || siteUrl(env).replace(/frontend\/$/, 'admin/')).replace(/\/?$/, '/');
 const trackUrl = (env: Env, o: Json) => `${siteUrl(env)}tra-cuu-don-hang.html?code=${encodeURIComponent(o.code)}&phone=${encodeURIComponent(o.customer?.phone || '')}`;
-const shopName = (c: Ctx) => c.store.name || c.env.SHOP_NAME || 'D&T Điện Lạnh';
+const shopName = (c: Ctx) => c.store.name || c.env.SHOP_NAME || 'Tên thương hiệu';
 
 function shippingLine(o: Json): string {
   const s = o.shipping || {};

@@ -17,7 +17,7 @@ end $$;
 -- 1. Khách vãng lai đọc được catalog, không đọc được dữ liệu nội bộ
 select pg_temp.as_user('anon', null);
 do $$ begin
-  assert (select count(*) from public.products) = 71, 'anon phải đọc được 71 sản phẩm';
+  assert (select count(*) from public.products) = 56, 'anon phải đọc được 56 sản phẩm';
   assert (select count(*) from public.coupons) = 3, 'anon đọc được mã công khai';
   begin perform * from public.leads; raise exception 'anon KHÔNG được đọc leads';
   exception when insufficient_privilege then null; end;
@@ -40,7 +40,7 @@ begin
     jsonb_build_array(jsonb_build_object('id', 1001, 'qty', 2, 'install', true, 'price', 1)),  -- price giả mạo bị bỏ qua
     '{"name":"Nguyễn Test","phone":"0901 234 567","gender":"Anh"}',
     '{"method":"delivery","province":"TP. Hồ Chí Minh","district":"Q7","address":"12 NTT"}',
-    'cod', null, 'gọi trước', 'dtcool10');
+    'cod', null, 'gọi trước', 'cool10');
   assert (r ->> 'subtotal')::bigint = p.price * 2, 'subtotal phải tính theo giá DB';
   assert (r ->> 'install')::bigint = case when p.free_install then 0 else 600000 end, 'phí lắp đặt sai';
   assert (r ->> 'discount')::bigint = least(p.price * 2 / 10, 1000000), 'giảm 10% tối đa 1tr';
@@ -108,7 +108,7 @@ begin
   begin update public.profiles set role = 'admin'; raise exception 'không được tự nâng quyền';
   exception when insufficient_privilege then null; end;
   update public.profiles set addresses = '[{"address":"1 A","default":true}]';
-  r := public.place_order('[{"id":1010,"qty":1}]', '{"name":"Khách Một","phone":"0901111111"}', '{"method":"pickup","store":"Q7"}', 'bank');
+  r := public.place_order('[{"id":1014,"qty":1}]', '{"name":"Khách Một","phone":"0901111111"}', '{"method":"pickup","store":"Q7"}', 'bank');
   assert (r ->> 'shippingFee')::bigint = 0, 'nhận tại cửa hàng miễn phí ship';
   assert jsonb_array_length(public.my_orders()) = 1, 'khách 1 thấy 1 đơn';
   assert (select count(*) from public.orders) = 1, 'RLS: chỉ thấy đơn của mình';

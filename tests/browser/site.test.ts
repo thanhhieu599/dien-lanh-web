@@ -9,10 +9,10 @@ const money = (n: number) => `${Math.round(n).toLocaleString('vi-VN')}₫`;
 
 try {
   section('Trang chủ & dữ liệu từ database');
-  sql(`update public.products set name = 'Máy lạnh TEST DB', price = 9990000 where id = 1001`);
+  sql(`update public.products set name = 'Máy lạnh Tên thương hiệu TEST DB', price = 9990000 where id = 1001`);
   await page.goto(`${fe}index.html`);
   await page.waitForSelector('.pcard');
-  check(await page.locator('.pcard', { hasText: 'Máy lạnh TEST DB' }).count() > 0, 'sản phẩm đọc từ database (tên đã sửa hiển thị)');
+  check(await page.locator('.pcard', { hasText: 'Máy lạnh Tên thương hiệu TEST DB' }).count() > 0, 'sản phẩm đọc từ database (tên đã sửa hiển thị)');
   check(await page.locator('.mnav').count() === 1, 'khung trang dựng đủ');
 
   section('Danh mục, bộ lọc, sắp xếp, phân trang, tìm kiếm');
@@ -221,8 +221,8 @@ try {
 
   section('Dữ liệu quản trị nhập thiếu không làm hỏng website');
   sql(`update public.settings set value = value || '{"hotlineB2B": null, "zalo": "", "email": null}' where key = 'store'`);
-  sql(`update public.products set sub = null where id = 1004`);
-  sql(`update public.brands set active = false where id = (select brand from public.products where id = 1005)`);
+  sql(`update public.products set sub = null where id = 1014`);
+  sql(`update public.brands set active = false where id = (select brand from public.products where id = 1015)`);
   sql(`update public.stores set phone = null where id = (select min(id) from public.stores)`);
   sql(`update public.categories set filters = '[]' where id = 'may-giat'`);
   sql(`update public.categories set active = false where id = 'quat-dieu-hoa'`);
@@ -230,7 +230,7 @@ try {
   const errsBefore = T.errors.length;
   const ctx2 = await T.newContext();
   const p2 = await T.newPage(ctx2);
-  for (const u of ['index.html', 'danh-muc.html?cat=chiller', 'san-pham.html?id=1004', 'san-pham.html?id=1005', 'danh-muc.html?cat=may-lanh', 'he-thong-cua-hang.html', 'so-sanh.html', 'danh-muc.html?cat=may-giat']) {
+  for (const u of ['index.html', 'danh-muc.html?cat=chiller', 'san-pham.html?id=1014', 'san-pham.html?id=1015', 'danh-muc.html?cat=may-lanh', 'he-thong-cua-hang.html', 'so-sanh.html', 'danh-muc.html?cat=may-giat']) {
     await p2.goto(`${fe}${u}`);
     await p2.waitForTimeout(400);
   }

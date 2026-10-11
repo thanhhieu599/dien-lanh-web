@@ -74,7 +74,7 @@ DT.onReady(() => {
         <ul>
           ${p.gift ? `<li><i>1</i><span>${esc(p.gift)}</span></li>` : ''}
           ${p.freeInstall ? `<li><i>${p.gift ? 2 : 1}</i><span>Miễn phí công lắp đặt tiêu chuẩn (tiết kiệm ${money(DT.config.installFee)})</span></li>` : ''}
-          <li><i>${DT.icon('check')}</i><span>Nhập mã <b>DTCOOL10</b> giảm thêm 10% (tối đa 1 triệu) cho đơn từ 5 triệu</span></li>
+          <li><i>${DT.icon('check')}</i><span>Nhập mã <b>COOL10</b> giảm thêm 10% (tối đa 1 triệu) cho đơn từ 5 triệu</span></li>
           <li><i>${DT.icon('check')}</i><span>Trả góp 0% qua thẻ tín dụng, duyệt nhanh 15 phút</span></li>
           <li><i>${DT.icon('check')}</i><span>Doanh nghiệp mua số lượng: <a class="link" href="bao-gia-du-an.html?sku=${p.sku}">nhận báo giá riêng</a></span></li>
         </ul>
@@ -101,7 +101,7 @@ DT.onReady(() => {
         <li>${DT.icon('tool')}<div><b>Lắp đặt chuyên nghiệp</b>Thợ có chứng chỉ, bảo hành lắp đặt 12 tháng</div></li>
         <li>${DT.icon('refresh')}<div><b>1 đổi 1 trong 30 ngày</b>Nếu lỗi do nhà sản xuất</div></li>
       </ul></div>
-      <div class="aside-box"><h4>Còn hàng tại cửa hàng</h4><ul class="store-stock">${DT.stores.slice(0, 4).map((st, i) => `<li><span>${esc(st.name.replace('D&T Điện Lạnh - ', ''))}<br><small class="muted">${esc(st.address)}</small></span><span class="ok">${(p.id + i) % 3 ? 'Còn hàng' : 'Sắp về'}</span></li>`).join('')}</ul>
+      <div class="aside-box"><h4>Còn hàng tại cửa hàng</h4><ul class="store-stock">${DT.stores.slice(0, 4).map((st, i) => `<li><span>${esc(st.name.replace(/^.* - /, ''))}<br><small class="muted">${esc(st.address)}</small></span><span class="ok">${(p.id + i) % 3 ? 'Còn hàng' : 'Sắp về'}</span></li>`).join('')}</ul>
         <a class="link" href="he-thong-cua-hang.html">Xem tất cả cửa hàng ${DT.icon('right')}</a></div>
       <div class="aside-box"><h4>Khách hàng doanh nghiệp</h4><p class="muted">Mua từ 5 sản phẩm, dự án nhà xưởng, văn phòng: chiết khấu riêng, công nợ, xuất VAT.</p><a class="btn btn-primary btn-block" href="bao-gia-du-an.html?sku=${p.sku}">${DT.icon('file')} Yêu cầu báo giá</a></div>
     </aside>`;

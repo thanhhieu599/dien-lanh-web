@@ -91,7 +91,7 @@ const order = {
   items: [{ id: 1001, name: 'Máy lạnh 1HP', price: 8000000, qty: 2, install: true }],
   subtotal: 16000000, install: 600000, shippingFee: 0, discount: 0, total: 16600000, invoice: { company: 'Cty ABC', taxCode: '0312345678' }, note: 'Gọi trước',
 };
-const ctx = { env: { SITE_URL: 'https://shop.vn/frontend/', ZNS_TEMPLATE_ORDER: '231' }, store: { name: 'D&T Điện Lạnh', bankBin: '970436', bankAccount: '0071000000000', bankOwner: 'CONG TY D T', bankName: 'Vietcombank' } };
+const ctx = { env: { SITE_URL: 'https://shop.vn/frontend/', ZNS_TEMPLATE_ORDER: '231' }, store: { name: 'Tên thương hiệu', bankBin: '970436', bankAccount: '0071000000000', bankOwner: 'CONG TY D T', bankName: 'Vietcombank' } };
 
 test('Thông báo nhân viên: đơn mới, thanh toán, lead', () => {
   const t = staffText({ id: 1, event: 'order_new', data: {}, attempts: 1, results: {}, order }, ctx)!;

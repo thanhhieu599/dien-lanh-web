@@ -161,7 +161,7 @@ DT.backend = (() => {
       }
       apply(data);
     } catch (e) {
-      console.warn('[D&T] Không nạp được dữ liệu từ máy chủ, dùng dữ liệu dự phòng:', e.message);
+      console.warn('[Website] Không nạp được dữ liệu từ máy chủ, dùng dữ liệu dự phòng:', e.message);
       DT.backend.offline = true;
     }
     // Đồng bộ trạng thái đăng nhập

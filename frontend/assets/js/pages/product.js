@@ -108,7 +108,6 @@ DT.onReady(() => {
       </ul></div>
       <div class="aside-box"><h4>Còn hàng tại cửa hàng</h4><ul class="store-stock">${DT.stores.slice(0, 4).map((st, i) => `<li><span>${esc(st.name.replace(/^.* - /, ''))}<br><small class="muted">${esc(st.address)}</small></span><span class="ok">${(p.id + i) % 3 ? 'Còn hàng' : 'Sắp về'}</span></li>`).join('')}</ul>
         <a class="link" href="he-thong-cua-hang.html">Xem tất cả cửa hàng ${DT.icon('right')}</a></div>
-      <div class="aside-box"><h4>Khách hàng doanh nghiệp</h4><p class="muted">Mua từ 5 sản phẩm, dự án nhà xưởng, văn phòng: chiết khấu riêng, công nợ, xuất VAT.</p><a class="btn btn-primary btn-block" data-quote href="bao-gia-du-an.html?sku=${encodeURIComponent(p.sku)}">${DT.icon('file')} Yêu cầu báo giá</a></div>
     </aside>`;
 
   // Tabs nội dung
@@ -149,6 +148,7 @@ DT.onReady(() => {
         <table class="spec-table">${Object.entries(p.specs).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table>
       </section>
       <section class="pd-section"><h2>Bài viết tư vấn</h2><div class="side-list">${DT.posts.slice(0, 4).map((a) => `<a href="${DT.api.postUrl(a.slug)}"><span class="sl-img">${DT.art(a.art)}</span>${esc(a.title)}</a>`).join('')}</div></section>
+      <section class="pd-section pd-b2b"><h2>Khách hàng doanh nghiệp</h2><p class="muted">Mua từ 5 sản phẩm, dự án nhà xưởng, văn phòng: chiết khấu riêng, công nợ, xuất VAT.</p><a class="btn btn-primary btn-block" data-quote href="bao-gia-du-an.html?sku=${encodeURIComponent(p.sku)}">${DT.icon('file')} Yêu cầu báo giá</a></section>
     </div>`;
 
   // Sản phẩm liên quan & đã xem

@@ -94,6 +94,11 @@ try {
   await page.mouse.wheel(0, 700);
   await page.waitForTimeout(300);
   check(Math.abs((await gap()) - g0) < 1, 'các cột giữ nguyên vị trí tương đối khi cuộn');
+  const hs = await page.evaluate(() => ['.gallery', '.pd-info', '.pd-aside'].map((x) => Math.round(document.querySelector(x).getBoundingClientRect().bottom)));
+  check(hs.every((v) => Math.abs(v - hs[0]) <= 1), `3 cột đáy thẳng hàng (${hs.join(' / ')})`);
+  check(await page.locator('.pd-aside [data-quote]').count() === 0, 'cột phải không còn khối "Yêu cầu báo giá"');
+  const order = await page.evaluate(() => { const secs = [...document.querySelectorAll('#pd-content > div:last-child > .pd-section')]; return secs.map((x) => x.querySelector('h2').textContent); });
+  check(order.at(-1) === 'Khách hàng doanh nghiệp' && order.at(-2) === 'Bài viết tư vấn' && await page.locator('.pd-b2b [data-quote]').count() === 1, 'khối "Yêu cầu báo giá" nằm dưới "Bài viết tư vấn"');
 
   console.log('Trang so sánh: nút X');
   await page.evaluate(() => { DT.store.clearCompare?.(); });

@@ -106,7 +106,8 @@ DT.sales = (() => {
       } catch (err) { DT.u.toast(err.message, 'error'); btn.disabled = false; return; }
       leadSuccess(lead, 'Đã nhận yêu cầu báo giá!');
     });
-    setTimeout(() => form.company.focus(), 50);
+    // Đưa con trỏ vào ô đầu tiên, trừ khi khách đã bấm vào ô khác (tránh kéo con trỏ khi đang gõ)
+    setTimeout(() => { if (!form.contains(document.activeElement)) form.company.focus(); }, 50);
     return { form, product: p0 };
   }
 

@@ -42,7 +42,6 @@ DT.ui = (() => {
           <strong>${money(p.price)}</strong>
           ${p.oldPrice ? `<del>${money(p.oldPrice)}</del>` : ''}
         </div>
-        ${p.gift ? `<div class="pcard-gift">${DT.icon('gift')}<span>${esc(p.gift)}</span></div>` : ''}
         <div class="pcard-meta">${stars(p.rating)}<span>${p.rating}</span><span class="dot">•</span><span>Đã bán ${sold(p.sold)}</span></div>
         ${opts.flash ? flashBar(p) : ''}
         <button class="btn btn-outline btn-block btn-sm pcard-buy" data-action="add-cart" data-id="${p.id}">${DT.icon('cart')} Thêm vào giỏ</button>

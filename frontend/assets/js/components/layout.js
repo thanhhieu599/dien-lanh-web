@@ -119,7 +119,7 @@ DT.layout = (() => {
         <a href="tinh-cong-suat-may-lanh.html">Tính công suất máy lạnh</a>
         <a href="hoi-dap.html">Hỏi đáp thường gặp</a>
         <a href="${DT.api.policyUrl('bao-hanh')}">Chính sách bảo hành</a><a href="${DT.api.policyUrl('doi-tra')}">Chính sách đổi trả</a>
-        <a href="${DT.api.policyUrl('van-chuyen')}">Vận chuyển & lắp đặt</a><a href="${DT.api.policyUrl('tra-gop')}">Hướng dẫn trả góp</a>
+        <a href="${DT.api.policyUrl('van-chuyen')}">Vận chuyển & lắp đặt</a>
         <a href="${DT.api.policyUrl('thanh-toan')}">Phương thức thanh toán</a><a href="${DT.api.policyUrl('bao-mat')}">Bảo mật thông tin</a>
       </div>
       <div class="footer-col"><h4>Về ${esc(cfg.name)}</h4>

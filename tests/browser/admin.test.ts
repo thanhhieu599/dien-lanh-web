@@ -332,8 +332,12 @@ try {
   check((await shop.locator('.faq-list').textContent())!.includes('Câu hỏi kiểm thử quản trị'), 'trang Hỏi đáp đọc câu hỏi từ database');
   await shop.goto(`${fe}index.html`);
   await shop.waitForSelector('.trust-section');
-  const ts = (await shop.locator('.trust-section').textContent())!;
-  check(ts.includes('4,9') && ts.includes('128 đánh giá') && ts.includes('Nguyễn Văn Khách') && await shop.locator('.tr-logo img').count() === 1 && !ts.includes('Khung chờ'), 'trang chủ: điểm Google, đánh giá thật, logo đối tác (không còn khung chờ)');
+  const home = (await shop.locator('.trust-section').textContent())!;
+  check(await shop.locator('.tr-logo img').count() === 1 && !home.includes('Khung chờ') && await shop.locator('#home-trust .rv-card').count() === 0 && !home.includes('Nguyễn Văn Khách'), 'trang chủ: logo đối tác, không hiện đánh giá khách hàng');
+  await shop.goto(`${fe}gioi-thieu.html`);
+  await shop.waitForSelector('[data-trust] .rv-card');
+  const ts = (await shop.locator('[data-trust]').first().textContent())!;
+  check(ts.includes('4,9') && ts.includes('128 đánh giá') && ts.includes('Nguyễn Văn Khách') && !ts.includes('Khung chờ'), 'trang Giới thiệu: điểm Google, đánh giá thật (không còn khung chờ)');
   check(await shop.locator('.g-links a[href*="writereview?placeid=ChIJTEST123"]').count() >= 1, 'link "Viết đánh giá" Google theo Place ID');
 
   section('Dữ liệu lớn (>1000 đơn): báo cáo không bị cắt');

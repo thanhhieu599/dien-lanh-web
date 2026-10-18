@@ -88,7 +88,7 @@ try {
   await page.goto(`${fe}index.html`);
   await page.waitForSelector('#home-projects .pj-card');
   check(await page.locator('#home-projects .pj-card').count() === 3, 'trang chủ: 3 dự án tiêu biểu');
-  check(await page.locator('#home-trust .trust-section').count() === 1 && await page.locator('#home-trust .rv-card').count() === 3, 'trang chủ: khối uy tín + 3 khung đánh giá');
+  check(await page.locator('#home-trust .trust-section').count() === 1 && await page.locator('#home-trust .rv-card').count() === 0, 'trang chủ: khối uy tín, không hiện "Khách hàng nói gì về chúng tôi"');
   await page.goto(`${fe}he-thong-cua-hang.html`);
   await page.waitForSelector('.store-card');
   check(await page.locator('.store-card a[href*="google.com/maps/search"]').count() === 5, 'mỗi cửa hàng có link "Xem & đánh giá trên Google"');
@@ -140,8 +140,13 @@ try {
   await page.goto(`${fe}index.html`);
   await page.waitForSelector('#home-trust .trust-section');
   const ht = await page.locator('#home-trust').textContent();
-  check(ht.includes('4,7') && ht.includes('86 đánh giá') && ht.includes('Chị Thảo') && ht.includes('Công ty Đối Tác A'), 'website demo hiện điểm Google, đánh giá & logo vừa nhập');
-  check(await page.locator('#home-trust .g-links a[href="https://maps.app.goo.gl/test"]').count() === 1, 'link "Xem trên Google Maps"');
+  check(ht.includes('Công ty Đối Tác A') && !ht.includes('Chị Thảo'), 'trang chủ hiện logo vừa nhập, không hiện đánh giá');
+  // Đánh giá & điểm Google vẫn hiện ở trang Giới thiệu
+  await page.goto(`${fe}gioi-thieu.html`);
+  await page.waitForSelector('[data-trust] .rv-card');
+  const gt = await page.locator('[data-trust]').first().textContent();
+  check(gt.includes('4,7') && gt.includes('86 đánh giá') && gt.includes('Chị Thảo'), 'trang Giới thiệu hiện điểm Google & đánh giá vừa nhập');
+  check(await page.locator('[data-trust] .g-links a[href="https://maps.app.goo.gl/test"]').count() >= 1, 'link "Xem trên Google Maps"');
 
   console.log('Điện thoại');
   const m = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, locale: 'vi-VN' });

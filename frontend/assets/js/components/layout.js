@@ -30,7 +30,7 @@ DT.layout = (() => {
   function header() {
     return `
     <div class="topbar"><div class="container">
-      <div class="topbar-left">${DT.icon('zap')} <span>Miễn phí lắp đặt • Giao nhanh 2h • Trả góp 0%</span></div>
+      <div class="topbar-left"></div>
       <nav class="topbar-right">
         <a href="tam-nhin-su-menh.html" class="about-link">${DT.icon('star')} Về chúng tôi</a>
         <a href="tra-cuu-don-hang.html">${DT.icon('truck')} Tra cứu đơn hàng</a>
@@ -97,7 +97,6 @@ DT.layout = (() => {
       ['tool', 'Lắp đặt chuẩn hãng', 'Thợ có chứng chỉ, bảo hành lắp đặt'],
       ['truck', 'Giao nhanh 2h', 'Miễn phí đơn từ 2 triệu'],
       ['refresh', '1 đổi 1 trong 30 ngày', 'Nếu lỗi do nhà sản xuất'],
-      ['card', 'Trả góp 0%', 'Duyệt hồ sơ 15 phút'],
     ];
     return `
     <section class="benefits"><div class="container">${benefits.map(([i, t, s]) => `<div class="benefit">${DT.icon(i)}<div><b>${t}</b><small>${s}</small></div></div>`).join('')}</div></section>

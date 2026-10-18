@@ -45,7 +45,6 @@ DT.onReady(() => {
   DT.u.setMeta({ title, description: desc, canonical: mode === 'category' ? DT.api.catUrl(cat.id, state.sub || undefined) : null });
   $('#crumb').outerHTML = DT.ui.breadcrumb(crumbs);
   $('#cat-title').textContent = title;
-  $('#cat-desc').textContent = desc;
 
   // Loại con (chip có ảnh)
   if (cat) {
@@ -66,8 +65,6 @@ DT.onReady(() => {
       <h2>Tiêu chí chọn mua ${esc(cat.short.toLowerCase())}</h2>
       <ul>${cat.filters.map((f) => `<li><strong>${esc(f.label)}:</strong> lựa chọn theo nhu cầu sử dụng thực tế (${f.options.slice(0, 4).map(esc).join(', ')}…).</li>`).join('')}
       <li><strong>Chi phí vận hành:</strong> ưu tiên sản phẩm Inverter / nhãn năng lượng 5 sao nếu sử dụng thường xuyên.</li></ul>
-      <h2>Chính sách khi mua tại ${esc(DT.config.name)}</h2>
-      <p>Giao hàng nhanh 2 giờ nội thành, miễn phí lắp đặt với sản phẩm có biểu tượng, trả góp 0% lãi suất, 1 đổi 1 trong 30 ngày nếu lỗi nhà sản xuất. Khách hàng doanh nghiệp được báo giá riêng theo số lượng và hỗ trợ công nợ.</p>
     </div><button class="btn btn-link btn-block" id="seo-more">Xem thêm ${DT.icon('down')}</button></div>`;
     $('#seo-more').onclick = (e) => { e.currentTarget.parentElement.classList.toggle('open'); e.currentTarget.remove(); };
   }

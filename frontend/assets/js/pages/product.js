@@ -35,7 +35,6 @@ DT.onReady(() => {
   const isAC = p.cat === 'may-lanh';
   const bundle = DT.sales.bundle(p);
   const pct = discount(p);
-  const monthly = Math.round(p.price / 12 / 1000) * 1000;
 
   $('#pd').innerHTML = `
     <div class="pd-title">
@@ -65,9 +64,7 @@ DT.onReady(() => {
 
     <div class="pd-info">
       <div class="pd-price">
-        <small>Giá bán (đã gồm VAT)</small>
         <div class="price-box"><strong>${money(p.price)}</strong>${p.oldPrice ? `<del>${money(p.oldPrice)}</del><span class="lbl lbl-sale">-${pct}%</span>` : ''}</div>
-        ${p.installment ? `<small>Trả góp 0% chỉ từ <b class="price">${money(monthly)}</b>/tháng</small>` : ''}
       </div>
       ${variants.length > 1 ? `<div class="pd-variants"><h4>${esc(c.filters[0]?.label || 'Phiên bản')}</h4><div class="variant-list">${variants.map((v) => `
         <a class="variant ${v.id === p.id ? 'active' : ''}" href="${DT.api.url(v)}"><b>${esc(variantLabel(v))}</b><small>${money(v.price)}</small></a>`).join('')}</div></div>` : ''}
@@ -83,17 +80,14 @@ DT.onReady(() => {
         </ul>
       </div>
       <ul class="check-list">${p.highlights.map((h) => `<li>${DT.icon('check')}${esc(h)}</li>`).join('')}</ul>
-      ${isAC && !p.freeInstall ? `<label class="opt-install check"><input type="checkbox" id="opt-install" checked> <span>Kèm dịch vụ lắp đặt chuẩn hãng <b class="price">+${money(DT.config.installFee)}</b></span></label>` : ''}
       <div class="buy-row">
         <span>Số lượng:</span>
         <div class="qty"><button data-q="-1" aria-label="Giảm">${DT.icon('minus')}</button><input id="qty" type="number" value="1" min="1" max="99" aria-label="Số lượng"><button data-q="1" aria-label="Tăng">${DT.icon('plus')}</button></div>
         <span class="muted">${p.stock > 0 ? `Còn hàng (${p.stock})` : 'Đặt trước - giao 3-5 ngày'}</span>
       </div>
       <div class="buy-btns">
-        <button class="btn btn-accent btn-buy" data-action="buy-now" data-id="${p.id}" data-qty="#qty">MUA NGAY<small>Giao nhanh 2h hoặc nhận tại cửa hàng</small></button>
+        <button class="btn btn-accent btn-buy" data-action="buy-now" data-id="${p.id}" data-qty="#qty">MUA NGAY<small>Giao nhanh 2h</small></button>
         <button class="btn btn-outline btn-lg" data-action="add-cart" data-id="${p.id}" data-qty="#qty">${DT.icon('cart')} Thêm vào giỏ</button>
-        <a class="btn btn-primary btn-buy" href="${DT.api.policyUrl('tra-gop')}">TRẢ GÓP 0%<small>Duyệt hồ sơ 15 phút</small></a>
-        <button type="button" class="btn btn-b2b" data-quote>${DT.icon('building')}<span>NHẬN BÁO GIÁ SỈ / DOANH NGHIỆP<small>Mua số lượng • Xuất VAT • Công nợ</small></span></button>
       </div>
       ${bundle.length ? `<div class="bundle" id="bundle">
         <h4>${DT.icon('tool')} Mua kèm để lắp đặt trọn gói</h4>

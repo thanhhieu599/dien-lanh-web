@@ -40,7 +40,7 @@ try {
   check(await page.evaluate(() => DT.store.get().cart[0].qty) === 99, 'số lượng tối đa 99 cho dòng mới');
 
   await page.goto(`${fe}san-pham.html?id=1020`);
-  await page.waitForSelector('#opt-install');
+  await page.waitForSelector('#pd [data-action="add-cart"]');
   await page.evaluate(() => DT.store.clearCart());
   const related = page.locator('.product-card [data-action="add-cart"], .pcard [data-action="add-cart"]').first();
   if (await related.count()) {
@@ -50,7 +50,8 @@ try {
   } else check(true, '(không có thẻ sản phẩm liên quan để thử)');
   await page.evaluate(() => document.querySelectorAll('.modal-wrap').forEach((x) => x.remove()));
   await page.locator('#pd [data-action="add-cart"]').first().click();
-  check(await page.evaluate(() => DT.store.get().cart.find((i) => i.id === 1020)?.install === true), 'sản phẩm chính: theo ô lắp đặt đã tick');
+  check(await page.evaluate(() => DT.store.get().cart.find((i) => i.id === 1020)?.install === false), 'trang sản phẩm không còn ô lắp đặt: mặc định chưa tính phí, khách chọn lắp đặt trong giỏ hàng');
+  check(await page.locator('#opt-install').count() === 0 && await page.locator('.buy-btns .btn').count() === 2, 'khối nút chỉ còn Mua ngay + Thêm vào giỏ');
 
   // Sản phẩm ngừng bán còn trong giỏ: tự bỏ, không treo nút đặt hàng
   await page.evaluate(() => { const s = JSON.parse(localStorage.getItem('dt_shop_v1')); s.cart = [{ id: 987654, qty: 1 }]; localStorage.setItem('dt_shop_v1', JSON.stringify(s)); });

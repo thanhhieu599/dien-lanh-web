@@ -60,7 +60,7 @@ try {
   console.log('Trang sản phẩm: báo giá doanh nghiệp & combo mua kèm');
   await page.evaluate(() => { localStorage.removeItem('dt_leads_v1'); DT.store.clearCart(); });
   await page.goto(`${fe}san-pham.html?id=1001`);
-  await page.waitForSelector('.btn-b2b');
+  await page.waitForSelector('.promo-box [data-quote]');
   check(await page.locator('.calc-hint[href="tinh-cong-suat-may-lanh.html"]').count() === 1, 'máy lạnh có link "Tính công suất"');
   const p = await page.evaluate(() => { const x = DT.api.productById(1001); return { price: x.price, sku: x.sku }; });
   // Combo
@@ -80,7 +80,7 @@ try {
   check(c1.length === 3 && c1.find((i) => i.id === 1001)?.qty === 2 && c1.some((i) => i.id === acc[0].id) && c1.some((i) => i.id === acc[2].id), 'thêm combo → giỏ có máy (x2) + 2 phụ kiện');
   check(await page.locator('#bundle input:checked').count() === 0 && await page.locator('#bundle-add').isDisabled(), 'sau khi thêm: bỏ chọn, khóa nút');
   // Báo giá doanh nghiệp
-  await page.click('.btn-b2b');
+  await page.click('.promo-box [data-quote]');
   await page.waitForSelector('.quote-form');
   check(await page.locator('.quote-form [name=qty]').inputValue() === '5', 'mặc định số lượng 5 (mua sỉ)');
   check((await page.locator('.quote-form .qi-name').textContent()).includes(p.sku), 'form hiện đúng sản phẩm & mã SKU');
@@ -108,11 +108,11 @@ try {
 
   console.log('Máy 2 HP & máy không phải máy lạnh');
   await page.goto(`${fe}san-pham.html?id=1003`);
-  await page.waitForSelector('.btn-b2b');
+  await page.waitForSelector('.promo-box [data-quote]');
   const sk3 = await page.evaluate(() => [...document.querySelectorAll('#bundle input')].map((i) => DT.api.productById(Number(i.value)).sku));
   check(sk3.includes('DT1066') && !sk3.includes('DT1065'), `máy 2 HP gợi ý ống đồng 6/12 (${sk3.join(', ')})`);
   await page.goto(`${fe}san-pham.html?id=1025`);
-  await page.waitForSelector('.btn-b2b');
+  await page.waitForSelector('.promo-box [data-quote]');
   check(await page.locator('#bundle').count() === 0 && await page.locator('.calc-hint').count() === 0, 'tủ lạnh: không có combo & link tính công suất, vẫn có báo giá DN');
 
   console.log('Giỏ hàng: gợi ý mua kèm & báo giá sỉ');
@@ -189,9 +189,9 @@ try {
   const box = await mp.locator('#chat-panel').boundingBox();
   check(box.x >= 0 && box.x + box.width <= 390 && box.y >= 0, 'khung chat nằm gọn trong màn hình điện thoại');
   await mp.goto(`${fe}san-pham.html?id=1001`);
-  await mp.waitForSelector('.btn-b2b');
-  await mp.locator('.btn-b2b').scrollIntoViewIfNeeded();
-  await mp.tap('.btn-b2b');
+  await mp.waitForSelector('.promo-box [data-quote]');
+  await mp.locator('.promo-box [data-quote]').scrollIntoViewIfNeeded();
+  await mp.tap('.promo-box [data-quote]');
   await mp.waitForSelector('.quote-form');
   const qb = await mp.locator('.modal.quote-modal').boundingBox();
   check(qb.width <= 390, 'form báo giá vừa màn hình điện thoại');

@@ -533,7 +533,7 @@ table { border-collapse: collapse; width: 100%; }
 .price-box { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 6px 0 12px; }
 .price-box strong { color: var(--accent); font-size: 28px; font-weight: 800; }
 .price-box del { color: var(--muted); }
-.pd-price { background: var(--accent-soft); border: 1px solid transparent; border-radius: 12px; padding: 12px 16px; }
+.pd-price { background: none; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; padding: 2px 0 12px; }
 .pd-price .price-box { margin: 0; }
 .pd-price small { color: var(--muted); }
 .pd-variants { margin: 14px 0; }
@@ -551,7 +551,7 @@ table { border-collapse: collapse; width: 100%; }
 .opt-install { display: flex; align-items: center; gap: 10px; background: var(--primary-soft); padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; }
 .buy-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
 .buy-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.buy-btns .btn-accent { grid-column: 1 / -1; }
+.buy-btns .btn { height: 56px; }  /* Mua ngay + Thêm vào giỏ cùng 1 hàng, cao bằng nhau */
 .pd-hotline { text-align: center; margin-top: 12px; font-size: 13px; color: var(--muted); }
 .pd-hotline a { color: var(--primary); font-weight: 700; }
 .pd-aside { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 130px; }
@@ -1226,4 +1226,10 @@ table { border-collapse: collapse; width: 100%; }
   .slider { min-height: 250px; }
   .slide { padding-bottom: 44px; align-content: center; }
   .slider-dots { bottom: 16px; }
+}
+
+/* Mobile: nút Mua ngay gọn 1 dòng khi đứng cạnh nút Thêm vào giỏ */
+@media (max-width: 480px) {
+  .buy-btns .btn-buy small { display: none; }
+  .buy-btns .btn { height: 50px; font-size: 14px; padding: 0 10px; }
 }

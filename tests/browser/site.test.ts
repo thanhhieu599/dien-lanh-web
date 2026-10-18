@@ -178,8 +178,8 @@ try {
 
   section('Báo giá doanh nghiệp, khung chat gọi lại, tính công suất (lưu vào CRM)');
   await page.goto(`${fe}san-pham.html?id=1002`);
-  await page.waitForSelector('.btn-b2b');
-  await page.click('.btn-b2b');
+  await page.waitForSelector('.promo-box [data-quote]');
+  await page.click('.promo-box [data-quote]');
   await page.waitForSelector('.quote-form');
   await page.fill('.quote-form [name=qty]', '40');
   await page.fill('.quote-form [name=company]', 'Nhà máy Điện tử Test');

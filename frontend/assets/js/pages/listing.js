@@ -42,6 +42,7 @@ DT.onReady(() => {
     crumbs = [{ label: 'Khuyến mãi' }];
     desc = 'Tổng hợp ưu đãi máy lạnh, tủ lạnh, máy giặt giảm đến 25%, quà tặng hấp dẫn.';
   }
+  if (mode !== 'category') $('#cat-desc').textContent = desc;
   DT.u.setMeta({ title, description: desc, canonical: mode === 'category' ? DT.api.catUrl(cat.id, state.sub || undefined) : null });
   $('#crumb').outerHTML = DT.ui.breadcrumb(crumbs);
   $('#cat-title').textContent = title;

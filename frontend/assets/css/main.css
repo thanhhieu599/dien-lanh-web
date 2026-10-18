@@ -468,7 +468,7 @@ table { border-collapse: collapse; width: 100%; }
 
 /* 8. Trang danh mục ---------------------------------------------- */
 .cat-hero { background: #fff; border: 1px solid var(--border); border-left: 4px solid var(--primary); color: var(--text); border-radius: var(--radius); padding: 20px 24px; margin: 16px 0; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
-.cat-hero h1 { font-size: 26px; margin: 0; }
+.cat-hero h1 { font-size: 26px; margin: 0 0 4px; }
 .cat-hero p { margin: 0; opacity: .9; }
 .sub-cats { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
 .sub-cat { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 6px 14px 6px 6px; font-weight: 500; transition: .15s; }

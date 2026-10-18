@@ -124,6 +124,8 @@ a.kpi:hover { border-color: var(--primary); }
 .ad-table .actions { text-align: right; white-space: nowrap; }
 .ad-table .actions .btn + .btn { margin-left: 4px; }
 .ad-table .w-thumb { width: 56px; }
+.ad-brand-logo { width: 72px; height: 36px; object-fit: contain; background: #fff; border: 1px solid var(--border, #e5e7eb); border-radius: 6px; padding: 2px; }
+.txt-muted { color: #6b7280; }
 .ad-table td .ic { width: 16px; height: 16px; vertical-align: -3px; }
 .ad-table select { height: 32px; border: 1px solid var(--border); border-radius: 6px; padding: 0 6px; background: #fff; }
 .ad-thumb { display: block; width: 44px; height: 44px; border-radius: 8px; overflow: hidden; background: var(--bg); }

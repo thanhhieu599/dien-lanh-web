@@ -29,10 +29,11 @@ try {
 
   console.log('Website');
   await page.goto(`${fe}index.html`);
-  await page.waitForSelector('#brands .brand-logo');
-  const brandHref = await page.locator('#brands a.brand-logo').first().getAttribute('href');
-  check(/^tim-kiem\.html\?brand=/.test(brandHref), `logo thương hiệu trỏ tới trang tìm kiếm (${brandHref})`);
-  await page.click('#brands a.brand-logo');
+  await page.click('.topbar-left a.brand-link');
+  await page.waitForSelector('.brand-tile');
+  const brandHref = await page.locator('a.brand-tile').first().getAttribute('href');
+  check(/^thuong-hieu\.html\?id=/.test(brandHref), `thương hiệu trỏ tới trang thương hiệu (${brandHref})`);
+  await page.click('a.brand-tile');
   await page.waitForSelector('.product-card, .p-card, .pcard, [data-id]');
   check(!/404/.test(page.url()) && await page.locator('[data-action="add-cart"]').count() > 0, 'bấm logo thương hiệu → danh sách sản phẩm (không 404)');
 

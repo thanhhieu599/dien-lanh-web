@@ -212,6 +212,13 @@ AD.demo = () => {
     if (!write(DT.PRODUCT_IMG_DEMO_KEY || 'dt_product_images_v1', map)) throw new Error('Bộ nhớ trình duyệt (bản demo) đã đầy: hãy bớt ảnh hoặc dùng ảnh nhỏ hơn.');
   }
 
+  // Thương hiệu (tên, logo) sửa ở bản demo -> trang Thương hiệu của website demo cùng trình duyệt (DT.BRANDS_DEMO_KEY)
+  function syncBrands() {
+    const list = (db.brands || []).filter((b) => b.active !== false).sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
+      .map((b) => ({ id: b.id, name: b.name, origin: b.origin || '', color: b.color || '', logo: b.logo || null }));
+    if (!write(DT.BRANDS_DEMO_KEY || 'dt_brands_v1', list)) throw new Error('Bộ nhớ trình duyệt (bản demo) đã đầy: hãy dùng ảnh logo nhỏ hơn.');
+  }
+
   // Đồng bộ dữ liệu khách tạo trên website demo (cùng tên miền -> cùng localStorage)
   function syncFromShop() {
     const shop = read(SHOP, { orders: [], users: [] });
@@ -358,6 +365,7 @@ AD.demo = () => {
       row.created_at = row.created_at || new Date().toISOString();
       db[table].push(row); persist();
       if (table === 'products') syncProductImages();
+      if (table === 'brands') syncBrands();
       return row;
     },
     async update(table, id, patch) {
@@ -368,6 +376,7 @@ AD.demo = () => {
       if (!r) throw new Error('Bản ghi không tồn tại');
       Object.assign(r, patch, { updated_at: new Date().toISOString() }); persist();
       if (table === 'products') syncProductImages();
+      if (table === 'brands') syncBrands();
       return r;
     },
     async remove(table, id) {
@@ -376,8 +385,9 @@ AD.demo = () => {
       if (['orders', 'leads', 'profiles'].includes(table)) throw new Error('Chế độ demo không xóa dữ liệu khách hàng');
       db[table] = db[table].filter((x) => String(x[AD.PK[table]]) !== String(id)); persist();
       if (table === 'products') syncProductImages();
+      if (table === 'brands') syncBrands();
     },
-    reset() { db = seed(); persist(); syncProductImages(); },
+    reset() { db = seed(); persist(); syncProductImages(); syncBrands(); },
   };
 };
 

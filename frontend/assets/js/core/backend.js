@@ -143,7 +143,7 @@ DT.backend = (() => {
     const q = {
       settings: 'key=in.(store,vision,trust)&select=key,value',
       categories: 'select=id,name,short,icon,art,subs,filters&order=sort',
-      brands: 'select=id,name,origin,color&order=sort',
+      brands: 'select=id,name,origin,color,logo&order=sort',
       products: 'select=*&order=id',
       stores: 'select=id,name,city,address,phone,hours,map&order=sort',
       posts: 'select=slug,title,cat,date,author,art,excerpt,content&order=date.desc',
@@ -164,6 +164,11 @@ DT.backend = (() => {
     try {
       const map = JSON.parse(localStorage.getItem(DT.PRODUCT_IMG_DEMO_KEY) || '{}');
       DT.products.forEach((p) => { const imgs = map[p.id]; if (Array.isArray(imgs) && imgs.length) p.images = imgs.slice(0, 10); });
+    } catch { /* bỏ qua */ }
+    // Thương hiệu (tên, logo) sửa trong trang quản trị demo
+    try {
+      const brands = JSON.parse(localStorage.getItem(DT.BRANDS_DEMO_KEY) || 'null');
+      if (Array.isArray(brands)) DT.brands = brands;
     } catch { /* bỏ qua */ }
   }
 

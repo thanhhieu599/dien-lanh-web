@@ -114,6 +114,7 @@ window.AD = window.AD || {};
       title: 'Thương hiệu', icon: 'tag', table: 'brands', order: 'sort.asc', search: ['name', 'id'],
       columns: [
         { label: 'Thứ tự', key: 'sort', cls: 'num' },
+        { label: 'Logo', render: (r) => (r.logo ? `<img class="ad-brand-logo" src="${esc(r.logo)}" alt="">` : '<small class="txt-muted">Chưa có</small>') },
         { label: 'Thương hiệu', render: (r) => `<b style="color:${esc(r.color || '#333')}">${esc(r.name)}</b><small>${esc(r.id)}</small>` },
         { label: 'Xuất xứ', key: 'origin' },
         { label: 'Hiển thị', render: (r) => yes(r.active) },
@@ -126,6 +127,7 @@ window.AD = window.AD || {};
         { key: 'color', label: 'Màu thương hiệu', col: 'third', placeholder: '#0b5ed7' },
         { key: 'sort', label: 'Thứ tự', type: 'number', step: 1, col: 'third', def: 0 },
         { key: 'active', label: 'Hiển thị', type: 'bool', col: 'third' },
+        { key: 'logo', label: 'Logo thương hiệu', type: 'image', folder: 'brands', col: 'full', help: 'Hiển thị ở trang Thương hiệu. Nên dùng ảnh nền trắng hoặc trong suốt (PNG), tỉ lệ ngang.' },
       ],
       afterSave: () => AD.loadCache(true),
     },

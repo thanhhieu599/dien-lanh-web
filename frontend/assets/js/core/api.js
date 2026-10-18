@@ -27,6 +27,7 @@ DT.api = (() => {
   const catUrl = (cat, sub) => (pretty() ? `danh-muc/${cat}${sub ? `/${sub}` : ''}.html` : `danh-muc.html?cat=${cat}${sub ? `&sub=${sub}` : ''}`);
   const postUrl = (slug) => (pretty() ? `tin-tuc/${slug}.html` : `bai-viet.html?slug=${slug}`);
   const policyUrl = (type) => (pretty() ? `chinh-sach/${type}.html` : `chinh-sach.html?type=${type}`);
+  const brandUrl = (id) => (id ? (pretty() ? `thuong-hieu/${id}.html` : `thuong-hieu.html?id=${id}`) : 'thuong-hieu.html');
 
   function matchQuery(p, q) {
     const words = n(q).split(/\s+/).filter(Boolean);
@@ -111,5 +112,5 @@ DT.api = (() => {
     });
   }
 
-  return { productById, product, category, brand, sub, url, catUrl, postUrl, policyUrl, list, related, suggest, reviews, fetchReviews };
+  return { productById, product, category, brand, sub, url, catUrl, postUrl, policyUrl, brandUrl, list, related, suggest, reviews, fetchReviews };
 })();

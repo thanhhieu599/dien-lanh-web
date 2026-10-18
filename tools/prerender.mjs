@@ -75,7 +75,7 @@ function serve(dir) {
 function routes(data) {
   const r = [];
   // Trang có nội dung cố định: ghi đè tại chỗ
-  for (const f of ['index.html', 'khuyen-mai.html', 'tin-tuc.html', 'dich-vu.html', 'bao-gia-du-an.html', 'gioi-thieu.html', 'tam-nhin-su-menh.html', 'tinh-cong-suat-may-lanh.html', 'du-an.html', 'hoi-dap.html', 'lien-he.html', 'he-thong-cua-hang.html']) {
+  for (const f of ['index.html', 'khuyen-mai.html', 'tin-tuc.html', 'dich-vu.html', 'bao-gia-du-an.html', 'gioi-thieu.html', 'tam-nhin-su-menh.html', 'tinh-cong-suat-may-lanh.html', 'du-an.html', 'hoi-dap.html', 'lien-he.html', 'he-thong-cua-hang.html', 'thuong-hieu.html']) {
     r.push({ src: f, out: f, priority: f === 'index.html' ? '1.0' : '0.6' });
   }
   for (const c of data.categories) {
@@ -87,6 +87,7 @@ function routes(data) {
   }
   for (const p of data.posts) r.push({ src: `bai-viet.html?slug=${p.slug}`, out: `tin-tuc/${p.slug}.html`, data: { qSlug: p.slug }, priority: '0.7', lastmod: p.date });
   for (const p of data.projects || []) r.push({ src: `du-an-chi-tiet.html?slug=${p.slug}`, out: `du-an/${p.slug}.html`, data: { qSlug: p.slug }, priority: '0.7', lastmod: p.updated });
+  for (const b of data.brands || []) r.push({ src: `thuong-hieu.html?id=${b.id}`, out: `thuong-hieu/${b.id}.html`, data: { qId: b.id }, priority: '0.7' });
   for (const k of data.policies) r.push({ src: `chinh-sach.html?type=${k}`, out: `chinh-sach/${k}.html`, data: { qType: k }, priority: '0.3' });
   return r;
 }
@@ -208,6 +209,7 @@ async function main() {
       posts: DT.posts.map((p) => ({ slug: p.slug, title: p.title, excerpt: p.excerpt, date: p.date })),
       projects: (DT.projects || []).map((p) => ({ slug: p.slug, title: p.title, summary: p.summary, updated: p.updated_at ? String(p.updated_at).slice(0, 10) : undefined })),
       faqs: (DT.faqs || []).map((f) => ({ q: f.question, a: f.answer.replace(/<[^>]+>/g, '') })),
+      brands: DT.brands.map((b) => ({ id: b.id, name: b.name })),
       policies: Object.keys(DT.policies),
       policyTitles: Object.fromEntries(Object.entries(DT.policies).map(([k, v]) => [k, v.title])),
     };

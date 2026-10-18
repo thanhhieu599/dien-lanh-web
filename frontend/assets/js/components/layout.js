@@ -30,7 +30,7 @@ DT.layout = (() => {
   function header() {
     return `
     <div class="topbar"><div class="container">
-      <div class="topbar-left"></div>
+      <div class="topbar-left"><a href="${DT.api.brandUrl()}" class="brand-link">${DT.icon('tag')} Thương hiệu</a></div>
       <nav class="topbar-right">
         <a href="tam-nhin-su-menh.html" class="about-link">${DT.icon('star')} Về chúng tôi</a>
         <a href="tra-cuu-don-hang.html">${DT.icon('truck')} Tra cứu đơn hàng</a>
@@ -73,6 +73,7 @@ DT.layout = (() => {
             <a href="${DT.api.catUrl(c.id)}">Tất cả ${esc(c.short.toLowerCase())}</a>
             ${c.subs.map((s) => `<a href="${DT.api.catUrl(c.id, s.id)}">${esc(s.name)}</a>`).join('')}</details>`).join('')}
           <div class="drawer-links">
+            <a href="${DT.api.brandUrl()}">${DT.icon('tag')}Thương hiệu</a>
             <a href="khuyen-mai.html">${DT.icon('percent')}Khuyến mãi hot</a>
             <a href="tinh-cong-suat-may-lanh.html">${DT.icon('snow')}Tính công suất máy lạnh</a>
             <a href="du-an.html">${DT.icon('building')}Dự án tiêu biểu</a>

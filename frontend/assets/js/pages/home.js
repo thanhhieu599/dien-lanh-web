@@ -100,12 +100,6 @@ DT.onReady(() => {
     $('.block-body', sec).innerHTML = DT.ui.grid(DT.api.list({ cat: sec.dataset.block, sub: t.dataset.sub || undefined, limit: 10 }).items);
   });
 
-  // ---------- Thương hiệu
-  // Bản demo: đủ 8 ô, ô trống hiển thị "Tên thương hiệu" chờ gắn logo thật
-  const brandTiles = DT.brands.slice(0, 16).map((b) => `<a class="brand-logo" style="color:${b.color}" href="tim-kiem.html?brand=${encodeURIComponent(b.id)}">${esc(b.name.toUpperCase())}</a>`);
-  while (brandTiles.length < 8) brandTiles.push('<span class="brand-logo brand-empty">TÊN THƯƠNG HIỆU</span>');
-  $('#brands').innerHTML = brandTiles.join('');
-
   // ---------- Dịch vụ
   $('#services').innerHTML = DT.services.map((s) => `
     <a class="svc" href="dich-vu.html?svc=${s.id}"><span class="svc-ic">${DT.icon(s.icon)}</span>

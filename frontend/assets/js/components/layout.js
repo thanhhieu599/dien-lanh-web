@@ -96,7 +96,7 @@ DT.layout = (() => {
     const benefits = [
       ['shield', '100% chính hãng', 'Đầy đủ hóa đơn, phiếu bảo hành'],
       ['tool', 'Lắp đặt chuẩn hãng', 'Thợ có chứng chỉ, bảo hành lắp đặt'],
-      ['truck', 'Giao nhanh 2h', 'Miễn phí đơn từ 2 triệu'],
+      ['truck', 'Giao nhanh 2h', DT.config.freeShipThreshold ? `Miễn phí đơn từ ${DT.u.shortMoney(DT.config.freeShipThreshold)}` : 'Giao tận nơi'],
       ['refresh', '1 đổi 1 trong 30 ngày', 'Nếu lỗi do nhà sản xuất'],
     ];
     return `
@@ -221,11 +221,26 @@ DT.layout = (() => {
     renderCompareBar();
   }
 
+  // Thông tin liên hệ viết trong trang HTML (data-cfg="hotline" | "hotlineB2B" | "email" | "workingHours")
+  // lấy theo Quản trị › Cài đặt cửa hàng; trống thì ẩn cả dòng (data-cfg-row)
+  function bindConfig() {
+    document.querySelectorAll('[data-cfg]').forEach((el) => {
+      const k = el.dataset.cfg;
+      const v = DT.config[k];
+      const row = el.closest('[data-cfg-row]') || el;
+      row.hidden = !v;
+      if (!v) return;
+      el.textContent = v;
+      if (el.tagName === 'A') el.href = k === 'email' ? `mailto:${v}` : `tel:${DT.u.tel(v)}`;
+    });
+  }
+
   function init() {
     const h = $('#site-header');
     const f = $('#site-footer');
     if (h) h.innerHTML = header();
     if (f) f.innerHTML = footer();
+    bindConfig();
     // Xác minh Google Search Console (Quản trị › Cài đặt › Mã xác minh): thẻ meta có trong trang build sẵn
     const gv = String(cfg.googleVerification || '').replace(/^.*content="([^"]+)".*$/, '$1').trim();
     if (gv && /^[\w-]{10,100}$/.test(gv)) {

@@ -114,11 +114,14 @@ DT.backend = (() => {
     createdAt: String(r.created_at).slice(0, 10),
   });
 
+  // Áp dữ liệu vào website. d có thể chỉ chứa một số bảng (bản demo: chỉ các bảng đã sửa trong quản trị)
   function apply(d) {
     const setting = (k) => d.settings?.find((s) => s.key === k)?.value;
-    if (setting('store')) Object.assign(DT.config, setting('store'));
-    DT.vision = setting('vision') || {}; // ảnh trang Tầm nhìn & Sứ mệnh (quản trị tải lên)
-    if (setting('trust')) DT.trust = { logos: [], certs: [], reviews: [], google: {}, ...setting('trust') };
+    if (d.settings) {
+      if (setting('store')) Object.assign(DT.config, setting('store'));
+      DT.vision = setting('vision') || {}; // ảnh trang Tầm nhìn & Sứ mệnh (quản trị tải lên)
+      if (setting('trust')) DT.trust = { logos: [], certs: [], reviews: [], google: {}, ...setting('trust') };
+    }
     if (d.projects) {
       DT.projects = d.projects.map((r) => ({
         ...r, beforeImage: r.before_image, afterImage: r.after_image, images: r.images || [],
@@ -126,17 +129,18 @@ DT.backend = (() => {
       }));
     }
     if (d.faqs) DT.faqs = d.faqs;
-    DT.categories = d.categories.map((c) => ({ ...c, subs: c.subs || [], filters: c.filters || [] }));
-    DT.brands = d.brands;
+    if (d.categories) DT.categories = d.categories.map((c) => ({ ...c, subs: c.subs || [], filters: c.filters || [] }));
+    if (d.brands) DT.brands = d.brands;
+    if (d.products) DT.products = d.products.map(mapProduct);
     // Danh mục bị ẩn -> sản phẩm của danh mục đó cũng ẩn khỏi website
     const cats = new Set(DT.categories.map((c) => c.id));
-    DT.products = d.products.map(mapProduct).filter((p) => cats.has(p.cat));
-    DT.stores = d.stores;
-    DT.posts = d.posts.map((p) => ({ ...p, date: String(p.date).slice(0, 10) }));
-    DT.banners = d.banners;
-    DT.services = d.services.map((s) => ({ ...s, price: Number(s.price), desc: s.description }));
-    DT.policies = Object.fromEntries(d.policies.map((p) => [p.key, { title: p.title, body: p.body }]));
-    DT.coupons = d.coupons.map((c) => ({ code: c.code, type: c.type, value: Number(c.value), max: c.max == null ? null : Number(c.max), min: Number(c.min), desc: c.description }));
+    DT.products = DT.products.filter((p) => cats.has(p.cat));
+    if (d.stores) DT.stores = d.stores;
+    if (d.posts) DT.posts = d.posts.map((p) => ({ ...p, date: String(p.date).slice(0, 10) }));
+    if (d.banners) DT.banners = d.banners;
+    if (d.services) DT.services = d.services.map((s) => ({ ...s, price: Number(s.price), desc: s.description }));
+    if (d.policies) DT.policies = Object.fromEntries(d.policies.map((p) => [p.key, { title: p.title, body: p.body }]));
+    if (d.coupons) DT.coupons = d.coupons.map((c) => ({ code: c.code, type: c.type, value: Number(c.value), max: c.max == null ? null : Number(c.max), min: Number(c.min), desc: c.description }));
   }
 
   async function fetchCatalog() {
@@ -159,21 +163,34 @@ DT.backend = (() => {
     return Object.fromEntries(keys.map((k, i) => [k, results[i]]));
   }
 
-  // Bản demo (chưa kết nối database): ảnh sản phẩm tải lên trong trang quản trị demo (cùng trình duyệt)
-  function demoImages() {
-    try {
-      const map = JSON.parse(localStorage.getItem(DT.PRODUCT_IMG_DEMO_KEY) || '{}');
-      DT.products.forEach((p) => { const imgs = map[p.id]; if (Array.isArray(imgs) && imgs.length) p.images = imgs.slice(0, 10); });
-    } catch { /* bỏ qua */ }
-    // Thương hiệu (tên, logo) sửa trong trang quản trị demo
-    try {
-      const brands = JSON.parse(localStorage.getItem(DT.BRANDS_DEMO_KEY) || 'null');
-      if (Array.isArray(brands)) DT.brands = brands;
-    } catch { /* bỏ qua */ }
+  // Bản demo (chưa kết nối database): website dùng dữ liệu trang quản trị demo cùng trình duyệt cho các bảng
+  // đã sửa trong quản trị (db.touched), lọc giống quyền xem của khách trên database (chỉ mục đang hiển thị)
+  function demoAdmin() {
+    let db = null;
+    try { db = JSON.parse(localStorage.getItem(DT.ADMIN_DEMO_KEY) || 'null'); } catch { /* bỏ qua */ }
+    if (!db?.touched) return;
+    const has = (t) => db.touched[t] && Array.isArray(db[t]);
+    const on = (r) => r.active !== false;
+    const bySort = (a, b) => (a.sort ?? 0) - (b.sort ?? 0);
+    const now = Date.now();
+    const d = {};
+    if (has('settings')) d.settings = db.settings;
+    if (has('categories')) d.categories = db.categories.filter(on).sort(bySort);
+    if (has('brands')) d.brands = db.brands.filter(on).sort(bySort);
+    if (has('products')) d.products = db.products.filter(on).sort((a, b) => a.id - b.id);
+    if (has('stores')) d.stores = db.stores.filter(on).sort(bySort);
+    if (has('posts')) d.posts = db.posts.filter((p) => p.published !== false).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    if (has('banners')) d.banners = db.banners.filter(on).sort(bySort);
+    if (has('services')) d.services = db.services.filter(on).sort(bySort);
+    if (has('policies')) d.policies = [...db.policies].sort(bySort);
+    if (has('coupons')) d.coupons = db.coupons.filter((c) => c.is_public !== false && c.active !== false && (!c.starts_at || new Date(c.starts_at).getTime() <= now) && (!c.ends_at || new Date(c.ends_at).getTime() > now));
+    if (has('projects')) d.projects = db.projects.filter((p) => p.published).sort((a, b) => bySort(a, b) || (b.year || 0) - (a.year || 0));
+    if (has('faqs')) d.faqs = db.faqs.filter(on).sort((a, b) => bySort(a, b) || (a.id || 0) - (b.id || 0));
+    try { apply(d); } catch (e) { console.warn('[Website demo] Bỏ qua dữ liệu quản trị demo lỗi:', e.message); }
   }
 
   async function load() {
-    if (!enabled) { demoImages(); return; }
+    if (!enabled) { demoAdmin(); return; }
     let data = null;
     try {
       const c = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');

@@ -5,6 +5,14 @@ DT.u = {
   $: (sel, root = document) => root.querySelector(sel),
   $$: (sel, root = document) => Array.from(root.querySelectorAll(sel)),
 
+  // Số tiền dạng ngắn cho câu quảng cáo: 150000 -> "150K", 2000000 -> "2 triệu", 1500000 -> "1,5 triệu"
+  shortMoney(n) {
+    n = Number(n) || 0;
+    if (n >= 1e6) return `${(Math.round(n / 1e5) / 10).toLocaleString('vi-VN')} triệu`;
+    if (n >= 1e3) return `${Math.round(n / 1e3)}K`;
+    return `${n}₫`;
+  },
+
   money(n) {
     if (n == null || isNaN(n)) return 'Liên hệ';
     return Math.round(n).toLocaleString('vi-VN') + '₫';

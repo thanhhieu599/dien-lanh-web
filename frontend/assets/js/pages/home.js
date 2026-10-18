@@ -44,9 +44,12 @@ DT.onReady(() => {
   });
 
   const user = DT.store.get().user;
+  // Giá vệ sinh máy lạnh thấp nhất trong mục Dịch vụ (quản trị)
+  const cleanPrices = DT.services.filter((s) => s.price > 0 && /vệ sinh/i.test(s.name)).map((s) => s.price);
+  const cleanPrice = cleanPrices.length ? Math.min(...cleanPrices) : 0;
   $('#hero-right').innerHTML = `
     <a class="mini-banner mb-1" href="khuyen-mai.html"><b>Flash Sale<br>giảm đến 25%</b><span>Số lượng có hạn mỗi ngày</span><em>Săn ngay</em>${DT.icon('zap')}</a>
-    <a class="mini-banner mb-2" href="dich-vu.html"><b>Vệ sinh máy lạnh<br>chỉ từ 150K</b><span>Thợ đến trong 2 giờ</span><em>Đặt lịch</em>${DT.icon('tool')}</a>
+    <a class="mini-banner mb-2" href="dich-vu.html"><b>Vệ sinh máy lạnh<br>${cleanPrice ? `chỉ từ ${DT.u.shortMoney(cleanPrice)}` : 'tận nơi'}</b><span>Thợ đến trong 2 giờ</span><em>Đặt lịch</em>${DT.icon('tool')}</a>
     <div class="hero-user">${user
       ? `<b>Xin chào, ${esc(user.name)}!</b><div class="btns"><a class="btn btn-sm btn-outline" href="tai-khoan.html#orders">Đơn hàng</a><a class="btn btn-sm btn-primary" href="yeu-thich.html">Yêu thích</a></div>`
       : `<b>Đăng nhập để nhận ưu đãi thành viên</b><div class="btns"><a class="btn btn-sm btn-primary" href="tai-khoan.html">Đăng nhập</a><a class="btn btn-sm btn-outline" href="tai-khoan.html#register">Đăng ký</a></div>`}</div>`;

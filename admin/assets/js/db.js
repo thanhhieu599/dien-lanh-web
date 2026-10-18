@@ -154,7 +154,7 @@ AD.supabase = (cfg) => {
 
 // ======================================================================= Demo
 AD.demo = () => {
-  const KEY = 'dt_admin_demo_v1';
+  const KEY = DT.ADMIN_DEMO_KEY || 'dt_admin_demo_v1';
   const SHOP = 'dt_shop_v1';
   const LEADS = 'dt_leads_v1';
   const REVIEWS = 'dt_reviews_v1';
@@ -199,25 +199,22 @@ AD.demo = () => {
       overlay: { orders: {}, leads: {} }, // dữ liệu chỉ admin có (ghi chú, thanh toán...)
     };
   }
+  // Bảng nội dung hiển thị trên website. Bảng nào đã sửa trong quản trị demo được ghi vào db.touched:
+  // website demo (cùng trình duyệt) dùng dữ liệu quản trị cho các bảng đó (core/backend.js › demoAdmin),
+  // bảng chưa sửa luôn lấy theo dữ liệu mới nhất của website (không bị dữ liệu demo cũ ghi đè).
+  const CONTENT = ['settings', 'categories', 'brands', 'products', 'coupons', 'posts', 'projects', 'faqs', 'banners', 'stores', 'services', 'policies'];
   let db = read(KEY, null);
-  if (!db) { db = seed(); write(KEY, db); }
-  // Dữ liệu demo tạo từ phiên bản cũ: bổ sung bảng mới
-  ['projects', 'faqs'].forEach((t) => { if (!db[t]) { db[t] = seed()[t]; write(KEY, db); } });
+  if (!db) db = seed();
+  db.touched = db.touched || {};
+  const fresh = seed();
+  CONTENT.forEach((t) => { if (!db.touched[t] || !db[t]) db[t] = fresh[t]; });
+  write(KEY, db);
+  const touch = (t) => { if (CONTENT.includes(t) && !db.touched[t]) { db.touched[t] = true; persist(); } };
   const persist = () => {
     if (!write(KEY, db)) throw new Error('Bộ nhớ trình duyệt (bản demo) đã đầy: hãy bớt ảnh hoặc dùng ảnh nhỏ hơn. Bản chính thức (kết nối Supabase) lưu ảnh trên máy chủ, không giới hạn như vậy.');
   };
-  // Ảnh sản phẩm tải lên ở bản demo -> website demo cùng trình duyệt hiển thị (DT.PRODUCT_IMG_DEMO_KEY)
-  function syncProductImages() {
-    const map = Object.fromEntries((db.products || []).filter((p) => (p.images || []).some((u) => u && !String(u).startsWith('art:'))).map((p) => [p.id, p.images]));
-    if (!write(DT.PRODUCT_IMG_DEMO_KEY || 'dt_product_images_v1', map)) throw new Error('Bộ nhớ trình duyệt (bản demo) đã đầy: hãy bớt ảnh hoặc dùng ảnh nhỏ hơn.');
-  }
-
-  // Thương hiệu (tên, logo) sửa ở bản demo -> trang Thương hiệu của website demo cùng trình duyệt (DT.BRANDS_DEMO_KEY)
-  function syncBrands() {
-    const list = (db.brands || []).filter((b) => b.active !== false).sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
-      .map((b) => ({ id: b.id, name: b.name, origin: b.origin || '', color: b.color || '', logo: b.logo || null }));
-    if (!write(DT.BRANDS_DEMO_KEY || 'dt_brands_v1', list)) throw new Error('Bộ nhớ trình duyệt (bản demo) đã đầy: hãy dùng ảnh logo nhỏ hơn.');
-  }
+  // Mã đánh giá không phụ thuộc vị trí trong danh sách (đánh giá mới thêm vào đầu danh sách)
+  const reviewId = (pid, r) => `${pid}-${r.date}-${[...`${r.name}|${r.text}`].reduce((h, ch) => (h * 31 + ch.codePointAt(0)) >>> 0, 7).toString(36)}`;
 
   // Đồng bộ dữ liệu khách tạo trên website demo (cùng tên miền -> cùng localStorage)
   function syncFromShop() {
@@ -251,7 +248,7 @@ AD.demo = () => {
     const st = db.overlay.reviews || {};
     db.reviews = Object.entries(rv).flatMap(([pid, list]) => list.map((r, i) => {
       // Mã không phụ thuộc vị trí trong danh sách (đánh giá mới thêm vào đầu danh sách)
-      const id = `${pid}-${r.date}-${[...`${r.name}|${r.text}`].reduce((h, ch) => (h * 31 + ch.codePointAt(0)) >>> 0, 7).toString(36)}`;
+      const id = reviewId(pid, r);
       return { id, product_id: Number(pid), name: r.name, rating: r.rating, text: r.text, status: st[id] || 'approved', verified: !!r.verified, created_at: r.date };
     })).filter((r) => r.status !== 'deleted');
   }
@@ -285,6 +282,10 @@ AD.demo = () => {
     if (table === 'reviews') {
       db.overlay.reviews = db.overlay.reviews || {};
       db.overlay.reviews[id] = patch.status;
+      // Ghi trạng thái duyệt vào đánh giá trên website demo: chỉ đánh giá "approved" được hiển thị
+      const rv = read(REVIEWS, {});
+      Object.entries(rv).forEach(([pid, list]) => list.forEach((r) => { if (reviewId(pid, r) === id) r.status = patch.status; }));
+      write(REVIEWS, rv);
     }
     persist();
   }
@@ -364,8 +365,7 @@ AD.demo = () => {
       if (db[table].some((x) => String(x[pk]) === String(row[pk]))) throw new Error('Mã / khóa đã tồn tại');
       row.created_at = row.created_at || new Date().toISOString();
       db[table].push(row); persist();
-      if (table === 'products') syncProductImages();
-      if (table === 'brands') syncBrands();
+      touch(table);
       return row;
     },
     async update(table, id, patch) {
@@ -375,8 +375,7 @@ AD.demo = () => {
       const r = db[table].find((x) => String(x[AD.PK[table]]) === String(id));
       if (!r) throw new Error('Bản ghi không tồn tại');
       Object.assign(r, patch, { updated_at: new Date().toISOString() }); persist();
-      if (table === 'products') syncProductImages();
-      if (table === 'brands') syncBrands();
+      touch(table);
       return r;
     },
     async remove(table, id) {
@@ -384,10 +383,9 @@ AD.demo = () => {
       if (table === 'reviews') { writeBack('reviews', id, { status: 'deleted' }); return; }
       if (['orders', 'leads', 'profiles'].includes(table)) throw new Error('Chế độ demo không xóa dữ liệu khách hàng');
       db[table] = db[table].filter((x) => String(x[AD.PK[table]]) !== String(id)); persist();
-      if (table === 'products') syncProductImages();
-      if (table === 'brands') syncBrands();
+      touch(table);
     },
-    reset() { db = seed(); persist(); syncProductImages(); syncBrands(); },
+    reset() { db = seed(); persist(); },
   };
 };
 

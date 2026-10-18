@@ -49,6 +49,8 @@ window.AD = window.AD || {};
         { key: 'old_price', label: 'Giá gốc (₫)', type: 'money', step: 1, col: 'quarter', validate: (v, o) => (v != null && v < o.price ? 'Giá gốc phải ≥ giá bán' : null) },
         { key: 'stock', label: 'Tồn kho', type: 'number', step: 1, col: 'quarter', required: true, validate: (v) => (v < 0 || !Number.isInteger(v) ? 'Số nguyên ≥ 0' : null) },
         { key: 'sold', label: 'Đã bán', type: 'number', step: 1, col: 'quarter', def: 0 },
+        { key: 'rating', label: 'Điểm đánh giá (1-5)', type: 'number', step: 0.1, col: 'quarter', def: 5, help: 'Số sao hiện trên website', validate: (v) => (v != null && (v < 1 || v > 5) ? 'Từ 1 đến 5' : null) },
+        { key: 'reviews', label: 'Số lượt đánh giá', type: 'number', step: 1, col: 'quarter', def: 0 },
         { key: 'active', label: 'Đang bán (hiện trên website)', type: 'bool', col: 'third' },
         { key: 'flash_sale', label: 'Flash sale', type: 'bool', col: 'third' },
         { key: 'free_install', label: 'Miễn phí lắp đặt', type: 'bool', col: 'third' },

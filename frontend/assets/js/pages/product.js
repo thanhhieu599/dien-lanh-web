@@ -19,9 +19,19 @@ DT.onReady(() => {
     { label: p.name },
   ]);
 
+  // Mã giảm giá công khai (quản trị › Mã giảm giá): ưu tiên mã giảm theo %, rồi giảm tiền, rồi miễn phí ship
+  const couponRank = { percent: 0, fixed: 1, freeship: 2 };
+  const coupon = [...(DT.coupons || [])].sort((a, b) => (couponRank[a.type] ?? 9) - (couponRank[b.type] ?? 9))[0];
+  const couponText = (c) => {
+    const m = DT.u.shortMoney;
+    const what = c.type === 'percent' ? `giảm thêm ${c.value}%${c.max ? ` (tối đa ${m(c.max)})` : ''}` : c.type === 'fixed' ? `giảm ${m(c.value)}` : 'miễn phí vận chuyển';
+    return `${what}${c.min ? ` cho đơn từ ${m(c.min)}` : ''}`;
+  };
+
   // Đánh giá: mẫu + đánh giá người dùng lưu localStorage
   const RKEY = 'dt_reviews_v1';
-  const loadUserReviews = () => { try { return JSON.parse(localStorage.getItem(RKEY) || '{}')[p.id] || []; } catch { return []; } };
+  // Chỉ hiện đánh giá chưa bị quản trị ẩn / xóa (quản trị demo ghi status vào đây)
+  const loadUserReviews = () => { try { return (JSON.parse(localStorage.getItem(RKEY) || '{}')[p.id] || []).filter((r) => !r.status || r.status === 'approved'); } catch { return []; } };
   // Có backend: đánh giá đã duyệt từ DB (nạp sau). Demo: đánh giá mẫu + đánh giá lưu trên trình duyệt.
   const reviews = () => (DT.backend.enabled ? [] : [...loadUserReviews(), ...DT.api.reviews(p)]);
 
@@ -74,7 +84,7 @@ DT.onReady(() => {
         <ul>
           ${p.gift ? `<li><i>1</i><span>${esc(p.gift)}</span></li>` : ''}
           ${p.freeInstall ? `<li><i>${p.gift ? 2 : 1}</i><span>Miễn phí công lắp đặt tiêu chuẩn (tiết kiệm ${money(DT.config.installFee)})</span></li>` : ''}
-          <li><i>${DT.icon('check')}</i><span>Nhập mã <b>COOL10</b> giảm thêm 10% (tối đa 1 triệu) cho đơn từ 5 triệu</span></li>
+          ${coupon ? `<li><i>${DT.icon('check')}</i><span>Nhập mã <b>${esc(coupon.code)}</b> ${esc(couponText(coupon))}</span></li>` : ''}
           <li><i>${DT.icon('check')}</i><span>Trả góp 0% qua thẻ tín dụng, duyệt nhanh 15 phút</span></li>
           <li><i>${DT.icon('check')}</i><span>Doanh nghiệp mua số lượng: <a class="link" href="bao-gia-du-an.html?sku=${encodeURIComponent(p.sku)}" data-quote>nhận báo giá riêng</a></span></li>
         </ul>

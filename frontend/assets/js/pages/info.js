@@ -57,7 +57,7 @@ DT.onReady(() => {
     const render = () => {
       const list = DT.stores.filter((s) => !sel.value || s.city === sel.value);
       $('#store-list').innerHTML = list.map((s, i) => `<div class="store-card ${i === 0 ? 'active' : ''}" data-store="${s.id}"><span class="svc-ic">${DT.icon('pin')}</span><div>
-        <h3>${esc(s.name)}</h3><p>${DT.icon('pin')}${esc(s.address)}, ${esc(s.city)}</p>${s.phone ? `<p>${DT.icon('phone')}<a href="tel:${DT.u.tel(s.phone)}">${esc(s.phone)}</a></p>` : ''}${s.hours ? `<p>${DT.icon('clock')}${esc(s.hours)} (cả CN)</p>` : ''}
+        <h3>${esc(s.name)}</h3><p>${DT.icon('pin')}${esc(s.address)}, ${esc(s.city)}</p>${s.phone ? `<p>${DT.icon('phone')}<a href="tel:${DT.u.tel(s.phone)}">${esc(s.phone)}</a></p>` : ''}${s.hours ? `<p>${DT.icon('clock')}${esc(s.hours)}</p>` : ''}
         <span class="store-links"><a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.address + ', ' + s.city)}">Chỉ đường ${DT.icon('right')}</a>
         <a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${s.name}, ${s.address}, ${s.city}`)}">Xem &amp; đánh giá trên Google ${DT.icon('right')}</a></span></div></div>`).join('');
       if (list[0]) showMap(list[0]);

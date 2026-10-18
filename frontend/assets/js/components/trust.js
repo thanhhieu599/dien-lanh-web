@@ -71,8 +71,9 @@ DT.trustUI = (() => {
       <div class="rv-list">${items.join('')}</div></div>`;
   }
 
-  // Khối tổng hợp đặt ở trang chủ / giới thiệu / dự án
-  function section({ withReviews = true } = {}) {
+  // Khối tổng hợp đặt ở trang chủ / giới thiệu / dự án: logo đối tác + chứng nhận
+  // (khối "Khách hàng nói gì về chúng tôi" không hiển thị trên website)
+  function section({ withReviews = false } = {}) {
     const html = [logos(), certs(), withReviews ? reviews() : ''].filter(Boolean).join('');
     return html ? `<section class="section section-box trust-section">${html}</section>` : '';
   }

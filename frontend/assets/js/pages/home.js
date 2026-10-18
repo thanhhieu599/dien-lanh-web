@@ -120,7 +120,7 @@ DT.onReady(() => {
     const featured = (DT.projects || []).filter((p) => p.featured).concat((DT.projects || []).filter((p) => !p.featured)).slice(0, 3);
     $('#home-projects').hidden = !featured.length;
     $('#home-projects-list').innerHTML = featured.map(DT.trustUI.projectCard).join('');
-    $('#home-trust').innerHTML = DT.trustUI.section({ withReviews: false });
+    $('#home-trust').innerHTML = DT.trustUI.section();
   }
 
   // ---------- Tin tức

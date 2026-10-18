@@ -94,7 +94,7 @@ try {
   check(await page.locator('.store-card a[href*="google.com/maps/search"]').count() === 5, 'mỗi cửa hàng có link "Xem & đánh giá trên Google"');
   const stores = await ld('ItemList');
   check(stores?.itemListElement?.length === 5 && stores.itemListElement.every((x) => x.item['@type'] === 'HVACBusiness' && x.item.address?.streetAddress && x.item.openingHoursSpecification), 'dữ liệu có cấu trúc HVACBusiness cho 5 cửa hàng (địa chỉ, giờ mở cửa)');
-  check(await page.locator('[data-trust="reviews"] .rv-card').count() === 3, 'trang cửa hàng: khối đánh giá');
+  check(await page.locator('.rv-card, [data-trust]').count() === 0 && !(await page.locator('main').textContent()).includes('Khách hàng nói gì'), 'trang cửa hàng: không hiện "Khách hàng nói gì về chúng tôi"');
   await page.goto(`${fe}gioi-thieu.html`);
   await page.waitForSelector('[data-trust] .trust-section');
   check(await page.locator('.about-links a[href="du-an.html"]').count() === 1, 'trang Giới thiệu: khối uy tín + link Dự án');
@@ -141,12 +141,17 @@ try {
   await page.waitForSelector('#home-trust .trust-section');
   const ht = await page.locator('#home-trust').textContent();
   check(ht.includes('Công ty Đối Tác A') && !ht.includes('Chị Thảo'), 'trang chủ hiện logo vừa nhập, không hiện đánh giá');
-  // Đánh giá & điểm Google vẫn hiện ở trang Giới thiệu
+  // Khối "Khách hàng nói gì về chúng tôi" không hiện ở bất kỳ trang nào (kể cả khi đã nhập đánh giá trong quản trị)
+  for (const u of ['gioi-thieu.html', 'tam-nhin-su-menh.html', 'du-an.html', 'he-thong-cua-hang.html', 'index.html']) {
+    await page.goto(`${fe}${u}`);
+    await page.waitForSelector('#site-footer footer, footer');
+    await page.waitForTimeout(300);
+    const t = await page.locator('main').textContent();
+    check(await page.locator('.rv-card').count() === 0 && !t.includes('Khách hàng nói gì') && !t.includes('Chị Thảo'), `${u}: không hiện khối đánh giá khách hàng`);
+  }
   await page.goto(`${fe}gioi-thieu.html`);
-  await page.waitForSelector('[data-trust] .rv-card');
-  const gt = await page.locator('[data-trust]').first().textContent();
-  check(gt.includes('4,7') && gt.includes('86 đánh giá') && gt.includes('Chị Thảo'), 'trang Giới thiệu hiện điểm Google & đánh giá vừa nhập');
-  check(await page.locator('[data-trust] .g-links a[href="https://maps.app.goo.gl/test"]').count() >= 1, 'link "Xem trên Google Maps"');
+  await page.waitForSelector('[data-trust] .trust-section');
+  check((await page.locator('[data-trust]').first().textContent()).includes('Công ty Đối Tác A'), 'trang Giới thiệu vẫn hiện logo đối tác vừa nhập');
 
   console.log('Điện thoại');
   const m = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, locale: 'vi-VN' });

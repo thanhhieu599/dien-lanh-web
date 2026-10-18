@@ -335,10 +335,9 @@ try {
   const home = (await shop.locator('.trust-section').textContent())!;
   check(await shop.locator('.tr-logo img').count() === 1 && !home.includes('Khung chờ') && await shop.locator('#home-trust .rv-card').count() === 0 && !home.includes('Nguyễn Văn Khách'), 'trang chủ: logo đối tác, không hiện đánh giá khách hàng');
   await shop.goto(`${fe}gioi-thieu.html`);
-  await shop.waitForSelector('[data-trust] .rv-card');
-  const ts = (await shop.locator('[data-trust]').first().textContent())!;
-  check(ts.includes('4,9') && ts.includes('128 đánh giá') && ts.includes('Nguyễn Văn Khách') && !ts.includes('Khung chờ'), 'trang Giới thiệu: điểm Google, đánh giá thật (không còn khung chờ)');
-  check(await shop.locator('.g-links a[href*="writereview?placeid=ChIJTEST123"]').count() >= 1, 'link "Viết đánh giá" Google theo Place ID');
+  await shop.waitForSelector('[data-trust] .trust-section');
+  const ts = (await shop.locator('main').textContent())!;
+  check(await shop.locator('.tr-logo img').count() === 1 && await shop.locator('.rv-card').count() === 0 && !ts.includes('Khách hàng nói gì') && !ts.includes('Nguyễn Văn Khách'), 'trang Giới thiệu: logo đối tác, không hiện khối đánh giá khách hàng');
 
   section('Dữ liệu lớn (>1000 đơn): báo cáo không bị cắt');
   sql(`insert into public.orders (code, phone, customer, shipping, payment, subtotal, total, created_at)

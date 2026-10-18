@@ -75,8 +75,8 @@ DT.onReady(() => {
       </div>
       ${r.saveYear > 0 ? `<p class="calc-save">${DT.icon('zap')}<span>Chọn Inverter tiết kiệm khoảng <b>${money(r.saveYear)}/năm</b> (dùng ${r.hours} giờ/ngày, ~${fmt(3000)}đ/kWh).</span></p>` : ''}
       <div class="calc-actions">
-        <a class="btn btn-accent" href="#calc-products">Xem máy ${esc(r.hp)} phù hợp</a>
-        <button type="button" class="btn btn-light" id="calc-share">${DT.icon('share')} Chia sẻ kết quả</button>
+        <a class="btn btn-primary" href="#calc-products">Xem máy ${esc(r.hp)} phù hợp</a>
+        <button type="button" class="btn btn-outline" id="calc-share">${DT.icon('share')} Chia sẻ kết quả</button>
       </div>
       <small class="muted">Kết quả tham khảo cho điều kiện thông thường. Đặt lịch khảo sát miễn phí bên dưới để được tính chính xác.</small>
     </div>`;

@@ -83,7 +83,7 @@ function routes(data) {
     for (const s of c.subs) r.push({ src: `danh-muc.html?cat=${c.id}&sub=${s.id}`, out: `danh-muc/${c.id}/${s.id}.html`, data: { qCat: c.id, qSub: s.id }, priority: '0.8' });
   }
   for (const p of data.products.slice(0, LIMIT)) {
-    r.push({ src: `san-pham.html?id=${p.id}`, out: `sp/${p.slug}.html`, data: { qId: String(p.id) }, og: `og/${p.slug}.png`, ogSelector: '#g-main', priority: '0.8', lastmod: p.updated });
+    r.push({ src: `san-pham.html?id=${p.id}`, out: `sp/${p.slug}.html`, data: { qId: String(p.id) }, og: `og/${p.slug}.png`, ogSelector: '#g-main .g-pic', priority: '0.8', lastmod: p.updated });
   }
   for (const p of data.posts) r.push({ src: `bai-viet.html?slug=${p.slug}`, out: `tin-tuc/${p.slug}.html`, data: { qSlug: p.slug }, priority: '0.7', lastmod: p.date });
   for (const p of data.projects || []) r.push({ src: `du-an-chi-tiet.html?slug=${p.slug}`, out: `du-an/${p.slug}.html`, data: { qSlug: p.slug }, priority: '0.7', lastmod: p.updated });

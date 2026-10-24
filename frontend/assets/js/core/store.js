@@ -131,9 +131,10 @@ DT.store = (() => {
     return { ok: true };
   }
   async function logout() {
-    if (be()) await DT.backend.signOut();
+    // Xóa thông tin tài khoản trên máy trước, rồi mới báo máy chủ
     state.user = null; state.myOrders = [];
     save();
+    if (be()) await DT.backend.signOut();
   }
   async function updateProfile(data) {
     if (!state.user) return;

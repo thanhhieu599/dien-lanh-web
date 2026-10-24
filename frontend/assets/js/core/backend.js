@@ -86,9 +86,15 @@ DT.backend = (() => {
     return profile();
   }
 
+  // Đăng xuất: xóa phiên trên máy NGAY (đơn đặt sau đó không bị gắn vào tài khoản cũ, kể cả khi
+  // khách chuyển trang liền hoặc mất mạng), rồi mới báo máy chủ hủy phiên bằng token vừa giữ lại
   async function signOut() {
-    try { await http('/auth/v1/logout', { method: 'POST' }); } catch { /* bỏ qua */ }
+    const token = session?.access_token;
     saveSession(null);
+    if (!token) return;
+    try {
+      await fetch(`${base}/auth/v1/logout`, { method: 'POST', headers: { apikey: cfg.anonKey, Authorization: `Bearer ${token}` } });
+    } catch { /* bỏ qua: phiên trên máy đã xóa */ }
   }
 
   async function profile() {

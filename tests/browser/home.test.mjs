@@ -68,6 +68,22 @@ try {
   await page.waitForSelector('[name=payment]');
   check(await page.locator('[name=payment][value=installment]').count() === 0 && !(await page.locator('main').innerText()).toLowerCase().includes('trả góp'), 'thanh toán: không còn lựa chọn trả góp');
 
+  console.log('Trang sản phẩm: ảnh & chọn theo nhu cầu');
+  await page.goto(`${fe}san-pham.html?id=1031`);
+  await page.waitForSelector('.gallery-thumbs');
+  check(await page.locator('.gallery-thumbs > *').count() >= 5, 'dưới ảnh chính có hàng ô ảnh nhỏ (ít nhất 5 ô)');
+  const vs = await page.$$eval('.pd-variants .variant', (a) => a.map((x) => ({ size: x.querySelector('b').textContent, need: x.querySelector('span')?.textContent || '', active: x.classList.contains('active') })));
+  check(await page.locator('.pd-variants h4').textContent() === 'Chọn theo nhu cầu' && vs.length === 4, `tủ lạnh: "Chọn theo nhu cầu" có 4 dung tích (${vs.map((v) => v.size).join(', ')})`);
+  check(vs.every((v) => /lít$/.test(v.size) && v.need) && vs.filter((v) => v.active).length === 1 && vs.find((v) => v.active).size === '212 lít', 'mỗi ô ghi dung tích + nhu cầu, ô đang xem được chọn');
+  check(vs.map((v) => parseFloat(v.size)).every((n, i, a) => !i || n >= a[i - 1]), 'sắp xếp từ nhỏ đến lớn');
+  await page.locator('.pd-variants .variant', { hasText: '236 lít' }).click();
+  await page.waitForFunction(() => document.querySelector('h1')?.textContent.includes('236'));
+  check((await page.locator('.pd-variants .variant.active b').textContent()) === '236 lít', 'bấm dung tích khác → mở đúng sản phẩm');
+  await page.goto(`${fe}san-pham.html?id=1001`);
+  await page.waitForSelector('.pd-variants');
+  const acv = await page.$$eval('.pd-variants .variant', (a) => a.map((x) => x.innerText.replace(/\n/g, ' ')));
+  check(acv.length === 3 && acv[0].includes('1 HP') && acv[0].includes('Phòng dưới 15 m²'), `máy lạnh: chọn theo công suất & diện tích phòng (${acv.join(' | ')})`);
+
   console.log('Điện thoại');
   const m = await browser.newPage({ viewport: { width: 390, height: 844 } });
   m.on('pageerror', (e) => errors.push(`${m.url()}: ${e.message}`));

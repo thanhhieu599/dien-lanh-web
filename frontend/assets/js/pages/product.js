@@ -35,12 +35,22 @@ DT.onReady(() => {
   // Có backend: đánh giá đã duyệt từ DB (nạp sau). Demo: đánh giá mẫu + đánh giá lưu trên trình duyệt.
   const reviews = () => (DT.backend.enabled ? [] : [...loadUserReviews(), ...DT.api.reviews(p)]);
 
-  // Biến thể: cùng thương hiệu, cùng loại, khác công suất/dung tích
-  // (mỗi công suất/dung tích chỉ hiện 1 lựa chọn, ưu tiên chính sản phẩm đang xem)
-  const variantLabel = (x) => x.attrs.capacity || x.attrs.volume || x.attrs.weight || x.sku;
+  // Chọn theo nhu cầu (như chọn size): các mẫu cùng thương hiệu, cùng loại, khác kích cỡ
+  // - kích cỡ: công suất / dung tích / khối lượng... lấy từ bảng thông số (giá trị cụ thể, vd "236 lít")
+  // - nhu cầu: diện tích phòng / số người dùng (thuộc tính lọc hoặc câu "phù hợp ..." trong đặc điểm nổi bật)
+  const SIZE_KEYS = ['Công suất', 'Dung tích tổng', 'Dung tích', 'Khối lượng', 'Diện tích sử dụng', 'Dung tích bình nước'];
+  const variantLabel = (x) => { const k = SIZE_KEYS.find((key) => x.specs?.[key]); return k ? x.specs[k] : (x.attrs.capacity || x.attrs.volume || x.attrs.weight || ''); };
+  const variantNeed = (x) => {
+    if (x.attrs.room) return `Phòng ${x.attrs.room.replace(/^Dưới/, 'dưới').replace(/^Trên/, 'trên')}`;
+    if (x.attrs.family) return `Gia đình ${x.attrs.family}`;
+    const m = (x.highlights || []).map((h) => /phù hợp (.+)$/i.exec(h)).find(Boolean);
+    return m ? m[1].charAt(0).toUpperCase() + m[1].slice(1) : '';
+  };
+  const sizeNum = (x) => parseFloat(String(variantLabel(x)).replace(',', '.')) || 0;
   const variants = [p, ...DT.products.filter((x) => x.id !== p.id && x.cat === p.cat && x.sub === p.sub && x.brand === p.brand)]
+    .filter((x) => variantLabel(x))
     .filter((x, i, all) => all.findIndex((y) => variantLabel(y) === variantLabel(x)) === i)
-    .sort((a, b) => a.price - b.price);
+    .sort((a, b) => sizeNum(a) - sizeNum(b) || a.price - b.price);
 
   const isAC = p.cat === 'may-lanh';
   const bundle = DT.sales.bundle(p);
@@ -63,8 +73,9 @@ DT.onReady(() => {
     </div>
 
     <div class="gallery">
-      <div class="gallery-main" id="g-main">${DT.productImage(p, 0)}</div>
-      <div class="gallery-thumbs">${p.images.map((_, i) => `<button class="${i === 0 ? 'active' : ''}" data-img="${i}" aria-label="Ảnh ${i + 1}">${DT.productImage(p, i)}</button>`).join('')}</div>
+      <div class="gallery-main" id="g-main"><div class="g-pic">${DT.productImage(p, 0)}</div>${p.images.length > 1 ? `<button class="g-nav prev" data-step="-1" aria-label="Ảnh trước">${DT.icon('left')}</button><button class="g-nav next" data-step="1" aria-label="Ảnh sau">${DT.icon('right')}</button>` : ''}</div>
+      <div class="gallery-thumbs">${p.images.map((_, i) => `<button class="${i === 0 ? 'active' : ''}" data-img="${i}" aria-label="Ảnh ${i + 1}">${DT.productImage(p, i)}</button>`).join('')}${
+        Array.from({ length: Math.max(0, 5 - p.images.length) }, () => `<span class="g-empty" aria-hidden="true">${DT.icon('image')}</span>`).join('')}</div>
       <div class="gallery-feats">
         <div>${DT.icon('shield')}Chính hãng<br>${esc(brand.origin || brand.name)}</div>
         <div>${DT.icon('refresh')}1 đổi 1<br>30 ngày</div>
@@ -76,8 +87,8 @@ DT.onReady(() => {
       <div class="pd-price">
         <div class="price-box"><strong>${money(p.price)}</strong>${p.oldPrice ? `<del>${money(p.oldPrice)}</del><span class="lbl lbl-sale">-${pct}%</span>` : ''}</div>
       </div>
-      ${variants.length > 1 ? `<div class="pd-variants"><h4>${esc(c.filters[0]?.label || 'Phiên bản')}</h4><div class="variant-list">${variants.map((v) => `
-        <a class="variant ${v.id === p.id ? 'active' : ''}" href="${DT.api.url(v)}"><b>${esc(variantLabel(v))}</b><small>${money(v.price)}</small></a>`).join('')}</div></div>` : ''}
+      ${variants.length > 1 ? `<div class="pd-variants"><h4>Chọn theo nhu cầu</h4><div class="variant-list">${variants.map((v) => `
+        <a class="variant ${v.id === p.id ? 'active' : ''}" href="${DT.api.url(v)}" ${v.id === p.id ? 'aria-current="true"' : ''}><b>${esc(variantLabel(v))}</b>${variantNeed(v) ? `<span>${esc(variantNeed(v))}</span>` : ''}<small>${money(v.price)}</small></a>`).join('')}</div></div>` : ''}
       ${isAC ? `<a class="calc-hint" href="tinh-cong-suat-may-lanh.html">${DT.icon('snow')}<span>Chưa chắc công suất phù hợp? <b>Tính công suất theo diện tích phòng</b></span>${DT.icon('right')}</a>` : ''}
       <div class="promo-box">
         <h4>${DT.icon('gift')} Khuyến mãi & ưu đãi</h4>
@@ -168,12 +179,15 @@ DT.onReady(() => {
   $('#sticky-buy').innerHTML = `<button class="btn btn-outline" data-action="add-cart" data-id="${p.id}" data-qty="#qty" aria-label="Thêm vào giỏ hàng">${DT.icon('cart')}</button><button class="btn btn-accent" data-action="buy-now" data-id="${p.id}" data-qty="#qty">Mua ngay • ${money(p.price)}</button>`;
 
   // ---------- Sự kiện
-  $('.gallery-thumbs').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-img]');
-    if (!b) return;
-    $$('.gallery-thumbs button').forEach((x) => x.classList.toggle('active', x === b));
-    $('#g-main').innerHTML = DT.productImage(p, +b.dataset.img);
-  });
+  let curImg = 0;
+  const showImg = (i) => {
+    curImg = (i + p.images.length) % p.images.length;
+    $$('.gallery-thumbs [data-img]').forEach((x) => x.classList.toggle('active', +x.dataset.img === curImg));
+    $('#g-main .g-pic').innerHTML = DT.productImage(p, curImg);
+    $(`.gallery-thumbs [data-img="${curImg}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  };
+  $('.gallery-thumbs').addEventListener('click', (e) => { const b = e.target.closest('[data-img]'); if (b) showImg(+b.dataset.img); });
+  $('#g-main').addEventListener('click', (e) => { const b = e.target.closest('[data-step]'); if (b) showImg(curImg + +b.dataset.step); });
   $('.buy-row').addEventListener('click', (e) => {
     const b = e.target.closest('[data-q]');
     if (!b) return;

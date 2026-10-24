@@ -121,6 +121,11 @@ try {
   await page.goto(`${fe}san-pham.html?id=1020`);
   await page.waitForSelector('#g-main');
   check(await page.locator('#g-main img[src^="data:image/"]').count() === 1 && await page.locator('.gallery-thumbs button').count() === 2, 'website demo hiện ảnh vừa tải');
+  check(await page.locator('.gallery-thumbs .g-empty').count() === 3, 'hàng ảnh nhỏ: 2 ảnh + 3 ô trống chờ thêm ảnh');
+  await page.click('#g-main .g-nav.next');
+  check(await page.locator('.gallery-thumbs button').nth(1).evaluate((b) => b.classList.contains('active')), 'mũi tên trên ảnh lớn chuyển sang ảnh 2');
+  await page.locator('.gallery-thumbs button').first().click();
+  check(await page.locator('.gallery-thumbs button').first().evaluate((b) => b.classList.contains('active')), 'bấm ảnh nhỏ → đổi ảnh lớn');
   await page.goto(`${fe}danh-muc.html?cat=may-lanh`);
   await page.waitForSelector('.product-card, .p-card, [data-id]');
   check(await page.locator('img[src^="data:image/"]').count() >= 1, 'danh sách sản phẩm hiện ảnh thật');

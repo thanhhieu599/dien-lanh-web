@@ -165,11 +165,14 @@ try {
   await page.goto(`${fe}tai-khoan.html`);
   await page.waitForSelector('#logout');
   await page.click('#logout');
+  await page.waitForFunction(() => !localStorage.getItem('dt_auth_v1') && !DT.store.get().user);
   await page.evaluate(() => { DT.store.clearCart(); DT.store.addToCart(1003, 1, { install: true }); });
   await page.goto(`${fe}thanh-toan.html`);
   await page.fill('[name=name]', 'Khách Vãng Lai');
   await page.fill('[name=phone]', '0388000111');
   await page.check('[name=method][value=pickup]');
+  // Đợi phần tóm tắt đơn cập nhật (phí ship = Miễn phí) rồi mới đọc tổng tiền
+  await page.waitForFunction(() => document.querySelector('#ship-fee')?.textContent === 'Miễn phí');
   const pickTotal = Number((await page.locator('#co-summary .sum-total b').textContent())!.replace(/\D/g, ''));
   await page.click('#co-form button[type=submit]');
   await page.waitForURL(/dat-hang-thanh-cong/);

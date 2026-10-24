@@ -26,7 +26,7 @@ const save = async (msg = 'Đã lưu nội dung website') => { await page.click(
 try {
   console.log('Mặc định: website không đổi khi chưa sửa');
   await page.goto(`${fe}index.html`);
-  await page.waitForSelector('#brand-story .bs-stats');
+  await page.waitForSelector('#flash .flash-head', { state: 'attached' }); // đợi trang chủ vẽ xong nội dung
   check((await text('#brand-story')).includes('50.000+') && (await text('#b2b-banner')).includes('Công nợ 30 - 60 ngày') && (await text('#hero-right')).includes('Flash Sale'), 'trang chủ hiện nội dung mặc định');
 
   console.log('Quản trị › Nội dung website');
@@ -69,7 +69,7 @@ try {
 
   console.log('Website nhận nội dung mới');
   await page.goto(`${fe}index.html`);
-  await page.waitForSelector('#brand-story .bs-stats');
+  await page.waitForSelector('#flash .flash-head', { state: 'attached' }); // đợi trang chủ vẽ xong nội dung
   check((await text('#hero-right')).includes('Giờ vàng') && await page.locator('#hero-right .mini-banner').first().evaluate((a) => a.querySelector('b').innerHTML.includes('<br>')), 'ô cạnh banner: tiêu đề mới, xuống dòng đúng');
   check(await page.locator('#brand-story h2 span').textContent() === 'điện lạnh' && (await text('#brand-story')).includes('80.000+'), 'dải giới thiệu: tiêu đề có chữ nhấn mạnh, số liệu mới');
   check((await text('#b2b-banner')).includes('Khảo sát tận nơi trong 24h') && (await text('#b2b-banner')).includes('700+'), 'khối doanh nghiệp: ý & số liệu mới');
@@ -100,7 +100,7 @@ try {
   await page.fill('[name="flash.endsAt"]', local(new Date(Date.now() - 3600000)));
   check(await save(), 'đặt giờ kết thúc trong quá khứ');
   await page.goto(`${fe}index.html`);
-  await page.waitForSelector('#brand-story .bs-stats');
+  await page.waitForSelector('#flash .flash-head', { state: 'attached' }); // đợi trang chủ vẽ xong nội dung
   check(await page.locator('#flash').isHidden(), 'khối Flash Sale tự ẩn khi hết giờ');
 
   console.log('Khôi phục mặc định');
@@ -108,7 +108,7 @@ try {
   await page.click('#ct-reset');
   check(await toast('Đã khôi phục'), 'khôi phục nội dung mặc định');
   await page.goto(`${fe}index.html`);
-  await page.waitForSelector('#brand-story .bs-stats');
+  await page.waitForSelector('#flash .flash-head', { state: 'attached' }); // đợi trang chủ vẽ xong nội dung
   check((await text('#brand-story')).includes('50.000+') && (await text('.flash-head h2')).includes('FLASH SALE') && await page.locator('#flash').isVisible() && !(await text('#hero-right')).includes('Giờ vàng'), 'website về nội dung mặc định');
 
   console.log('Phân quyền');

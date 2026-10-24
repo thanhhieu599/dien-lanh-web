@@ -322,7 +322,8 @@ try {
   section('Website nhận cấu hình mới');
   const shop = await T.newPage();
   await shop.goto(`${fe}index.html`);
-  await shop.waitForSelector('#brand-story .bs-stats');
+  // Trang có sẵn nội dung mặc định trong HTML; đợi dữ liệu từ database về và thay vào
+  await shop.waitForFunction(() => document.querySelector('#brand-story')?.textContent?.includes('15+'), null, { timeout: 8000 }).catch(() => {});
   check((await shop.locator('#brand-story').textContent())!.includes('15+') && (await shop.locator('.newsletter').textContent())!.includes('Nhận bảng giá dự án hàng tháng'), 'website đọc Nội dung website từ database');
   await shop.goto(`${fe}index.html`);
   const cheap = Number(sql(`select id from public.products where active and price < 1000000 order by price limit 1`));

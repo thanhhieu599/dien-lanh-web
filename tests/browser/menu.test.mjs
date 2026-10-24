@@ -28,7 +28,12 @@ try {
   check((await page.locator('.topbar-right').textContent()).includes('Tra cứu đơn hàng') && !(await page.locator('.topbar-right').textContent()).includes('Tin tức'), 'thanh trên cùng chỉ giữ tiện ích, không trùng menu');
 
   const cats = await page.evaluate(() => DT.categories.length);
-  check(await sub('products').count() === cats + 1, `Sản phẩm ▾: ${cats} danh mục + Thương hiệu`);
+  const lv1 = page.locator('[data-mm="products"] + .mm-sub > a, [data-mm="products"] + .mm-sub > .mm-item > a');
+  check(await lv1.count() === cats + 1, `Sản phẩm ▾ cấp 1: ${cats} danh mục + Thương hiệu`);
+  const tree = await page.evaluate(() => DT.categories.map((c) => ({ name: c.name, subs: c.subs.filter((s) => DT.products.some((p) => p.cat === c.id && p.sub === s.id)).map((s) => s.name) })));
+  const shown = await page.$$eval('[data-mm="products"] + .mm-sub > .mm-item', (items) => items.map((it) => ({ name: it.querySelector(':scope > a span').textContent, subs: [...it.querySelectorAll('.mm-sub2 a:not(.mm-all)')].map((a) => a.textContent) })));
+  check(JSON.stringify(shown) === JSON.stringify(tree), `Sản phẩm ▾ cấp 2: đúng loại con của từng danh mục (${tree.map((t) => t.subs.length).join('/')})`);
+  check(await page.locator('.mm-sub2 .mm-sub2').count() === 0, 'tối đa 2 cấp');
   const svcs = await page.evaluate(() => DT.services.length);
   check(await sub('services').count() === svcs + 1, `Dịch vụ ▾: ${svcs} dịch vụ (từ quản trị) + Tính công suất`);
   check((await sub('b2b').allTextContents()).join('|') === 'Báo giá dự án|Dự án tiêu biểu', 'Doanh nghiệp ▾: Báo giá dự án, Dự án tiêu biểu');
@@ -45,9 +50,26 @@ try {
   await page.hover('[data-mm="products"]');
   await page.waitForTimeout(250);
   check(await sub('products').first().isVisible(), 'rê chuột vào Sản phẩm → hiện menu con');
-  await sub('products').first().click();
+  const it2 = page.locator('[data-mm="products"] + .mm-sub > .mm-item').nth(1);
+  check(!(await it2.locator('.mm-sub2').isVisible()), 'cấp 2 ẩn khi chưa rê vào danh mục');
+  await it2.locator(':scope > a').hover();
+  await page.waitForTimeout(250);
+  check(await it2.locator('.mm-sub2').isVisible(), 'rê chuột vào danh mục → hiện loại con bên phải');
+  const target = it2.locator('.mm-sub2 a').first();
+  const bx = await target.boundingBox();
+  await page.mouse.move(bx.x + 10, bx.y + bx.height / 2, { steps: 10 });
+  await page.waitForTimeout(150);
+  check(await target.isVisible(), 'rê chuột sang bảng loại con không bị đóng');
+  await target.click();
   await page.waitForSelector('.pcard');
-  check(/danh-muc\.html\?cat=/.test(page.url()) && await active() === 'Sản phẩm', 'mở danh mục từ menu, tô sáng "Sản phẩm"');
+  check(/danh-muc\.html\?cat=tu-lanh&sub=/.test(page.url()) && await active() === 'Sản phẩm', 'bấm loại con → mở đúng trang loại con, tô sáng "Sản phẩm"');
+  await page.hover('[data-mm="products"]');
+  await page.waitForTimeout(250);
+  await page.locator('[data-mm="products"] + .mm-sub > .mm-item').first().hover();
+  await page.waitForTimeout(200);
+  await page.locator('[data-mm="products"] + .mm-sub > .mm-item').first().locator('.mm-all').click();
+  await page.waitForSelector('.pcard');
+  check(/danh-muc\.html\?cat=may-lanh$/.test(page.url()), '"Xem tất cả" mở trang danh mục');
   // Bàn phím: Tab vào mục có menu con cũng mở menu con
   await page.focus('[data-mm="about"]');
   await page.waitForTimeout(250);

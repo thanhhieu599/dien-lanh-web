@@ -211,6 +211,15 @@ table { border-collapse: collapse; width: 100%; }
 .mm-sub a { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; font-size: 14px; color: var(--text); }
 .mm-sub a .ic { width: 18px; height: 18px; flex: none; color: var(--primary); }
 .mm-sub a:hover { background: var(--primary-soft); color: var(--primary); }
+/* Cấp 2 (loại con của danh mục) */
+.mm-item { position: relative; }
+.mm-item > a > .ic:last-child { width: 15px; height: 15px; margin-left: auto; color: var(--muted); }
+.mm-item:hover > a, .mm-item:focus-within > a { background: var(--primary-soft); color: var(--primary); }
+.mm-sub2 { position: absolute; top: -8px; left: calc(100% + 9px); min-width: 240px; padding: 8px; background: #fff; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); opacity: 0; visibility: hidden; transition: opacity .12s, visibility 0s linear .18s; }
+.mm-sub2::before { content: ''; position: absolute; top: 0; bottom: 0; left: -12px; width: 12px; } /* cầu nối để rê chuột sang không bị mất */
+.mm-item:hover > .mm-sub2, .mm-item:focus-within > .mm-sub2 { z-index: 2; opacity: 1; visibility: visible; transition: opacity .12s, visibility 0s; }
+.mm-sub2 a { padding: 8px 10px; }
+.mm-sub2 .mm-all { margin-top: 4px; color: var(--primary); font-weight: 600; font-size: 13.5px; }
 
 /* Trang chủ: dải "Về chúng tôi" dẫn tới Tầm nhìn & Sứ mệnh */
 .brand-story { position: relative; overflow: hidden; isolation: isolate; display: grid; grid-template-columns: 1.3fr auto auto; align-items: center; gap: 28px; margin-top: 16px; padding: 22px 28px; border-radius: var(--radius); color: var(--dark); background: var(--primary-soft); border: 1px solid var(--primary-line); }

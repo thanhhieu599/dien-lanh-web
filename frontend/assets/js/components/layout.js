@@ -33,7 +33,9 @@ DT.layout = (() => {
     return [
       { key: 'home', label: 'Trang chủ', href: 'index.html' },
       { key: 'products', label: 'Sản phẩm', href: 'tim-kiem.html', sub: [
-        ...DT.categories.map((c) => ({ label: c.name, href: DT.api.catUrl(c.id), icon: c.icon })),
+        // Cấp 2: loại con của từng danh mục (chỉ loại đang có sản phẩm), hiện khi rê chuột vào danh mục
+        ...DT.categories.map((c) => ({ label: c.name, href: DT.api.catUrl(c.id), icon: c.icon,
+          children: c.subs.filter((s) => DT.products.some((p) => p.cat === c.id && p.sub === s.id)).map((s) => ({ label: s.name, href: DT.api.catUrl(c.id, s.id) })) })),
         { label: 'Thương hiệu', href: DT.api.brandUrl(), icon: 'tag' },
       ] },
       { key: 'promo', label: 'Khuyến mãi', href: 'khuyen-mai.html', cls: 'hot' },
@@ -58,6 +60,14 @@ DT.layout = (() => {
       { key: 'contact', label: 'Liên hệ', href: 'lien-he.html' },
     ];
   }
+  // Một dòng trong menu xổ; dòng có cấp 2 (loại con) mở bảng bên phải khi rê chuột / Tab
+  function mmItem(s) {
+    const link = `<a href="${s.href}">${DT.icon(s.icon)}<span>${esc(s.label)}</span>${s.children?.length ? DT.icon('right') : ''}</a>`;
+    if (!s.children?.length) return link;
+    return `<div class="mm-item">${link}<div class="mm-sub2">${s.children.map((c) => `<a href="${c.href}">${esc(c.label)}</a>`).join('')}
+      <a class="mm-all" href="${s.href}">Xem tất cả ${esc(s.label.toLowerCase())}</a></div></div>`;
+  }
+
   // Trang đang xem -> mục menu được tô sáng
   const MM_OF = {
     home: 'home', category: 'products', search: 'products', product: 'products', brands: 'products', compare: 'products',
@@ -94,7 +104,7 @@ DT.layout = (() => {
       </div>
       <nav class="mainnav" aria-label="Menu chính"><div class="container"><ul>
         ${mainMenu().map((m) => `<li class="${m.sub ? 'has-sub' : ''}"><a href="${m.href}" data-mm="${m.key}" class="${m.cls || ''}">${esc(m.label)}${m.sub ? DT.icon('down') : ''}</a>${m.sub
-          ? `<div class="mm-sub">${m.sub.map((s) => `<a href="${s.href}">${DT.icon(s.icon)}<span>${esc(s.label)}</span></a>`).join('')}</div>` : ''}</li>`).join('')}
+          ? `<div class="mm-sub">${m.sub.map(mmItem).join('')}</div>` : ''}</li>`).join('')}
       </ul></div></nav>
     </header>
     <div class="drawer" id="drawer" aria-hidden="true">

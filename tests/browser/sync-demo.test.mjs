@@ -84,7 +84,7 @@ try {
   check((await text('.benefits')).includes('Miễn phí đơn từ 3 triệu'), 'dải cam kết: ngưỡng miễn phí ship mới (3 triệu)');
   check((await text('main')).includes('Banner đồng bộ từ quản trị'), 'trang chủ: banner mới');
   check((await text('#hero-right')).includes('chỉ từ 120K'), 'trang chủ: giá vệ sinh theo mục Dịch vụ (120K)');
-  check(!(await text('.catnav')).includes(hideCatName), 'menu: danh mục đã ẩn không hiện');
+  check(!(await page.locator('.mainnav').innerHTML()).includes(hideCatName), 'menu: danh mục đã ẩn không hiện');
   const st = await page.evaluate((id) => ({ hidden: DT.products.filter((p) => p.cat === id).length, p2: !!DT.api.productById(1002), p1: DT.api.productById(1001) }), hideCat);
   check(st.hidden === 0, 'sản phẩm của danh mục đã ẩn không hiện');
   check(!st.p2, 'sản phẩm đã ẩn (1002) không hiện');

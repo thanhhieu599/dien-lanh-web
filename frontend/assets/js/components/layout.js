@@ -27,16 +27,51 @@ DT.layout = (() => {
     </div>`;
   }
 
+  // Menu chính, sắp theo hành trình mua hàng: xem sản phẩm -> ưu đãi -> dịch vụ -> doanh nghiệp -> tư vấn -> về công ty -> liên hệ.
+  // Danh mục, dịch vụ lấy từ dữ liệu (quản trị thêm / ẩn là menu tự cập nhật).
+  function mainMenu() {
+    return [
+      { key: 'home', label: 'Trang chủ', href: 'index.html' },
+      { key: 'products', label: 'Sản phẩm', href: 'tim-kiem.html', sub: [
+        ...DT.categories.map((c) => ({ label: c.name, href: DT.api.catUrl(c.id), icon: c.icon })),
+        { label: 'Thương hiệu', href: DT.api.brandUrl(), icon: 'tag' },
+      ] },
+      { key: 'promo', label: 'Khuyến mãi', href: 'khuyen-mai.html', cls: 'hot' },
+      { key: 'services', label: 'Dịch vụ', href: 'dich-vu.html', sub: [
+        ...DT.services.map((s) => ({ label: s.name, href: `dich-vu.html?svc=${s.id}`, icon: s.icon })),
+        { label: 'Tính công suất máy lạnh', href: 'tinh-cong-suat-may-lanh.html', icon: 'snow' },
+      ] },
+      { key: 'b2b', label: 'Doanh nghiệp', href: 'bao-gia-du-an.html', sub: [
+        { label: 'Báo giá dự án', href: 'bao-gia-du-an.html', icon: 'file' },
+        { label: 'Dự án tiêu biểu', href: 'du-an.html', icon: 'building' },
+      ] },
+      { key: 'news', label: 'Tin tức', href: 'tin-tuc.html', sub: [
+        { label: 'Tin tức & kinh nghiệm', href: 'tin-tuc.html', icon: 'file' },
+        { label: 'Hỏi đáp thường gặp', href: 'hoi-dap.html', icon: 'chat' },
+      ] },
+      { key: 'about', label: 'Giới thiệu', href: 'gioi-thieu.html', sub: [
+        { label: 'Giới thiệu công ty', href: 'gioi-thieu.html', icon: 'shield' },
+        { label: 'Tầm nhìn & Sứ mệnh', href: 'tam-nhin-su-menh.html', icon: 'star' },
+        { label: 'Hệ thống cửa hàng', href: 'he-thong-cua-hang.html', icon: 'pin' },
+        { label: 'Chính sách', href: DT.api.policyUrl('bao-hanh'), icon: 'refresh' },
+      ] },
+      { key: 'contact', label: 'Liên hệ', href: 'lien-he.html' },
+    ];
+  }
+  // Trang đang xem -> mục menu được tô sáng
+  const MM_OF = {
+    home: 'home', category: 'products', search: 'products', product: 'products', brands: 'products', compare: 'products',
+    'khuyen-mai': 'promo', services: 'services', calculator: 'services', b2b: 'b2b', projects: 'b2b', project: 'b2b',
+    blog: 'news', article: 'news', faq: 'news', about: 'about', vision: 'about', stores: 'about', policy: 'about', contact: 'contact',
+  };
+
   function header() {
     return `
     <div class="topbar"><div class="container">
       <div class="topbar-left"><a href="${DT.api.brandUrl()}" class="brand-link">${DT.icon('tag')} Thương hiệu</a></div>
       <nav class="topbar-right">
-        <a href="tam-nhin-su-menh.html" class="about-link">${DT.icon('star')} Về chúng tôi</a>
         <a href="tra-cuu-don-hang.html">${DT.icon('truck')} Tra cứu đơn hàng</a>
         <a href="he-thong-cua-hang.html">${DT.icon('pin')} Hệ thống cửa hàng</a>
-        <a href="dich-vu.html">${DT.icon('tool')} Dịch vụ điện lạnh</a>
-        <a href="tin-tuc.html">${DT.icon('file')} Tin tức</a>
         <a href="bao-gia-du-an.html" class="b2b-link">${DT.icon('building')} Khách hàng doanh nghiệp</a>
       </nav>
     </div></div>
@@ -57,11 +92,10 @@ DT.layout = (() => {
         <a class="h-action" href="tai-khoan.html" id="h-account">${DT.icon('user')}<span><small>Tài khoản</small><b id="h-user">Đăng nhập</b></span></a>
         <a class="h-action h-cart" href="gio-hang.html">${DT.icon('cart')}<em class="badge" id="cart-count">0</em><span><small>Giỏ hàng</small><b>Của bạn</b></span></a>
       </div>
-      <nav class="catnav"><div class="container">
-        ${DT.categories.map((c) => `<a href="${DT.api.catUrl(c.id)}" data-nav="${c.id}">${DT.icon(c.icon)}${esc(c.short)}</a>`).join('')}
-        <a href="khuyen-mai.html" class="hot" data-nav="khuyen-mai">${DT.icon('percent')}Khuyến mãi</a>
-        <a href="tam-nhin-su-menh.html" class="cn-vision" data-nav="vision"><span class="cn-dot" aria-hidden="true"></span>Tầm nhìn &amp; Sứ mệnh</a>
-      </div></nav>
+      <nav class="mainnav" aria-label="Menu chính"><div class="container"><ul>
+        ${mainMenu().map((m) => `<li class="${m.sub ? 'has-sub' : ''}"><a href="${m.href}" data-mm="${m.key}" class="${m.cls || ''}">${esc(m.label)}${m.sub ? DT.icon('down') : ''}</a>${m.sub
+          ? `<div class="mm-sub">${m.sub.map((s) => `<a href="${s.href}">${DT.icon(s.icon)}<span>${esc(s.label)}</span></a>`).join('')}</div>` : ''}</li>`).join('')}
+      </ul></div></nav>
     </header>
     <div class="drawer" id="drawer" aria-hidden="true">
       <div class="drawer-panel">
@@ -259,8 +293,7 @@ DT.layout = (() => {
       if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
     });
     const page = document.body.dataset.page;
-    const cat = DT.u.param('cat');
-    $$(`.catnav [data-nav="${cat || page}"]`).forEach((a) => a.classList.add('active'));
+    $$(`.mainnav [data-mm="${MM_OF[page]}"]`).forEach((a) => a.classList.add('active'));
     $$(`.mnav [data-m="${page}"]`).forEach((a) => a.classList.add('active'));
 
     const top = $('#to-top');

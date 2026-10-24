@@ -1,5 +1,5 @@
 // Kiểm thử công cụ tăng chuyển đổi (chế độ DEMO): báo giá doanh nghiệp, khung chat + giờ gọi lại,
-// tính công suất máy lạnh, combo mua kèm, gợi ý ở giỏ hàng, giao diện điện thoại.
+// tính công suất máy lạnh, gợi ý ở giỏ hàng, giao diện điện thoại.
 // Chạy: node tests/browser/sales.test.mjs
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -57,28 +57,13 @@ try {
   check(!(await page.locator('#chat-panel').evaluate((el) => el.classList.contains('show'))), 'đóng khung chat');
   await page.evaluate(() => { DT.config.messenger = 'https://m.me/test'; });
 
-  console.log('Trang sản phẩm: báo giá doanh nghiệp & combo mua kèm');
+  console.log('Trang sản phẩm: báo giá doanh nghiệp');
   await page.evaluate(() => { localStorage.removeItem('dt_leads_v1'); DT.store.clearCart(); });
   await page.goto(`${fe}san-pham.html?id=1001`);
   await page.waitForSelector('.promo-box [data-quote]');
   check(await page.locator('.calc-hint[href="tinh-cong-suat-may-lanh.html"]').count() === 1, 'máy lạnh có link "Tính công suất"');
   const p = await page.evaluate(() => { const x = DT.api.productById(1001); return { price: x.price, sku: x.sku }; });
-  // Combo
-  const items = page.locator('#bundle .bundle-item');
-  check(await items.count() === 3, `máy 1 HP treo tường: 3 phụ kiện gợi ý (${await items.count()})`);
-  check(await page.locator('#bundle-add').isDisabled(), 'chưa chọn phụ kiện → nút combo bị khóa');
-  const acc = await page.evaluate(() => [...document.querySelectorAll('#bundle input')].map((i) => DT.api.productById(Number(i.value))).map((x) => ({ id: x.id, price: x.price, sku: x.sku })));
-  check(!acc.some((a) => a.sku === 'DT1066'), 'máy 1 HP không gợi ý ống đồng 6/12 (dành cho 2 HP)');
-  await items.nth(0).locator('input').check();
-  await items.nth(2).locator('input').check();
-  await page.fill('#qty', '2');
-  await page.locator('#qty').dispatchEvent('input');
-  const want = p.price * 2 + acc[0].price + acc[2].price;
-  check((await page.locator('#bundle-total').textContent()) === money(want), `tổng combo = 2 máy + 2 phụ kiện (${money(want)})`);
-  await page.click('#bundle-add');
-  const c1 = await cart();
-  check(c1.length === 3 && c1.find((i) => i.id === 1001)?.qty === 2 && c1.some((i) => i.id === acc[0].id) && c1.some((i) => i.id === acc[2].id), 'thêm combo → giỏ có máy (x2) + 2 phụ kiện');
-  check(await page.locator('#bundle input:checked').count() === 0 && await page.locator('#bundle-add').isDisabled(), 'sau khi thêm: bỏ chọn, khóa nút');
+  check(await page.locator('#bundle, .bundle').count() === 0, 'trang sản phẩm không còn khối "Mua kèm để lắp đặt trọn gói"');
   // Báo giá doanh nghiệp
   await page.click('.promo-box [data-quote]');
   await page.waitForSelector('.quote-form');
@@ -109,13 +94,20 @@ try {
   console.log('Máy 2 HP & máy không phải máy lạnh');
   await page.goto(`${fe}san-pham.html?id=1003`);
   await page.waitForSelector('.promo-box [data-quote]');
-  const sk3 = await page.evaluate(() => [...document.querySelectorAll('#bundle input')].map((i) => DT.api.productById(Number(i.value)).sku));
-  check(sk3.includes('DT1066') && !sk3.includes('DT1065'), `máy 2 HP gợi ý ống đồng 6/12 (${sk3.join(', ')})`);
+  check(await page.locator('#bundle').count() === 0, 'máy 2 HP: không có khối mua kèm');
   await page.goto(`${fe}san-pham.html?id=1025`);
   await page.waitForSelector('.promo-box [data-quote]');
-  check(await page.locator('#bundle').count() === 0 && await page.locator('.calc-hint').count() === 0, 'tủ lạnh: không có combo & link tính công suất, vẫn có báo giá DN');
+  check(await page.locator('#bundle').count() === 0 && await page.locator('.calc-hint').count() === 0, 'tủ lạnh: không có link tính công suất, vẫn có báo giá DN');
 
   console.log('Giỏ hàng: gợi ý mua kèm & báo giá sỉ');
+  // Giỏ: 2 máy 1 HP + 2 trong 3 phụ kiện gợi ý (còn thiếu 1 để kiểm tra gợi ý mua kèm)
+  await page.evaluate(() => {
+    DT.store.clearCart();
+    const acc = DT.sales.bundle(DT.api.productById(1001)).map((b) => b.product.id);
+    DT.store.addToCart(1001, 2);
+    DT.store.addToCart(acc[0], 1);
+    DT.store.addToCart(acc[2], 1);
+  });
   await page.goto(`${fe}gio-hang.html`);
   await page.waitForSelector('.cart-item');
   check(await page.locator('.cart-xsell [data-xsell]').count() === 1, 'gợi ý 1 phụ kiện còn thiếu');

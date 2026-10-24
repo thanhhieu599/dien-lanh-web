@@ -84,6 +84,22 @@ try {
   const acv = await page.$$eval('.pd-variants .variant', (a) => a.map((x) => x.innerText.replace(/\n/g, ' ')));
   check(acv.length === 3 && acv[0].includes('1 HP') && acv[0].includes('Phòng dưới 15 m²'), `máy lạnh: chọn theo công suất & diện tích phòng (${acv.join(' | ')})`);
 
+  console.log('Không còn phần trượt theo khi cuộn (trừ thanh đầu trang)');
+  await page.evaluate(() => { DT.store.clearCart(); DT.store.addToCart(1001, 1); });
+  for (const u of ['danh-muc.html?cat=may-lanh', 'san-pham.html?id=1003', 'gio-hang.html', 'thanh-toan.html', 'he-thong-cua-hang.html', 'tinh-cong-suat-may-lanh.html', 'hoi-dap.html', 'du-an-chi-tiet.html?slug=dieu-hoa-van-phong-6-tang']) {
+    await page.goto(`${fe}${u}`);
+    await page.waitForSelector('#site-footer footer, footer');
+    await page.waitForTimeout(300);
+    const moving = await page.evaluate(() => [...document.querySelectorAll('body *')].filter((e) => {
+      const st = getComputedStyle(e);
+      return (st.position === 'sticky' && !e.classList.contains('header')) || (['auto', 'scroll'].includes(st.overflowY) && e.scrollHeight > e.clientHeight + 2 && e.offsetParent && !e.closest('.modal-wrap, .chat-panel, #drawer'));
+    }).map((e) => e.className));
+    check(moving.length === 0, `${u}: không có phần trượt theo / thanh cuộn riêng${moving.length ? ` (${moving.join(', ')})` : ''}`);
+  }
+  await page.goto(`${fe}san-pham.html?id=1001`);
+  await page.waitForSelector('.pd-info');
+  check(await page.locator('#bundle, .bundle').count() === 0 && !(await page.locator('.pd-info').innerText()).includes('Mua kèm'), 'trang sản phẩm không còn khối "Mua kèm để lắp đặt trọn gói"');
+
   console.log('Điện thoại');
   const m = await browser.newPage({ viewport: { width: 390, height: 844 } });
   m.on('pageerror', (e) => errors.push(`${m.url()}: ${e.message}`));

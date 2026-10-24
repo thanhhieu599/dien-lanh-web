@@ -108,17 +108,18 @@ try {
   for (const id of ids) await page.click(`.pcard[data-id="${id}"] [data-action="compare"]`, { force: true });
   await page.goto(`${fe}so-sanh.html`);
   await page.waitForSelector('.compare-table .cp-x');
+  const PRIMARY = await page.evaluate(() => { const d = document.createElement('div'); d.style.color = 'var(--primary)'; document.body.append(d); const c = getComputedStyle(d).color; d.remove(); return c; });
   const st = await page.evaluate(() => {
     const x = document.querySelector('.compare-table .cp-x'); const td = document.querySelector('.compare-table .cp-head');
     return { color: getComputedStyle(x).color, bg: getComputedStyle(x).backgroundColor, td: getComputedStyle(td).display, tdBg: getComputedStyle(td).backgroundColor };
   });
   check(st.color !== st.bg && st.color !== 'rgb(255, 255, 255)', `nút X có màu nhìn thấy được (${st.color})`);
-  check(st.td === 'table-cell' && st.tdBg !== 'rgb(11, 94, 215)', 'hàng sản phẩm hiển thị đúng dạng bảng, không bị nền xanh');
+  check(st.td === 'table-cell' && st.tdBg !== PRIMARY, 'hàng sản phẩm hiển thị đúng dạng bảng, không bị nền xanh');
   await page.click('.compare-table .cp-x');
   await page.waitForTimeout(300);
   check(await page.locator('.compare-table .cp-head').count() === 1, 'bấm X → bỏ sản phẩm khỏi so sánh');
   const chat = await page.evaluate(() => getComputedStyle(document.querySelector('.chat-panel .cp-head')).backgroundColor);
-  check(chat === 'rgb(11, 94, 215)', 'khung chat giữ nguyên giao diện');
+  check(chat === PRIMARY, 'khung chat giữ nguyên giao diện');
 
   console.log('Điện thoại');
   const mp = await browser.newPage({ viewport: { width: 390, height: 844 } });

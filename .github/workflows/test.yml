@@ -52,6 +52,8 @@ jobs:
         run: node tests/browser/sync-demo.test.mjs
       - name: Menu chính
         run: node tests/browser/menu.test.mjs
+      - name: Trang chủ (banner hình, khối danh mục 1 hàng) & bỏ trả góp / miễn phí lắp đặt
+        run: node tests/browser/home.test.mjs
       - name: Vận hành & quản trị (GA4/Pixel, phân quyền, MISA, bảo trì, ảnh sản phẩm)
         run: node --experimental-strip-types --no-warnings tests/browser/ops.test.ts
       - name: Vận hành & quản trị - chế độ demo

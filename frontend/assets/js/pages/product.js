@@ -12,7 +12,7 @@ DT.onReady(() => {
   DT.analytics?.viewItem(p);
   // Ảnh chia sẻ (Zalo/Facebook): ảnh thật nếu có, không thì ảnh chụp sẵn khi build (og/<slug>.png)
   const ogImage = /^https?:/.test(p.images[0]) ? p.images[0] : DT.SEO?.prettyUrls ? `og/${p.slug}.png` : null;
-  DT.u.setMeta({ title: p.name, description: `${p.name} chính hãng giá ${money(p.price)}. ${p.short}. Giao nhanh, lắp đặt, trả góp 0%.`, canonical: DT.api.url(p), image: ogImage, type: 'product' });
+  DT.u.setMeta({ title: p.name, description: `${p.name} chính hãng giá ${money(p.price)}. ${p.short}. Giao nhanh, lắp đặt chuẩn hãng.`, canonical: DT.api.url(p), image: ogImage, type: 'product' });
   $('#crumb').outerHTML = DT.ui.breadcrumb([
     { label: c.name, href: `${DT.api.catUrl(c.id)}` },
     ...(sub.id ? [{ label: sub.name, href: `${DT.api.catUrl(c.id, sub.id)}` }] : []),
@@ -83,9 +83,7 @@ DT.onReady(() => {
         <h4>${DT.icon('gift')} Khuyến mãi & ưu đãi</h4>
         <ul>
           ${p.gift ? `<li><i>1</i><span>${esc(p.gift)}</span></li>` : ''}
-          ${p.freeInstall ? `<li><i>${p.gift ? 2 : 1}</i><span>Miễn phí công lắp đặt tiêu chuẩn (tiết kiệm ${money(DT.config.installFee)})</span></li>` : ''}
           ${coupon ? `<li><i>${DT.icon('check')}</i><span>Nhập mã <b>${esc(coupon.code)}</b> ${esc(couponText(coupon))}</span></li>` : ''}
-          <li><i>${DT.icon('check')}</i><span>Trả góp 0% qua thẻ tín dụng, duyệt nhanh 15 phút</span></li>
           <li><i>${DT.icon('check')}</i><span>Doanh nghiệp mua số lượng: <a class="link" href="bao-gia-du-an.html?sku=${encodeURIComponent(p.sku)}" data-quote>nhận báo giá riêng</a></span></li>
         </ul>
       </div>
@@ -147,7 +145,7 @@ DT.onReady(() => {
         <div id="review-list">${DT.backend.enabled ? '<p class="muted">Đang tải đánh giá…</p>' : rv.map(reviewHtml).join('')}</div>
       </section>
       <section class="pd-section faq"><h2>Câu hỏi thường gặp</h2>
-        <details><summary>Giá đã bao gồm lắp đặt chưa?</summary><p>${p.freeInstall ? 'Sản phẩm được miễn phí công lắp đặt tiêu chuẩn. Vật tư phát sinh (ống đồng ngoài 3m, giá đỡ…) tính theo bảng giá niêm yết.' : 'Giá chưa gồm công lắp đặt. Bạn có thể chọn thêm dịch vụ lắp đặt khi đặt hàng.'}</p></details>
+        <details><summary>Giá đã bao gồm lắp đặt chưa?</summary><p>${p.freeInstall ? 'Giá đã gồm công lắp đặt tiêu chuẩn. Vật tư phát sinh (ống đồng ngoài 3m, giá đỡ…) tính theo bảng giá niêm yết.' : 'Giá chưa gồm công lắp đặt. Bạn có thể chọn thêm dịch vụ lắp đặt khi đặt hàng.'}</p></details>
         <details><summary>Bao lâu thì nhận được hàng?</summary><p>Nội thành TP.HCM, Bình Dương, Đồng Nai giao trong 2 - 4 giờ. Tỉnh khác 2 - 5 ngày.</p></details>
         <details><summary>Có xuất hóa đơn VAT cho công ty không?</summary><p>Có. Nhập thông tin công ty ở bước thanh toán, hóa đơn điện tử được gửi qua email trong 24 giờ.</p></details>
         <details><summary>Bảo hành như thế nào?</summary><p>Bảo hành chính hãng ${esc(p.warranty)}, kỹ thuật viên đến tận nơi. Gọi ${esc(DT.config.hotline)} để được hỗ trợ.</p></details>

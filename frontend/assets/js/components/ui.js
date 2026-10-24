@@ -25,7 +25,6 @@ DT.ui = (() => {
         <a href="${url}" class="pcard-img" aria-label="${esc(p.name)}">${DT.productImage(p, 0)}</a>
         <div class="pcard-labels">
           ${pct ? `<span class="lbl lbl-sale">-${pct}%</span>` : ''}
-          ${p.installment ? '<span class="lbl lbl-ins">Trả góp 0%</span>' : ''}
         </div>
         ${badge ? `<span class="lbl lbl-${badge[1]} pcard-badge">${badge[0]}</span>` : ''}
         <div class="pcard-actions">
@@ -33,7 +32,6 @@ DT.ui = (() => {
           <button class="icon-btn ${s.compare.includes(p.id) ? 'active' : ''}" data-action="compare" data-id="${p.id}" title="So sánh" aria-label="So sánh">${DT.icon('compare')}</button>
           <button class="icon-btn" data-action="quickview" data-id="${p.id}" title="Xem nhanh" aria-label="Xem nhanh">${DT.icon('eye')}</button>
         </div>
-        ${p.freeInstall ? `<span class="pcard-install">${DT.icon('tool')} Miễn phí lắp đặt</span>` : ''}
       </div>
       <div class="pcard-body">
         ${chips.length ? `<div class="pcard-chips">${chips.map((c) => `<span>${esc(c)}</span>`).join('')}</div>` : ''}

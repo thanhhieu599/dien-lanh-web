@@ -66,7 +66,12 @@ try {
   await adminSave('products/1002', { active: false }, 'ẩn sản phẩm 1002');
   await adminSave(`categories/${hideCat}`, { active: false }, `ẩn danh mục "${hideCatName}"`);
   await adminSave('brands/thuong-hieu', { name: 'Hãng Đồng Bộ' }, 'đổi tên thương hiệu');
-  await adminSave('banners/1', { title: 'Banner đồng bộ từ quản trị' }, 'sửa banner trang chủ');
+  await page.goto(`${admin}#/banners/1`);
+  await page.waitForSelector('#frm [data-img-field="image"]');
+  const bannerPng = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = 1200; c.height = 780; const g = c.getContext('2d'); g.fillStyle = '#134682'; g.fillRect(0, 0, 1200, 780); return c.toDataURL('image/png').split(',')[1]; });
+  await page.locator('#frm [data-img-field="image"] input[type=file]').setInputFiles({ name: 'banner.png', mimeType: 'image/png', buffer: Buffer.from(bannerPng, 'base64') });
+  await page.waitForSelector('#frm [data-img-field="image"] .ad-img-prev img');
+  await adminSave('banners/1', { title: 'Banner đồng bộ từ quản trị', href: 'khuyen-mai.html' }, 'tải ảnh & sửa banner trang chủ');
   await adminSave(`posts/${firstPost}`, { title: 'Bài viết đồng bộ từ quản trị' }, 'sửa bài viết');
   await adminSave('policies/new', { key: 'kiem-tra', title: 'Chính sách kiểm tra đồng bộ', body: '<p>Nội dung chính sách mới.</p>' }, 'thêm chính sách');
   await adminSave('stores/1', { name: 'Showroom Đồng Bộ' }, 'sửa tên cửa hàng');
@@ -82,7 +87,8 @@ try {
   check((await text('.h-hotline')).includes('1800 1234'), 'đầu trang: hotline mới');
   check((await text('footer')).includes('1800 1234') && !(await text('footer')).includes('Doanh nghiệp: 0909'), 'chân trang: hotline mới, ẩn hotline doanh nghiệp đã xóa');
   check((await text('.benefits')).includes('Miễn phí đơn từ 3 triệu'), 'dải cam kết: ngưỡng miễn phí ship mới (3 triệu)');
-  check((await text('main')).includes('Banner đồng bộ từ quản trị'), 'trang chủ: banner mới');
+  const slide1 = page.locator('#slider .slide').first();
+  check(await slide1.getAttribute('aria-label') === 'Banner đồng bộ từ quản trị' && await slide1.getAttribute('href') === 'khuyen-mai.html' && await slide1.locator('img').count() === 1, 'trang chủ: banner mới (ảnh tải lên, liên kết mới)');
   check((await text('#hero-right')).includes('chỉ từ 120K'), 'trang chủ: giá vệ sinh theo mục Dịch vụ (120K)');
   check(!(await page.locator('.mainnav').innerHTML()).includes(hideCatName), 'menu: danh mục đã ẩn không hiện');
   const st = await page.evaluate((id) => ({ hidden: DT.products.filter((p) => p.cat === id).length, p2: !!DT.api.productById(1002), p1: DT.api.productById(1001) }), hideCat);

@@ -7,16 +7,16 @@ DT.onReady(() => {
   DT.layout.bindMega($('#hero-side'));
 
   const slider = $('#slider');
-  slider.innerHTML = DT.banners.map((b, i) => `
-    <div class="slide ${b.theme} ${i === 0 ? 'active' : ''}">
-      <div>
-        <span class="slide-tag">${i === 2 ? 'Doanh nghiệp' : 'Ưu đãi tháng 10'}</span>
-        <h2>${esc(b.title)}</h2>
-        <p>${esc(b.sub)}</p>
-        <a class="btn btn-lg ${i === 2 ? 'btn-accent' : 'btn-light'}" href="${esc(DT.u.safeUrl(b.href) || '#')}">${esc(b.cta)} ${DT.icon('right')}</a>
-      </div>
-      <div class="slide-art">${DT.art()}</div>
-    </div>`).join('') +
+  // Banner chỉ hiển thị hình (quản trị › Banner tải ảnh lên); bấm vào hình mở liên kết của banner
+  slider.innerHTML = DT.banners.map((b, i) => {
+    const pic = b.image
+      ? `<img src="${esc(b.image)}" alt="${esc(b.title || 'Banner')}" ${i ? 'loading="lazy"' : ''}>`
+      : `<span class="slide-ph">${DT.icon('image')}<b>Ảnh banner ${i + 1}</b><small>Tải ảnh tại Quản trị › Banner (khuyến nghị 1200 × 780 px)</small></span>`;
+    const href = DT.u.safeUrl(b.href);
+    return href
+      ? `<a class="slide ${i === 0 ? 'active' : ''}" href="${esc(href)}" aria-label="${esc(b.title || `Banner ${i + 1}`)}">${pic}</a>`
+      : `<div class="slide ${i === 0 ? 'active' : ''}">${pic}</div>`;
+  }).join('') +
     `<button class="slider-nav prev" aria-label="Trước">${DT.icon('left')}</button><button class="slider-nav next" aria-label="Sau">${DT.icon('right')}</button>
      <div class="slider-dots">${DT.banners.map((_, i) => `<button class="${i === 0 ? 'active' : ''}" data-i="${i}" aria-label="Banner ${i + 1}"></button>`).join('')}</div>`;
   let cur = 0;
@@ -84,6 +84,12 @@ DT.onReady(() => {
   // Danh mục bị ẩn / chưa có sản phẩm thì bỏ qua khối đó
   const blocks = ['may-lanh', 'tu-lanh', 'may-giat', 'tu-dong-tu-mat', 'vat-tu-dien-lanh']
     .filter((id) => DT.api.category(id) && DT.products.some((p) => p.cat === id));
+  // Mỗi danh mục: 1 hàng sản phẩm, kéo / bấm mũi tên sang phải, tối đa 10 sản phẩm; xem thêm ở "Xem tất cả"
+  const row = (cat, sub) => {
+    const { items, total } = DT.api.list({ cat, sub: sub || undefined, limit: 10 });
+    const more = total > items.length ? `<a class="car-more" href="${DT.api.catUrl(cat, sub || undefined)}"><b>Xem tất cả</b><span>${total} sản phẩm</span>${DT.icon('right')}</a>` : '';
+    return items.length ? DT.ui.carousel(items.map((p) => DT.ui.productCard(p)).join('') + more, `car-${cat}`) : DT.ui.empty('Chưa có sản phẩm');
+  };
   $('#cat-sections').innerHTML = blocks.map((id) => {
     const c = DT.api.category(id);
     return `<section class="section section-box" data-block="${id}">
@@ -92,7 +98,7 @@ DT.onReady(() => {
         <div class="tabs"><button class="tab active" data-sub="">Nổi bật</button>${c.subs.map((s) => `<button class="tab" data-sub="${s.id}">${esc(s.name.replace(/^(Máy lạnh|Máy giặt|Tủ lạnh) /, ''))}</button>`).join('')}</div>
         <a class="link" href="${DT.api.catUrl(id)}">Xem tất cả ${DT.icon('right')}</a>
       </div>
-      <div class="block-body">${DT.ui.grid(DT.api.list({ cat: id, limit: 10 }).items)}</div>
+      <div class="block-body">${row(id)}</div>
     </section>`;
   }).join('');
   $('#cat-sections').addEventListener('click', (e) => {
@@ -100,7 +106,7 @@ DT.onReady(() => {
     if (!t) return;
     const sec = t.closest('[data-block]');
     $$('.tab', sec).forEach((x) => x.classList.toggle('active', x === t));
-    $('.block-body', sec).innerHTML = DT.ui.grid(DT.api.list({ cat: sec.dataset.block, sub: t.dataset.sub || undefined, limit: 10 }).items);
+    $('.block-body', sec).innerHTML = row(sec.dataset.block, t.dataset.sub);
   });
 
   // ---------- Dịch vụ

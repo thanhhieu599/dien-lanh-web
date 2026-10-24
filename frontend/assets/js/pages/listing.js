@@ -32,7 +32,7 @@ DT.onReady(() => {
     const sub = cat.subs.find((s) => s.id === state.sub);
     title = sub ? sub.name : cat.name;
     crumbs = [{ label: cat.name, href: sub ? `${DT.api.catUrl(cat.id)}` : null }, ...(sub ? [{ label: sub.name }] : [])];
-    desc = `${title} chính hãng giá tốt, trả góp 0%, miễn phí giao hàng & lắp đặt tại TP.HCM, Bình Dương, Đồng Nai.`;
+    desc = `${title} chính hãng giá tốt, giao nhanh, lắp đặt chuẩn hãng tại TP.HCM, Bình Dương, Đồng Nai.`;
   } else if (mode === 'search') {
     title = state.q ? `Kết quả tìm kiếm "${state.q}"` : 'Tìm kiếm sản phẩm';
     crumbs = [{ label: 'Tìm kiếm' }];

@@ -44,7 +44,7 @@ DT.onReady(() => {
               <div class="ci-meta">
                 <span>SKU: ${esc(p.sku)} • Bảo hành ${esc(p.warranty)}</span>
                 ${p.gift ? `<span>${DT.icon('gift')} ${esc(p.gift)}</span>` : ''}
-                ${p.cat === 'may-lanh' ? (p.freeInstall ? `<span class="price">✓ Miễn phí lắp đặt</span>` : `<label class="check"><input type="checkbox" data-install ${install ? 'checked' : ''}> Lắp đặt chuẩn hãng (+${money(DT.config.installFee)}/bộ)</label>`) : ''}
+                ${p.cat === 'may-lanh' ? (p.freeInstall ? `<span class="muted">✓ Đã gồm công lắp đặt tiêu chuẩn</span>` : `<label class="check"><input type="checkbox" data-install ${install ? 'checked' : ''}> Lắp đặt chuẩn hãng (+${money(DT.config.installFee)}/bộ)</label>`) : ''}
               </div>
             </div>
             <div class="ci-right">

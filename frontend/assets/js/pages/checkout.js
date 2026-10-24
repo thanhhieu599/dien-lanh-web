@@ -53,7 +53,6 @@ DT.onReady(() => {
           <label class="radio-card"><input type="radio" name="payment" value="bank"><span class="rc-ic">${DT.icon('building')}</span><span><b>Chuyển khoản ngân hàng / QR</b><small>Quét mã VietQR bằng app ngân hàng bất kỳ</small></span></label>
           <label class="radio-card"><input type="radio" name="payment" value="card"><span class="rc-ic">${DT.icon('card')}</span><span><b>Thẻ ATM / Visa / Master / JCB</b><small data-gw="vnpay">Thanh toán ngay qua cổng VNPay</small></span></label>
           <label class="radio-card"><input type="radio" name="payment" value="wallet"><span class="rc-ic">${DT.icon('phone')}</span><span><b>Ví MoMo</b><small data-gw="momo">Quét mã bằng ứng dụng MoMo</small></span></label>
-          <label class="radio-card"><input type="radio" name="payment" value="installment"><span class="rc-ic">${DT.icon('percent')}</span><span><b>Trả góp 0%</b><small>Qua thẻ tín dụng hoặc công ty tài chính</small></span></label>
         </div>
         <div class="bank-info" id="bank-info">
           <b>Thông tin chuyển khoản</b><br>Ngân hàng: ${esc(DT.config.bankName)}<br>Số tài khoản: <b>${esc(DT.config.bankAccount)}</b><br>Chủ tài khoản: ${esc(DT.config.bankOwner || DT.config.company)}<br>Nội dung: <b>Mã đơn hàng</b> – mã QR có sẵn số tiền & nội dung hiện ngay sau khi đặt hàng

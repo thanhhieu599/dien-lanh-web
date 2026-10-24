@@ -117,7 +117,7 @@ insert into public.posts (slug, title, cat, date, author, art, excerpt, content)
 on conflict (slug) do nothing;
 
 insert into public.banners (id, title, sub, cta, href, theme, art, sort) values
-  (1, 'Siêu sale máy lạnh Inverter', 'Giảm đến 25% • Miễn phí lắp đặt • Trả góp 0%', 'Mua ngay', 'danh-muc.html?cat=may-lanh', 'blue', 'ac', 0),
+  (1, 'Siêu sale máy lạnh Inverter', 'Giảm đến 25%', 'Mua ngay', 'danh-muc.html?cat=may-lanh', 'blue', 'ac', 0),
   (2, 'Tủ lạnh thông minh - Giữ tươi gấp đôi', 'Tặng hộp bảo quản cao cấp cho đơn từ 10 triệu', 'Khám phá', 'danh-muc.html?cat=tu-lanh', 'navy', 'fridge-sbs', 1),
   (3, 'Giải pháp điều hòa cho nhà xưởng & văn phòng', 'Khảo sát miễn phí • Báo giá dự án trong 24h • Xuất VAT', 'Nhận báo giá', 'bao-gia-du-an.html', 'teal', 'ac-cassette', 2),
   (4, 'Vệ sinh máy lạnh chỉ từ 150K', 'Thợ chuyên nghiệp • Có mặt trong 2h • Bảo hành 30 ngày', 'Đặt lịch', 'dich-vu.html', 'orange', 'ac', 3)
@@ -135,7 +135,7 @@ on conflict (id) do nothing;
 insert into public.policies (key, title, body, sort) values
   ('bao-hanh', 'Chính sách bảo hành', '<p>Tất cả sản phẩm tại cửa hàng là hàng chính hãng, được bảo hành theo tiêu chuẩn của nhà sản xuất.</p><ul><li>Bảo hành tại nhà đối với máy lạnh, tủ lạnh, máy giặt.</li><li>Tiếp nhận bảo hành qua hotline 1900 6868 hoặc tại showroom.</li><li>Thời gian xử lý: 24 - 72 giờ làm việc.</li></ul><p>Không bảo hành với các trường hợp: hư hỏng do thiên tai, sử dụng sai hướng dẫn, tự ý tháo dỡ sửa chữa.</p>', 0),
   ('doi-tra', 'Chính sách đổi trả', '<ul><li><strong>1 đổi 1 trong 30 ngày</strong> nếu lỗi do nhà sản xuất.</li><li>Đổi sang sản phẩm khác trong 7 ngày (sản phẩm còn nguyên hộp, chưa lắp đặt), phí 10%.</li><li>Hoàn tiền trong 3 - 5 ngày làm việc sau khi nhận lại hàng.</li></ul>', 1),
-  ('van-chuyen', 'Chính sách vận chuyển & lắp đặt', '<ul><li>Miễn phí giao hàng nội thành cho đơn từ 2.000.000₫.</li><li>Giao nhanh trong 2 - 4 giờ tại TP.HCM, Bình Dương, Đồng Nai.</li><li>Miễn phí lắp đặt máy lạnh treo tường có biểu tượng "Miễn phí lắp đặt" (chưa bao gồm vật tư ống đồng ngoài 3m tiêu chuẩn).</li></ul>', 2),
+  ('van-chuyen', 'Chính sách vận chuyển & lắp đặt', '<ul><li>Miễn phí giao hàng nội thành cho đơn từ 2.000.000₫.</li><li>Giao nhanh trong 2 - 4 giờ tại TP.HCM, Bình Dương, Đồng Nai.</li><li>Lắp đặt chuẩn kỹ thuật hãng; vật tư phát sinh (ống đồng ngoài 3m tiêu chuẩn, giá đỡ…) tính theo bảng giá niêm yết.</li></ul>', 2),
   ('bao-mat', 'Chính sách bảo mật thông tin', '<p>Chúng tôi cam kết bảo mật thông tin khách hàng theo Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân. Thông tin chỉ được dùng để xử lý đơn hàng, giao hàng, bảo hành và chăm sóc khách hàng.</p>', 3),
   ('thanh-toan', 'Phương thức thanh toán', '<ul><li>Thanh toán khi nhận hàng (COD).</li><li>Chuyển khoản ngân hàng / QR.</li><li>Thẻ ATM, Visa, Master, JCB qua cổng thanh toán.</li><li>Ví điện tử MoMo, ZaloPay, VNPay.</li><li>Doanh nghiệp: công nợ theo hợp đồng, xuất hóa đơn VAT.</li></ul>', 4)
 on conflict (key) do nothing;
@@ -197,7 +197,7 @@ insert into public.faqs (category, question, answer, sort) select 'Mua hàng & b
   where not exists (select 1 from public.faqs where question = 'Sản phẩm được bảo hành như thế nào?');
 insert into public.faqs (category, question, answer, sort) select 'Mua hàng & bảo hành', 'Giao hàng và lắp đặt mất bao lâu?', 'Nội thành giao nhanh trong khoảng 2 giờ với sản phẩm có sẵn; lắp đặt theo lịch hẹn của khách hàng. Khu vực khác và đơn số lượng lớn sẽ được thông báo thời gian cụ thể khi xác nhận đơn.', 21
   where not exists (select 1 from public.faqs where question = 'Giao hàng và lắp đặt mất bao lâu?');
-insert into public.faqs (category, question, answer, sort) select 'Mua hàng & bảo hành', 'Có những hình thức thanh toán nào?', 'Thanh toán khi nhận hàng (COD), chuyển khoản / quét mã VietQR, thẻ ATM – Visa – Master qua VNPay, ví MoMo và trả góp 0% qua thẻ tín dụng hoặc công ty tài chính.', 22
+insert into public.faqs (category, question, answer, sort) select 'Mua hàng & bảo hành', 'Có những hình thức thanh toán nào?', 'Thanh toán khi nhận hàng (COD), chuyển khoản / quét mã VietQR, thẻ ATM – Visa – Master qua VNPay, và ví MoMo.', 22
   where not exists (select 1 from public.faqs where question = 'Có những hình thức thanh toán nào?');
 insert into public.faqs (category, question, answer, sort) select 'Mua hàng & bảo hành', 'Chính sách đổi trả ra sao?', 'Hỗ trợ 1 đổi 1 trong 30 ngày nếu sản phẩm lỗi do nhà sản xuất. Xem chi tiết tại <a href="chinh-sach.html?type=doi-tra">chính sách đổi trả</a>.', 23
   where not exists (select 1 from public.faqs where question = 'Chính sách đổi trả ra sao?');

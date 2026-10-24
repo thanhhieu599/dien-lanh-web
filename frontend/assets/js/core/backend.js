@@ -151,7 +151,7 @@ DT.backend = (() => {
       products: 'select=*&order=id',
       stores: 'select=id,name,city,address,phone,hours,map&order=sort',
       posts: 'select=slug,title,cat,date,author,art,excerpt,content&order=date.desc',
-      banners: 'select=title,sub,cta,href,theme,art&order=sort',
+      banners: 'select=title,sub,cta,href,theme,art,image&order=sort',
       services: 'select=id,name,price,unit,icon,description&order=sort',
       policies: 'select=key,title,body&order=sort',
       coupons: 'select=code,type,value,max,min,description',

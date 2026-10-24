@@ -12,6 +12,7 @@ DT.ICONS = {
   right: '<path d="m9 18 6-6-6-6"/>',
   left: '<path d="m15 18-6-6 6-6"/>',
   down: '<path d="m6 9 6 6 6-6"/>',
+  image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>',
   up: '<path d="m18 15-6-6-6 6"/>',
   truck: '<path d="M1 3h15v13H1zM16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>',
   shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>',

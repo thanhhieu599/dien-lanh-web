@@ -32,7 +32,6 @@ DT.onReady(() => {
       ${row('Thương hiệu', (p) => esc(DT.api.brand(p.brand).name))}
       ${row('Đánh giá', (p) => `${stars(p.rating)} ${p.rating} (${p.reviews})`)}
       ${row('Khuyến mãi', (p) => esc(p.gift || '-'))}
-      ${row('Lắp đặt', (p) => (p.freeInstall ? '<span class="status ok">Miễn phí</span>' : '-'))}
       ${keys.map((k) => row(esc(k), (p) => esc(p.specs[k] || '-'))).join('')}
     </table></div>`;
     $('#cp-clear').onclick = () => DT.store.clearCompare();

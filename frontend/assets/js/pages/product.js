@@ -112,10 +112,7 @@ DT.onReady(() => {
 
     <aside class="pd-aside">
       <div class="aside-box"><h4>Chính sách bán hàng</h4><ul>
-        <li>${DT.icon('shield')}<div><b>Hàng chính hãng 100%</b>Đầy đủ hóa đơn VAT, CO/CQ</div></li>
-        <li>${DT.icon('truck')}<div><b>Giao hàng miễn phí</b>Đơn từ ${money(DT.config.freeShipThreshold)} nội thành</div></li>
-        <li>${DT.icon('tool')}<div><b>Lắp đặt chuyên nghiệp</b>Thợ có chứng chỉ, bảo hành lắp đặt 12 tháng</div></li>
-        <li>${DT.icon('refresh')}<div><b>1 đổi 1 trong 30 ngày</b>Nếu lỗi do nhà sản xuất</div></li>
+        ${DT.siteContent().salesPolicy.filter((x) => x.title).map((x) => `<li>${DT.icon(x.icon || 'check')}<div><b>${DT.siteText(x.title)}</b>${DT.siteText(x.sub)}</div></li>`).join('')}
       </ul></div>
       <div class="aside-box"><h4>Còn hàng tại cửa hàng</h4><ul class="store-stock">${DT.stores.slice(0, 4).map((st, i) => `<li><span>${esc(st.name.replace(/^.* - /, ''))}<br><small class="muted">${esc(st.address)}</small></span><span class="ok">${(p.id + i) % 3 ? 'Còn hàng' : 'Sắp về'}</span></li>`).join('')}</ul>
         <a class="link" href="he-thong-cua-hang.html">Xem tất cả cửa hàng ${DT.icon('right')}</a></div>

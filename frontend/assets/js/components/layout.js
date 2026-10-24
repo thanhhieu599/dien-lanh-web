@@ -137,16 +137,13 @@ DT.layout = (() => {
   }
 
   function footer() {
-    const benefits = [
-      ['shield', '100% chính hãng', 'Đầy đủ hóa đơn, phiếu bảo hành'],
-      ['tool', 'Lắp đặt chuẩn hãng', 'Thợ có chứng chỉ, bảo hành lắp đặt'],
-      ['truck', 'Giao nhanh 2h', DT.config.freeShipThreshold ? `Miễn phí đơn từ ${DT.u.shortMoney(DT.config.freeShipThreshold)}` : 'Giao tận nơi'],
-      ['refresh', '1 đổi 1 trong 30 ngày', 'Nếu lỗi do nhà sản xuất'],
-    ];
+    // Dải cam kết & ô nhận tin: Quản trị › Nội dung website
+    const SC = DT.siteContent();
+    const T = (s) => DT.siteText(s);
     return `
-    <section class="benefits"><div class="container">${benefits.map(([i, t, s]) => `<div class="benefit">${DT.icon(i)}<div><b>${t}</b><small>${s}</small></div></div>`).join('')}</div></section>
+    <section class="benefits"><div class="container">${SC.benefits.filter((b) => b.title).map((b) => `<div class="benefit">${DT.icon(b.icon || 'check')}<div><b>${T(b.title)}</b><small>${T(b.sub)}</small></div></div>`).join('')}</div></section>
     <section class="newsletter"><div class="container">
-      <div><h3>Nhận ưu đãi độc quyền</h3><p>Đăng ký để nhận mã giảm giá 300K và lịch vệ sinh máy lạnh định kỳ.</p></div>
+      <div><h3>${T(SC.newsletter.title)}</h3><p>${T(SC.newsletter.sub)}</p></div>
       <form id="newsletter-form" class="newsletter-form"><input type="email" required placeholder="Nhập email của bạn" aria-label="Email"><button class="btn btn-accent">Đăng ký</button></form>
     </div></section>
     <footer class="footer"><div class="container footer-grid">

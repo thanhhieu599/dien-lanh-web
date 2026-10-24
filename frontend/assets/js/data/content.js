@@ -256,3 +256,60 @@ DT.trustData = () => {
   }
   return DT.trust;
 };
+
+// ---------------------------------------------------------------------------
+// Nội dung website chỉnh trong Quản trị › Nội dung website (settings 'home').
+// Đây là nội dung mặc định; quản trị lưu phần nào thì phần đó thay thế.
+// Ký hiệu trong chữ: {ten} = tên cửa hàng, {nguong} = ngưỡng miễn phí ship (2 triệu), {nguong_vnd} = (2.000.000₫), {gia_ve_sinh} = giá vệ sinh thấp nhất,
+// *chữ* = tô màu nhấn mạnh, xuống dòng = ngắt dòng.
+DT.siteContentDefaults = {
+  mini: [
+    { title: 'Flash Sale\ngiảm đến 25%', sub: 'Số lượng có hạn mỗi ngày', cta: 'Săn ngay', href: 'khuyen-mai.html' },
+    { title: 'Vệ sinh máy lạnh\nchỉ từ {gia_ve_sinh}', sub: 'Thợ đến trong 2 giờ', cta: 'Đặt lịch', href: 'dich-vu.html' },
+  ],
+  story: {
+    kicker: 'Về {ten}', title: 'Kiến tạo không gian *mát lành, bền vững* cho mọi công trình Việt',
+    stats: [{ value: '10+', label: 'Năm kinh nghiệm' }, { value: '50.000+', label: 'Khách hàng' }, { value: '500+', label: 'Dự án doanh nghiệp' }],
+    btn: 'Xem Tầm nhìn & Sứ mệnh', btnHref: 'tam-nhin-su-menh.html', link: 'Giới thiệu công ty', linkHref: 'gioi-thieu.html',
+  },
+  b2b: {
+    title: 'Giải pháp điều hòa & điện lạnh cho doanh nghiệp',
+    desc: 'Cung cấp, lắp đặt và bảo trì hệ thống máy lạnh cho văn phòng, nhà xưởng, nhà máy FDI, bếp ăn công nghiệp, chuỗi cửa hàng.',
+    points: ['Khảo sát & thiết kế miễn phí', 'Báo giá dự án trong 24h', 'Công nợ 30 - 60 ngày, xuất VAT', 'Hợp đồng bảo trì định kỳ'],
+    btn: 'Yêu cầu báo giá dự án', btnHref: 'bao-gia-du-an.html',
+    stats: [{ value: '500+', label: 'Dự án đã thi công' }, { value: '24h', label: 'Phản hồi báo giá' }, { value: '50+', label: 'Kỹ thuật viên' }, { value: '98%', label: 'Khách hàng hài lòng' }],
+  },
+  flash: { title: 'FLASH SALE', endsAt: '' }, // endsAt trống = đếm ngược tới 0 giờ mỗi ngày
+  benefits: [
+    { icon: 'shield', title: '100% chính hãng', sub: 'Đầy đủ hóa đơn, phiếu bảo hành' },
+    { icon: 'tool', title: 'Lắp đặt chuẩn hãng', sub: 'Thợ có chứng chỉ, bảo hành lắp đặt' },
+    { icon: 'truck', title: 'Giao nhanh 2h', sub: 'Miễn phí đơn từ {nguong}' },
+    { icon: 'refresh', title: '1 đổi 1 trong 30 ngày', sub: 'Nếu lỗi do nhà sản xuất' },
+  ],
+  salesPolicy: [
+    { icon: 'shield', title: 'Hàng chính hãng 100%', sub: 'Đầy đủ hóa đơn VAT, CO/CQ' },
+    { icon: 'truck', title: 'Giao hàng miễn phí', sub: 'Đơn từ {nguong_vnd} nội thành' },
+    { icon: 'tool', title: 'Lắp đặt chuyên nghiệp', sub: 'Thợ có chứng chỉ, bảo hành lắp đặt 12 tháng' },
+    { icon: 'refresh', title: '1 đổi 1 trong 30 ngày', sub: 'Nếu lỗi do nhà sản xuất' },
+  ],
+  newsletter: { title: 'Nhận ưu đãi độc quyền', sub: 'Đăng ký để nhận mã giảm giá 300K và lịch vệ sinh máy lạnh định kỳ.' },
+};
+DT.siteIcons = ['shield', 'tool', 'truck', 'refresh', 'gift', 'percent', 'star', 'check', 'clock', 'headset', 'card', 'building', 'snow', 'zap'];
+// Nội dung đang dùng = mặc định + phần quản trị đã lưu (DT.homeContent)
+DT.siteContent = () => {
+  const d = DT.siteContentDefaults; const o = DT.homeContent || {};
+  const obj = (k) => ({ ...d[k], ...(o[k] || {}) });
+  const list = (k) => (Array.isArray(o[k]) && o[k].length ? o[k] : d[k]);
+  return { mini: list('mini'), story: obj('story'), b2b: obj('b2b'), flash: obj('flash'), benefits: list('benefits'), salesPolicy: list('salesPolicy'), newsletter: obj('newsletter') };
+};
+// Thay ký hiệu & định dạng chữ (đã an toàn HTML)
+DT.siteText = (s, { rich = false } = {}) => {
+  const svc = (DT.services || []).filter((x) => x.price > 0 && /vệ sinh/i.test(x.name)).map((x) => x.price);
+  let t = String(s || '')
+    .replace(/\{ten\}/g, DT.config.name || '')
+    .replace(/\{nguong_vnd\}/g, DT.config.freeShipThreshold ? DT.u.money(DT.config.freeShipThreshold) : '')
+    .replace(/\{nguong\}/g, DT.config.freeShipThreshold ? DT.u.shortMoney(DT.config.freeShipThreshold) : '')
+    .replace(/\{gia_ve_sinh\}/g, svc.length ? DT.u.shortMoney(Math.min(...svc)) : '');
+  t = DT.u.esc(t);
+  return rich ? t.replace(/\*([^*]+)\*/g, '<span>$1</span>').replace(/\n/g, '<br>') : t.replace(/\*/g, '');
+};

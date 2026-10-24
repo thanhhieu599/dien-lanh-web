@@ -45,11 +45,12 @@ DT.onReady(() => {
 
   const user = DT.store.get().user;
   // Giá vệ sinh máy lạnh thấp nhất trong mục Dịch vụ (quản trị)
-  const cleanPrices = DT.services.filter((s) => s.price > 0 && /vệ sinh/i.test(s.name)).map((s) => s.price);
-  const cleanPrice = cleanPrices.length ? Math.min(...cleanPrices) : 0;
+  const SC = DT.siteContent();
+  const T = (s) => DT.siteText(s, { rich: true });
+  const href = (h, def) => esc(DT.u.safeUrl(h) || def);
+  // 2 ô cạnh banner (Quản trị › Nội dung website)
   $('#hero-right').innerHTML = `
-    <a class="mini-banner mb-1" href="khuyen-mai.html"><b>Flash Sale<br>giảm đến 25%</b><span>Số lượng có hạn mỗi ngày</span><em>Săn ngay</em>${DT.icon('zap')}</a>
-    <a class="mini-banner mb-2" href="dich-vu.html"><b>Vệ sinh máy lạnh<br>${cleanPrice ? `chỉ từ ${DT.u.shortMoney(cleanPrice)}` : 'tận nơi'}</b><span>Thợ đến trong 2 giờ</span><em>Đặt lịch</em>${DT.icon('tool')}</a>
+    ${SC.mini.slice(0, 2).map((m, i) => `<a class="mini-banner mb-${i + 1}" href="${href(m.href, '#')}"><b>${T(m.title)}</b><span>${T(m.sub)}</span>${m.cta ? `<em>${T(m.cta)}</em>` : ''}${DT.icon(i ? 'tool' : 'zap')}</a>`).join('')}
     <div class="hero-user">${user
       ? `<b>Xin chào, ${esc(user.name)}!</b><div class="btns"><a class="btn btn-sm btn-outline" href="tai-khoan.html#orders">Đơn hàng</a><a class="btn btn-sm btn-primary" href="yeu-thich.html">Yêu thích</a></div>`
       : `<b>Đăng nhập để nhận ưu đãi thành viên</b><div class="btns"><a class="btn btn-sm btn-primary" href="tai-khoan.html">Đăng nhập</a><a class="btn btn-sm btn-outline" href="tai-khoan.html#register">Đăng ký</a></div>`}</div>`;
@@ -61,20 +62,40 @@ DT.onReady(() => {
     return `<a class="qcat" href="${DT.api.catUrl(c.id)}"><div class="qcat-img${sample ? '' : ' qcat-icon'}">${sample ? DT.productImage(sample, 0) : DT.icon(c.icon || 'box')}</div><b>${esc(c.short || c.name)}</b></a>`;
   }).join('');
 
-  // ---------- Flash sale + đếm ngược tới 24h
+  // ---------- Dải giới thiệu công ty & khối doanh nghiệp (Quản trị › Nội dung website)
+  const st = SC.story;
+  $('#brand-story').innerHTML = `
+    <div class="bs-text"><span class="bs-kicker"><span class="bs-dot"></span>${T(st.kicker)}</span><h2>${T(st.title)}</h2></div>
+    <ul class="bs-stats">${(st.stats || []).filter((x) => x.value).map((x) => `<li><b>${T(x.value)}</b><span>${T(x.label)}</span></li>`).join('')}</ul>
+    <div class="bs-cta">${st.btn ? `<a class="bs-btn" href="${href(st.btnHref, 'tam-nhin-su-menh.html')}">${T(st.btn)} <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>` : ''}
+      ${st.link ? `<a class="bs-link" href="${href(st.linkHref, 'gioi-thieu.html')}">${T(st.link)}</a>` : ''}</div>`;
+  const bb = SC.b2b;
+  $('#b2b-banner').innerHTML = `
+    <div><h2>${T(bb.title)}</h2><p>${T(bb.desc)}</p>
+      <ul class="b2b-points">${(bb.points || []).filter(Boolean).map((x) => `<li>${DT.icon('check')}${T(x)}</li>`).join('')}</ul>
+      ${bb.btn ? `<a class="btn btn-primary btn-lg" href="${href(bb.btnHref, 'bao-gia-du-an.html')}">${T(bb.btn)}</a>` : ''}</div>
+    <div class="b2b-stats">${(bb.stats || []).filter((x) => x.value).map((x) => `<div><b>${T(x.value)}</b>${T(x.label)}</div>`).join('')}</div>`;
+
+  // ---------- Flash sale + đếm ngược (tới giờ kết thúc đặt trong quản trị, hoặc 0 giờ mỗi ngày)
   const flashItems = DT.api.list({ flash: true, sort: 'discount' }).items;
+  const flashEnd = SC.flash.endsAt ? new Date(SC.flash.endsAt) : null;
+  if (flashEnd && !(flashEnd > new Date())) $('#flash').hidden = true; // đợt flash sale đã kết thúc
   $('#flash').innerHTML = `
     <div class="flash-head">
-      <h2>${DT.icon('zap')} FLASH SALE</h2>
-      <div class="countdown">Kết thúc sau <b id="cd-h">00</b>:<b id="cd-m">00</b>:<b id="cd-s">00</b></div>
+      <h2>${DT.icon('zap')} ${T(SC.flash.title || 'FLASH SALE')}</h2>
+      <div class="countdown">Kết thúc sau <span id="cd-d-wrap" hidden><b id="cd-d">0</b> ngày </span><b id="cd-h">00</b>:<b id="cd-m">00</b>:<b id="cd-s">00</b></div>
       <a class="link" href="khuyen-mai.html">Xem tất cả ${DT.icon('right')}</a>
     </div>
     ${DT.ui.carousel(flashItems.map((p) => DT.ui.productCard(p, { flash: true })).join(''), 'flash-car')}`;
   const tick = () => {
     const now = new Date();
-    const end = new Date(now); end.setHours(24, 0, 0, 0);
+    let end = flashEnd;
+    if (!end) { end = new Date(now); end.setHours(24, 0, 0, 0); }
     const s = Math.max(0, Math.floor((end - now) / 1000));
-    $('#cd-h').textContent = String(Math.floor(s / 3600)).padStart(2, '0');
+    const days = Math.floor(s / 86400);
+    $('#cd-d-wrap').hidden = !days;
+    $('#cd-d').textContent = days;
+    $('#cd-h').textContent = String(Math.floor((s % 86400) / 3600)).padStart(2, '0');
     $('#cd-m').textContent = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
     $('#cd-s').textContent = String(s % 60).padStart(2, '0');
   };

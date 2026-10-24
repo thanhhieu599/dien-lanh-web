@@ -10,7 +10,7 @@ window.AD = window.AD || {};
     { group: null, items: [['dashboard', 'home', 'Tổng quan']] },
     { group: 'Bán hàng', items: [['orders', 'cart', 'Đơn hàng', 'orders'], ['leads', 'chat', 'Khách hàng tiềm năng', 'leads'], ['customers', 'user', 'Khách hàng'], ['maintenance', 'wrench', 'Lịch bảo trì', 'maintenance']] },
     { group: 'Sản phẩm', items: [['products', 'box', 'Sản phẩm'], ['categories', 'grid', 'Danh mục'], ['brands', 'tag', 'Thương hiệu'], ['reviews', 'star', 'Đánh giá', 'reviews']] },
-    { group: 'Marketing', items: [['coupons', 'percent', 'Mã giảm giá'], ['banners', 'zap', 'Banner'], ['posts', 'file', 'Bài viết'], ['vision', 'eye', 'Trang Tầm nhìn'], ['projects', 'building', 'Dự án tiêu biểu'], ['faqs', 'chat', 'Hỏi đáp (FAQ)'], ['trust', 'star', 'Uy tín & đánh giá']] },
+    { group: 'Marketing', items: [['coupons', 'percent', 'Mã giảm giá'], ['banners', 'zap', 'Banner'], ['posts', 'file', 'Bài viết'], ['vision', 'eye', 'Trang Tầm nhìn'], ['projects', 'building', 'Dự án tiêu biểu'], ['faqs', 'chat', 'Hỏi đáp (FAQ)'], ['trust', 'star', 'Uy tín & đánh giá'], ['content', 'file', 'Nội dung website']] },
     { group: 'Phân tích', items: [['reports', 'grid', 'Báo cáo'], ['notifications', 'mail', 'Nhật ký thông báo']] },
     { group: 'Kế toán', items: [['misa', 'file', 'Xuất Excel MISA']] },
     { group: 'Cấu hình', items: [['settings', 'tool', 'Cài đặt cửa hàng'], ['stores', 'pin', 'Cửa hàng'], ['services', 'wrench', 'Dịch vụ'], ['policies', 'shield', 'Chính sách']] },
@@ -28,7 +28,7 @@ window.AD = window.AD || {};
     accountant: { label: 'Kế toán', home: 'orders', pages: ['orders', 'reports', 'misa'] },
   };
   AD.BACKOFFICE = Object.keys(AD.ROLES);
-  const ADMIN_ONLY = ['settings', 'vision', 'trust'];
+  const ADMIN_ONLY = ['settings', 'vision', 'trust', 'content'];
   AD.allowed = (key) => {
     const role = AD.me?.role;
     if (role === 'admin') return true;
@@ -159,7 +159,7 @@ window.AD = window.AD || {};
     const raw = location.hash.replace(/^#\/?/, '') || AD.ROLES[AD.me?.role]?.home || 'dashboard';
     const [path, qs] = raw.split('?');
     const [key, id] = path.split('/').map(decodeURIComponent);
-    if (!AD.allowed(key) && (AD.resources[key] || ['dashboard', 'orders', 'leads', 'reviews', 'customers', 'reports', 'settings', 'vision', 'trust', 'notifications', 'maintenance', 'misa'].includes(key))) {
+    if (!AD.allowed(key) && (AD.resources[key] || ['dashboard', 'orders', 'leads', 'reviews', 'customers', 'reports', 'settings', 'vision', 'trust', 'content', 'notifications', 'maintenance', 'misa'].includes(key))) {
       document.querySelectorAll('[data-nav]').forEach((a) => a.classList.remove('active'));
       const home = AD.ROLES[AD.me?.role]?.home || 'dashboard';
       view.innerHTML = `<div class="ad-empty">${ic('shield')}<p>Tài khoản <b>${esc(AD.ROLES[AD.me?.role]?.label || '')}</b> không có quyền xem mục này.</p><a class="btn btn-light" href="#/${home}">Về trang của tôi</a></div>`;
@@ -181,6 +181,7 @@ window.AD = window.AD || {};
       else if (key === 'settings') await P.settings(params, view);
       else if (key === 'vision') await P.vision(params, view);
       else if (key === 'trust') await P.trust(params, view);
+      else if (key === 'content') await P.content(params, view);
       else if (key === 'notifications') await P.notifications(params, view);
       else if (key === 'maintenance') await P.maintenance(params, view);
       else if (key === 'misa') await P.misa(params, view);

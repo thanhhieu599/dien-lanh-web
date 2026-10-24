@@ -334,3 +334,9 @@ form:not(.ad-card) > .ad-form-foot { margin: 0; padding: 14px 18px; border: 1px 
   .ad-gal-list { grid-template-columns: repeat(2, 1fr); }
   .ad-gal-url { flex-wrap: wrap; }
 }
+
+/* Nội dung website */
+.ct-range { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; }
+.ct-bundle { display: grid; grid-template-columns: 2fr 2fr 1fr 1fr; gap: 8px; }
+.ct-subs { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+@media (max-width: 760px) { .ct-range, .ct-bundle { grid-template-columns: 1fr; } }

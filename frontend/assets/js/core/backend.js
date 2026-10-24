@@ -127,6 +127,11 @@ DT.backend = (() => {
       if (setting('store')) Object.assign(DT.config, setting('store'));
       DT.vision = setting('vision') || {}; // ảnh trang Tầm nhìn & Sứ mệnh (quản trị tải lên)
       if (setting('trust')) DT.trust = { logos: [], certs: [], reviews: [], google: {}, ...setting('trust') };
+      // Quản trị › Nội dung website: nội dung trang chủ / dải cam kết... và mức lọc giá, phụ kiện mua kèm
+      if (setting('home')) DT.homeContent = setting('home');
+      const cat = setting('catalog');
+      if (cat && Array.isArray(cat.priceRanges) && cat.priceRanges.length) DT.priceRanges = cat.priceRanges;
+      if (cat && Array.isArray(cat.bundles)) DT.bundleRules = cat.bundles;
     }
     if (d.projects) {
       DT.projects = d.projects.map((r) => ({
@@ -151,7 +156,7 @@ DT.backend = (() => {
 
   async function fetchCatalog() {
     const q = {
-      settings: 'key=in.(store,vision,trust)&select=key,value',
+      settings: 'key=in.(store,vision,trust,home,catalog)&select=key,value',
       categories: 'select=id,name,short,icon,art,subs,filters&order=sort',
       brands: 'select=id,name,origin,color,logo&order=sort',
       products: 'select=*&order=id',

@@ -54,7 +54,8 @@ window.AD = window.AD || {};
         { key: 'active', label: 'Đang bán (hiện trên website)', type: 'bool', col: 'third' },
         { key: 'flash_sale', label: 'Flash sale', type: 'bool', col: 'third' },
         { key: 'free_install', label: 'Miễn phí lắp đặt', type: 'bool', col: 'third' },
-        { key: 'badges', label: 'Nhãn', type: 'tags', col: 'third', help: 'hot, bestseller, new, premium, project, b2b' },
+        { key: 'badges', label: 'Nhãn', type: 'tags', col: 'third', help: 'Cách nhau dấu phẩy: hot (Bán chạy), bestseller, new (Mới), premium (Cao cấp), project (Dự án), b2b (Giá sỉ)',
+          validate: (v) => { const bad = (v || []).filter((x) => !['hot', 'bestseller', 'new', 'premium', 'project', 'b2b'].includes(x)); return bad.length ? `Nhãn không hợp lệ: ${bad.join(', ')}` : null; } },
         { key: 'gift', label: 'Quà tặng / khuyến mãi kèm', col: 'third' },
         { key: '_g3', type: 'custom', render: () => '<h4 class="ad-sec">Bộ lọc & thông số</h4>', read: () => undefined, col: 'full' },
         {

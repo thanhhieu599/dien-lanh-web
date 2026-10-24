@@ -308,9 +308,22 @@ try {
   check(await toast(page, 'Đã lưu mục Uy tín'), 'lưu mục Uy tín & đánh giá');
   const tr = JSON.parse(sql(`select value from public.settings where key = 'trust'`));
   check(tr.google.rating === 4.9 && tr.google.count === 128 && tr.reviews[0]?.name === 'Nguyễn Văn Khách' && /\/media\/trust\//.test(tr.logos[0]?.image), 'database: điểm Google, đánh giá, logo (ảnh trên kho)');
+  // Nội dung website (settings 'home', 'catalog')
+  await page.goto(`${admin}#/content`);
+  await page.waitForSelector('#ct-form');
+  await page.fill('[name="newsletter.title"]', 'Nhận bảng giá dự án hàng tháng');
+  await page.fill('[name="story.stats.0.value"]', '15+');
+  await page.click('#ct-form .ad-form-foot .btn-primary');
+  check(await toast(page, 'Đã lưu nội dung website'), 'lưu Nội dung website');
+  const homeSet = JSON.parse(sql(`select value from public.settings where key = 'home'`));
+  const catalog = JSON.parse(sql(`select value from public.settings where key = 'catalog'`));
+  check(homeSet.newsletter.title === 'Nhận bảng giá dự án hàng tháng' && homeSet.story.stats[0].value === '15+' && catalog.priceRanges.length >= 1 && Array.isArray(catalog.bundles), 'database: nội dung website, mức lọc giá, phụ kiện mua kèm');
 
   section('Website nhận cấu hình mới');
   const shop = await T.newPage();
+  await shop.goto(`${fe}index.html`);
+  await shop.waitForSelector('#brand-story .bs-stats');
+  check((await shop.locator('#brand-story').textContent())!.includes('15+') && (await shop.locator('.newsletter').textContent())!.includes('Nhận bảng giá dự án hàng tháng'), 'website đọc Nội dung website từ database');
   await shop.goto(`${fe}index.html`);
   const cheap = Number(sql(`select id from public.products where active and price < 1000000 order by price limit 1`));
   await shop.evaluate((id: number) => { DT.store.addToCart(id, 1); }, cheap);

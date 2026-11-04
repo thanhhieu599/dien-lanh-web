@@ -18,7 +18,7 @@ DT.onReady(() => {
     sub: params.get('sub') || '',
     brands: (params.get('brand') || '').split(',').filter(Boolean),
     price: params.get('price') || '',
-    sort: params.get('sort') || 'popular',
+    sort: params.get('sort') || (cat ? 'category' : 'popular'),
     page: Number(params.get('page')) || 1,
     q: params.get('q') || '',
     attrs: {},
@@ -46,11 +46,16 @@ DT.onReady(() => {
   DT.u.setMeta({ title, description: desc, canonical: mode === 'category' ? DT.api.catUrl(cat.id, state.sub || undefined) : null });
   $('#crumb').outerHTML = DT.ui.breadcrumb(crumbs);
   $('#cat-title').textContent = title;
+  $('.cat-cover-image')?.remove();
+  if (cat?.image) {
+    $('#cat-title').closest('.cat-hero').insertAdjacentHTML('afterbegin', `<img class="cat-cover-image" src="${esc(cat.image)}" alt="${esc(cat.name)}">`);
+  }
+  if (cat && !$('#sort option[value="category"]')) $('#sort').insertAdjacentHTML('afterbegin', '<option value="category">Thứ tự danh mục</option>');
 
   // Loại con (chip có ảnh)
   if (cat) {
     $('#sub-cats').innerHTML = `<a class="sub-cat ${!state.sub ? 'active' : ''}" href="${DT.api.catUrl(cat.id)}">Tất cả</a>` + cat.subs.map((s) => {
-      const sample = DT.products.find((p) => p.cat === cat.id && p.sub === s.id && DT.hasImage(p));
+      const sample = DT.products.find((p) => DT.api.inCategory(p, cat.id) && p.sub === s.id && DT.hasImage(p));
       return `<a class="sub-cat ${state.sub === s.id ? 'active' : ''}" href="${DT.api.catUrl(cat.id, s.id)}">${sample ? `<span class="sc-img">${DT.productImage(sample, 0)}</span>` : ''}${esc(s.name)}</a>`;
     }).join('');
     // Máy lạnh: gợi ý công cụ tính công suất ngay đầu danh mục
@@ -134,7 +139,7 @@ DT.onReady(() => {
     if (state.brands.length) p.set('brand', state.brands.join(','));
     if (state.price) p.set('price', state.price);
     Object.entries(state.attrs).forEach(([k, v]) => v.length && p.set(k, v.join(',')));
-    if (state.sort !== 'popular') p.set('sort', state.sort);
+    if (state.sort !== (cat ? 'category' : 'popular')) p.set('sort', state.sort);
     if (state.page > 1) p.set('page', state.page);
     history.replaceState(null, '', `${location.pathname}${p.toString() ? '?' + p : ''}`);
   }

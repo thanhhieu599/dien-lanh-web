@@ -116,6 +116,8 @@ DT.backend = (() => {
     rating: Number(r.rating), reviews: r.reviews, sold: r.sold, stock: r.stock,
     badges: r.badges || [], gift: r.gift, installment: r.installment, freeInstall: r.free_install, flashSale: r.flash_sale,
     attrs: r.attrs || {}, specs: r.specs || {}, highlights: r.highlights || [], short: r.short || '', warranty: r.warranty || '',
+    description: r.description || '', options: r.options || {}, productTags: r.product_tags || [],
+    requiresShipping: r.requires_shipping !== false, weight: Number(r.weight || 0), weightUnit: r.weight_unit || 'g',
     art: r.art || { type: 'generic', color: 'white' }, images: r.images?.length ? r.images : ['art:0'],
     createdAt: String(r.created_at).slice(0, 10),
   });
@@ -151,21 +153,25 @@ DT.backend = (() => {
     if (d.banners) DT.banners = d.banners;
     if (d.services) DT.services = d.services.map((s) => ({ ...s, price: Number(s.price), desc: s.description }));
     if (d.policies) DT.policies = Object.fromEntries(d.policies.map((p) => [p.key, { title: p.title, body: p.body }]));
-    if (d.coupons) DT.coupons = d.coupons.map((c) => ({ code: c.code, type: c.type, value: Number(c.value), max: c.max == null ? null : Number(c.max), min: Number(c.min), desc: c.description }));
+    if (d.coupons) {
+      DT.couponCatalog = d.coupons.map((c) => ({ ...c, value: Number(c.value), max: c.max == null ? null : Number(c.max), min: Number(c.min), desc: c.description }));
+      const now = Date.now();
+      DT.coupons = DT.couponCatalog.filter((c) => c.is_public !== false && c.active !== false && (!c.starts_at || new Date(c.starts_at).getTime() <= now) && (!c.ends_at || new Date(c.ends_at).getTime() > now) && (c.usage_limit == null || Number(c.used_count || 0) < c.usage_limit));
+    }
   }
 
   async function fetchCatalog() {
     const q = {
       settings: 'key=in.(store,vision,trust,home,catalog)&select=key,value',
-      categories: 'select=id,name,short,icon,art,subs,filters&order=sort',
-      brands: 'select=id,name,origin,color,logo&order=sort',
+      categories: 'select=id,name,short,icon,art,image,product_ids,excluded_product_ids,subs,filters&order=sort',
+      brands: 'select=id,name,slug,origin,color,logo,product_ids&order=sort',
       products: 'select=*&order=id',
       stores: 'select=id,name,city,address,phone,hours,map&order=sort',
       posts: 'select=slug,title,cat,date,author,art,excerpt,content&order=date.desc',
       banners: 'select=title,sub,cta,href,theme,art,image&order=sort',
       services: 'select=id,name,price,unit,icon,description&order=sort',
       policies: 'select=key,title,body&order=sort',
-      coupons: 'select=code,type,value,max,min,description',
+      coupons: 'select=*',
       projects: 'select=*&published=is.true&order=sort,year.desc',
       faqs: 'select=id,category,question,answer,sort&active=is.true&order=sort,id',
     };
@@ -194,7 +200,7 @@ DT.backend = (() => {
     if (has('banners')) d.banners = db.banners.filter(on).sort(bySort);
     if (has('services')) d.services = db.services.filter(on).sort(bySort);
     if (has('policies')) d.policies = [...db.policies].sort(bySort);
-    if (has('coupons')) d.coupons = db.coupons.filter((c) => c.is_public !== false && c.active !== false && (!c.starts_at || new Date(c.starts_at).getTime() <= now) && (!c.ends_at || new Date(c.ends_at).getTime() > now));
+    if (has('coupons')) d.coupons = db.coupons;
     if (has('projects')) d.projects = db.projects.filter((p) => p.published).sort((a, b) => bySort(a, b) || (b.year || 0) - (a.year || 0));
     if (has('faqs')) d.faqs = db.faqs.filter(on).sort((a, b) => bySort(a, b) || (a.id || 0) - (b.id || 0));
     try { apply(d); } catch (e) { console.warn('[Website demo] Bỏ qua dữ liệu quản trị demo lỗi:', e.message); }

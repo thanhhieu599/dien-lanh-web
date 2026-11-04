@@ -1,0 +1,143 @@
+.crm-page a {
+  color: #1687ff;
+}
+
+.crm-page .btn-primary {
+  background: #1687ff;
+  border-color: #1687ff;
+  color: #fff;
+}
+
+.crm-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 24px;
+}
+
+.crm-layout main,
+.crm-layout aside {
+  min-width: 0;
+}
+
+.crm-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.crm-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #34495e;
+  color: #fff;
+  font-size: 19px;
+}
+
+.crm-profile {
+  padding: 8px 0 28px;
+}
+
+.crm-profile .crm-avatar {
+  width: 88px;
+  height: 88px;
+  font-size: 40px;
+}
+
+.crm-profile h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+}
+
+.crm-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 24px;
+  padding-top: 24px;
+  text-align: center;
+}
+
+.crm-metrics strong,
+.crm-metrics small {
+  display: block;
+  margin-top: 6px;
+}
+
+.crm-metrics strong {
+  font-size: 19px;
+}
+
+.crm-metrics small {
+  color: #64748b;
+}
+
+.crm-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.crm-card-head h3 {
+  margin: 0;
+}
+
+.crm-layout aside p {
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.crm-layout textarea,
+.crm-layout input {
+  width: 100%;
+  margin: 8px 0 12px;
+}
+
+.crm-layout textarea {
+  resize: vertical;
+}
+
+.crm-layout hr {
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+  margin: 24px 0;
+}
+
+.crm-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.crm-tags span {
+  background: #e8eef4;
+  border-radius: 4px;
+  padding: 4px 8px;
+  color: #334155;
+}
+
+@media (max-width: 900px) {
+  .crm-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 540px) {
+  .crm-metrics {
+    grid-template-columns: 1fr;
+    text-align: left;
+  }
+
+  .crm-profile .crm-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 28px;
+  }
+}

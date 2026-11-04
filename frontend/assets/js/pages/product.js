@@ -12,7 +12,9 @@ DT.onReady(() => {
   DT.analytics?.viewItem(p);
   // Ảnh chia sẻ (Zalo/Facebook): ảnh thật nếu có, không thì ảnh chụp sẵn khi build (og/<slug>.png)
   const ogImage = /^https?:/.test(p.images[0]) ? p.images[0] : DT.SEO?.prettyUrls ? `og/${p.slug}.png` : null;
-  DT.u.setMeta({ title: p.name, description: `${p.name} chính hãng giá ${money(p.price)}. ${p.short}. Giao nhanh, lắp đặt chuẩn hãng.`, canonical: DT.api.url(p), image: ogImage, type: 'product' });
+  const description = (p.description || '').trim();
+  const optionGroups = DT.api.optionGroups(p);
+  DT.u.setMeta({ title: p.name, description: description || p.name, canonical: DT.api.url(p), image: ogImage, type: 'product' });
   $('#crumb').outerHTML = DT.ui.breadcrumb([
     { label: c.name, href: `${DT.api.catUrl(c.id)}` },
     ...(sub.id ? [{ label: sub.name, href: `${DT.api.catUrl(c.id, sub.id)}` }] : []),
@@ -37,14 +39,13 @@ DT.onReady(() => {
 
   // Chọn theo nhu cầu (như chọn size): các mẫu cùng thương hiệu, cùng loại, khác kích cỡ
   // - kích cỡ: công suất / dung tích / khối lượng... lấy từ bảng thông số (giá trị cụ thể, vd "236 lít")
-  // - nhu cầu: diện tích phòng / số người dùng (thuộc tính lọc hoặc câu "phù hợp ..." trong đặc điểm nổi bật)
+  // - nhu cầu: diện tích phòng / số người dùng từ thuộc tính lọc.
   const SIZE_KEYS = ['Công suất', 'Dung tích tổng', 'Dung tích', 'Khối lượng', 'Diện tích sử dụng', 'Dung tích bình nước'];
   const variantLabel = (x) => { const k = SIZE_KEYS.find((key) => x.specs?.[key]); return k ? x.specs[k] : (x.attrs.capacity || x.attrs.volume || x.attrs.weight || ''); };
   const variantNeed = (x) => {
     if (x.attrs.room) return `Phòng ${x.attrs.room.replace(/^Dưới/, 'dưới').replace(/^Trên/, 'trên')}`;
     if (x.attrs.family) return `Gia đình ${x.attrs.family}`;
-    const m = (x.highlights || []).map((h) => /phù hợp (.+)$/i.exec(h)).find(Boolean);
-    return m ? m[1].charAt(0).toUpperCase() + m[1].slice(1) : '';
+    return '';
   };
   const sizeNum = (x) => parseFloat(String(variantLabel(x)).replace(',', '.')) || 0;
   const variants = [p, ...DT.products.filter((x) => x.id !== p.id && x.cat === p.cat && x.sub === p.sub && x.brand === p.brand)]
@@ -97,7 +98,7 @@ DT.onReady(() => {
           <li><i>${DT.icon('check')}</i><span>Doanh nghiệp mua số lượng: <a class="link" href="bao-gia-du-an.html?sku=${encodeURIComponent(p.sku)}" data-quote>nhận báo giá riêng</a></span></li>
         </ul>
       </div>
-      <ul class="check-list">${p.highlights.map((h) => `<li>${DT.icon('check')}${esc(h)}</li>`).join('')}</ul>
+      ${optionGroups.length ? `<div class="pd-options" id="pd-options">${optionGroups.map((group, index) => `<fieldset class="pd-option-group" data-option-group="${index}"><legend>${esc(group.name)}</legend><div class="pd-option-values">${group.values.map((value) => `<button type="button" class="pd-option" data-option-value="${esc(value)}" aria-pressed="false">${esc(value)}</button>`).join('')}</div></fieldset>`).join('')}</div>` : ''}
       <div class="buy-row">
         <span>Số lượng:</span>
         <div class="qty"><button data-q="-1" aria-label="Giảm">${DT.icon('minus')}</button><input id="qty" type="number" value="1" min="1" max="99" aria-label="Số lượng"><button data-q="1" aria-label="Tăng">${DT.icon('plus')}</button></div>
@@ -122,12 +123,8 @@ DT.onReady(() => {
   const rv = reviews();
   $('#pd-content').innerHTML = `
     <div>
-      <section class="pd-section"><h2>Đặc điểm nổi bật</h2><div class="rich">
-        <p><strong>${esc(p.name)}</strong> là sản phẩm thuộc dòng ${esc(sub.name.toLowerCase())} của thương hiệu ${esc(brand.name)}${brand.origin ? ` (${esc(brand.origin)})` : ''}. ${esc(p.short)}.</p>
-        <ul>${p.highlights.map((h) => `<li>${esc(h)}</li>`).join('')}</ul>
-        ${DT.hasImage(p) ? `<div class="article-cover">${DT.productImage(p, 1)}</div>` : ''}
-        <h2>Vì sao nên mua tại ${esc(DT.config.name)}?</h2>
-        <p>Sản phẩm chính hãng, được lắp đặt bởi đội ngũ kỹ thuật được hãng đào tạo, bảo hành tận nơi. Chúng tôi hỗ trợ khảo sát miễn phí để chọn đúng công suất, giúp tiết kiệm điện năng và kéo dài tuổi thọ thiết bị.</p>
+      <section class="pd-section"><h2>Mô tả sản phẩm</h2><div class="rich" id="product-description">
+        ${description.split(/\n\s*\n/).filter((text) => text.trim()).map((text) => `<p>${esc(text).replace(/\n/g, '<br>')}</p>`).join('')}
       </div></section>
       <section class="pd-section" id="reviews"><h2>Đánh giá ${esc(p.name)}</h2>
         <div class="rating-summary">
@@ -166,6 +163,17 @@ DT.onReady(() => {
 
   // Thanh mua cố định trên mobile
   $('#sticky-buy').innerHTML = `<button class="btn btn-outline" data-action="add-cart" data-id="${p.id}" data-qty="#qty" aria-label="Thêm vào giỏ hàng">${DT.icon('cart')}</button><button class="btn btn-accent" data-action="buy-now" data-id="${p.id}" data-qty="#qty">Mua ngay • ${money(p.price)}</button>`;
+  $('#pd-options')?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-option-value]');
+    if (!button) return;
+    const group = button.closest('[data-option-group]');
+    group.classList.remove('invalid');
+    group.querySelectorAll('[data-option-value]').forEach((value) => {
+      const active = value === button;
+      value.classList.toggle('active', active);
+      value.setAttribute('aria-pressed', String(active));
+    });
+  });
 
   // ---------- Sự kiện
   let curImg = 0;
@@ -231,7 +239,7 @@ DT.onReady(() => {
   // SEO: dữ liệu có cấu trúc Product
   DT.u.jsonLd({
     '@context': 'https://schema.org', '@type': 'Product', name: p.name, sku: p.sku, mpn: p.sku,
-    brand: { '@type': 'Brand', name: brand.name }, description: [p.short, ...p.highlights].filter(Boolean).join('. '), category: sub.id ? `${c.name} > ${sub.name}` : c.name,
+    brand: { '@type': 'Brand', name: brand.name }, description, category: sub.id ? `${c.name} > ${sub.name}` : c.name,
     ...(ogImage ? { image: DT.u.abs(ogImage) } : {}),
     additionalProperty: Object.entries(p.specs || {}).slice(0, 20).map(([name, value]) => ({ '@type': 'PropertyValue', name, value: String(value) })),
     ...(p.reviews > 0 ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: p.rating, reviewCount: p.reviews } } : {}),

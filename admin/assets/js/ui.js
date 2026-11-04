@@ -116,7 +116,7 @@ AD.ui = (() => {
       case 'image':
         input = imageInput(f.key, v, f.folder || 'media', dis); break;
       case 'gallery':
-        input = galleryInput(f.key, (v || []).filter((x) => x && !String(x).startsWith('art:')), f.folder || 'media', f.max || 10); break;
+        input = galleryInput(f.key, (v || []).filter((x) => x && !String(x).startsWith('art:')), f.folder || 'media', f.max || 10, f.showHelp !== false); break;
       case 'custom':
         input = f.render(v, ctx); break;
       default:
@@ -153,8 +153,8 @@ AD.ui = (() => {
   });
   // Thư viện nhiều ảnh (ảnh sản phẩm): tải nhiều ảnh cùng lúc (tự nén), kéo thả, sắp xếp, xóa, dán link.
   // Ảnh đầu tiên là ảnh chính. Giá trị (mảng link) lưu ở input ẩn name=key dạng JSON.
-  function galleryInput(key, list, folder, max) {
-    return `<div class="ad-gal" data-gal="${esc(key)}" data-folder="${esc(folder)}" data-max="${max}">
+  function galleryInput(key, list, folder, max, showHelp = true) {
+    return `<div class="ad-gal" data-gal="${esc(key)}" data-folder="${esc(folder)}" data-max="${max}" data-show-help="${showHelp}">
       <input type="hidden" name="${esc(key)}" value="${esc(JSON.stringify(list))}">
       <div class="ad-gal-list">${list.map((u, i) => `<figure class="ad-gal-item" data-i="${i}">
           <img src="${esc(u)}" alt="Ảnh ${i + 1}" loading="lazy">${i === 0 ? '<span class="ad-gal-main">Ảnh chính</span>' : ''}
@@ -166,12 +166,12 @@ AD.ui = (() => {
         ${list.length < max ? `<button type="button" class="ad-gal-add" data-gal-pick>${ic('plus')}<b>Tải ảnh lên</b><small>Chọn hoặc kéo thả nhiều ảnh<br>JPG, PNG, WEBP – tự nén</small></button>` : ''}
       </div>
       <div class="ad-gal-url"><input type="url" placeholder="Hoặc dán link ảnh (https://…)" data-gal-url aria-label="Link ảnh"><button type="button" class="btn btn-light btn-sm" data-gal-addurl>${ic('plus')} Thêm link</button></div>
-      <small class="help">${list.length}/${max} ảnh. Ảnh đầu tiên là ảnh chính (hiện ở danh sách, giỏ hàng, chia sẻ Zalo/Facebook). Nên dùng ảnh nền trắng, vuông, ≥ 800px.</small>
+      ${showHelp ? `<small class="help">${list.length}/${max} ảnh. Ảnh đầu tiên là ảnh chính (hiện ở danh sách, giỏ hàng, chia sẻ Zalo/Facebook). Nên dùng ảnh nền trắng, vuông, ≥ 800px.</small>` : ''}
       <input type="file" accept="image/*" multiple hidden>
     </div>`;
   }
   const galList = (box) => { try { return JSON.parse(box.querySelector('input[type=hidden]').value || '[]'); } catch { return []; } };
-  const galSet = (box, list) => { box.outerHTML = galleryInput(box.dataset.gal, list, box.dataset.folder, Number(box.dataset.max)); };
+  const galSet = (box, list) => { box.outerHTML = galleryInput(box.dataset.gal, list, box.dataset.folder, Number(box.dataset.max), box.dataset.showHelp !== 'false'); };
   async function galUpload(box, files) {
     const max = Number(box.dataset.max);
     const list = galList(box);

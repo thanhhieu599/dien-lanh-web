@@ -25,9 +25,11 @@ async function adminSave(route, fills, label) {
   await page.goto(`${admin}#/${route}`);
   await page.waitForSelector('#frm');
   for (const [k, v] of Object.entries(fills)) {
+    if (route.startsWith('coupons/') && k === 'min') await page.check('[name=condition_type][value=order_min]');
     const el = page.locator(`#frm [name="${k}"]`).first();
-    const tag = await el.evaluate((x) => (x.type === 'checkbox' ? 'check' : x.tagName));
+    const tag = await el.evaluate((x) => (x.type === 'checkbox' ? 'check' : x.type === 'radio' ? 'radio' : x.tagName));
     if (tag === 'check') await el.setChecked(!!v);
+    else if (tag === 'radio') await page.locator(`#frm [name="${k}"][value="${String(v)}"]`).check();
     else if (tag === 'SELECT') await el.selectOption(String(v));
     else await el.fill(String(v));
   }

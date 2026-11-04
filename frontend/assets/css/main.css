@@ -1,4 +1,17 @@
 [hidden] { display: none !important; }
+.co-coupon { display: flex; gap: 8px; margin: 12px 0; }
+.co-coupon input { min-width: 0; flex: 1; padding: 9px; border: 1px solid var(--border); border-radius: 6px; }
+.pd-options { display: grid; gap: 16px; margin: 22px 0; }
+.pd-option-group { min-width: 0; margin: 0; padding: 0; border: 0; }
+.pd-option-group legend { font-size: 14px; font-weight: 600; margin-bottom: 9px; }
+.pd-option-values { display: flex; flex-wrap: wrap; gap: 8px; }
+.pd-option { border: 1px solid #d0d5dd; background: #fff; color: var(--text); border-radius: 6px; padding: 9px 16px; min-height: 42px; cursor: pointer; overflow-wrap: anywhere; max-width: 100%; }
+.pd-option:hover, .pd-option.active { border-color: var(--primary); color: var(--primary); background: #edf5ff; }
+.pd-option.active { box-shadow: inset 0 0 0 1px var(--primary); }
+.pd-option:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.pd-option-group.invalid legend { color: #c92020; }
+.pd-option-group.invalid .pd-option { border-color: #c92020; }
+.item-options { display: block; color: var(--muted); margin-top: 4px; font-size: 12px; }
 /* =========================================================
    D&T Điện Lạnh - Giao diện chính
    1. Biến & reset  2. Tiện ích  3. Nút & form  4. Header
@@ -502,6 +515,7 @@ table { border-collapse: collapse; width: 100%; }
 /* 8. Trang danh mục ---------------------------------------------- */
 .cat-hero { background: #fff; border: 1px solid var(--border); border-left: 4px solid var(--primary); color: var(--text); border-radius: var(--radius); padding: 20px 24px; margin: 16px 0; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
 .cat-hero h1 { font-size: 26px; margin: 0 0 4px; }
+.cat-cover-image { width: 100px; height: 100px; object-fit: contain; flex-shrink: 0; border-radius: 10px; }
 .cat-hero p { margin: 0; opacity: .9; }
 .sub-cats { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
 .sub-cat { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 6px 14px 6px 6px; font-weight: 500; transition: .15s; }

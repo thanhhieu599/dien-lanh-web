@@ -17,6 +17,16 @@ DT.api = (() => {
   const productById = (id) => { idx(); return byId.get(Number(id)); };
   const product = (key) => { idx(); return byId.get(Number(key)) || bySlug.get(key); };
   const category = (id) => DT.categories.find((c) => c.id === id);
+  const optionGroups = (p) => Object.entries(p.options || {}).map(([name, values]) => ({
+    name: name.trim(),
+    values: [...new Set((Array.isArray(values) ? values : String(values || '').split(/[,;\n|]/)).map((value) => String(value).trim()).filter(Boolean))],
+  })).filter((group) => group.name && group.values.length);
+  const optionText = (options) => Object.entries(options || {}).map(([name, value]) => `${name}: ${value}`).join(' · ');
+  const inCategory = (p, id) => {
+    const c = category(id);
+    if (!c || (c.excluded_product_ids || []).some((value) => String(value) === String(p.id))) return false;
+    return p.cat === id || (c.product_ids || []).some((value) => String(value) === String(p.id));
+  };
   // Thương hiệu bị ẩn / xóa trong quản trị: vẫn hiển thị được sản phẩm (dùng mã thương hiệu làm tên)
   const brand = (id) => DT.brands.find((b) => b.id === id) || { id, name: String(id || '').replace(/(^|-)(\w)/g, (m, s, c) => (s ? ' ' : '') + c.toUpperCase()), origin: '', color: '#344054' };
   // Loại con của danh mục; sản phẩm chưa chọn loại thì dùng chính danh mục
@@ -27,7 +37,10 @@ DT.api = (() => {
   const catUrl = (cat, sub) => (pretty() ? `danh-muc/${cat}${sub ? `/${sub}` : ''}.html` : `danh-muc.html?cat=${cat}${sub ? `&sub=${sub}` : ''}`);
   const postUrl = (slug) => (pretty() ? `tin-tuc/${slug}.html` : `bai-viet.html?slug=${slug}`);
   const policyUrl = (type) => (pretty() ? `chinh-sach/${type}.html` : `chinh-sach.html?type=${type}`);
-  const brandUrl = (id) => (id ? (pretty() ? `thuong-hieu/${id}.html` : `thuong-hieu.html?id=${id}`) : 'thuong-hieu.html');
+  const brandUrl = (id) => {
+    const slug = DT.brands.find((b) => b.id === id || b.slug === id)?.slug || id;
+    return id ? (pretty() ? `thuong-hieu/${encodeURIComponent(slug)}.html` : `thuong-hieu.html?id=${encodeURIComponent(slug)}`) : 'thuong-hieu.html';
+  };
 
   function matchQuery(p, q) {
     const words = n(q).split(/\s+/).filter(Boolean);
@@ -41,7 +54,7 @@ DT.api = (() => {
    */
   function list(f = {}) {
     let items = DT.products.filter((p) => {
-      if (f.cat && p.cat !== f.cat) return false;
+      if (f.cat && !inCategory(p, f.cat)) return false;
       if (f.sub && p.sub !== f.sub) return false;
       if (f.brands?.length && !f.brands.includes(p.brand)) return false;
       if (f.flash && !p.flashSale) return false;
@@ -67,7 +80,9 @@ DT.api = (() => {
       newest: (a, b) => b.createdAt.localeCompare(a.createdAt),
       rating: (a, b) => b.rating - a.rating || b.reviews - a.reviews,
     };
-    items = items.slice().sort(sorters[f.sort] || sorters.popular);
+    const categoryOrder = new Map((category(f.cat)?.product_ids || []).map((id, index) => [String(id), index]));
+    const ordered = (a, b) => (categoryOrder.get(String(a.id)) ?? Infinity) - (categoryOrder.get(String(b.id)) ?? Infinity) || sorters.popular(a, b);
+    items = items.slice().sort(f.sort === 'category' || (!f.sort && categoryOrder.size) ? ordered : sorters[f.sort] || sorters.popular);
     const total = items.length;
     if (f.limit) {
       const page = Math.max(1, f.page || 1);
@@ -112,5 +127,5 @@ DT.api = (() => {
     });
   }
 
-  return { productById, product, category, brand, sub, url, catUrl, postUrl, policyUrl, brandUrl, list, related, suggest, reviews, fetchReviews };
+  return { productById, product, category, optionGroups, optionText, inCategory, brand, sub, url, catUrl, postUrl, policyUrl, brandUrl, list, related, suggest, reviews, fetchReviews };
 })();

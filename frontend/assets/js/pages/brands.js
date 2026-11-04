@@ -11,7 +11,7 @@ DT.onReady(() => {
   const withBrand = (url, id) => `${url}${url.includes('?') ? '&' : '?'}brand=${encodeURIComponent(id)}`;
 
   const id = DT.u.param('id');
-  const brand = id && DT.brands.find((b) => b.id === id);
+  const brand = id && DT.brands.find((b) => b.id === id || b.slug === id);
 
   if (!brand) {
     DT.u.setMeta({ title: 'Thương hiệu', description: `Các thương hiệu điện lạnh chính hãng tại ${DT.config.name}. Chọn thương hiệu để xem sản phẩm theo từng danh mục.`, canonical: DT.api.brandUrl() });
@@ -28,7 +28,8 @@ DT.onReady(() => {
   $('#crumb').outerHTML = DT.ui.breadcrumb([{ label: 'Thương hiệu', href: DT.api.brandUrl() }, { label: brand.name }]);
   $('.cat-hero').remove(); // tiêu đề nằm trong khung logo bên dưới
 
-  const items = DT.products.filter((p) => p.brand === brand.id);
+  const ranks = new Map((brand.product_ids || []).map((id, index) => [String(id), index]));
+  const items = DT.products.filter((p) => p.brand === brand.id).sort((a, b) => (ranks.get(String(a.id)) ?? Infinity) - (ranks.get(String(b.id)) ?? Infinity) || a.name.localeCompare(b.name, 'vi'));
   const groups = DT.categories.map((c) => ({ c, list: items.filter((p) => p.cat === c.id) })).filter((g) => g.list.length);
   $('#brand-page').innerHTML = `
     <div class="brand-head">

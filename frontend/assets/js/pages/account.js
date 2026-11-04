@@ -71,7 +71,7 @@ DT.onReady(() => {
   function orderCard(o) {
     const st = DT.orderStatus[o.status];
     return `<div class="order-card"><div class="oc-head"><span>Mã đơn <b>${o.code}</b> • ${new Date(o.createdAt).toLocaleDateString('vi-VN')}</span><span class="status ${st.cls}">${st.label}</span></div>
-      <div class="oc-body">${o.items.slice(0, 2).map((it) => `<div class="co-item"><span class="nm">${esc(it.name)} × ${it.qty}</span><b>${money(it.price * it.qty)}</b></div>`).join('')}${o.items.length > 2 ? `<small class="muted">+ ${o.items.length - 2} sản phẩm khác</small>` : ''}</div>
+      <div class="oc-body">${o.items.slice(0, 2).map((it) => `<div class="co-item"><span class="nm">${esc(it.name)} × ${it.qty}${DT.api.optionText(it.options) ? `<small class="item-options">${esc(DT.api.optionText(it.options))}</small>` : ''}</span><b>${money(it.price * it.qty)}</b></div>`).join('')}${o.items.length > 2 ? `<small class="muted">+ ${o.items.length - 2} sản phẩm khác</small>` : ''}</div>
       <div class="oc-foot"><span>Tổng tiền: <b class="price">${money(o.total)}</b></span><a class="btn btn-outline btn-sm" href="tra-cuu-don-hang.html?code=${encodeURIComponent(o.code)}&phone=${encodeURIComponent(o.customer.phone)}">Xem chi tiết</a></div></div>`;
   }
 

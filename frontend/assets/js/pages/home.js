@@ -58,8 +58,8 @@ DT.onReady(() => {
   // ---------- Danh mục nhanh
   $('#quick-cats').innerHTML = DT.categories.map((c) => {
     // Ảnh thật của 1 sản phẩm trong danh mục nếu có, chưa có ảnh thì dùng biểu tượng danh mục
-    const sample = DT.products.find((p) => p.cat === c.id && DT.hasImage(p));
-    return `<a class="qcat" href="${DT.api.catUrl(c.id)}"><div class="qcat-img${sample ? '' : ' qcat-icon'}">${sample ? DT.productImage(sample, 0) : DT.icon(c.icon || 'box')}</div><b>${esc(c.short || c.name)}</b></a>`;
+    const sample = DT.products.find((p) => DT.api.inCategory(p, c.id) && DT.hasImage(p));
+    return `<a class="qcat" href="${DT.api.catUrl(c.id)}"><div class="qcat-img${c.image || sample ? '' : ' qcat-icon'}">${c.image ? `<img src="${esc(c.image)}" alt="${esc(c.name)}" loading="lazy">` : sample ? DT.productImage(sample, 0) : DT.icon(c.icon || 'box')}</div><b>${esc(c.short || c.name)}</b></a>`;
   }).join('');
 
   // ---------- Dải giới thiệu công ty & khối doanh nghiệp (Quản trị › Nội dung website)
@@ -105,7 +105,7 @@ DT.onReady(() => {
   // ---------- Khối sản phẩm theo danh mục (tab theo loại)
   // Danh mục bị ẩn / chưa có sản phẩm thì bỏ qua khối đó
   const blocks = ['may-lanh', 'tu-lanh', 'may-giat', 'tu-dong-tu-mat', 'vat-tu-dien-lanh']
-    .filter((id) => DT.api.category(id) && DT.products.some((p) => p.cat === id));
+    .filter((id) => DT.api.category(id) && DT.products.some((p) => DT.api.inCategory(p, id)));
   // Mỗi danh mục: 1 hàng sản phẩm, kéo / bấm mũi tên sang phải, tối đa 10 sản phẩm; xem thêm ở "Xem tất cả"
   const row = (cat, sub) => {
     const { items, total } = DT.api.list({ cat, sub: sub || undefined, limit: 10 });

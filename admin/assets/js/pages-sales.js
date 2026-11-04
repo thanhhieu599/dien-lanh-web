@@ -133,7 +133,7 @@ AD.pages = AD.pages || {};
         <div>
           <section class="ad-card"><h3>Sản phẩm</h3>
             ${table([
-              { label: 'Sản phẩm', render: (i) => `<b>${esc(i.name)}</b><small>${esc(i.sku || '')}${i.install ? ' • kèm lắp đặt' : ''}</small>` },
+              { label: 'Sản phẩm', render: (i) => `<b>${esc(i.name)}</b><small>${esc(i.sku || '')}${i.install ? ' • kèm lắp đặt' : ''}</small>${DT.api.optionText(i.options) ? `<small>${esc(DT.api.optionText(i.options))}</small>` : ''}` },
               { label: 'Đơn giá', render: (i) => money(i.price), cls: 'num' }, { label: 'SL', key: 'qty', cls: 'num' },
               { label: 'Thành tiền', render: (i) => money(i.price * i.qty), cls: 'num' },
             ], o.order_items || [])}

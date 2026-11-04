@@ -113,7 +113,7 @@ DT.ui = (() => {
         <h3>${esc(p.name)}</h3>
         <div class="pcard-meta">${stars(p.rating)}<span>${p.rating} (${p.reviews} đánh giá)</span></div>
         <div class="price-box"><strong>${money(p.price)}</strong>${p.oldPrice ? `<del>${money(p.oldPrice)}</del><span class="lbl lbl-sale">-${discount(p)}%</span>` : ''}</div>
-        <ul class="check-list">${p.highlights.slice(0, 4).map((h) => `<li>${DT.icon('check')}${esc(h)}</li>`).join('')}</ul>
+        ${(p.description || '').trim() ? `<p class="qv-description">${esc(p.description).replace(/\n/g, '<br>')}</p>` : ''}
         <div class="qv-btns">
           <button class="btn btn-primary" data-action="buy-now" data-id="${p.id}">Mua ngay</button>
           <button class="btn btn-outline" data-action="add-cart" data-id="${p.id}">${DT.icon('cart')} Thêm vào giỏ</button>
@@ -140,11 +140,31 @@ DT.ui = (() => {
     const act = el.dataset.action;
     if (['add-cart', 'buy-now', 'wishlist', 'compare', 'quickview'].includes(act)) e.preventDefault();
     if (act === 'add-cart' || act === 'buy-now') {
+      const product = DT.api.productById(id);
+      if (!product) return;
+      const groups = DT.api.optionGroups(product);
+      let options = {};
+      if (groups.length) {
+        if (!el.dataset.qty || !el.closest('#pd, #sticky-buy')) { location.href = DT.api.url(product); return; }
+        const values = groups.map((group, index) => {
+          const field = DT.u.$(`#pd-options [data-option-group="${index}"]`);
+          const value = field?.querySelector('[aria-pressed="true"]')?.dataset.optionValue;
+          field?.classList.toggle('invalid', !value);
+          return [group.name, value];
+        });
+        const missing = values.filter(([, value]) => !value);
+        if (missing.length) {
+          DT.u.toast(`Vui lòng chọn ${missing.map(([name]) => name).join(', ')}`, 'error');
+          DT.u.$('#pd-options')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+        options = Object.fromEntries(values);
+      }
       const qtyInput = el.dataset.qty ? DT.u.$(el.dataset.qty) : null;
       const qty = qtyInput ? Math.max(1, parseInt(qtyInput.value, 10) || 1) : 1;
       // Ô "lắp đặt" chỉ áp dụng cho sản phẩm chính của trang chi tiết (không áp cho sản phẩm liên quan / xem nhanh)
       const install = el.closest('#pd, #sticky-buy') ? !!DT.u.$('#opt-install')?.checked : false;
-      if (!DT.store.addToCart(id, qty, { install })) return;
+      if (!DT.store.addToCart(id, qty, { install, options })) return;
       if (act === 'buy-now') { location.href = 'gio-hang.html'; return; }
       addedToCart(DT.api.productById(id));
     }

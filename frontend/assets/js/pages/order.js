@@ -21,7 +21,7 @@ DT.orderView = (o) => {
     <ul class="timeline">${o.status === 'cancelled' ? '<li class="done"><b>Đơn hàng đã hủy</b></li>' : flow.map((s, i) => `<li class="${i <= idx ? 'done' : ''}"><b>${labels[s]}</b>${i === 0 ? `<small>${new Date(o.createdAt).toLocaleString('vi-VN')}</small>` : ''}</li>`).join('')}</ul>
     <div class="order-items">${o.items.map((it) => {
       const p = DT.api.productById(it.id);
-      return `<div class="co-item"><span class="ci-img">${p ? DT.productImage(p, 0) : ''}<em>${it.qty}</em></span><span class="nm">${esc(it.name)}${it.install ? ' <small class="muted">(+ lắp đặt)</small>' : ''}</span><b>${money(it.price * it.qty)}</b></div>`;
+      return `<div class="co-item"><span class="ci-img">${p ? DT.productImage(p, 0) : ''}<em>${it.qty}</em></span><span class="nm">${esc(it.name)}${it.install ? ' <small class="muted">(+ lắp đặt)</small>' : ''}${DT.api.optionText(it.options) ? `<small class="item-options">${esc(DT.api.optionText(it.options))}</small>` : ''}</span><b>${money(it.price * it.qty)}</b></div>`;
     }).join('')}</div>
     <div class="order-info">
       <div class="sum-row"><span>Tạm tính</span><span>${money(o.subtotal)}</span></div>

@@ -32,6 +32,7 @@ AD.pages.crudList = async (key, params, el) => {
 };
 
 AD.pages.crudForm = async (key, id, params, el) => {
+  if (key === 'coupons') return AD.pages.couponForm(id, params, el);
   const R = AD.resources[key];
   const { esc, ic, field, read, run, confirm } = AD.ui;
   const editing = id !== 'new';
@@ -47,6 +48,14 @@ AD.pages.crudForm = async (key, id, params, el) => {
 
   const ctx = { editing, values: row };
   const canEdit = AD.can(R);
+  const productLayout = R.formSections;
+  const section = ([sectionId, title, keys]) => `<section class="ad-card product-section" data-product-section="${sectionId}" aria-labelledby="product-${sectionId}">
+    <h2 id="product-${sectionId}">${title}</h2>
+    <div class="ad-grid">${keys.map((fieldKey) => {
+      const f = R.fields.find((item) => item.key === fieldKey);
+      const markup = field({ ...f, col: ['price', 'old_price', 'stock', 'sold', 'sku', 'slug', 'warranty', 'weight', 'weight_unit'].includes(fieldKey) ? 'half' : 'full' }, row[fieldKey] ?? f.def, ctx);
+      return markup;
+    }).join('')}</div></section>`;
   el.innerHTML = `<div class="ad-head"><div><a class="ad-back" href="#/${key}">${ic('left')} ${esc(R.title)}</a>
       <h1>${editing ? esc(row.name || row.title || row[pk]) : 'Thêm mới'}</h1>
       ${editing && row.updated_at ? `<small class="muted">Cập nhật: ${AD.ui.dt(row.updated_at)}</small>` : ''}</div>
@@ -55,21 +64,48 @@ AD.pages.crudForm = async (key, id, params, el) => {
       ${editing && R.duplicate && canEdit ? `<a class="btn btn-light" href="#/${key}/new?from=${encodeURIComponent(id)}">${ic('refresh')} Nhân bản</a>` : ''}
       ${editing && canEdit ? `<button class="btn btn-light txt-danger" id="del">${ic('trash')} Xóa</button>` : ''}
     </div></div>
-    <form class="ad-card ad-form" id="frm" novalidate>
-      <div class="ad-grid">${R.fields.map((f) => field(f, row[f.key], ctx)).join('')}</div>
+    <form class="${productLayout ? 'ad-product-form' : 'ad-card ad-form'}" id="frm" novalidate>
+      ${productLayout ? `<div class="product-editor-layout"><div class="product-editor-main">${productLayout.main.map(section).join('')}</div><aside class="product-editor-aside">${productLayout.aside.map(section).join('')}</aside></div>` : `<div class="ad-grid">${R.fields.map((f) => field(f, row[f.key], ctx)).join('')}</div>`}
       ${canEdit ? `<div class="ad-form-foot"><a class="btn btn-light" href="#/${key}">Hủy</a><button class="btn btn-primary" id="save">${ic('check')} Lưu</button></div>` : '<p class="muted">Bạn chỉ có quyền xem mục này.</p>'}
     </form>`;
 
   const form = el.querySelector('#frm');
+  const categoryEditor = key === 'categories' ? await AD.categoryProducts.mount(form, row, canEdit) : null;
+  const brandEditor = key === 'brands' ? await AD.categoryProducts.mount(form, row, canEdit, 'brand') : null;
+  if (brandEditor) {
+    const updateBrandUrl = () => {
+      const slug = DT.u.slugify(form.elements.name.value);
+      const base = DT.SEO?.siteUrl || new URL('../frontend/', location.href.split('#')[0]).href;
+      form.querySelector('#brand-url').value = slug ? new URL(`thuong-hieu/${slug}.html`, base).href : '';
+    };
+    form.elements.name.addEventListener('input', updateBrandUrl);
+    updateBrandUrl();
+  }
+  if (productLayout) {
+    const active = form.elements.active;
+    const status = active.closest('label');
+    status.outerHTML = `<div class="product-status"><label><input type="radio" name="active" value="true" ${row.active !== false ? 'checked' : ''}> Hiển thị trên website</label><label><input type="radio" name="active" value="false" ${row.active === false ? 'checked' : ''}> Ẩn sản phẩm</label></div>`;
+    const shipping = form.elements.requires_shipping;
+    const updateShipping = () => {
+      ['weight', 'weight_unit'].forEach((name) => { form.elements[name].disabled = !shipping.checked; });
+    };
+    shipping.addEventListener('change', updateShipping);
+    updateShipping();
+  }
   // Trường phụ thuộc danh mục (loại con, thuộc tính bộ lọc) vẽ lại khi đổi danh mục
   form.addEventListener('change', (e) => {
     const f = R.fields.find((x) => x.key === e.target.name && x.rerender);
     if (!f) return;
     ctx.values = { ...ctx.values, [f.key]: e.target.value };
+    if (productLayout) {
+      ctx.values.attrs = Object.fromEntries([...form.querySelectorAll('[data-attr]')].map((s) => [s.dataset.attr, s.value]));
+      ctx.values.sub = form.elements.sub.value;
+    }
     R.fields.filter((x) => typeof x.options === 'function' || x.type === 'custom').forEach((x) => {
+      if (productLayout && !['sub', 'attrs'].includes(x.key)) return;
       if (x.key === f.key || x.key.startsWith('_') || x.key === 'art') return;
       const node = form.querySelector(`[data-field="${x.key}"]`);
-      if (node) node.outerHTML = field(x, x.key === 'attrs' ? {} : ctx.values[x.key], ctx);
+      if (node) node.outerHTML = field(productLayout ? { ...x, col: 'full' } : x, x.key === 'attrs' && !productLayout ? {} : ctx.values[x.key], ctx);
     });
   });
 
@@ -78,6 +114,12 @@ AD.pages.crudForm = async (key, id, params, el) => {
     const data = read(form, R.fields, ctx);
     if (!data) { AD.ui.toast('Vui lòng kiểm tra các trường báo lỗi', 'error'); form.querySelector('.invalid')?.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
     Object.keys(data).forEach((k) => k.startsWith('_') && delete data[k]);
+    if (productLayout) data.active = form.elements.active.value === 'true';
+    if (categoryEditor) Object.assign(data, categoryEditor.data());
+    if (brandEditor) {
+      Object.assign(data, brandEditor.data(), { slug: DT.u.slugify(data.name) });
+      if (!data.slug) { AD.ui.toast('Vui lòng nhập tên thương hiệu có chữ hoặc số', 'error'); return; }
+    }
     R.beforeSave?.(data, editing);
     const insert = async () => {
       try { return await AD.db.insert(R.table, { ...data }); } catch (err) {
@@ -86,7 +128,7 @@ AD.pages.crudForm = async (key, id, params, el) => {
         throw err;
       }
     };
-    const saved = await run(e.submitter || form.querySelector('#save'), () => (editing ? AD.db.update(R.table, id, data) : insert()),
+    const saved = await run(e.submitter || form.querySelector('#save'), () => (R.save ? R.save(data, { editing, id }) : editing ? AD.db.update(R.table, id, data) : insert()),
       AD.db.mode === 'supabase' ? 'Đã lưu. Website cập nhật sau tối đa vài phút.' : 'Đã lưu');
     if (!saved) return;
     await R.afterSave?.(saved);

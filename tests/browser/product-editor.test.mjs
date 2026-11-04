@@ -1,0 +1,100 @@
+import assert from 'node:assert/strict';
+import { blockExternal, chromium, pagesServer } from './lib.mjs';
+
+const { server, base } = await pagesServer(process.cwd());
+let browser;
+try {
+  browser = await chromium();
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  await blockExternal(context);
+  const page = await context.newPage();
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto(`${base}admin/index.html#/products/1001`);
+  await page.click('#demo-enter');
+  await page.waitForSelector('#frm [name=name]');
+  const initial = await page.evaluate(() => AD.db.get('products', 1001));
+  assert.equal(await page.locator('[data-product-section]').count(), 10);
+  assert.equal(await page.locator('[data-product-section=basic] h2').innerText(), 'Thông tin cơ bản');
+  assert.equal(await page.locator('[data-product-section=pricing] h2').innerText(), 'Giá & tồn kho');
+  assert.equal(await page.locator('[name=badges], [name=short], [name=highlights], [data-art], .product-art').count(), 0);
+  assert.equal(await page.locator('[data-gal=images] > .help').count(), 0);
+  const mainBox = await page.locator('.product-editor-main').boundingBox();
+  const asideBox = await page.locator('.product-editor-aside').boundingBox();
+  assert.ok(asideBox.x > mainBox.x + mainBox.width, 'sidebar appears to the right');
+
+  await page.fill('[name=description]', 'Mô tả sản phẩm kiểm thử.\n\nHướng dẫn sử dụng.');
+  await page.fill('[name=product_tags]', 'gia đình, tiết kiệm điện');
+  await page.fill('[name=weight]', '12.5');
+  await page.selectOption('[name=weight_unit]', 'kg');
+  await page.locator('[data-kv=options] [data-k]').first().fill('Màu sắc');
+  await page.locator('[data-kv=options] [data-v]').first().fill('Trắng, Đen');
+  await page.fill('[data-gal-url]', `${base}frontend/assets/images/favicon.svg`);
+  await page.click('[data-gal-addurl]');
+  assert.equal(await page.locator('[data-gal=images] > .help').count(), 0);
+  const categories = await page.locator('[name=cat] option').evaluateAll((els) => els.map((e) => e.value));
+  await page.selectOption('[name=cat]', categories.find((id) => id !== initial.cat));
+  await page.selectOption('[name=cat]', initial.cat);
+  await page.selectOption('[name=sub]', initial.sub);
+  assert.equal(await page.inputValue('[name=description]'), 'Mô tả sản phẩm kiểm thử.\n\nHướng dẫn sử dụng.');
+  assert.equal(await page.locator('[data-kv=options] [data-v]').first().inputValue(), 'Trắng, Đen');
+  await page.fill('[name=weight]', '-1');
+  await page.click('#save');
+  assert.equal(await page.locator('[data-field=weight].invalid').count(), 1);
+  await page.fill('[name=weight]', '12.5');
+  await page.click('#save');
+  await page.waitForFunction(async () => (await AD.db.get('products', 1001)).weight === 12.5);
+  await page.reload();
+  await page.waitForSelector('[name=weight]');
+  assert.equal(await page.inputValue('[name=weight]'), '12.5');
+  assert.equal(await page.inputValue('[name=weight_unit]'), 'kg');
+  const saved = await page.evaluate(() => AD.db.get('products', 1001));
+  assert.equal(saved.active, true);
+  assert.deepEqual(saved.product_tags, ['gia đình', 'tiết kiệm điện']);
+  assert.equal(saved.options['Màu sắc'], 'Trắng, Đen');
+  for (const key of ['price', 'stock', 'sku', 'name', 'installment']) assert.equal(saved[key], initial[key]);
+  for (const key of ['badges', 'art', 'short', 'highlights']) assert.deepEqual(saved[key], initial[key]);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'no mobile overflow');
+  await page.uncheck('[name=requires_shipping]');
+  assert.equal(await page.locator('[name=weight]').isDisabled(), true);
+  await page.check('[name=active][value=false]');
+  await page.click('#save');
+  await page.waitForFunction(async () => (await AD.db.get('products', 1001)).active === false);
+  assert.equal((await page.evaluate(() => AD.db.get('products', 1001))).weight, 12.5);
+  await page.check('[name=active][value=true]');
+  await page.click('#save');
+  await page.waitForFunction(async () => (await AD.db.get('products', 1001)).active === true);
+
+  await page.goto(`${base}frontend/san-pham.html?id=1001`);
+  await page.waitForSelector('#pd-content');
+  await page.waitForFunction(() => document.querySelector('#pd-content')?.textContent.includes('Mô tả sản phẩm kiểm thử.'));
+  assert.deepEqual(await page.locator('.pd-option').allTextContents(), ['Trắng', 'Đen']);
+  assert.deepEqual(await page.locator('#product-description p').allTextContents(), ['Mô tả sản phẩm kiểm thử.', 'Hướng dẫn sử dụng.']);
+  assert.equal(await page.locator('.pd-info .check-list').count(), 0);
+  assert.equal(await page.locator('meta[name=description]').getAttribute('content'), saved.description);
+  await page.evaluate(() => DT.ui.quickView(1001));
+  assert.equal(await page.locator('.qv-description').innerText(), saved.description);
+  assert.equal(await page.locator('.qv-info .check-list').count(), 0);
+
+  // Clearing the primary description must never restore legacy marketing text.
+  await page.goto(`${base}admin/index.html#/products/1001`);
+  await page.waitForSelector('[name=description]');
+  await page.fill('[name=description]', '');
+  await page.click('#save');
+  await page.waitForFunction(async () => (await AD.db.get('products', 1001)).description === '');
+  await page.goto(`${base}frontend/san-pham.html?id=1001`);
+  await page.waitForSelector('#product-description', { state: 'attached' });
+  assert.equal((await page.locator('#product-description').innerText()).trim(), '');
+  assert.equal(await page.locator('meta[name=description]').getAttribute('content'), initial.name);
+  await page.goto(`${base}admin/index.html#/products/new`);
+  await page.waitForSelector('#frm [name=name]');
+  assert.equal(await page.locator('[name=requires_shipping]').isChecked(), true);
+  assert.equal(await page.inputValue('[name=weight_unit]'), 'g');
+  assert.deepEqual(errors, []);
+  console.log('PASS: layout, category edits, validation, persistence, status, shipping, storefront sync, mobile, defaults');
+} finally {
+  await browser?.close();
+  await new Promise((resolve) => server.close(resolve));
+}

@@ -87,7 +87,10 @@ function routes(data) {
   }
   for (const p of data.posts) r.push({ src: `bai-viet.html?slug=${p.slug}`, out: `tin-tuc/${p.slug}.html`, data: { qSlug: p.slug }, priority: '0.7', lastmod: p.date });
   for (const p of data.projects || []) r.push({ src: `du-an-chi-tiet.html?slug=${p.slug}`, out: `du-an/${p.slug}.html`, data: { qSlug: p.slug }, priority: '0.7', lastmod: p.updated });
-  for (const b of data.brands || []) r.push({ src: `thuong-hieu.html?id=${b.id}`, out: `thuong-hieu/${b.id}.html`, data: { qId: b.id }, priority: '0.7' });
+  for (const b of data.brands || []) {
+    r.push({ src: `thuong-hieu.html?id=${b.slug || b.id}`, out: `thuong-hieu/${b.slug || b.id}.html`, data: { qId: b.slug || b.id }, priority: '0.7' });
+    if (b.slug && b.slug !== b.id) r.push({ src: `thuong-hieu.html?id=${b.slug}`, out: `thuong-hieu/${b.id}.html`, data: { qId: b.slug }, priority: '0.5' });
+  }
   for (const k of data.policies) r.push({ src: `chinh-sach.html?type=${k}`, out: `chinh-sach/${k}.html`, data: { qType: k }, priority: '0.3' });
   return r;
 }
@@ -165,7 +168,7 @@ function writeLlms(siteUrl, d) {
     '## Danh mục sản phẩm', '',
     ...d.categories.map((cat) => `- [${cat.name}](${u(`danh-muc/${cat.id}.html`)}): ${cat.subs.map((s) => s.name).join(', ')}`), '',
     '## Sản phẩm', '',
-    ...d.products.map((p) => `- [${p.name}](${u(`sp/${p.slug}.html`)}): ${money(p.price)}${p.oldPrice ? ` (giá gốc ${money(p.oldPrice)})` : ''}. ${p.short || ''}`), '',
+    ...d.products.map((p) => `- [${p.name}](${u(`sp/${p.slug}.html`)}): ${money(p.price)}${p.oldPrice ? ` (giá gốc ${money(p.oldPrice)})` : ''}. ${(p.description || '').replace(/\s+/g, ' ').trim()}`), '',
     '## Bài viết tư vấn', '',
     ...d.posts.map((p) => `- [${p.title}](${u(`tin-tuc/${p.slug}.html`)}): ${p.excerpt || ''}`), '',
     ...(d.projects?.length ? ['## Dự án tiêu biểu', '', ...d.projects.map((p) => `- [${p.title}](${u(`du-an/${p.slug}.html`)}): ${p.summary || ''}`), ''] : []),
@@ -205,11 +208,11 @@ async function main() {
       backend: DT.backend.enabled && !DT.backend.offline,
       config: DT.config,
       categories: DT.categories.map((c) => ({ id: c.id, name: c.name, subs: c.subs.map((s) => ({ id: s.id, name: s.name })) })),
-      products: DT.products.map((p) => ({ id: p.id, slug: p.slug, name: p.name, price: p.price, oldPrice: p.oldPrice, short: p.short, updated: p.updatedAt || p.createdAt })),
+      products: DT.products.map((p) => ({ id: p.id, slug: p.slug, name: p.name, price: p.price, oldPrice: p.oldPrice, description: p.description || '', updated: p.updatedAt || p.createdAt })),
       posts: DT.posts.map((p) => ({ slug: p.slug, title: p.title, excerpt: p.excerpt, date: p.date })),
       projects: (DT.projects || []).map((p) => ({ slug: p.slug, title: p.title, summary: p.summary, updated: p.updated_at ? String(p.updated_at).slice(0, 10) : undefined })),
       faqs: (DT.faqs || []).map((f) => ({ q: f.question, a: f.answer.replace(/<[^>]+>/g, '') })),
-      brands: DT.brands.map((b) => ({ id: b.id, name: b.name })),
+      brands: DT.brands.map((b) => ({ id: b.id, slug: b.slug, name: b.name })),
       policies: Object.keys(DT.policies),
       policyTitles: Object.fromEntries(Object.entries(DT.policies).map(([k, v]) => [k, v.title])),
     };

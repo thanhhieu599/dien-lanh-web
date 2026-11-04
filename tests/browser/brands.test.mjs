@@ -70,8 +70,7 @@ try {
   await page.waitForSelector('.ad-table');
   check(await page.locator('.ad-table img.ad-brand-logo').count() === 1, 'danh sách quản trị hiện logo');
   await page.goto(`${admin}#/brands/new`);
-  await page.waitForSelector('#frm [name=id]');
-  await page.fill('#frm [name=id]', 'hang-moi');
+  await page.waitForSelector('#frm [name=name]');
   await page.fill('#frm [name=name]', 'Hãng Mới');
   await page.click('#save');
   check(await toast('Đã lưu'), 'thêm thương hiệu mới');

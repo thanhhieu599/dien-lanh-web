@@ -105,10 +105,12 @@ DT.onReady(() => {
     $$('[data-gw]').forEach((el) => { if (!gw[el.dataset.gw]) el.textContent = 'Nhân viên sẽ liên hệ hướng dẫn thanh toán'; });
   });
   function renderSummary() {
-    const t = DT.store.totals();
+    const t = DT.store.totals(form.phone.value);
     $('#co-summary').innerHTML = `<div class="summary">
       <h3>Đơn hàng (${DT.store.cartCount()} sản phẩm) <a class="link" href="gio-hang.html" style="float:right;font-size:13px">Sửa</a></h3>
-      <div class="co-items">${t.lines.map(({ product: p, qty }) => `<div class="co-item"><span class="ci-img">${DT.productImage(p, 0)}<em>${qty}</em></span><span class="nm">${esc(p.name)}</span><b>${money(p.price * qty)}</b></div>`).join('')}</div>
+      <div class="co-coupon"><input id="co-coupon-code" placeholder="Mã khuyến mãi" aria-label="Mã khuyến mãi"><button type="button" class="btn btn-outline btn-sm" id="co-apply-coupon">Áp dụng</button></div>
+      ${t.couponError ? `<p class="muted">${esc(t.couponError)}</p>` : ''}
+      <div class="co-items">${t.lines.map(({ product: p, qty, options }) => `<div class="co-item"><span class="ci-img">${DT.productImage(p, 0)}<em>${qty}</em></span><span class="nm">${esc(p.name)}${DT.api.optionText(options) ? `<small class="item-options">${esc(DT.api.optionText(options))}</small>` : ''}</span><b>${money(p.price * qty)}</b></div>`).join('')}</div>
       <div class="sum-row"><span>Tạm tính</span><span>${money(t.subtotal)}</span></div>
       ${t.install ? `<div class="sum-row"><span>Phí lắp đặt</span><span>${money(t.install)}</span></div>` : ''}
       <div class="sum-row"><span>Phí vận chuyển</span><span id="ship-fee">${t.shipping && form.method.value === 'delivery' ? money(t.shipping) : 'Miễn phí'}</span></div>
@@ -121,6 +123,7 @@ DT.onReady(() => {
   }
 
   form.addEventListener('change', (e) => {
+    if (e.target.name === 'phone') renderSummary();
     if (e.target.name === 'method') {
       const pickup = form.method.value === 'pickup';
       $('#delivery-fields').classList.toggle('hidden', pickup);
@@ -133,6 +136,20 @@ DT.onReady(() => {
       $('#invoice-fields').classList.toggle('show', e.target.checked);
       ['company', 'taxCode'].forEach((n) => { form[n].required = e.target.checked; });
     }
+  });
+
+  form.addEventListener('click', async (event) => {
+    if (!event.target.closest('#co-apply-coupon')) return;
+    const button = form.querySelector('#co-apply-coupon');
+    button.disabled = true;
+    try {
+      const result = await DT.store.applyCoupon(form.querySelector('#co-coupon-code').value, form.phone.value);
+      DT.u.toast(result.msg, result.ok ? 'success' : 'error');
+      renderSummary();
+    } catch (error) { DT.u.toast(error.message, 'error'); button.disabled = false; }
+  });
+  form.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && event.target.id === 'co-coupon-code') { event.preventDefault(); form.querySelector('#co-apply-coupon').click(); }
   });
 
   form.addEventListener('submit', async (e) => {

@@ -15,28 +15,37 @@ DT.store = (() => {
   const get = () => state;
 
   // ---------- Giỏ hàng
+  const lineKey = (id, options = {}) => Object.keys(options).length ? `${id}:${JSON.stringify(Object.entries(options).sort(([a], [b]) => a.localeCompare(b)))}` : String(id);
+  const findLine = (id, key) => state.cart.find((i) => i.id === id && (key === undefined || (i.key || lineKey(i.id, i.options)) === key));
   function addToCart(id, qty = 1, opts = {}) {
     const p = DT.api.productById(id);
     if (!p) return false;
-    const item = state.cart.find((i) => i.id === id);
+    const groups = DT.api.optionGroups(p);
+    const options = Object.fromEntries(groups.map((group) => [group.name, opts.options?.[group.name]]));
+    if (groups.some((group) => !group.values.includes(options[group.name]))) {
+      DT.u.toast('Vui lòng chọn đầy đủ thuộc tính sản phẩm', 'error');
+      return false;
+    }
+    const key = lineKey(id, options);
+    const item = findLine(id, key);
     const n = Math.min(Math.max(1, Math.floor(Number(qty)) || 1), 99);
     if (item) item.qty = Math.min(item.qty + n, 99);
-    else state.cart.push({ id, qty: n, install: !!opts.install });
+    else state.cart.push({ id, key, qty: n, install: !!opts.install, options });
     save();
     return true;
   }
-  function setQty(id, qty) {
-    const item = state.cart.find((i) => i.id === id);
+  function setQty(id, qty, key) {
+    const item = findLine(id, key);
     if (!item) return;
-    if (qty <= 0) state.cart = state.cart.filter((i) => i.id !== id);
+    if (qty <= 0) state.cart = state.cart.filter((i) => i !== item);
     else item.qty = Math.min(qty, 99);
     save();
   }
-  function setInstall(id, on) {
-    const item = state.cart.find((i) => i.id === id);
+  function setInstall(id, on, key) {
+    const item = findLine(id, key);
     if (item) { item.install = on; save(); }
   }
-  const removeFromCart = (id) => setQty(id, 0);
+  const removeFromCart = (id, key) => setQty(id, 0, key);
   const clearCart = () => { state.cart = []; state.coupon = null; save(); };
   const cartCount = () => state.cart.reduce((s, i) => s + i.qty, 0);
   // Bỏ khỏi giỏ / yêu thích / so sánh các sản phẩm đã ngừng kinh doanh (admin ẩn hoặc xóa).
@@ -52,37 +61,58 @@ DT.store = (() => {
   }
 
   // Tính tổng tiền giỏ hàng, gồm phí lắp đặt, vận chuyển và mã giảm giá
-  function totals() {
+  function demoAdminState() {
+    try { return JSON.parse(localStorage.getItem(DT.ADMIN_DEMO_KEY || 'dt_admin_demo_v1') || '{}'); } catch { return {}; }
+  }
+  function findCoupon(code) {
+    if (!DT.backend?.enabled) {
+      const db = demoAdminState();
+      if (db.touched?.coupons) {
+        const c = db.coupons.find((c) => c.code === code);
+        return c ? { ...c, desc: c.description } : null;
+      }
+    }
+    return (state.couponObj?.code === code ? state.couponObj : null) || (DT.couponCatalog || DT.coupons).find((c) => c.code === code);
+  }
+  function recordDemoCouponUse(code, delta) {
+    if (!code) return;
+    const db = demoAdminState();
+    const c = db.coupons?.find((c) => c.code === code);
+    if (c) {
+      c.used_count = Math.max(0, Number(c.used_count || 0) + delta);
+      db.touched = { ...db.touched, coupons: true };
+      localStorage.setItem(DT.ADMIN_DEMO_KEY || 'dt_admin_demo_v1', JSON.stringify(db));
+    }
+    (DT.couponCatalog || DT.coupons).filter((c) => c.code === code).forEach((c) => { c.used_count = Math.max(0, Number(c.used_count || 0) + delta); });
+  }
+  function totals(phone = state.user?.phone) {
     const cfg = DT.config;
-    const lines = state.cart.map((i) => ({ ...i, product: DT.api.productById(i.id) })).filter((l) => l.product);
+    const lines = state.cart.map((i) => ({ ...i, key: i.key || lineKey(i.id, i.options), product: DT.api.productById(i.id) })).filter((l) => l.product);
     const subtotal = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
     const install = lines.reduce((s, l) => s + (l.install && !l.product.freeInstall && l.product.cat === 'may-lanh' ? cfg.installFee * l.qty : 0), 0);
     let shipping = subtotal === 0 || subtotal >= cfg.freeShipThreshold ? 0 : cfg.shippingFee;
     let discount = 0;
-    const c = state.coupon && (DT.coupons.find((x) => x.code === state.coupon) || (state.couponObj?.code === state.coupon ? state.couponObj : null));
-    if (c && subtotal >= c.min) {
-      // Cùng công thức với hàm coupon_discount() trên server
-      if (c.type === 'percent') discount = Math.min(Math.floor(subtotal * c.value / 100), c.max || Infinity);
-      if (c.type === 'fixed') discount = Math.min(c.value, subtotal);
-      if (c.type === 'ship') shipping = 0;
-    }
-    return { lines, subtotal, install, shipping, discount, coupon: c && subtotal >= c.min ? c : null, total: Math.max(0, subtotal + install + shipping - discount) };
+    const c = state.coupon && findCoupon(state.coupon);
+    const result = c ? DT.promotions.evaluate(c, lines, { phone, orders: state.orders, customers: demoAdminState().crm_customers || [], skipCustomer: !!DT.backend?.enabled }) : null;
+    if (result?.ok) { discount = result.discount; if (result.free_ship) shipping = 0; }
+    return { lines, subtotal, install, shipping, discount, coupon: result?.ok ? c : null, couponError: result && !result.ok ? result.msg : null, total: Math.max(0, subtotal + install + shipping - discount) };
   }
   // Mã công khai kiểm tra tại chỗ; mã riêng hỏi server (validate_coupon)
-  async function applyCoupon(code) {
+  async function applyCoupon(code, phone = state.user?.phone) {
     code = String(code).trim().toUpperCase();
-    const c = DT.coupons.find((x) => x.code === code);
-    const { subtotal } = totals();
-    if (!c && DT.backend.enabled) {
-      const r = await DT.backend.rpc('validate_coupon', { p_code: code, p_subtotal: subtotal });
+    const c = findCoupon(code);
+    const { lines } = totals(phone);
+    if (DT.backend.enabled) {
+      const r = await DT.backend.rpc('validate_coupon_cart', { p_code: code, p_items: lines.map((line) => ({ id: line.id, qty: line.qty })), p_phone: phone || null });
       if (!r.ok) return { ok: false, msg: r.msg };
       const k = r.coupon;
-      state.couponObj = { code: k.code, type: k.type, value: Number(k.value), max: k.max == null ? null : Number(k.max), min: Number(k.min), desc: k.desc };
+      state.couponObj = { ...k, code: k.code, type: k.type, value: Number(k.value), max: k.max == null ? null : Number(k.max), min: Number(k.min), desc: k.description || k.desc };
       state.coupon = k.code; save();
       return { ok: true, msg: `Đã áp dụng: ${k.desc || k.code}` };
     }
     if (!c) return { ok: false, msg: 'Mã giảm giá không tồn tại' };
-    if (subtotal < c.min) return { ok: false, msg: `Đơn hàng tối thiểu ${DT.u.money(c.min)} để dùng mã này` };
+    const result = DT.promotions.evaluate(c, lines, { phone, orders: state.orders, customers: demoAdminState().crm_customers || [] });
+    if (!result.ok) return result;
     state.coupon = c.code; save();
     return { ok: true, msg: `Đã áp dụng: ${c.desc}` };
   }
@@ -158,12 +188,18 @@ DT.store = (() => {
   // ---------- Đơn hàng
   // Có backend: place_order() tính lại giá trên server; đơn trả về được lưu tạm để hiện trang thành công.
   async function placeOrder(info) {
-    const t = totals();
+    const t = totals(info.customer.phone);
     if (!t.lines.length) return null;
+    if (state.coupon && t.couponError) throw new Error(t.couponError);
+    for (const line of t.lines) {
+      if (DT.api.optionGroups(line.product).some((group) => !group.values.includes(line.options?.[group.name]))) {
+        throw new Error(`Vui lòng chọn lại thuộc tính cho ${line.product.name}`);
+      }
+    }
     let order;
     if (be()) {
       order = await DT.backend.rpc('place_order', {
-        p_items: t.lines.map((l) => ({ id: l.id, qty: l.qty, install: !!l.install })),
+        p_items: t.lines.map((l) => ({ id: l.id, qty: l.qty, install: !!l.install, options: l.options || {} })),
         p_customer: info.customer, p_shipping: info.shipping, p_payment: info.payment,
         p_invoice: info.invoice || null, p_note: info.note || null, p_coupon: t.coupon?.code || null,
       });
@@ -183,13 +219,14 @@ DT.store = (() => {
         status: 'pending',
         customer: info.customer, shipping: info.shipping, payment: info.payment,
         invoice: info.invoice || null, note: info.note || '',
-        items: t.lines.map((l) => ({ id: l.id, name: l.product.name, price: l.product.price, qty: l.qty, install: l.install })),
+        items: t.lines.map((l) => ({ id: l.id, name: l.product.name, price: l.product.price, qty: l.qty, install: l.install, options: l.options || {} })),
         subtotal: t.subtotal, install: t.install, shippingFee: pickup ? 0 : t.shipping, discount: t.discount, coupon: t.coupon?.code || null,
         total: t.total - (pickup ? t.shipping : 0),
         userId: state.user?.id || null,
         maintenance: !!info.maintenance,
         attribution: info.attribution || null,
       };
+      recordDemoCouponUse(t.coupon?.code, 1);
     }
     state.orders.unshift(order);
     state.orders = state.orders.slice(0, 50);
@@ -228,7 +265,7 @@ DT.store = (() => {
       return o;
     }
     const o = state.orders.find((x) => x.code === code);
-    if (o && o.status === 'pending') { o.status = 'cancelled'; save(); return o; }
+    if (o && o.status === 'pending') { o.status = 'cancelled'; recordDemoCouponUse(o.coupon, -1); save(); return o; }
     throw new Error('Không thể hủy đơn hàng này');
   }
 

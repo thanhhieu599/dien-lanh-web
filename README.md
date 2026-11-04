@@ -96,7 +96,8 @@ Bật thanh toán online và thông báo tự động: xem **`docs/PHASE4.md`** 
 
 ## Tùy chỉnh nhanh
 
-- Thông tin doanh nghiệp, hotline, phí ship, phí lắp đặt, mã giảm giá, bài viết, cửa hàng: `frontend/assets/js/data/content.js`
+- Khi đã có trang quản trị: sửa trong **Quản trị** (Cài đặt cửa hàng, Sản phẩm, Banner, Mã giảm giá, Bài viết, Cửa hàng, Dịch vụ, Chính sách, **Nội dung website**…)
+- Dữ liệu / nội dung mặc định (khi chưa sửa trong quản trị): `frontend/assets/js/data/content.js` (nội dung trang chủ, dải cam kết…: `DT.siteContentDefaults`)
 - Sản phẩm mẫu: sửa `tools/generate-catalog.mjs` rồi chạy `node tools/generate-catalog.mjs`
 - Màu thương hiệu: biến `--primary`, `--accent` trong `assets/css/main.css`
 

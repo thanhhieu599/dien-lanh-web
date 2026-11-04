@@ -9,18 +9,9 @@ window.AD = window.AD || {};
 
   AD.pages.content = async (params, el) => {
     if (AD.me.role !== 'admin') throw new Error('Chỉ quản trị viên được sửa Nội dung website');
-    const D = DT.siteContentDefaults;
     const [homeRow, catRow] = await Promise.all([AD.db.get('settings', 'home'), AD.db.get('settings', 'catalog')]);
     const saved = homeRow?.value || {};
-    const C = {
-      mini: saved.mini?.length ? saved.mini : D.mini,
-      story: { ...D.story, ...(saved.story || {}) },
-      b2b: { ...D.b2b, ...(saved.b2b || {}) },
-      flash: { ...D.flash, ...(saved.flash || {}) },
-      benefits: saved.benefits?.length ? saved.benefits : D.benefits,
-      salesPolicy: saved.salesPolicy?.length ? saved.salesPolicy : D.salesPolicy,
-      newsletter: { ...D.newsletter, ...(saved.newsletter || {}) },
-    };
+    const C = DT.siteContent(saved); // mặc định + phần đã lưu (cùng cách website dùng)
     const cat = catRow?.value || {};
     const ranges = cat.priceRanges?.length ? cat.priceRanges : DT.priceRanges;
     const bundles = Array.isArray(cat.bundles) ? cat.bundles : DT.bundleRules;
@@ -39,7 +30,7 @@ window.AD = window.AD || {};
       ${f('Tiêu đề', inp(`${key}.${i}.title`, x.title), 'quarter')}
       ${f('Dòng phụ', inp(`${key}.${i}.sub`, x.sub), 'half')}`).join('');
     const pad = (arr, n, fill) => Array.from({ length: n }, (_, i) => arr[i] || fill());
-    const SYMBOLS = 'Ký hiệu: <b>{ten}</b> tên cửa hàng, <b>{nguong}</b> / <b>{nguong_vnd}</b> ngưỡng miễn phí ship (2 triệu / 2.000.000₫), <b>{gia_ve_sinh}</b> giá vệ sinh thấp nhất, <b>*chữ*</b> tô màu nhấn mạnh.';
+    const SYMBOLS = 'Ký hiệu: <b>{ten}</b> tên cửa hàng, <b>{nguong}</b> / <b>{nguong_vnd}</b> ngưỡng miễn phí ship (2 triệu / 2.000.000₫), <b>{gia_ve_sinh}</b> giá vệ sinh thấp nhất, <b>*chữ*</b> tô màu nhấn mạnh, <b>[chữ có {ký hiệu}|chữ thay thế]</b> dùng chữ thay thế khi ký hiệu chưa có dữ liệu.';
 
     const rangeRow = (r = {}) => `<div class="tr-row ct-row"><div class="tr-f ct-range">
       <input data-k="label" placeholder="Tên mức giá *, vd 5 - 10 triệu" value="${esc(r.label || '')}">
@@ -55,7 +46,7 @@ window.AD = window.AD || {};
 
     el.innerHTML = `<div class="ad-head"><div><h1>Nội dung website</h1><small class="muted">Chữ, số liệu trên trang chủ, dải cam kết, trang sản phẩm; Flash Sale; mức lọc giá; phụ kiện gợi ý mua kèm. ${SYMBOLS}</small></div></div>
       <form id="ct-form" novalidate>
-        ${card('Trang chủ – 2 ô cạnh banner', 'Ô 1 nền trắng chữ đỏ, ô 2 chữ xanh. Xuống dòng trong tiêu đề để ngắt dòng.', C.mini.slice(0, 2).map((m, i) => `
+        ${card('Trang chủ – 2 ô cạnh banner', 'Ô 1 nền trắng chữ đỏ, ô 2 chữ xanh. Xuống dòng trong tiêu đề để ngắt dòng.', pad(C.mini, 2, () => ({})).slice(0, 2).map((m, i) => `
           ${f(`Ô ${i + 1} – tiêu đề`, area(`mini.${i}.title`, m.title), 'half')}
           ${f('Dòng phụ', inp(`mini.${i}.sub`, m.sub), 'half')}
           ${f('Chữ trên nút', inp(`mini.${i}.cta`, m.cta), 'half')}
@@ -113,7 +104,8 @@ window.AD = window.AD || {};
       });
       return out;
     };
-    const badUrl = (h) => h && !/^(https?:\/\/|[a-z0-9-]+\.html|#|\/|tel:|mailto:)/i.test(h);
+    // Kiểm tra link bằng đúng hàm website dùng khi hiển thị: link nào website bỏ qua thì không cho lưu
+    const badUrl = (h) => !!h && !DT.u.safeUrl(h);
 
     const save = async (home, catalog, msg) => {
       await run(form.querySelector('.ad-form-foot .btn-primary'), async () => {
@@ -128,7 +120,7 @@ window.AD = window.AD || {};
       e.preventDefault();
       const v = collect();
       const hrefs = [...v.mini.map((m) => m.href), v.story.btnHref, v.story.linkHref, v.b2b.btnHref];
-      if (hrefs.some(badUrl)) { AD.ui.toast('Liên kết không hợp lệ: dùng tên trang (vd khuyen-mai.html) hoặc địa chỉ bắt đầu bằng https://', 'error'); return; }
+      if (hrefs.some(badUrl)) { AD.ui.toast('Liên kết không hợp lệ: dùng tên trang (vd khuyen-mai.html), địa chỉ https://, tel:, mailto: hoặc zalo:', 'error'); return; }
       v.b2b.points = v.b2b.points.filter(Boolean);
       v.story.stats = v.story.stats.filter((x) => x.value);
       v.b2b.stats = v.b2b.stats.filter((x) => x.value);
@@ -144,7 +136,8 @@ window.AD = window.AD || {};
         return { label: g('label'), min: Math.round((min || 0) * 1e6), max: max == null ? null : Math.round(max * 1e6) };
       }).filter((r) => r.label);
       if (priceRanges.some((r) => r.max != null && r.max <= r.min)) { AD.ui.toast('Mức lọc giá: giá "Đến" phải lớn hơn giá "Từ"', 'error'); return; }
-      priceRanges.forEach((r) => { r.v = `${r.min / 1e6}-${r.max == null ? '' : r.max / 1e6}`; });
+      // Mã mức giá cùng dạng mặc định (vd 30-999 cho "Trên 30 triệu") để link lọc cũ vẫn dùng được
+      priceRanges.forEach((r) => { r.v = `${r.min / 1e6}-${r.max == null ? 999 : r.max / 1e6}`; });
       if (!priceRanges.length) { AD.ui.toast('Cần ít nhất 1 mức lọc giá', 'error'); return; }
       // Phụ kiện mua kèm
       const bundlesOut = rows('bundles').map((r) => {

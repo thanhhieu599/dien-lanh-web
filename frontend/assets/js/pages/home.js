@@ -50,7 +50,7 @@ DT.onReady(() => {
   const href = (h, def) => esc(DT.u.safeUrl(h) || def);
   // 2 ô cạnh banner (Quản trị › Nội dung website)
   $('#hero-right').innerHTML = `
-    ${SC.mini.slice(0, 2).map((m, i) => `<a class="mini-banner mb-${i + 1}" href="${href(m.href, '#')}"><b>${T(m.title)}</b><span>${T(m.sub)}</span>${m.cta ? `<em>${T(m.cta)}</em>` : ''}${DT.icon(i ? 'tool' : 'zap')}</a>`).join('')}
+    ${SC.mini.slice(0, 2).filter((m) => m.title).map((m, i) => `<a class="mini-banner mb-${i + 1}" href="${href(m.href, '#')}"><b>${T(m.title)}</b><span>${T(m.sub)}</span>${m.cta ? `<em>${T(m.cta)}</em>` : ''}${DT.icon(i ? 'tool' : 'zap')}</a>`).join('')}
     <div class="hero-user">${user
       ? `<b>Xin chào, ${esc(user.name)}!</b><div class="btns"><a class="btn btn-sm btn-outline" href="tai-khoan.html#orders">Đơn hàng</a><a class="btn btn-sm btn-primary" href="yeu-thich.html">Yêu thích</a></div>`
       : `<b>Đăng nhập để nhận ưu đãi thành viên</b><div class="btns"><a class="btn btn-sm btn-primary" href="tai-khoan.html">Đăng nhập</a><a class="btn btn-sm btn-outline" href="tai-khoan.html#register">Đăng ký</a></div>`}</div>`;
@@ -98,6 +98,7 @@ DT.onReady(() => {
     $('#cd-h').textContent = String(Math.floor((s % 86400) / 3600)).padStart(2, '0');
     $('#cd-m').textContent = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
     $('#cd-s').textContent = String(s % 60).padStart(2, '0');
+    if (flashEnd && !s) $('#flash').hidden = true; // hết giờ khi khách đang xem trang
   };
   tick(); setInterval(tick, 1000);
 

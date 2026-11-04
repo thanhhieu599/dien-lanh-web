@@ -34,6 +34,7 @@ Việc còn lại cho giai đoạn sau: thanh toán online (VNPay/MoMo cần ser
 - `db.js`: hai adapter cùng giao diện `list/get/insert/update/remove` – Supabase (PostgREST, đếm bằng `Prefer: count=exact`) và Demo (localStorage, đồng bộ đơn/lead/đánh giá từ website demo cùng tên miền).
 - `resources.js`: cấu hình khai báo cho các mục CRUD (cột, bộ lọc, trường form); `pages-crud.js` dựng danh sách + form từ cấu hình.
 - `pages-sales.js`: tổng quan, đơn hàng, CRM lead, báo cáo; `pages-other.js`: đánh giá, khách hàng, cài đặt; `charts.js`: biểu đồ SVG.
+- `pages-content.js`: **Nội dung website** (chỉ quản trị viên): chữ / số liệu trang chủ, Flash Sale, dải cam kết, chính sách bán hàng, ô nhận tin, mức lọc giá, phụ kiện mua kèm. Lưu ở `settings` khóa `home` và `catalog`; mặc định nằm trong `DT.siteContentDefaults` (`data/content.js`), website đọc qua `DT.siteContent()` / `DT.siteText()`.
 - Quyền thật nằm ở RLS (migrations); giao diện chỉ ẩn mục không có quyền. Migration `20261011000001_admin.sql` thêm trigger hoàn/trừ kho khi đơn vào/ra trạng thái hủy.
 
 ## Giai đoạn 4 – Thanh toán, thông báo, SEO (đã triển khai, hướng dẫn: `docs/PHASE4.md`)

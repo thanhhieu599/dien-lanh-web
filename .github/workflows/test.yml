@@ -56,6 +56,8 @@ jobs:
         run: node tests/browser/home.test.mjs
       - name: Quản trị › Nội dung website (bản demo)
         run: node tests/browser/content.test.mjs
+      - name: Nội dung website - các lỗi tìm thấy khi rà soát
+        run: node tests/browser/content-review.test.mjs
       - name: Vận hành & quản trị (GA4/Pixel, phân quyền, MISA, bảo trì, ảnh sản phẩm)
         run: node --experimental-strip-types --no-warnings tests/browser/ops.test.ts
       - name: Vận hành & quản trị - chế độ demo

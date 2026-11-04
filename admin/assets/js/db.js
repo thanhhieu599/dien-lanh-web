@@ -385,7 +385,8 @@ AD.demo = () => {
       db[table] = db[table].filter((x) => String(x[AD.PK[table]]) !== String(id)); persist();
       touch(table);
     },
-    reset() { db = seed(); persist(); },
+    // Khôi phục dữ liệu mẫu: website dùng lại dữ liệu mặc định (chưa bảng nào được sửa)
+    reset() { db = seed(); db.touched = {}; persist(); },
   };
 };
 

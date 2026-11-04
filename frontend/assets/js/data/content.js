@@ -261,11 +261,12 @@ DT.trustData = () => {
 // Nội dung website chỉnh trong Quản trị › Nội dung website (settings 'home').
 // Đây là nội dung mặc định; quản trị lưu phần nào thì phần đó thay thế.
 // Ký hiệu trong chữ: {ten} = tên cửa hàng, {nguong} = ngưỡng miễn phí ship (2 triệu), {nguong_vnd} = (2.000.000₫), {gia_ve_sinh} = giá vệ sinh thấp nhất,
-// *chữ* = tô màu nhấn mạnh, xuống dòng = ngắt dòng.
+// *chữ* = tô màu nhấn mạnh, xuống dòng = ngắt dòng,
+// [chữ có {ký hiệu}|chữ thay thế] = dùng chữ thay thế khi ký hiệu chưa có dữ liệu (vd chưa đặt ngưỡng miễn phí ship).
 DT.siteContentDefaults = {
   mini: [
     { title: 'Flash Sale\ngiảm đến 25%', sub: 'Số lượng có hạn mỗi ngày', cta: 'Săn ngay', href: 'khuyen-mai.html' },
-    { title: 'Vệ sinh máy lạnh\nchỉ từ {gia_ve_sinh}', sub: 'Thợ đến trong 2 giờ', cta: 'Đặt lịch', href: 'dich-vu.html' },
+    { title: 'Vệ sinh máy lạnh\n[chỉ từ {gia_ve_sinh}|tận nơi]', sub: 'Thợ đến trong 2 giờ', cta: 'Đặt lịch', href: 'dich-vu.html' },
   ],
   story: {
     kicker: 'Về {ten}', title: 'Kiến tạo không gian *mát lành, bền vững* cho mọi công trình Việt',
@@ -283,21 +284,21 @@ DT.siteContentDefaults = {
   benefits: [
     { icon: 'shield', title: '100% chính hãng', sub: 'Đầy đủ hóa đơn, phiếu bảo hành' },
     { icon: 'tool', title: 'Lắp đặt chuẩn hãng', sub: 'Thợ có chứng chỉ, bảo hành lắp đặt' },
-    { icon: 'truck', title: 'Giao nhanh 2h', sub: 'Miễn phí đơn từ {nguong}' },
+    { icon: 'truck', title: 'Giao nhanh 2h', sub: '[Miễn phí đơn từ {nguong}|Giao tận nơi]' },
     { icon: 'refresh', title: '1 đổi 1 trong 30 ngày', sub: 'Nếu lỗi do nhà sản xuất' },
   ],
   salesPolicy: [
     { icon: 'shield', title: 'Hàng chính hãng 100%', sub: 'Đầy đủ hóa đơn VAT, CO/CQ' },
-    { icon: 'truck', title: 'Giao hàng miễn phí', sub: 'Đơn từ {nguong_vnd} nội thành' },
+    { icon: 'truck', title: 'Giao hàng miễn phí', sub: '[Đơn từ {nguong_vnd} nội thành|Giao tận nơi]' },
     { icon: 'tool', title: 'Lắp đặt chuyên nghiệp', sub: 'Thợ có chứng chỉ, bảo hành lắp đặt 12 tháng' },
     { icon: 'refresh', title: '1 đổi 1 trong 30 ngày', sub: 'Nếu lỗi do nhà sản xuất' },
   ],
   newsletter: { title: 'Nhận ưu đãi độc quyền', sub: 'Đăng ký để nhận mã giảm giá 300K và lịch vệ sinh máy lạnh định kỳ.' },
 };
 DT.siteIcons = ['shield', 'tool', 'truck', 'refresh', 'gift', 'percent', 'star', 'check', 'clock', 'headset', 'card', 'building', 'snow', 'zap'];
-// Nội dung đang dùng = mặc định + phần quản trị đã lưu (DT.homeContent)
-DT.siteContent = () => {
-  const d = DT.siteContentDefaults; const o = DT.homeContent || {};
+// Nội dung đang dùng = mặc định + phần quản trị đã lưu (mặc định: DT.homeContent; trang quản trị truyền phần đã lưu)
+DT.siteContent = (saved = DT.homeContent) => {
+  const d = DT.siteContentDefaults; const o = saved || {};
   const obj = (k) => ({ ...d[k], ...(o[k] || {}) });
   const list = (k) => (Array.isArray(o[k]) && o[k].length ? o[k] : d[k]);
   return { mini: list('mini'), story: obj('story'), b2b: obj('b2b'), flash: obj('flash'), benefits: list('benefits'), salesPolicy: list('salesPolicy'), newsletter: obj('newsletter') };
@@ -305,11 +306,17 @@ DT.siteContent = () => {
 // Thay ký hiệu & định dạng chữ (đã an toàn HTML)
 DT.siteText = (s, { rich = false } = {}) => {
   const svc = (DT.services || []).filter((x) => x.price > 0 && /vệ sinh/i.test(x.name)).map((x) => x.price);
-  let t = String(s || '')
-    .replace(/\{ten\}/g, DT.config.name || '')
-    .replace(/\{nguong_vnd\}/g, DT.config.freeShipThreshold ? DT.u.money(DT.config.freeShipThreshold) : '')
-    .replace(/\{nguong\}/g, DT.config.freeShipThreshold ? DT.u.shortMoney(DT.config.freeShipThreshold) : '')
-    .replace(/\{gia_ve_sinh\}/g, svc.length ? DT.u.shortMoney(Math.min(...svc)) : '');
-  t = DT.u.esc(t);
+  const ship = DT.config.freeShipThreshold;
+  const values = {
+    ten: DT.config.name || '',
+    nguong_vnd: ship ? DT.u.money(ship) : '',
+    nguong: ship ? DT.u.shortMoney(ship) : '',
+    gia_ve_sinh: svc.length ? DT.u.shortMoney(Math.min(...svc)) : '',
+  };
+  // Hàm thay thế (không dùng chuỗi) để tên cửa hàng có "$&", "$1"... hiện đúng nguyên văn
+  const fill = (x) => x.replace(/\{(\w+)\}/g, (m, k) => (k in values ? values[k] : m));
+  const missing = (x) => [...x.matchAll(/\{(\w+)\}/g)].some(([, k]) => k in values && !values[k]);
+  let t = String(s || '').replace(/\[([^\[\]|]*)\|([^\[\]]*)\]/g, (m, main, alt) => (missing(main) ? alt : main));
+  t = DT.u.esc(fill(t));
   return rich ? t.replace(/\*([^*]+)\*/g, '<span>$1</span>').replace(/\n/g, '<br>') : t.replace(/\*/g, '');
 };

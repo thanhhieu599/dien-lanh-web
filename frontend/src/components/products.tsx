@@ -45,8 +45,8 @@ function ProductResults({products,flash}:{products:Product[];flash:boolean}) {
 }
 export function CategorySection({category:c}:{category:import('../types').Category}) {
  const [sub,setSub]=useState('');const products=dt.api.list({cat:c.id,sub,sort:'category'}).items;
- return <section className="section section-box" data-block={c.id}><div className="section-head"><h2>{c.name}</h2><div className="tabs"><button className={`tab ${!sub?'active':''}`} onClick={()=>setSub('')}>Nổi bật</button>{c.subs.map(s=><button className={`tab ${sub===s.id?'active':''}`} key={s.id} onClick={()=>setSub(s.id)}>{s.name.replace(/^(Máy lạnh|Máy giặt|Tủ lạnh) /,'')}</button>)}</div></div><div className="block-body"><ProductGrid products={products}/></div></section>;
+ return <section className="section section-box" data-block={c.id}><div className="section-head"><h2>{c.name}</h2><div className="tabs"><button type="button" className={`tab ${!sub?'active':''}`} aria-pressed={!sub} onClick={()=>setSub('')}>Nổi bật</button>{c.subs.map(s=><button type="button" className={`tab ${sub===s.id?'active':''}`} aria-pressed={sub===s.id} key={s.id} onClick={()=>setSub(s.id)}>{s.name.replace(/^(Máy lạnh|Máy giặt|Tủ lạnh) /,'')}</button>)}</div><ShopLink className="link" href={dt.api.catUrl(c.id,sub||undefined)}>Xem tất cả<Icon name="right"/></ShopLink></div><div className="block-body"><ProductGrid products={products}/></div></section>;
 }
 export function ProductSection({title,products,href}:{title:string;products:Product[];href?:string}) {
-  return <section className="section section-box"><div className="section-head"><h2>{title}</h2></div><ProductGrid products={products}/></section>;
+  return <section className="section section-box"><div className="section-head"><h2>{title}</h2>{href&&<ShopLink className="link" href={href}>Xem tất cả<Icon name="right"/></ShopLink>}</div><ProductGrid products={products}/></section>;
 }

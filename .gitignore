@@ -2,6 +2,13 @@ node_modules/
 .env
 .DS_Store
 dist/
+server/config.local.php
+server/seed.json
+server/seed.sql
+server/seed-test.json
+server/seed-test.sql
+server/uploads/
+.cache/
 
 # Ảnh chụp giao diện (sinh bởi tools/capture-screens.mjs)
 design/screens/

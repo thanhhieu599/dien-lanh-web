@@ -415,7 +415,7 @@ AD.pages = AD.pages || {};
 
   // ======================================================================= Ảnh trang Tầm nhìn & Sứ mệnh
   // Nén ảnh ngay trên trình duyệt (giảm dung lượng, trang tải nhanh) rồi lưu:
-  //  - Supabase: file lên Storage (bucket 'media'), link vào settings 'vision'
+  //  - PHP/MySQL: file lên Storage (bucket 'media'), link vào settings 'vision'
   //  - Demo: ảnh dạng data URL trong localStorage (website demo cùng tên miền đọc được)
   const { compress, toDataUrl } = AD.media;
 
@@ -424,7 +424,7 @@ AD.pages = AD.pages || {};
       throw new Error(
         "Chỉ quản trị viên được sửa ảnh trang Tầm nhìn & Sứ mệnh",
       );
-    const supa = AD.db.mode === "supabase";
+    const supa = AD.db.mode === "mysql";
     const loadImages = async () => {
       if (!supa) {
         try {
@@ -562,7 +562,7 @@ AD.pages = AD.pages || {};
   AD.pages.trust = async (params, el) => {
     if (AD.me.role !== "admin")
       throw new Error("Chỉ quản trị viên được sửa mục Uy tín & đánh giá");
-    const supa = AD.db.mode === "supabase";
+    const supa = AD.db.mode === "mysql";
     const empty = { logos: [], certs: [], reviews: [], google: {} };
     let data;
     if (supa) data = (await AD.db.get("settings", "trust"))?.value;
@@ -704,9 +704,9 @@ AD.pages = AD.pages || {};
   AD.pages.notifications = async (params, el) => {
     el.innerHTML = `<div class="ad-head"><div><h1>Nhật ký thông báo</h1><small class="muted">Thông báo tự động gửi nhân viên (Zalo, Telegram, email) và khách hàng (email, Zalo ZNS) khi có đơn mới, thanh toán, đổi trạng thái, yêu cầu báo giá</small></div></div>
       <div id="list"><div class="ad-loading">Đang tải…</div></div>`;
-    if (AD.db.mode !== "supabase") {
+    if (AD.db.mode !== "mysql") {
       el.querySelector("#list").innerHTML =
-        '<div class="ad-card"><p>Chế độ demo không gửi thông báo. Kết nối Supabase và cấu hình kênh gửi theo <b>docs/PHASE4.md</b> để bật tính năng này.</p></div>';
+        '<div class="ad-card"><p>Chế độ demo không gửi thông báo. Kết nối PHP/MySQL và cấu hình kênh gửi theo <b>docs/PHASE4.md</b> để bật tính năng này.</p></div>';
       return;
     }
     const size = 30;

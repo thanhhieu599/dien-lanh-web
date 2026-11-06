@@ -1,13 +1,16 @@
-// Kết nối cơ sở dữ liệu Supabase (xem supabase/README.md).
-// Để trống url/anonKey = chế độ DEMO: dữ liệu mẫu, đơn hàng lưu trên trình duyệt.
-// anonKey là khóa công khai (an toàn khi để trên website); dữ liệu được bảo vệ bằng RLS.
-// TUYỆT ĐỐI không dán service_role key vào đây.
+// Backend PHP/MySQL cùng hosting. Đổi mode thành 'demo' để xem giao diện tĩnh.
 window.DT = window.DT || {};
 
 DT.BACKEND = {
-  url: '',            // vd: 'https://abcdxyz.supabase.co'
-  anonKey: '',        // Project Settings > API > anon public
-  // Khách đăng nhập bằng số điện thoại; hệ thống ánh xạ thành email nội bộ <sđt>@<domain>
-  phoneEmailDomain: 'sdt.trangthietbi.vn',
+  mode: 'mysql',
+  apiUrl: new URL('../../../server/api.php', document.currentScript.src).href,
   cacheMinutes: 5,    // thời gian giữ catalog trong sessionStorage
+};
+// Không cần URL rewrite; hỗ trợ cả hosting cài trong thư mục con.
+DT.apiEndpoint = (path) => {
+  const [route, query = ''] = path.split('?');
+  const url = new URL(DT.BACKEND.apiUrl);
+  url.search = query;
+  url.searchParams.set('route', route);
+  return url.href;
 };

@@ -1,6 +1,17 @@
 # Kiến trúc & kế hoạch giai đoạn 2–3
 
-## Giai đoạn 1 (hiện tại)
+> **Cập nhật:** Runtime hiện hành đã chuyển sang PHP/PDO + MySQL. Xem [server/README.md](../server/README.md) và [README](../README.md). Phần bên dưới là tài liệu lịch sử của bản Supabase, không phải hướng dẫn triển khai hiện tại.
+
+## Kiến trúc hiện hành
+
+- Website: React/TypeScript trong `frontend/src/`, Router giữ URL HTML và SEO.
+- Quản trị: React/TypeScript trong `admin/src/`, HashRouter giữ URL `/admin/#/products/1001`.
+- Vite build cả hai entry; đóng gói hosting và SEO ghép bundle quản trị vào `dist/admin/`.
+- Backend: PHP/PDO + MySQL trong `server/`; quyền truy cập được kiểm tra tại API.
+- Quản trị dùng lại adapter `db.js`, metadata `resources.js` và trình xuất `xlsx.js`; không nạp các trình dựng giao diện JS cũ.
+- Hướng dẫn hiện hành: [quản trị](../admin/README.md), [chuyển đổi React](REACT-MIGRATION.md).
+
+## Giai đoạn 1 (lịch sử)
 
 - Frontend tĩnh, không phụ thuộc framework → tải nhanh, deploy ở bất kỳ đâu.
 - Tất cả truy xuất dữ liệu đi qua `DT.api` (`assets/js/core/api.js`); trạng thái người dùng qua `DT.store` (`core/store.js`, lưu localStorage).

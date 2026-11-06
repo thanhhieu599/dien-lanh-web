@@ -4,7 +4,7 @@ AD.pages = AD.pages || {};
 
 (() => {
   const { esc, money, d, ic, table, run, toast } = AD.ui;
-  const supa = () => AD.db.mode === 'supabase';
+  const supa = () => AD.db.mode === 'mysql';
   const pad = (n) => String(n).padStart(2, '0');
   const ymd = (x) => `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`;
   const localDay = (s, add = 0) => { const [y, m, dd] = s.split('-').map(Number); return new Date(y, m - 1, dd + add); };
@@ -87,7 +87,7 @@ AD.pages = AD.pages || {};
     if (tab !== 'upcoming') rows.reverse();
     el.innerHTML = `<div class="ad-head"><div><h1>Lịch bảo trì định kỳ</h1><small class="muted">Nhắc khách vệ sinh máy lạnh theo chu kỳ – nguồn doanh thu dịch vụ lặp lại</small></div>
         <div class="ad-head-actions"><button class="btn btn-light" id="csv">${ic('file')} Xuất CSV</button></div></div>
-      ${supa() ? '' : `<div class="ad-alert">${ic('alert')}<div><b>Bản demo:</b> lịch được tính từ các đơn <b>Hoàn thành</b> có tick "Nhắc bảo trì". Khi kết nối Supabase, hệ thống tự gửi email / Zalo ZNS cho khách và báo nhân viên đúng ngày.</div></div>`}
+      ${supa() ? '' : `<div class="ad-alert">${ic('alert')}<div><b>Bản demo:</b> lịch được tính từ các đơn <b>Hoàn thành</b> có tick "Nhắc bảo trì". Khi kết nối PHP/MySQL, hệ thống tự gửi email / Zalo ZNS cho khách và báo nhân viên đúng ngày.</div></div>`}
       <div class="kpis">
         <div class="kpi"><span>Đến hạn trong 30 ngày</span><b>${in30}</b><small>lần nhắc</small></div>
         <div class="kpi"><span>Khách đang theo dõi</span><b>${customers}</b><small>số điện thoại</small></div>

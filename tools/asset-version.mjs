@@ -15,7 +15,8 @@ export function stampAssets(dir, version) {
       if (!e.name.endsWith('.html')) continue;
       const src = fs.readFileSync(p, 'utf8');
       // chỉ file nội bộ (không phải http://, https://, //)
-      const out = src.replace(/(\s(?:href|src)=")(?!https?:|\/\/)([^"?#]+\.(?:css|js))(?:\?v=[^"]*)?"/g, `$1$2?v=${version}"`);
+      const out = src.replace(/(\s(?:href|src)=")(?!https?:|\/\/)([^"?#]+\.(?:css|js))(?:\?v=[^"]*)?"/g,
+        (_,prefix,file)=>/(^|\/)react-assets\//.test(file)?`${prefix}${file}"`:`${prefix}${file}?v=${version}"`);
       if (out !== src) { fs.writeFileSync(p, out); files++; }
     }
   };

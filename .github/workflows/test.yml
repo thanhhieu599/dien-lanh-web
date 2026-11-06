@@ -1,66 +1,43 @@
-# Kiểm thử database (PostgreSQL), Edge Functions (thanh toán, thông báo) và luồng thanh toán trên trình duyệt.
-name: Tests
-
+name: Tests (PHP + MySQL)
 on:
   push:
     branches: [main]
   pull_request:
-
+permissions:
+  contents: read
 jobs:
   test:
-    runs-on: ubuntu-24.04 # cố định: ubuntu-latest đã lên 26.04, Playwright 1.56 chưa hỗ trợ
-    timeout-minutes: 20
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_PASSWORD: postgres
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
-    env:
-      PGHOST: localhost
-      PGUSER: postgres
-      PGPASSWORD: postgres
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
       - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
       - run: npx playwright install --with-deps chromium
-      - name: Database
-        run: ./supabase/tests/run-local.sh | tee db.log && ! grep -q ERROR db.log
-      - name: Edge Functions
-        run: ./supabase/functions/tests/run.sh
-      - name: Thanh toán trên trình duyệt
-        run: node --experimental-strip-types --no-warnings tests/browser/payments.test.ts
-      - name: Website (đã kết nối database)
-        run: node --experimental-strip-types --no-warnings tests/browser/site.test.ts
-      - name: Trang quản trị (đã kết nối database)
-        run: node --experimental-strip-types --no-warnings tests/browser/admin.test.ts
-      - name: Chế độ demo + giao diện điện thoại
-        run: node tests/browser/demo.test.mjs
-      - name: Công cụ bán hàng (báo giá DN, khung chat, tính công suất, combo)
-        run: node tests/browser/sales.test.mjs
-      - name: Uy tín & SEO (dự án, hỏi đáp, đánh giá Google, quản trị)
-        run: node tests/browser/trust.test.mjs
-      - name: Thương hiệu (trang thương hiệu, logo, trang sản phẩm, so sánh)
-        run: node tests/browser/brands.test.mjs
-      - name: Đồng bộ quản trị ↔ website (bản demo)
-        run: node tests/browser/sync-demo.test.mjs
-      - name: Menu chính
-        run: node tests/browser/menu.test.mjs
-      - name: Trang chủ (banner hình, khối danh mục 1 hàng) & bỏ trả góp / miễn phí lắp đặt
-        run: node tests/browser/home.test.mjs
-      - name: Quản trị › Nội dung website (bản demo)
-        run: node tests/browser/content.test.mjs
-      - name: Nội dung website - các lỗi tìm thấy khi rà soát
-        run: node tests/browser/content-review.test.mjs
-      - name: Vận hành & quản trị (GA4/Pixel, phân quyền, MISA, bảo trì, ảnh sản phẩm)
-        run: node --experimental-strip-types --no-warnings tests/browser/ops.test.ts
-      - name: Vận hành & quản trị - chế độ demo
-        run: node tests/browser/ops-demo.test.mjs
-      - name: Rà soát toàn bộ (lỗi đã sửa không tái phát)
-        run: node tests/browser/audit.test.mjs
+      - run: npm run db:seed
+      - run: docker compose up -d --build --wait
+      - name: PHP syntax
+        run: docker compose exec -T web sh -c 'find server -name "*.php" -exec php -l {} \;'
+      - run: docker compose exec -T web php server/cli.php seed
+      - run: npm run test:api
+        env:
+          TEST_ADMIN_PHONE: '0912345698'
+      - run: docker compose exec -T web php server/cli.php admin 0912345698
+      - run: npm run test:hosting
+        env:
+          TEST_ADMIN_PHONE: '0912345698'
+          TEST_ADMIN_PASSWORD: 'MysqlTest!2026'
+      - run: npm run test:browser
+      - name: SEO build using MySQL
+        run: npm run build -- --backend http://127.0.0.1:8080/server/api.php --limit 3
+      - run: npm run test:build
+      - name: Docker logs
+        if: failure()
+        run: docker compose logs
+      - name: Stop local services
+        if: always()
+        run: docker compose down

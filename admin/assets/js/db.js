@@ -1,5 +1,5 @@
 // Lớp dữ liệu trang quản trị. Hai chế độ cùng một giao diện gọi:
-//  - Supabase: REST (PostgREST) + Auth, quyền do RLS (role staff/admin) quyết định
+//  - PHP/MySQL: API riêng, phiên cookie HttpOnly, phân quyền tại máy chủ.
 //  - Demo: lưu trên trình duyệt; đọc đơn hàng / form từ website demo cùng tên miền
 // Dữ liệu dạng hàng (row) theo đúng tên cột database (snake_case).
 window.AD = window.AD || {};
@@ -29,10 +29,9 @@ AD.COLS = {
   reviews: "id,product_id,user_id,name,rating,text,status,verified,created_at",
 };
 
-// ======================================================================= Supabase
-AD.supabase = (cfg) => {
-  const base = cfg.url.replace(/\/+$/, "");
-  const KEY = "dt_admin_auth_v1";
+// ======================================================================= PHP/MySQL
+AD.mysql = (cfg) => {
+  const KEY = "dt_mysql_admin_auth_v1";
   let session = null;
   try {
     session = JSON.parse(localStorage.getItem(KEY) || "null");
@@ -91,7 +90,7 @@ AD.supabase = (cfg) => {
     if (session.expires_at * 1000 - 60000 > Date.now())
       return session.access_token;
     try {
-      const d = await http("/auth/v1/token?grant_type=refresh_token", {
+      const d = await http("/auth/refresh", {
         method: "POST",
         body: { refresh_token: session.refresh_token },
         auth: false,
@@ -117,14 +116,15 @@ AD.supabase = (cfg) => {
   ) {
     const t = auth ? await token() : null;
     const h = {
-      apikey: cfg.anonKey,
-      Authorization: `Bearer ${t || cfg.anonKey}`,
+      "X-DT-Request": "1",
+      "X-DT-Admin": "1",
+
       "Content-Type": "application/json",
       ...headers,
     };
     let res;
     try {
-      res = await fetch(base + path, {
+      res = await fetch(DT.apiEndpoint(path), { credentials: 'same-origin',
         method,
         headers: h,
         body: body === undefined ? undefined : JSON.stringify(body),
@@ -179,17 +179,16 @@ AD.supabase = (cfg) => {
     return p.toString();
   }
 
-  // Tải file lên Supabase Storage (bucket công khai 'media'), trả về link công khai
+  // Tải ảnh lên hosting PHP, trả về URL đọc ảnh qua API.
   async function upload(path, blob) {
     const t = await token();
     let res;
     try {
-      res = await fetch(`${base}/storage/v1/object/media/${path}`, {
+      res = await fetch(DT.apiEndpoint(`/media/${path}`), {
         method: "POST",
         body: blob,
         headers: {
-          apikey: cfg.anonKey,
-          Authorization: `Bearer ${t || cfg.anonKey}`,
+          "X-DT-Request": "1",
           "Content-Type": blob.type,
           "x-upsert": "true",
         },
@@ -203,57 +202,53 @@ AD.supabase = (cfg) => {
         save(null);
         throw expired();
       }
-      throw new Error(
-        /bucket not found/i.test(d?.message || "")
-          ? 'Chưa tạo kho ảnh "media" trên Supabase (chạy migration mới nhất)'
-          : friendly(d, res.status),
-      );
+      throw new Error(friendly(d, res.status));
     }
-    return `${base}/storage/v1/object/public/media/${path}`;
+    return DT.apiEndpoint(`/media/${path}`);
   }
   // Xóa file cũ trong kho ảnh (bỏ qua nếu không phải file của kho)
   async function removeFile(url) {
-    const prefix = `${base}/storage/v1/object/public/media/`;
+    const prefix = DT.apiEndpoint('/media/');
     if (!url || !url.startsWith(prefix)) return;
     const t = await token();
-    await fetch(`${base}/storage/v1/object/media/${url.slice(prefix.length)}`, {
+    await fetch(DT.apiEndpoint(`/media/${decodeURIComponent(url.slice(prefix.length))}`), {
       method: "DELETE",
-      headers: { apikey: cfg.anonKey, Authorization: `Bearer ${t}` },
+      headers: { "X-DT-Request": "1" },
     }).catch(() => {});
   }
 
   return {
-    mode: "supabase",
+    mode: "mysql",
     upload,
     removeFile,
     async login(id, password) {
-      const email = id.includes("@")
-        ? id.trim()
-        : `${id.replace(/\D/g, "")}@${cfg.phoneEmailDomain || "sdt.local"}`;
-      const d = await http("/auth/v1/token?grant_type=password", {
+      const identifier = id.trim();
+      const d = await http("/auth/login", {
         method: "POST",
         auth: false,
-        body: { email, password },
+        body: { email: identifier, password },
       });
       save(toSession(d));
       return this.me();
     },
     async logout() {
       try {
-        await http("/auth/v1/logout", { method: "POST" });
+        await http("/auth/logout", { method: "POST" });
       } catch {
         /* bỏ qua */
       }
       save(null);
     },
     async me() {
+      const current = await http('/auth/session', { auth: false });
+      save(current ? toSession(current) : null);
       if (!session?.user_id) return null;
       const r = await http(
-        `/rest/v1/profiles?id=eq.${session.user_id}&select=id,name,phone,email,role`,
+        `/data/profiles?id=eq.${session.user_id}&select=id,name,phone,email,role`,
       );
       return r[0] || null;
     },
-    // Supabase trả tối đa 1000 dòng / lần: lấy nhiều hơn (báo cáo, xuất CSV) thì đọc theo từng trang
+    // PHP/MySQL trả tối đa 1000 dòng / lần: lấy nhiều hơn (báo cáo, xuất CSV) thì đọc theo từng trang
     async list(table, opts = {}) {
       const PAGE = 1000;
       const want = opts.limit || PAGE;
@@ -263,7 +258,7 @@ AD.supabase = (cfg) => {
       while (rows.length < want) {
         const n = Math.min(PAGE, want - rows.length);
         const { data, res } = await http(
-          `/rest/v1/${table}?${query({ ...opts, limit: n, offset: start + rows.length }, table)}`,
+          `/data/${table}?${query({ ...opts, limit: n, offset: start + rows.length }, table)}`,
           { headers: { Prefer: "count=exact" }, raw: true },
         );
         const total = Number(
@@ -278,16 +273,16 @@ AD.supabase = (cfg) => {
     },
     async get(table, id, select = AD.COLS[table] || "*") {
       const r = await http(
-        `/rest/v1/${table}?${AD.PK[table]}=eq.${encodeURIComponent(id)}&select=${select}`,
+        `/data/${table}?${AD.PK[table]}=eq.${encodeURIComponent(id)}&select=${select}`,
       );
       return r[0] || null;
     },
     async saveBrand(data, id = null) {
-      return http('/rest/v1/rpc/save_brand', { method: 'POST', body: { p_brand: data, p_id: id } });
+      return http('/rpc/save_brand', { method: 'POST', body: { p_brand: data, p_id: id } });
     },
     async insert(table, row) {
       const r = await http(
-        `/rest/v1/${table}?select=${AD.COLS[table] || "*"}`,
+        `/data/${table}?select=${AD.COLS[table] || "*"}`,
         {
           method: "POST",
           body: row,
@@ -298,7 +293,7 @@ AD.supabase = (cfg) => {
     },
     async update(table, id, patch) {
       const r = await http(
-        `/rest/v1/${table}?${AD.PK[table]}=eq.${encodeURIComponent(id)}&select=${AD.COLS[table] || "*"}`,
+        `/data/${table}?${AD.PK[table]}=eq.${encodeURIComponent(id)}&select=${AD.COLS[table] || "*"}`,
         {
           method: "PATCH",
           body: patch,
@@ -313,12 +308,12 @@ AD.supabase = (cfg) => {
     },
     async remove(table, id) {
       await http(
-        `/rest/v1/${table}?${AD.PK[table]}=eq.${encodeURIComponent(id)}`,
+        `/data/${table}?${AD.PK[table]}=eq.${encodeURIComponent(id)}`,
         { method: "DELETE", headers: { Prefer: "return=minimal" } },
       );
     },
     rpc: (fn, args = {}) =>
-      http(`/rest/v1/rpc/${fn}`, { method: "POST", body: args }),
+      http(`/rpc/${fn}`, { method: "POST", body: args }),
   };
 };
 
@@ -532,7 +527,7 @@ AD.demo = () => {
   const persist = () => {
     if (!write(KEY, db))
       throw new Error(
-        "Bộ nhớ trình duyệt (bản demo) đã đầy: hãy bớt ảnh hoặc dùng ảnh nhỏ hơn. Bản chính thức (kết nối Supabase) lưu ảnh trên máy chủ, không giới hạn như vậy.",
+        "Bộ nhớ trình duyệt (bản demo) đã đầy: hãy bớt ảnh hoặc dùng ảnh nhỏ hơn. Bản chính thức (kết nối PHP/MySQL) lưu ảnh trên máy chủ, không giới hạn như vậy.",
       );
   };
   // Mã đánh giá không phụ thuộc vị trí trong danh sách (đánh giá mới thêm vào đầu danh sách)
@@ -596,6 +591,7 @@ AD.demo = () => {
         status: l.status || "new",
         staff_note: ov.staff_note || null,
         assigned_to: ov.assigned_to || null,
+        notes: ov.notes || l.notes || [],
         source_url: null,
         created_at: l.createdAt,
         updated_at: ov.updated_at || l.createdAt,
@@ -846,6 +842,7 @@ AD.demo = () => {
       const ov = (db.overlay.leads[id] = db.overlay.leads[id] || {});
       if ("staff_note" in patch) ov.staff_note = patch.staff_note;
       if ("assigned_to" in patch) ov.assigned_to = patch.assigned_to;
+      if ("notes" in patch) ov.notes = patch.notes;
       ov.updated_at = now;
     }
     if (table === "reviews") {
@@ -1134,6 +1131,7 @@ AD.demo = () => {
       const links = db.crm_order_links;
 
       db = seed();
+      db.touched = {};
 
       db.crm_customers = customers;
       db.crm_order_links = links;
@@ -1144,4 +1142,4 @@ AD.demo = () => {
 };
 
 AD.db =
-  DT.BACKEND?.url && DT.BACKEND?.anonKey ? AD.supabase(DT.BACKEND) : AD.demo();
+  DT.BACKEND?.mode === "mysql" ? AD.mysql(DT.BACKEND) : AD.demo();

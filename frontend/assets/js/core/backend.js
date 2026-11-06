@@ -1,14 +1,13 @@
-// Kết nối Supabase (REST + Auth) bằng fetch, không cần thư viện ngoài.
+// Kết nối API PHP/MySQL bằng fetch, phiên đăng nhập dùng cookie HttpOnly.
 // - DT.ready: Promise hoàn tất khi đã nạp catalog từ DB (hoặc ngay lập tức ở chế độ demo)
 // - DT.onReady(fn): chạy fn khi DOM sẵn sàng VÀ dữ liệu đã nạp
 window.DT = window.DT || {};
 
 DT.backend = (() => {
   const cfg = DT.BACKEND || {};
-  const enabled = !!(cfg.url && cfg.anonKey);
-  const base = (cfg.url || '').replace(/\/+$/, '');
-  const SESSION_KEY = 'dt_auth_v1';
-  const CACHE_KEY = 'dt_catalog_cache_v3';
+  const enabled = cfg.mode === 'mysql';
+  const SESSION_KEY = 'dt_mysql_auth_v1';
+  const CACHE_KEY = 'dt_mysql_catalog_cache_v1';
 
   let session = null;
   try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch { /* bỏ qua */ }
@@ -28,12 +27,12 @@ DT.backend = (() => {
   }
 
   async function http(path, { method = 'GET', body, headers = {}, auth = true } = {}) {
-    const h = { apikey: cfg.anonKey, 'Content-Type': 'application/json', ...headers };
+    const h = { 'Content-Type': 'application/json', 'X-DT-Request': '1', ...headers };
     const token = auth ? await accessToken() : null;
-    h.Authorization = `Bearer ${token || cfg.anonKey}`;
+    // Cookie HttpOnly được máy chủ kiểm tra; marker chỉ phục vụ giao diện.
     let res;
     try {
-      res = await fetch(base + path, { method, headers: h, body: body === undefined ? undefined : JSON.stringify(body) });
+      res = await fetch(DT.apiEndpoint(path), { credentials: 'same-origin', method, headers: h, body: body === undefined ? undefined : JSON.stringify(body) });
     } catch {
       throw new Error(friendly(null, 0));
     }
@@ -48,8 +47,7 @@ DT.backend = (() => {
     return data;
   }
 
-  // ---------- Auth (Supabase GoTrue)
-  const phoneEmail = (phone) => `${String(phone).replace(/\D/g, '')}@${cfg.phoneEmailDomain || 'sdt.local'}`;
+  // ---------- Auth PHP/MySQL
   const toSession = (d) => ({
     access_token: d.access_token,
     refresh_token: d.refresh_token,
@@ -61,7 +59,7 @@ DT.backend = (() => {
     if (!session) return null;
     if (session.expires_at * 1000 - 60000 > Date.now()) return session.access_token;
     try {
-      const d = await http('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: session.refresh_token }, auth: false });
+      const d = await http('/auth/refresh', { method: 'POST', body: { refresh_token: session.refresh_token }, auth: false });
       saveSession(toSession(d));
       return session.access_token;
     } catch {
@@ -71,17 +69,17 @@ DT.backend = (() => {
   }
 
   async function signUp({ phone, password, name, email }) {
-    const d = await http('/auth/v1/signup', {
+    const d = await http('/auth/signup', {
       method: 'POST', auth: false,
-      body: { email: phoneEmail(phone), password, data: { name, phone, contact_email: email || '' } },
+      body: { phone, password, data: { name, phone, contact_email: email || '' } },
     });
-    if (!d.access_token) throw new Error('Tài khoản cần xác nhận email. Quản trị viên vui lòng tắt "Confirm email" trong Supabase (xem supabase/README.md).');
+    if (!d.access_token) throw new Error('Không tạo được phiên đăng nhập');
     saveSession(toSession(d));
     return profile();
   }
 
   async function signIn(phone, password) {
-    const d = await http('/auth/v1/token?grant_type=password', { method: 'POST', auth: false, body: { email: phoneEmail(phone), password } });
+    const d = await http('/auth/login', { method: 'POST', auth: false, body: { phone, password } });
     saveSession(toSession(d));
     return profile();
   }
@@ -93,21 +91,21 @@ DT.backend = (() => {
     saveSession(null);
     if (!token) return;
     try {
-      await fetch(`${base}/auth/v1/logout`, { method: 'POST', headers: { apikey: cfg.anonKey, Authorization: `Bearer ${token}` } });
+      await fetch(DT.apiEndpoint('/auth/logout'), { method: 'POST', credentials: 'same-origin', headers: { 'X-DT-Request': '1' } });
     } catch { /* bỏ qua: phiên trên máy đã xóa */ }
   }
 
   async function profile() {
     if (!session?.user_id) return null;
-    const rows = await http(`/rest/v1/profiles?id=eq.${session.user_id}&select=id,name,phone,email,addresses,role`);
+    const rows = await http(`/data/profiles?id=eq.${session.user_id}&select=id,name,phone,email,addresses,role`);
     return rows[0] || null;
   }
 
   // ---------- REST tiện ích
-  const select = (table, query = '') => http(`/rest/v1/${table}?${query}`);
-  const rpc = (fn, args = {}) => http(`/rest/v1/rpc/${fn}`, { method: 'POST', body: args });
-  const insert = (table, row) => http(`/rest/v1/${table}`, { method: 'POST', body: row, headers: { Prefer: 'return=minimal' } });
-  const update = (table, filter, patch) => http(`/rest/v1/${table}?${filter}`, { method: 'PATCH', body: patch, headers: { Prefer: 'return=representation' } });
+  const select = (table, query = '') => http(`/data/${table}?${query}`);
+  const rpc = (fn, args = {}) => http(`/rpc/${fn}`, { method: 'POST', body: args });
+  const insert = (table, row) => http(`/data/${table}`, { method: 'POST', body: row, headers: { Prefer: 'return=minimal' } });
+  const update = (table, filter, patch) => http(`/data/${table}?${filter}`, { method: 'PATCH', body: patch, headers: { Prefer: 'return=representation' } });
 
   // ---------- Nạp catalog & nội dung
   const mapProduct = (r) => ({
@@ -224,6 +222,10 @@ DT.backend = (() => {
       DT.backend.offline = true;
     }
     // Đồng bộ trạng thái đăng nhập
+    try {
+      const current = await http('/auth/session', { auth: false });
+      saveSession(current ? toSession(current) : null);
+    } catch { /* giữ thông tin cũ khi máy chủ tạm thời không truy cập được */ }
     const s = DT.store.get();
     if (!session) {
       if (s.user) { s.user = null; DT.store.save(); }

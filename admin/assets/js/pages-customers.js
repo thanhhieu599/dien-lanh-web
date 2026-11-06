@@ -12,7 +12,7 @@ window.AD = window.AD || {};
   };
 
   const roleCell = (c) =>
-    AD.me.role === "admin" && AD.db.mode === "supabase" &&
+    AD.me.role === "admin" && AD.db.mode === "mysql" &&
     c.profile_id && c.profile_id !== AD.me.id
       ? `<select data-role="${esc(c.profile_id)}">${Object.entries(ROLE)
           .map(([key, [label]]) => `<option value="${key}" ${c.role === key ? "selected" : ""}>${label}</option>`)

@@ -17,37 +17,8 @@
   <link rel="stylesheet" href="assets/css/main.css?v=20261105-promotions1">
 </head>
 <body data-page="tracking">
-  <div id="site-header"></div>
-  <main id="main">
-    <section class="page-banner"><div class="container"><h1>Tra cứu đơn hàng</h1><p>Nhập mã đơn hàng và số điện thoại đặt hàng để theo dõi tình trạng giao hàng, lắp đặt.</p></div></section>
-    <div class="container" style="max-width:820px">
-      <form id="track-form" class="section section-box" novalidate>
-        <div class="form-row">
-          <div class="field"><label>Mã đơn hàng <span class="req">*</span></label><input name="code" required placeholder="VD: DT12345678"><div class="err">Vui lòng nhập mã đơn hàng</div></div>
-          <div class="field"><label>Số điện thoại <span class="req">*</span></label><input name="phone" type="tel" required data-validate="phone" placeholder="Số điện thoại đặt hàng"><div class="err">Số điện thoại không hợp lệ</div></div>
-        </div>
-        <button class="btn btn-primary btn-lg">Tra cứu</button>
-      </form>
-      <div id="track-result"></div>
-    </div>
-  </main>
-  <div id="site-footer"></div>
-  <script src="assets/js/data/catalog.js?v=202610111716"></script>
-  <script src="assets/js/data/content.js?v=202610111716"></script>
-  <script src="assets/js/seo-config.js?v=202610111716"></script>
-  <script src="assets/js/backend-config.js?v=202610111716"></script>
-  <script src="assets/js/core/utils.js?v=202610111716"></script>
-  <script src="assets/js/components/icons.js?v=202610111716"></script>
-  <script src="assets/js/core/api.js?v=20261105-brands1"></script>
-  <script src="assets/js/core/promotions.js?v=20261105-promotions1"></script>
-  <script src="assets/js/core/store.js?v=20261105-promotions1"></script>
-  <script src="assets/js/core/backend.js?v=20261105-promotions1"></script>
-  <script src="assets/js/core/payments.js?v=202610111716"></script>
-  <script src="assets/js/components/art.js?v=202610111716"></script>
-  <script src="assets/js/components/ui.js?v=20261104-options1"></script>
-  <script src="assets/js/components/layout.js?v=202610111716"></script>
-  <script src="assets/js/components/sales.js?v=202610111716"></script>
-  <script src="assets/js/components/analytics.js?v=202610111716"></script>
-  <script src="assets/js/pages/order.js?v=20261104-options1"></script>
+  <div id="root"><p class="container" role="status">Đang tải website…</p></div>
+  <noscript>Vui lòng bật JavaScript để sử dụng giỏ hàng, tìm kiếm và đặt hàng.</noscript>
+  <script type="module" src="src/main.tsx"></script>
 </body>
 </html>

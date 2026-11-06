@@ -129,7 +129,7 @@ AD.pages.crudForm = async (key, id, params, el) => {
       }
     };
     const saved = await run(e.submitter || form.querySelector('#save'), () => (R.save ? R.save(data, { editing, id }) : editing ? AD.db.update(R.table, id, data) : insert()),
-      AD.db.mode === 'supabase' ? 'Đã lưu. Website cập nhật sau tối đa vài phút.' : 'Đã lưu');
+      AD.db.mode === 'mysql' ? 'Đã lưu. Website cập nhật sau tối đa vài phút.' : 'Đã lưu');
     if (!saved) return;
     await R.afterSave?.(saved);
     if (!editing && saved) location.hash = `#/${key}/${encodeURIComponent(saved[pk])}`;

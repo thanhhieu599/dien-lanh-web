@@ -146,7 +146,7 @@ window.AD = window.AD || {};
               limit: 1,
             })
           : none,
-        AD.allowed("maintenance") && AD.db.mode === "supabase"
+        AD.allowed("maintenance") && AD.db.mode === "mysql"
           ? AD.db.list("notifications", {
               select: "id",
               filters: [
@@ -208,7 +208,7 @@ window.AD = window.AD || {};
       <div class="ad-login-brand"><span class="logo-mark">${ic("snow")}</span><div><b>Tên thương hiệu</b><small>Trang quản trị</small></div></div>
       ${
         demo
-          ? `<div class="ad-alert">${ic("alert")}<div><b>Chế độ demo</b><br>Chưa kết nối Supabase. Dữ liệu lưu trên trình duyệt này; đơn hàng và form gửi từ website demo (cùng trình duyệt) sẽ hiện tại đây.</div></div>
+          ? `<div class="ad-alert">${ic("alert")}<div><b>Chế độ demo</b><br>Chưa kết nối PHP/MySQL. Dữ liệu lưu trên trình duyệt này; đơn hàng và form gửi từ website demo (cùng trình duyệt) sẽ hiện tại đây.</div></div>
         <button class="btn btn-primary btn-block btn-lg" id="demo-enter">Vào trang quản trị (demo)</button>`
           : `<form id="login" novalidate>
         <div class="ad-field"><label>Số điện thoại hoặc email</label><input name="id" required autocomplete="username"></div>
@@ -284,7 +284,7 @@ window.AD = window.AD || {};
         </header>
         ${
           AD.db.mode === "demo"
-            ? `<div class="ad-demo-bar">${ic("alert")} Chế độ demo: dữ liệu lưu trên trình duyệt. Sửa sản phẩm ở đây chưa đổi website demo. Kết nối Supabase để dùng thật (xem supabase/README.md). <button class="btn btn-link btn-sm" id="reset-demo">Khôi phục dữ liệu mẫu</button>
+            ? `<div class="ad-demo-bar">${ic("alert")} Chế độ demo: dữ liệu lưu trên trình duyệt. Sửa sản phẩm ở đây chưa đổi website demo. Kết nối PHP/MySQL để dùng thật (xem server/README.md). <button class="btn btn-link btn-sm" id="reset-demo">Khôi phục dữ liệu mẫu</button>
           <label class="ad-demo-role">Xem với vai trò <select id="demo-role" aria-label="Vai trò demo">${Object.entries(
             AD.ROLES,
           )

@@ -186,7 +186,7 @@ AD.ui = (() => {
     let done = 0;
     for (const f of imgs.slice(0, room)) {
       if (add) add.textContent = `Đang tải ${done + 1}/${Math.min(imgs.length, room)}…`;
-      try { list.push(await AD.media.upload(f, box.dataset.folder, AD.db.mode === 'supabase' ? { max: 1600, quality: 0.85 } : { max: 900, quality: 0.72 })); done++; }
+      try { list.push(await AD.media.upload(f, box.dataset.folder, AD.db.mode === 'mysql' ? { max: 1600, quality: 0.85 } : { max: 900, quality: 0.72 })); done++; }
       catch (e) { if (AD.handleError?.(e)) return; toast(`${f.name}: ${e.message}`, 'error'); }
     }
     galSet(form?.querySelector(`[data-gal="${key}"]`) || box, list);
@@ -294,7 +294,7 @@ AD.ui = (() => {
 })();
 
 // Ảnh: nén ngay trên trình duyệt (WebP, giới hạn cạnh dài) rồi lưu
-//  - Supabase: Storage bucket công khai 'media' -> link công khai
+//  - PHP/MySQL: Storage bucket công khai 'media' -> link công khai
 //  - Demo: data URL (lưu cùng dữ liệu demo trên trình duyệt)
 AD.media = (() => {
   async function compress(file, max, quality) {
@@ -309,7 +309,7 @@ AD.media = (() => {
   }
   const toDataUrl = (blob) => new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
   async function upload(file, folder = 'media', { max, quality } = {}) {
-    const supa = AD.db.mode === 'supabase';
+    const supa = AD.db.mode === 'mysql';
     const blob = await compress(file, max || (supa ? 2000 : 1200), quality || (supa ? 0.85 : 0.75));
     if (!supa) return toDataUrl(blob);
     const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';

@@ -1,5 +1,7 @@
 # Cơ sở dữ liệu – Supabase (PostgreSQL)
 
+> **Tích hợp cũ:** Dự án đã chuyển runtime sang PHP/MySQL. Thư mục này được giữ để tham khảo, không cần cài Supabase. Xem [hướng dẫn PHP/MySQL](../server/README.md).
+
 Website là trang tĩnh (GitHub Pages) nên dùng **Supabase** làm backend: PostgreSQL + đăng nhập + REST API, trang web gọi thẳng vào database, dữ liệu được bảo vệ bằng **Row Level Security (RLS)**.
 
 ```

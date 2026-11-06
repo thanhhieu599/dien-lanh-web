@@ -135,7 +135,7 @@ DT.store = (() => {
   }
 
   // ---------- Tài khoản
-  // Có backend: Supabase Auth + bảng profiles. Demo: lưu trên trình duyệt (không mã hóa, chỉ để thử).
+  // Có backend: PHP session + hồ sơ MySQL. Demo: lưu trên trình duyệt để thử giao diện.
   const be = () => DT.backend.enabled;
   async function register({ name, phone, email, password }) {
     if (be()) {

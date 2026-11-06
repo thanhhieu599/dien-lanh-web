@@ -1,0 +1,47 @@
+// Chạy với PHP/MySQL thật: API_BASE=http://127.0.0.1:8080/server/api.php node tests/server/mysql-api.test.mjs
+import assert from 'node:assert/strict';
+const base = process.env.API_BASE || 'http://127.0.0.1:8080/server/api.php';
+let cookie = '';
+async function request(route, { method = 'GET', body, csrf = true } = {}) {
+  const [name, query = ''] = route.split('?');
+  const url = new URL(base); url.search = query; url.searchParams.set('route', name);
+  const headers = { 'Content-Type': 'application/json' };
+  if (cookie) headers.Cookie = cookie;
+  if (csrf) headers['X-DT-Request'] = '1';
+  const response = await fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+  const session = response.headers.getSetCookie().find((c) => c.startsWith('dt_session='));
+  if (session) cookie = session.split(';')[0];
+  return { status: response.status, data: await response.json() };
+}
+assert.equal((await request('/health')).status, 200);
+assert.deepEqual((await request('/data/profiles')).data, []);
+assert.equal((await request('/data/products', { method:'POST', body:{name:'blocked'} })).status, 401);
+assert.equal((await request('/auth/login', { method:'POST', body:{}, csrf:false })).status, 403);
+const products = (await request('/data/products?limit=1000')).data;
+const product = products.find((p) => p.stock > 5 && !Object.values(p.options || {}).some((v) => v.length));
+assert.ok(product, 'Seed must contain a stocked product without options');
+const phone = process.env.TEST_ADMIN_PHONE || `09${Date.now().toString().slice(-8)}`;
+let result = await request('/auth/signup', { method:'POST', body:{phone, password:'MysqlTest!2026', data:{phone,name:'API test'}} });
+assert.equal(result.status, 200, JSON.stringify(result.data));
+const id = result.data.user.id;
+result = await request(`/data/profiles?id=eq.${id}`, { method:'PATCH', body:{role:'admin',name:'Updated'} });
+assert.equal(result.status, 200);
+assert.equal(result.data[0].role, 'customer', 'Customers cannot elevate privileges');
+const orderBody = { p_items:[{id:product.id,qty:2,price:1}], p_customer:{phone,name:'API test'}, p_shipping:{method:'delivery',address:'Test address'}, p_payment:'cod' };
+result = await request('/rpc/place_order', { method:'POST', body:orderBody });
+assert.equal(result.status, 200, JSON.stringify(result.data));
+assert.equal(result.data.subtotal, product.price * 2, 'Server must ignore forged prices');
+const order = result.data;
+assert.equal((await request(`/data/products?id=eq.${product.id}`)).data[0].stock, product.stock - 2);
+assert.equal((await request('/rpc/track_order', {method:'POST',body:{p_code:order.code,p_phone:'0900000000'}})).status, 404);
+assert.equal((await request(`/data/orders?id=eq.${order.id}`, {method:'PATCH',body:{status:'done'}})).status, 403);
+result = await request('/rpc/cancel_order', {method:'POST',body:{p_code:order.code,p_phone:phone}});
+assert.equal(result.status, 200);
+assert.equal(result.data.status, 'cancelled');
+assert.equal((await request(`/data/products?id=eq.${product.id}`)).data[0].stock, product.stock);
+assert.equal((await request('/rpc/cancel_order', {method:'POST',body:{p_code:order.code,p_phone:phone}})).status, 400);
+assert.equal((await request(`/data/products?id=eq.${product.id}`)).data[0].stock, product.stock, 'Repeated cancellation must not duplicate inventory');
+assert.equal((await request('/rpc/place_order', {method:'POST',body:{...orderBody,p_items:[{id:product.id,qty:product.stock+1}]}})).status, 400);
+await request('/auth/logout', {method:'POST'});
+assert.equal((await request('/rpc/my_orders', {method:'POST'})).status, 401);
+console.log('MySQL API integration checks passed.');

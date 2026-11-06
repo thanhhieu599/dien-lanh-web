@@ -1,120 +1,80 @@
-# dien-lanh-web
+# D&T Điện Lạnh
 
-**D&T Điện Lạnh – Website bán hàng điện lạnh**
+Website khách hàng dùng **React 19 + TypeScript + Vite + React Router**, backend **PHP 8.5 + MySQL**. Trang quản trị cũng dùng React/TypeScript với hash routing tại `/admin/`. Giữ các URL `.html` và đường dẫn SEO hiện có.
 
-Website thương mại điện tử ngành điện lạnh (máy lạnh, tủ lạnh, tủ đông, máy giặt, vật tư…), bố cục theo chuẩn các chuỗi điện máy bán lẻ tại Việt Nam, bổ sung thêm phần dịch vụ và khách hàng doanh nghiệp (B2B).
+## Cấu trúc
 
-## Lộ trình
-
-| Giai đoạn | Nội dung | Trạng thái |
-|---|---|---|
-| 1 | Frontend đầy đủ trang và chức năng (dữ liệu mẫu, lưu ở trình duyệt) | ✅ Xong |
-| 2 | Cơ sở dữ liệu Supabase/PostgreSQL: sản phẩm, đơn hàng, khách hàng, lead, đánh giá (xem `supabase/README.md`) | ✅ Xong – cần tạo project & dán khóa |
-| 3 | Trang quản trị `/admin/`: đơn hàng, CRM lead, sản phẩm, khuyến mãi, bài viết, đánh giá, báo cáo, phân quyền (xem `admin/README.md`) | ✅ Xong |
-| 4 | Thanh toán online (VNPay, MoMo, chuyển khoản VietQR tự đối soát qua SePay), SEO pre-render (link đẹp, sitemap, dữ liệu có cấu trúc, ảnh chia sẻ, llms.txt), thông báo tự động Zalo/Email/ZNS (xem `docs/PHASE4.md`) | ✅ Xong – cần khai báo khóa cổng thanh toán & kênh gửi |
-
-## Cấu trúc thư mục
-
-```
-dien-lanh-web/
-├── frontend/                  # Website khách hàng (HTML/CSS/JS thuần, không cần build)
-│   ├── *.html                 # 21 trang (xem danh sách bên dưới)
-│   └── assets/
-│       ├── css/main.css       # Toàn bộ giao diện + responsive
-│       ├── images/            # favicon, ảnh (giai đoạn 2: ảnh sản phẩm thật)
-│       └── js/
-│           ├── data/          # catalog.js (tự sinh), content.js (cấu hình, bài viết, cửa hàng, chính sách)
-│           ├── core/          # utils.js, api.js (lớp dữ liệu), store.js (giỏ hàng, tài khoản, đơn hàng)
-│           ├── components/    # layout (header/footer/mega menu), ui (thẻ SP, modal), icons, art (ảnh minh họa SVG)
-│           └── pages/         # script riêng từng trang
-├── admin/                     # Giai đoạn 3 – trang quản trị (SPA, dùng chung database)
-├── supabase/                  # Database: migrations, seed, kiểm thử
-│   ├── functions/payments/    # Giai đoạn 4 – Edge Function thanh toán: VNPay, MoMo, webhook SePay
-│   ├── functions/notify/      # Giai đoạn 4 – Edge Function gửi thông báo Zalo Bot / Telegram / Email / ZNS
-│   └── setup/cron.sql         # Lịch gửi thông báo mỗi phút (pg_cron)
-├── tools/generate-catalog.mjs # Sinh dữ liệu sản phẩm mẫu
-├── tools/build-seed.mjs       # Sinh supabase/seed.sql từ dữ liệu frontend
-├── tools/prerender.mjs        # Giai đoạn 4 – build website chuẩn SEO (trang HTML đầy đủ cho từng sản phẩm)
-├── tools/asset-version.mjs    # Gắn ?v=phiên bản cho CSS/JS (tránh trình duyệt dùng CSS cũ) – bản build tự gắn
-├── tests/browser/             # Kiểm thử trên trình duyệt thật (thanh toán, bản build SEO)
-├── .github/workflows/         # Tự build & đăng GitHub Pages (6 giờ/lần), chạy kiểm thử
-└── docs/                      # Tài liệu kiến trúc, hướng dẫn giai đoạn 4 (PHASE4.md)
+```text
+frontend/src/   Component, layout, trang, hook và service React/TypeScript
+frontend/assets/ CSS, ảnh và lớp dữ liệu dùng chung với quản trị
+frontend/*.html Các entry React giữ nguyên URL cũ
+admin/src/      Component, trang, service và CSS quản trị React/TypeScript
+admin/assets/   Adapter dữ liệu, metadata, Excel và các file UI cũ giữ để đối chiếu
+server/         API PHP/PDO, schema MySQL, công cụ cài đặt và cấp quyền
+tests/          Kiểm thử trình duyệt và API MySQL
+tools/          Sinh dữ liệu mẫu, pre-render SEO, đóng gói hosting
+docs/           Tài liệu nghiệp vụ và kiến trúc
+supabase/       Mã tích hợp cũ được giữ lại để tham khảo, không dùng trong runtime mới
 ```
 
-## Các trang & chức năng
+## Chạy với MySQL
 
-| Trang | File | Chức năng |
-|---|---|---|
-| Trang chủ | `index.html` | Mega menu, slider, flash sale đếm ngược, danh mục nhanh, khối SP theo danh mục có tab, B2B, dịch vụ, thương hiệu, đã xem, tin tức |
-| Danh mục | `danh-muc.html?cat=…&sub=…` | Lọc theo thương hiệu, giá, công suất/dung tích/công nghệ…; sắp xếp; phân trang; URL chia sẻ được; nội dung SEO |
-| Tìm kiếm | `tim-kiem.html?q=…` | Tìm không dấu, gợi ý tức thì trên header |
-| Khuyến mãi | `khuyen-mai.html` | Sản phẩm đang giảm giá |
-| Chi tiết SP | `san-pham.html?id=…` | Gallery, biến thể công suất, khuyến mãi, tùy chọn lắp đặt, thông số, đánh giá (viết được), FAQ, tồn kho cửa hàng, SP tương tự, JSON-LD |
-| Giỏ hàng | `gio-hang.html` | Sửa số lượng, lắp đặt, mã giảm giá, tiến độ freeship |
-| Thanh toán | `thanh-toan.html` | Giao tận nơi / nhận tại cửa hàng, COD, chuyển khoản VietQR, thẻ qua VNPay, ví MoMo, trả góp; xuất hóa đơn VAT công ty |
-| Đặt hàng thành công | `dat-hang-thanh-cong.html` | Thông tin đơn, mã QR chuyển khoản có sẵn số tiền, nút thanh toán lại |
-| Kết quả thanh toán | `ket-qua-thanh-toan.html` | VNPay / MoMo trả khách về; kiểm chữ ký trên máy chủ, báo thành công / lý do lỗi |
-| Tra cứu đơn | `tra-cuu-don-hang.html` | Theo mã đơn + SĐT, timeline trạng thái, hủy đơn |
-| Tài khoản | `tai-khoan.html` | Đăng ký/đăng nhập, tổng quan, đơn hàng, sổ địa chỉ, hồ sơ, yêu thích |
-| Yêu thích / So sánh | `yeu-thich.html`, `so-sanh.html` | So sánh tối đa 4 SP, bảng thông số |
-| Dịch vụ | `dich-vu.html` | Bảng giá, quy trình, form đặt lịch |
-| Báo giá dự án (B2B) | `bao-gia-du-an.html` | Form RFQ doanh nghiệp |
-| Dự án tiêu biểu | `du-an.html`, `du-an-chi-tiet.html?slug=…` | Danh sách lọc theo lĩnh vực, ảnh trước / sau (thanh so sánh), quy mô, thời gian thi công, cảm nhận khách hàng; quản lý tại Quản trị › Dự án tiêu biểu |
-| Hỏi đáp | `hoi-dap.html` | 24 câu hỏi thường gặp, tìm không dấu, lọc nhóm, link từng câu, FAQPage cho Google & AI; quản lý tại Quản trị › Hỏi đáp |
-| Tính công suất | `tinh-cong-suat-may-lanh.html` | Gợi ý HP theo diện tích, tiền điện Inverter, sản phẩm phù hợp, đặt khảo sát |
-| Tin tức | `tin-tuc.html`, `bai-viet.html?slug=…` | Danh sách theo chuyên mục, bài viết, JSON-LD Article |
-| Khác | `gioi-thieu`, `lien-he`, `he-thong-cua-hang` (bản đồ), `chinh-sach?type=…`, `404` | |
+Cần Docker Desktop đang chạy. Node.js 26 LTS dùng cho công cụ phát triển; Node.js 22.18+ và 24 vẫn được hỗ trợ.
 
-Mã giảm giá demo: `COOL10`, `GIAM300K`, `FREESHIP`.
-
-## SEO
-
-- Chạy trực tiếp mã nguồn: link dạng `san-pham.html?id=…` (nội dung vẽ bằng JavaScript).
-- Bản đăng chính thức được build bằng `npm run build` (`tools/prerender.mjs`): mỗi sản phẩm / danh mục / bài viết / chính sách thành một trang HTML đầy đủ nội dung với link thân thiện (`sp/<slug>.html`, `danh-muc/<loai>.html`, `tin-tuc/<slug>.html`), có canonical, Open Graph + ảnh chia sẻ, JSON-LD (Product, Article, BreadcrumbList, Store), `sitemap.xml`, `robots.txt`, `llms.txt`.
-- GitHub Actions tự build & đăng mỗi lần push và 6 giờ/lần (cập nhật dữ liệu từ Supabase). Địa chỉ website chính thức: `frontend/assets/js/seo-config.js`.
-
-## Xem online
-
-- Website: https://thanhhieu599.github.io/dien-lanh-web/ (tự chuyển vào `frontend/`)
-- Quản trị: https://thanhhieu599.github.io/dien-lanh-web/admin/
-
-## Chạy thử
-
-```bash
-cd frontend
-npx http-server -p 8080     # hoặc: python3 -m http.server 8080
-# mở http://localhost:8080
+```sh
+npm ci
+npm run db:seed
+docker compose up -d --build --wait
+docker compose exec web php server/cli.php seed
+npm run dev
 ```
 
-Có thể deploy ngay lên GitHub Pages / Netlify / Vercel (static) hoặc hosting thường.
+Mở http://127.0.0.1:5173/frontend/ và http://127.0.0.1:5173/admin/. Vite chuyển `/server/` tới PHP tại cổng 8080; đặt biến `PHP_SERVER` nếu dùng cổng khác. Tạo tài khoản quản trị nội bộ trực tiếp bằng CLI, không cần đăng ký trên website:
 
-## Kết nối cơ sở dữ liệu
+```sh
+docker compose exec web php server/cli.php create-admin 09xxxxxxxx "Quản trị viên"
+```
 
-Mặc định website chạy **chế độ demo** (dữ liệu lưu trên trình duyệt). Làm theo `supabase/README.md` để tạo database Supabase, rồi dán URL + anon key vào `frontend/assets/js/backend-config.js` – đơn hàng, tài khoản, form báo giá, đánh giá sẽ được lưu tập trung.
+Thay số điện thoại bằng số của bạn. Lệnh yêu cầu nhập mật khẩu ẩn hai lần (8–72 byte), không ghi đè tài khoản đã tồn tại. Đăng nhập tại `/admin/` bằng tài khoản vừa tạo. Admin có thể cấp vai trò cho tài khoản khác tại Khách hàng → chi tiết khách hàng → Vai trò tài khoản. Hiện các admin có quyền ngang nhau, chưa có vai trò superadmin riêng.
 
-Bật thanh toán online và thông báo tự động: xem **`docs/PHASE4.md`** (từng bước, kèm danh sách khóa cần khai báo).
+Trên PowerShell có chặn `npm.ps1`, dùng `npm.cmd` thay cho `npm`.
 
-## Tùy chỉnh nhanh
+Để có dữ liệu chạy thử đầy đủ trong admin (15 mẫu mỗi danh sách nghiệp vụ/nội dung, 20 thông báo gồm 10 lịch bảo trì): chạy `npm.cmd run db:seed:test`, rồi `docker compose exec web php server/cli.php seed-test`. Mẫu được đánh dấu TEST, nạp lại không ghi đè dữ liệu đã có. Xem [chi tiết bộ dữ liệu thử nghiệm](server/README.md#dữ-liệu-thử-nghiệm-cho-admin).
 
-- Khi đã có trang quản trị: sửa trong **Quản trị** (Cài đặt cửa hàng, Sản phẩm, Banner, Mã giảm giá, Bài viết, Cửa hàng, Dịch vụ, Chính sách, **Nội dung website**…)
-- Dữ liệu / nội dung mặc định (khi chưa sửa trong quản trị): `frontend/assets/js/data/content.js` (nội dung trang chủ, dải cam kết…: `DT.siteContentDefaults`)
-- Sản phẩm mẫu: sửa `tools/generate-catalog.mjs` rồi chạy `node tools/generate-catalog.mjs`
-- Màu thương hiệu: biến `--primary`, `--accent` trong `assets/css/main.css`
+## Đưa lên hosting
 
-Xem thêm `docs/ARCHITECTURE.md`.
+Hosting cần PHP 8.3+ với PDO MySQL và fileinfo; khuyến nghị PHP 8.5 cùng MySQL 9.7 LTS hoặc 8.4 LTS. Không cần Node.js chạy trên hosting.
 
-## Uy tín & SEO
+```sh
+npm run package:hosting
+```
 
-- Quản trị › **Uy tín & đánh giá**: logo khách hàng / đối tác, giấy chứng nhận, điểm & đánh giá Google (hiện ở trang chủ, Giới thiệu, Dự án, Cửa hàng).
-- Hướng dẫn đăng ký Google Search Console & Google Business Profile: `docs/GOOGLE-SEO-SETUP.md`.
-- Kế hoạch bài viết 12 tuần (3 bài/tuần, 4 cụm chủ đề): `docs/KE-HOACH-NOI-DUNG.md`.
+Upload nội dung `dist/`, tạo database rồi cấu hình `server/config.local.php` trên hosting. Import `server/schema.sql`; thêm dữ liệu mẫu và tài khoản quản trị theo [hướng dẫn server](server/README.md). API dùng query string nên không cần rewrite URL. GitHub Pages chỉ phục vụ được bản demo tĩnh.
 
-## Vận hành & quản trị
+## Dữ liệu và tính năng
 
-- **Đo lường quảng cáo**: Google Analytics 4 + Meta Pixel (nhập mã trong Quản trị › Cài đặt cửa hàng), hộp đồng ý cookie theo Nghị định 13/2023, nguồn khách (UTM / gclid / fbclid) gắn vào lead & đơn hàng, báo cáo **Hiệu quả theo nguồn** có tính ROAS. Hướng dẫn: `docs/DO-LUONG-QUANG-CAO.md`.
-- **Phân quyền**: Quản trị, Nhân viên vận hành, **Kinh doanh** (chỉ thấy lead được giao), **Kế toán** (đơn hàng & thanh toán, xuất MISA). Chặn cả ở database (RLS).
-- **Xuất Excel MISA**: chứng từ bán hàng (tách VAT, phân bổ chiết khấu, tổng khớp từng đồng), danh mục khách hàng, hàng hóa.
-- **Lịch bảo trì định kỳ**: tự nhắc khách vệ sinh máy lạnh sau 6/12/18/24 tháng, đo tỷ lệ khách quay lại.
-- **Ảnh sản phẩm**: tải nhiều ảnh, kéo thả, tự nén, sắp xếp ngay trong quản trị.
+- Website và quản trị kết nối API PHP/MySQL mặc định; thông tin database chỉ nằm phía máy chủ.
+- Phiên đăng nhập dùng cookie HttpOnly; mật khẩu dùng `password_hash`, quyền kiểm tra ở mỗi yêu cầu.
+- Máy chủ tính lại giá, phí và mã giảm giá; đặt/hủy đơn dùng transaction, khóa hàng để cập nhật tồn kho.
+- Hỗ trợ COD, VietQR, quản trị nội dung và ảnh trên hosting. VNPay/MoMo, webhook, gửi email/Zalo và cron nhắc bảo trì của bản Supabase cũ **chưa được chuyển sang PHP**; không được bật như tính năng đã hoạt động.
+- MySQL lưu bản ghi theo resource/key và JSON để giữ tương thích mô hình dữ liệu hiện có; SKU/slug sản phẩm có unique index. Chưa có bộ nhập dữ liệu từ project Supabase đang chạy.
 
-Chi tiết: `docs/VAN-HANH.md`.
+## Kiểm thử và SEO
+
+```sh
+npx playwright install chromium
+npm test
+npm run test:api
+npm run build -- --backend http://127.0.0.1:8080/server/api.php
+npm run test:build
+```
+
+`npm test` kiểm tra TypeScript và giao diện website và quản trị React trên bản build; bộ demo phục vụ riêng, không xác nhận backend thật. `test:api` cần MySQL đã seed và PHP đang chạy. `test:hosting` chạy Vite cùng bộ kiểm tra website + quản trị React trên MySQL thật, cần tài khoản admin thử nghiệm qua `TEST_ADMIN_PHONE` và `TEST_ADMIN_PASSWORD`.
+
+Để dựng demo SEO: `npm run build -- --demo --limit 3`. Muốn xem demo khi phát triển, đổi `mode: 'mysql'` thành `mode: 'demo'` trong `frontend/assets/js/backend-config.js`, rồi chạy `npm run dev`.
+
+Chi tiết cấu trúc và 20 file giao diện cũ đã xóa sau khi được đồng ý: [chuyển đổi React](docs/REACT-MIGRATION.md). Các bộ kiểm thử HTML cũ vẫn được giữ tại `tests/browser/`; `test:legacy:browser` chỉ dành để tham khảo/chuyển đổi selector, không phải tiêu chí xác nhận giao diện React.
+
+CI chạy MySQL/PHP, API integration, các bộ test demo và build SEO. Workflow đóng gói hosting chạy thủ công và không tự xuất bản.
+
+Các tài liệu cũ trong `docs/` và `supabase/` mô tả kiến trúc trước chuyển đổi; hướng dẫn PHP/MySQL hiện hành nằm ở `server/README.md`.

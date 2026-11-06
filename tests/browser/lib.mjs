@@ -18,6 +18,12 @@ export function pagesServer(dir, prefix = '/dien-lanh-web/') {
       fs.createReadStream(path.join(dir, '404.html')).pipe(res);
       return;
     }
+    // Các bộ test demo phục vụ static; backend thật được kiểm thử riêng với PHP/MySQL.
+    if (file.endsWith(`${path.sep}backend-config.js`)) {
+      res.writeHead(200, { 'Content-Type': TYPES['.js'] });
+      res.end(fs.readFileSync(file, 'utf8').replace("mode: 'mysql'", "mode: 'demo'"));
+      return;
+    }
     res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
     fs.createReadStream(file).pipe(res);
   });

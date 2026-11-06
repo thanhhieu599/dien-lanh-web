@@ -2,15 +2,42 @@
   "name": "dien-lanh-web",
   "private": true,
   "type": "module",
-  "description": "D&T Điện Lạnh - website bán hàng điện lạnh (HTML/CSS/JS thuần + Supabase)",
+  "description": "D&T Điện Lạnh - website và quản trị React/TypeScript, backend PHP/MySQL",
   "scripts": {
     "build": "node tools/prerender.mjs --out dist",
-    "test:db": "./supabase/tests/run-local.sh",
-    "test:functions": "./supabase/functions/tests/run.sh",
-    "serve": "npx http-server -p 8080 -c-1"
+    "test": "npm run typecheck && npm run test:browser",
+    "test:browser": "node tools/package-hosting.mjs && node tests/react/website.test.mjs && node tests/react/product-layout.test.mjs && node tests/react/visual-restore.test.mjs && node tests/react/admin.test.mjs",
+    "test:legacy:browser": "node tools/test-browser.mjs",
+    "test:build": "node tests/react/prerender.test.mjs dist",
+    "test:legacy:functions": "node --test supabase/functions/tests/unit.test.ts",
+    "serve": "vite",
+    "dev": "vite",
+    "dev:server": "docker compose up --build",
+    "build:react": "node tools/build-react.mjs",
+    "typecheck": "tsc --noEmit",
+    "db:seed": "node tools/build-mysql-seed.mjs",
+    "db:seed:test": "node tools/build-mysql-seed.mjs --test",
+    "test:seed": "node tools/build-mysql-seed.mjs --test && node tests/server/seed.test.mjs",
+    "package:hosting": "node tools/package-hosting.mjs",
+    "test:api": "node tests/server/mysql-api.test.mjs",
+    "test:hosting": "node tools/test-hosting.mjs",
+    "test:admin": "node tools/package-hosting.mjs && node tests/react/admin.test.mjs"
+  },
+  "engines": {
+    "node": "^22.18.0 || ^24.0.0 || ^26.0.0"
   },
   "devDependencies": {
-    "pg": "^8.13.1",
-    "playwright": "1.56.1"
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "playwright": "1.56.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.5"
+  },
+  "dependencies": {
+    "dompurify": "3.4.17",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router-dom": "7.18.5"
   }
 }

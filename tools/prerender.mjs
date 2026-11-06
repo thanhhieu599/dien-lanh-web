@@ -1,9 +1,10 @@
 // Build website tĩnh chuẩn SEO (pre-render) để đăng lên GitHub Pages / hosting bất kỳ.
 //
-//   node tools/prerender.mjs [--out dist] [--site https://ten-mien.vn/] [--limit 5]
+//   node tools/prerender.mjs --backend http://localhost:8080/server/api.php [--out dist] [--site https://ten-mien.vn/] [--limit 5]
+//   node tools/prerender.mjs --demo --limit 3
 //
 // Cách làm: mở từng trang bằng trình duyệt Chromium (Playwright), chờ JavaScript vẽ xong nội dung
-// (dữ liệu lấy từ Supabase nếu đã cấu hình, không thì dữ liệu mẫu), rồi lưu lại HTML hoàn chỉnh.
+// (dữ liệu lấy từ API PHP/MySQL hoặc --demo), rồi lưu lại HTML hoàn chỉnh.
 // Google, Cốc Cốc, Zalo/Facebook (xem trước link) và các công cụ AI đọc được ngay nội dung, giá, thông số
 // mà không cần chạy JavaScript. Khi khách mở trang, JavaScript vẫn chạy bình thường (giỏ hàng, bộ lọc…).
 //
@@ -16,6 +17,8 @@
 //   frontend/og/*.png                        ảnh chia sẻ Zalo / Facebook
 //   frontend/sitemap.xml, robots.txt, llms.txt (tóm tắt cho công cụ AI)
 import { newVersion, stampAssets } from './asset-version.mjs';
+import { copySiteFiles } from './copy-site.mjs';
+import { buildReact } from './build-react.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
@@ -36,11 +39,18 @@ async function loadPlaywright() {
 
 // ---------------------------------------------------------------- 1. Chép mã nguồn sang thư mục build
 function copySite() {
+  if (!OUT.startsWith(ROOT + path.sep) || !['dist','build','out','.cache'].includes(path.relative(ROOT, OUT).split(path.sep)[0])) {
+    throw new Error('Thư mục build phải nằm trong dist/, build/, out/ hoặc .cache/ của dự án');
+  }
   fs.rmSync(OUT, { recursive: true, force: true });
   fs.mkdirSync(OUT, { recursive: true });
   for (const f of ['index.html', '404.html', '.nojekyll', 'frontend', 'admin']) {
-    fs.cpSync(path.join(ROOT, f), path.join(OUT, f), { recursive: true });
+    copySiteFiles(path.join(ROOT, f), path.join(OUT, f), (file)=>path.basename(file)!=='src');
   }
+  copySiteFiles(path.join(ROOT, 'server'), path.join(OUT, 'server'),
+    (file) => !['config.local.php','seed.json','seed.sql','uploads'].includes(path.basename(file)));
+  copySiteFiles(path.join(ROOT,'.cache/react/frontend'),path.join(OUT,'frontend'));
+  copySiteFiles(path.join(ROOT,'.cache/react/admin'),path.join(OUT,'admin'));
 }
 
 function siteUrlFromSource() {
@@ -54,14 +64,29 @@ function writeSeoConfig(siteUrl) {
     .replace(/siteUrl:\s*'[^']*'/, `siteUrl: '${siteUrl}'`)
     .replace(/prettyUrls:\s*false/, 'prettyUrls: true');
   fs.writeFileSync(f, src);
+  if (args.demo) {
+    const config = path.join(OUT, 'frontend/assets/js/backend-config.js');
+    fs.writeFileSync(config, fs.readFileSync(config, 'utf8').replace("mode: 'mysql'", "mode: 'demo'"));
+  }
 }
 
 // ---------------------------------------------------------------- 2. Máy chủ tĩnh cục bộ
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json', '.xml': 'application/xml', '.txt': 'text/plain; charset=utf-8' };
 function serve(dir) {
-  const server = http.createServer((req, res) => {
+  const server = http.createServer(async (req, res) => {
+    if (new URL(req.url, 'http://x').pathname === '/server/api.php' && (args.backend || process.env.API_UPSTREAM)) {
+      try {
+        const target = new URL(String(args.backend || process.env.API_UPSTREAM));
+        target.search = new URL(req.url, 'http://x').search;
+        const upstream = await fetch(target);
+        res.writeHead(upstream.status, { 'Content-Type': 'application/json' });
+        res.end(await upstream.text());
+      } catch { res.writeHead(502).end('{"message":"Backend unavailable"}'); }
+      return;
+    }
     const p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
     let file = path.join(dir, p);
+    if (path.extname(file) === '.php') { res.writeHead(503).end('Use --backend <PHP API URL> or --demo'); return; }
     if (!file.startsWith(dir)) { res.writeHead(403).end(); return; }
     if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
     if (!fs.existsSync(file)) { res.writeHead(404).end('not found'); return; }
@@ -98,9 +123,10 @@ function routes(data) {
 // ---------------------------------------------------------------- 4. Chụp trang
 async function snapshot(page, base, siteUrl, route) {
   await page.goto(base + route.src, { waitUntil: 'load', timeout: 60000 });
+  await page.waitForSelector('html[data-react-ready="true"] #main h1', {state:'attached'});
   // Máy chủ dữ liệu lỗi giữa chừng -> trang đang hiện dữ liệu mẫu: dừng build, không xuất bản dữ liệu giả
   const offline = await page.evaluate(() => DT.ready.catch(() => {}).then(() => DT.backend.enabled && DT.backend.offline));
-  if (offline) throw new Error(`Không nạp được dữ liệu từ Supabase khi dựng ${route.out} – dừng build để không xuất bản dữ liệu mẫu`);
+  if (offline) throw new Error(`Không nạp được dữ liệu PHP/MySQL khi dựng ${route.out}`);
   await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(100);
   if (route.og) {
@@ -109,9 +135,13 @@ async function snapshot(page, base, siteUrl, route) {
   }
   return page.evaluate(({ out, data, siteUrl }) => {
     // Bỏ phần tạm thời (thông báo, cửa sổ bật lên) và trạng thái riêng của trình duyệt build
-    document.querySelectorAll('#toasts, .modal-wrap').forEach((e) => e.remove());
+    document.querySelectorAll('#toasts, .modal-wrap, .cookie-bar').forEach((e) => e.remove());
+    // Runtime chung được bootstrap lại theo đúng thứ tự khi React khởi động ở máy khách.
+    document.querySelectorAll('script[data-shared-runtime]').forEach((e)=>e.remove());
     document.body.classList.remove('no-scroll');
     document.documentElement.dataset.prerendered = new Date().toISOString().slice(0, 10);
+    delete document.documentElement.dataset.reactReady;
+    document.getElementById('root')?.setAttribute('aria-busy','true');
     Object.entries(data || {}).forEach(([k, v]) => { document.body.dataset[k] = v; });
     const head = document.head;
     const depth = out.split('/').length - 1;
@@ -121,17 +151,16 @@ async function snapshot(page, base, siteUrl, route) {
       (head.querySelector('meta[charset]') || head.firstChild).after(b);
     }
     const abs = (rel) => new URL(rel, siteUrl).href;
+    document.querySelectorAll('a[href^="/frontend/"]').forEach((anchor)=>{
+      anchor.setAttribute('href', abs(anchor.getAttribute('href').slice('/frontend/'.length)));
+    });
     const meta = (attr, key, val) => {
       let m = head.querySelector(`meta[${attr}="${key}"]`);
       if (!m) { m = document.createElement('meta'); m.setAttribute(attr, key); head.appendChild(m); }
       m.content = val;
     };
-    if (!head.querySelector('link[rel="canonical"]')) {
-      const l = document.createElement('link');
-      l.rel = 'canonical';
-      l.href = abs(out === 'index.html' ? './' : out);
-      head.appendChild(l);
-    }
+    const canonical=head.querySelector('link[rel="canonical"]') || document.createElement('link');
+    canonical.rel='canonical';canonical.href=abs(out === 'index.html' ? './' : out);head.appendChild(canonical);
     meta('property', 'og:url', head.querySelector('link[rel="canonical"]').href);
     meta('property', 'og:title', document.title);
     meta('property', 'og:site_name', DT.config.name);
@@ -183,6 +212,8 @@ function writeLlms(siteUrl, d) {
 // ---------------------------------------------------------------- Chạy
 async function main() {
   const t0 = Date.now();
+  if (!args.demo && !args.backend && !process.env.API_UPSTREAM) throw new Error('Build MySQL cần --backend http://localhost:8080/server/api.php hoặc API_UPSTREAM. Dùng --demo để build dữ liệu mẫu.');
+  await buildReact();
   copySite();
   const siteUrl = String(args.site || process.env.SITE_URL || siteUrlFromSource()).replace(/\/?$/, '/');
   writeSeoConfig(siteUrl);
@@ -201,6 +232,7 @@ async function main() {
   page.on('pageerror', (e) => errors.push(`${page.url()}: ${e.message}`));
 
   await page.goto(`${base}index.html`, { waitUntil: 'load' });
+  await page.waitForSelector('html[data-react-ready="true"] #main h1', {state:'attached'});
   const data = await page.evaluate(async () => {
     await DT.ready.catch(() => {});
     return {
@@ -217,8 +249,8 @@ async function main() {
       policyTitles: Object.fromEntries(Object.entries(DT.policies).map(([k, v]) => [k, v.title])),
     };
   });
-  if (data.configured && !data.backend) throw new Error('Đã cấu hình Supabase nhưng không nạp được dữ liệu – dừng build để không xuất bản dữ liệu mẫu');
-  console.log(`Nguồn dữ liệu: ${data.backend ? 'Supabase' : 'dữ liệu mẫu (chế độ demo)'} – ${data.products.length} sản phẩm, ${data.categories.length} danh mục, ${data.posts.length} bài viết`);
+  if (data.configured && !data.backend) throw new Error('Không nạp được dữ liệu PHP/MySQL, dừng build');
+  console.log(`Nguồn dữ liệu: ${data.backend ? 'PHP/MySQL' : 'dữ liệu mẫu (chế độ demo)'} – ${data.products.length} sản phẩm, ${data.categories.length} danh mục, ${data.posts.length} bài viết`);
 
   // Ảnh chia sẻ mặc định (banner trang chủ)
   await page.setViewportSize({ width: 1200, height: 630 });

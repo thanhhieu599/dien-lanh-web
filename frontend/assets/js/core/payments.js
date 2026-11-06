@@ -1,18 +1,19 @@
-// Thanh toán online qua Edge Function "payments" (supabase/functions/payments):
+// Thanh toán qua API PHP/MySQL. COD và VietQR dùng trực tiếp trên hosting.
 // VNPay (thẻ ATM / Visa / Master / JCB / QR ngân hàng), ví MoMo, chuyển khoản VietQR (đối soát tự động qua SePay).
 window.DT = window.DT || {};
 
 DT.payments = (() => {
   const cfg = DT.BACKEND || {};
-  const base = () => `${String(cfg.url || '').replace(/\/+$/, '')}/functions/v1/payments`;
+  const base = (path) => DT.apiEndpoint(`/payments/${path}`);
   let cached = null;
 
   async function call(path, body) {
     let res;
     try {
-      res = await fetch(`${base()}/${path}`, {
+      res = await fetch(base(path), {
         method: body === undefined ? 'GET' : 'POST',
-        headers: { 'Content-Type': 'application/json', apikey: cfg.anonKey, Authorization: `Bearer ${cfg.anonKey}` },
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'X-DT-Request': '1' },
         body: body === undefined ? undefined : JSON.stringify(body),
       });
     } catch {
@@ -23,7 +24,7 @@ DT.payments = (() => {
     return d;
   }
 
-  // Cổng nào đang bật (quản trị cấu hình khóa trên Supabase). Chế độ demo: không có cổng nào.
+  // Cổng online chỉ bật sau khi triển khai ký giao dịch và webhook trên máy chủ.
   function config() {
     if (!DT.backend?.enabled) return Promise.resolve({ vnpay: false, momo: false, bankAuto: false });
     cached = cached || call('config').catch(() => ({ vnpay: false, momo: false, bankAuto: false }));

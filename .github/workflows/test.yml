@@ -23,6 +23,7 @@ jobs:
       - name: PHP syntax
         run: docker compose exec -T web sh -c 'find server -name "*.php" -exec php -l {} \;'
       - run: docker compose exec -T web php server/cli.php seed
+      - run: npm run test:unit
       - run: npm run test:api
         env:
           TEST_ADMIN_PHONE: '0912345698'

@@ -2,18 +2,18 @@
 window.DT = window.DT || {};
 
 DT.config = {
-  name: 'Tên thương hiệu',
+  name: 'Kỷ nghệ lạnh Khánh Lê',
   slogan: 'Mát lạnh chính hãng - Lắp đặt tận tâm',
-  company: 'TÊN CÔNG TY',
-  taxCode: '0300000000',
-  hotline: '1900 6868',
-  hotlineB2B: '0909 000 000',
-  email: 'email@tencongty.vn',
-  zalo: 'https://zalo.me/0909000000',
+  company: 'CÔNG TY TNHH KỶ NGHỆ LẠNH KHÁNH LÊ',
+  taxCode: '0316112415',
+  hotline: '0387770075',
+  hotlineB2B: '0387770075',
+  email: 'Kynghelanhkhanhle824@gmail.com',
+  zalo: 'https://zalo.me/0387770075',
   messenger: '',      // link Messenger của fanpage, vd https://m.me/ten-fanpage (để trống = ẩn)
   facebook: 'https://facebook.com/',
   youtube: 'https://youtube.com/',
-  address: 'TP. Hồ Chí Minh, Việt Nam',
+  address: '824/2 Lê Đức Anh, Khu phố 41, Phường Bình Tân, Thành Phố Hồ Chí Minh, Việt Nam',
   workingHours: '7:30 - 21:30 (Cả CN & ngày lễ)',
   openTime: '07:30',   // giờ mở / đóng cửa: khung chat & form tự hẹn giờ gọi lại khi ngoài giờ
   closeTime: '21:30',
@@ -86,11 +86,7 @@ DT.services = [
 ];
 
 DT.stores = [
-  { id: 1, name: 'Tên thương hiệu - Quận 7', city: 'TP. Hồ Chí Minh', address: '123 Nguyễn Thị Thập, P. Tân Phú, Quận 7', phone: '028 3700 0001', hours: '8:00 - 21:00', map: 'Nguyễn Thị Thập Quận 7' },
-  { id: 2, name: 'Tên thương hiệu - Thủ Đức', city: 'TP. Hồ Chí Minh', address: '456 Võ Văn Ngân, P. Bình Thọ, TP. Thủ Đức', phone: '028 3700 0002', hours: '8:00 - 21:00', map: 'Võ Văn Ngân Thủ Đức' },
-  { id: 3, name: 'Tên thương hiệu - Tân Bình', city: 'TP. Hồ Chí Minh', address: '789 Cộng Hòa, P. 13, Q. Tân Bình', phone: '028 3700 0003', hours: '8:00 - 21:00', map: 'Cộng Hòa Tân Bình' },
-  { id: 4, name: 'Tên thương hiệu - Biên Hòa', city: 'Đồng Nai', address: '12 Phạm Văn Thuận, P. Tân Mai, TP. Biên Hòa', phone: '0251 370 0004', hours: '8:00 - 20:30', map: 'Phạm Văn Thuận Biên Hòa' },
-  { id: 5, name: 'Tên thương hiệu - Thủ Dầu Một', city: 'Bình Dương', address: '34 Đại lộ Bình Dương, P. Phú Hòa, TP. Thủ Dầu Một', phone: '0274 370 0005', hours: '8:00 - 20:30', map: 'Đại lộ Bình Dương Thủ Dầu Một' },
+  { id: 1, name: DT.config.name, city: 'Thành Phố Hồ Chí Minh', address: '824/2 Lê Đức Anh, Khu phố 41, Phường Bình Tân', phone: DT.config.hotline, hours: DT.config.workingHours, map: DT.config.address },
 ];
 
 DT.posts = [
@@ -159,7 +155,7 @@ DT.posts = [
 ];
 
 DT.policies = {
-  'bao-hanh': { title: 'Chính sách bảo hành', body: `<p>Tất cả sản phẩm tại cửa hàng là hàng chính hãng, được bảo hành theo tiêu chuẩn của nhà sản xuất.</p><ul><li>Bảo hành tại nhà đối với máy lạnh, tủ lạnh, máy giặt.</li><li>Tiếp nhận bảo hành qua hotline ${'1900 6868'} hoặc tại showroom.</li><li>Thời gian xử lý: 24 - 72 giờ làm việc.</li></ul><p>Không bảo hành với các trường hợp: hư hỏng do thiên tai, sử dụng sai hướng dẫn, tự ý tháo dỡ sửa chữa.</p>` },
+  'bao-hanh': { title: 'Chính sách bảo hành', body: `<p>Tất cả sản phẩm tại cửa hàng là hàng chính hãng, được bảo hành theo tiêu chuẩn của nhà sản xuất.</p><ul><li>Bảo hành tại nhà đối với máy lạnh, tủ lạnh, máy giặt.</li><li>Tiếp nhận bảo hành qua hotline ${DT.config.hotline} hoặc tại showroom.</li><li>Thời gian xử lý: 24 - 72 giờ làm việc.</li></ul><p>Không bảo hành với các trường hợp: hư hỏng do thiên tai, sử dụng sai hướng dẫn, tự ý tháo dỡ sửa chữa.</p>` },
   'doi-tra': { title: 'Chính sách đổi trả', body: `<ul><li><strong>1 đổi 1 trong 30 ngày</strong> nếu lỗi do nhà sản xuất.</li><li>Đổi sang sản phẩm khác trong 7 ngày (sản phẩm còn nguyên hộp, chưa lắp đặt), phí 10%.</li><li>Hoàn tiền trong 3 - 5 ngày làm việc sau khi nhận lại hàng.</li></ul>` },
   'van-chuyen': { title: 'Chính sách vận chuyển & lắp đặt', body: `<ul><li>Miễn phí giao hàng nội thành cho đơn từ 2.000.000₫.</li><li>Giao nhanh trong 2 - 4 giờ tại TP.HCM, Bình Dương, Đồng Nai.</li><li>Lắp đặt chuẩn kỹ thuật hãng; vật tư phát sinh (ống đồng ngoài 3m tiêu chuẩn, giá đỡ…) tính theo bảng giá niêm yết.</li></ul>` },
   'bao-mat': { title: 'Chính sách bảo mật thông tin', body: `<p>Chúng tôi cam kết bảo mật thông tin khách hàng theo Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân. Thông tin chỉ được dùng để xử lý đơn hàng, giao hàng, bảo hành và chăm sóc khách hàng.</p>` },

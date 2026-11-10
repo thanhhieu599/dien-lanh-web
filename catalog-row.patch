@@ -1,0 +1,446 @@
+diff --git a/.github/workflows/test.yml b/.github/workflows/test.yml
+index d1289c1..c3d6a0c 100644
+--- a/.github/workflows/test.yml
++++ b/.github/workflows/test.yml
+@@ -23,6 +23,7 @@ jobs:
+       - name: PHP syntax
+         run: docker compose exec -T web sh -c 'find server -name "*.php" -exec php -l {} \;'
+       - run: docker compose exec -T web php server/cli.php seed
++      - run: npm run test:unit
+       - run: npm run test:api
+         env:
+           TEST_ADMIN_PHONE: '0912345698'
+diff --git a/admin/assets/js/db.js b/admin/assets/js/db.js
+index f88c1fa..7ecf238 100644
+--- a/admin/assets/js/db.js
++++ b/admin/assets/js/db.js
+@@ -380,85 +380,17 @@ AD.demo = () => {
+   function seed() {
+     const now = new Date().toISOString();
+     return {
+-      products: DT.products.map((p) => ({
+-        id: p.id,
+-        sku: p.sku,
+-        slug: p.slug,
+-        name: p.name,
+-        cat: p.cat,
+-        sub: p.sub,
+-        brand: p.brand,
+-        price: p.price,
+-        old_price: p.oldPrice,
+-        rating: p.rating,
+-        reviews: p.reviews,
+-        sold: p.sold,
+-        stock: p.stock,
+-        badges: p.badges,
+-        gift: p.gift,
+-        installment: p.installment,
+-        free_install: p.freeInstall,
+-        flash_sale: p.flashSale,
+-        attrs: p.attrs,
+-        specs: p.specs,
+-        highlights: p.highlights,
+-        short: p.short,
+-        description: p.description || '',
+-        options: p.options || {},
+-        product_tags: p.productTags || [],
+-        requires_shipping: p.requiresShipping !== false,
+-        weight: p.weight || 0,
+-        weight_unit: p.weightUnit || 'g',
+-        warranty: p.warranty,
+-        art: p.art,
+-        images: p.images,
+-        active: true,
+-        created_at: p.createdAt,
+-        updated_at: now,
+-      })),
++      // Chuyển dữ liệu website -> bản ghi database: frontend/assets/js/core/rows.js
++      products: DT.products.map((p) => ({ ...DT.rows.product.toRow(p), active: true, updated_at: now })),
+       categories: DT.categories.map((c, i) => ({
+         ...c,
+         sort: i,
+         active: true,
+       })),
+       brands: DT.brands.map((b, i) => ({ ...b, sort: i, active: true })),
+-      coupons: DT.coupons.map((c) => ({
+-        code: c.code,
+-        type: c.type,
+-        value: c.value,
+-        max: c.max ?? null,
+-        min: c.min,
+-        description: c.desc,
+-        is_public: true,
+-        active: true,
+-        starts_at: null,
+-        ends_at: null,
+-        usage_limit: null,
+-        used_count: 0,
+-      })),
++      coupons: DT.coupons.map((c) => ({ ...DT.rows.coupon.toRow(c), is_public: true, active: true, starts_at: null, ends_at: null, usage_limit: null, used_count: 0 })),
+       posts: DT.posts.map((p) => ({ ...p, published: true })),
+-      projects: (DT.projects || []).map((p, i) => ({
+-        slug: p.slug,
+-        title: p.title,
+-        client: p.client,
+-        industry: p.industry,
+-        location: p.location,
+-        year: p.year,
+-        units: p.units,
+-        capacity: p.capacity,
+-        duration: p.duration,
+-        summary: p.summary,
+-        content: p.content,
+-        before_image: p.beforeImage || null,
+-        after_image: p.afterImage || null,
+-        images: p.images || [],
+-        testimonial: p.testimonial,
+-        testimonial_name: p.testimonialName,
+-        testimonial_role: p.testimonialRole,
+-        featured: !!p.featured,
+-        published: true,
+-        sort: i,
+-      })),
++      projects: (DT.projects || []).map((p, i) => ({ ...DT.rows.project.toRow(p), published: true, sort: i })),
+       faqs: (DT.faqs || []).map((f) => ({ ...f, active: true })),
+       banners: DT.banners.map((b, i) => ({
+         id: i + 1,
+@@ -467,16 +399,7 @@ AD.demo = () => {
+         active: true,
+       })),
+       stores: DT.stores.map((s, i) => ({ ...s, sort: i, active: true })),
+-      services: DT.services.map((s, i) => ({
+-        id: s.id,
+-        name: s.name,
+-        price: s.price,
+-        unit: s.unit,
+-        icon: s.icon,
+-        description: s.desc,
+-        sort: i,
+-        active: true,
+-      })),
++      services: DT.services.map((s, i) => ({ ...DT.rows.service.toRow(s), sort: i, active: true })),
+       policies: Object.entries(DT.policies).map(([key, v], i) => ({
+         key,
+         title: v.title,
+diff --git a/admin/src/services/runtime.ts b/admin/src/services/runtime.ts
+index 0a794d6..7bb8320 100644
+--- a/admin/src/services/runtime.ts
++++ b/admin/src/services/runtime.ts
+@@ -6,7 +6,7 @@ export const adminBase=new URL('./',document.baseURI);
+ export const websiteBase=new URL('../frontend/',adminBase);
+ async function script(path:string){await new Promise<void>((resolve,reject)=>{const el=document.createElement('script');const url=new URL(path,adminBase);url.searchParams.set('v',__BUILD_VERSION__);el.src=url.href;el.dataset.adminRuntime=path;el.onload=()=>resolve();el.onerror=()=>reject(new Error(`Không tải được ${path}`));document.head.append(el);});}
+ export async function bootstrap(){
+- for(const file of ['data/catalog','data/content','seo-config','backend-config','core/utils','components/icons','core/api','components/art'])await script(`../frontend/assets/js/${file}.js`);
++ for(const file of ['data/catalog','data/content','seo-config','backend-config','core/utils','components/icons','core/rows','core/api','components/art'])await script(`../frontend/assets/js/${file}.js`);
+  dt=window.DT;window.AD={cache:{},me:null} as Admin;ad=window.AD;
+  ad.today=()=>today();
+  // Keep resource definitions and database contracts; none of the legacy page/UI renderers are loaded.
+@@ -41,7 +41,7 @@ export async function loadCache(){
+  const tables=role==='accountant'?['categories','brands','products']:['categories','brands','services','products'];
+  const results=await Promise.all(tables.map(table=>ad.db.list(table,{limit:5000,order:table==='products'?'id.desc':'sort.asc'})));
+  ad.cache={...ad.cache,...Object.fromEntries(tables.map((t,i)=>[t,results[i].rows]))};
+- ad.cache.productMap=new Map((ad.cache.products || []).map((p:Row)=>[String(p.id),{...p,freeInstall:p.free_install}]));dt.brands=ad.cache.brands || dt.brands;
++ ad.cache.productMap=new Map((ad.cache.products || []).map((p:Row)=>[String(p.id),{...p,...dt.rows.product.toView(p)}]));dt.brands=ad.cache.brands || dt.brands;
+ }
+ export const money=(value:any)=>new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(Number(value)||0);
+ export const date=(value:any)=>value?new Date(value).toLocaleString('vi-VN',{dateStyle:'short',timeStyle:'short'}):'—';
+diff --git a/frontend/assets/js/core/backend.js b/frontend/assets/js/core/backend.js
+index 526a8a2..a1c1c27 100644
+--- a/frontend/assets/js/core/backend.js
++++ b/frontend/assets/js/core/backend.js
+@@ -108,17 +108,8 @@ DT.backend = (() => {
+   const update = (table, filter, patch) => http(`/data/${table}?${filter}`, { method: 'PATCH', body: patch, headers: { Prefer: 'return=representation' } });
+ 
+   // ---------- Nạp catalog & nội dung
+-  const mapProduct = (r) => ({
+-    id: r.id, sku: r.sku, slug: r.slug, name: r.name, cat: r.cat, sub: r.sub, brand: r.brand,
+-    price: Number(r.price), oldPrice: r.old_price == null ? null : Number(r.old_price),
+-    rating: Number(r.rating), reviews: r.reviews, sold: r.sold, stock: r.stock,
+-    badges: r.badges || [], gift: r.gift, installment: r.installment, freeInstall: r.free_install, flashSale: r.flash_sale,
+-    attrs: r.attrs || {}, specs: r.specs || {}, highlights: r.highlights || [], short: r.short || '', warranty: r.warranty || '',
+-    description: r.description || '', options: r.options || {}, productTags: r.product_tags || [],
+-    requiresShipping: r.requires_shipping !== false, weight: Number(r.weight || 0), weightUnit: r.weight_unit || 'g',
+-    art: r.art || { type: 'generic', color: 'white' }, images: r.images?.length ? r.images : ['art:0'],
+-    createdAt: String(r.created_at).slice(0, 10),
+-  });
++  // Chuyển bản ghi database -> dữ liệu website: xem core/rows.js (dùng chung với quản trị)
++  const mapProduct = (r) => DT.rows.product.toView(r);
+ 
+   // Áp dữ liệu vào website. d có thể chỉ chứa một số bảng (bản demo: chỉ các bảng đã sửa trong quản trị)
+   function apply(d) {
+@@ -134,10 +125,7 @@ DT.backend = (() => {
+       if (cat && Array.isArray(cat.bundles)) DT.bundleRules = cat.bundles;
+     }
+     if (d.projects) {
+-      DT.projects = d.projects.map((r) => ({
+-        ...r, beforeImage: r.before_image, afterImage: r.after_image, images: r.images || [],
+-        testimonialName: r.testimonial_name, testimonialRole: r.testimonial_role,
+-      }));
++      DT.projects = d.projects.map(DT.rows.project.toView);
+     }
+     if (d.faqs) DT.faqs = d.faqs;
+     if (d.categories) DT.categories = d.categories.map((c) => ({ ...c, subs: c.subs || [], filters: c.filters || [] }));
+@@ -149,10 +137,10 @@ DT.backend = (() => {
+     if (d.stores) DT.stores = d.stores;
+     if (d.posts) DT.posts = d.posts.map((p) => ({ ...p, date: String(p.date).slice(0, 10) }));
+     if (d.banners) DT.banners = d.banners;
+-    if (d.services) DT.services = d.services.map((s) => ({ ...s, price: Number(s.price), desc: s.description }));
++    if (d.services) DT.services = d.services.map(DT.rows.service.toView);
+     if (d.policies) DT.policies = Object.fromEntries(d.policies.map((p) => [p.key, { title: p.title, body: p.body }]));
+     if (d.coupons) {
+-      DT.couponCatalog = d.coupons.map((c) => ({ ...c, value: Number(c.value), max: c.max == null ? null : Number(c.max), min: Number(c.min), desc: c.description }));
++      DT.couponCatalog = d.coupons.map(DT.rows.coupon.toView);
+       const now = Date.now();
+       DT.coupons = DT.couponCatalog.filter((c) => c.is_public !== false && c.active !== false && (!c.starts_at || new Date(c.starts_at).getTime() <= now) && (!c.ends_at || new Date(c.ends_at).getTime() > now) && (c.usage_limit == null || Number(c.used_count || 0) < c.usage_limit));
+     }
+@@ -167,7 +155,7 @@ DT.backend = (() => {
+       stores: 'select=id,name,city,address,phone,hours,map&order=sort',
+       posts: 'select=slug,title,cat,date,author,art,excerpt,content&order=date.desc',
+       banners: 'select=title,sub,cta,href,theme,art,image&order=sort',
+-      services: 'select=id,name,price,unit,icon,description&order=sort',
++      services: `select=${DT.rows.service.columns}&order=sort`,
+       policies: 'select=key,title,body&order=sort',
+       coupons: 'select=*',
+       projects: 'select=*&published=is.true&order=sort,year.desc',
+diff --git a/frontend/assets/js/core/rows.js b/frontend/assets/js/core/rows.js
+new file mode 100644
+index 0000000..4f01dd7
+--- /dev/null
++++ b/frontend/assets/js/core/rows.js
+@@ -0,0 +1,89 @@
++// Catalog Row: nơi DUY NHẤT chuyển bản ghi database (snake_case) <-> dữ liệu website (camelCase).
++// Dùng chung cho: website (core/backend.js), quản trị demo (admin/assets/js/db.js), quản trị React
++// (admin/src/services/runtime.ts) và công cụ tạo dữ liệu mẫu MySQL (tools/build-mysql-seed.mjs).
++// Thêm một trường mới: thêm MỘT dòng vào danh sách fields của loại dữ liệu đó.
++window.DT = window.DT || {};
++DT.rows = (() => {
++  const num = (v) => Number(v);
++  const numOr0 = (v) => Number(v || 0);
++  const numOrNull = (v) => (v == null ? null : Number(v));
++  const or = (fallback) => (v) => (v == null ? fallback : v);
++
++  // fields: [tên trên website, tên trong database, chuyển khi đọc (database -> website), chuyển khi ghi (website -> database)]
++  // keepView: giữ thêm các trường khác khi đọc; keepRow: giữ thêm các trường khác khi ghi
++  function resource(fields, { columns, keepView = false, keepRow = false } = {}) {
++    const list = fields.map(([view, row = view, read = (v) => v, write = (v) => v]) => ({ view, row, read, write }));
++    return {
++      // Danh sách cột cho truy vấn select= (mặc định: đúng các trường đã khai báo)
++      columns: columns || list.map((f) => f.row).join(','),
++      toView(row = {}) {
++        const out = keepView ? { ...row } : {};
++        for (const f of list) out[f.view] = f.read(row[f.row], row);
++        return out;
++      },
++      toRow(view = {}) {
++        const out = keepRow ? { ...view } : {};
++        for (const f of list) {
++          if (keepRow && f.view !== f.row) delete out[f.view];
++          out[f.row] = f.write(view[f.view], view);
++        }
++        return out;
++      },
++    };
++  }
++
++  const product = resource([
++    ['id'], ['sku'], ['slug'], ['name'], ['cat'], ['sub'], ['brand'],
++    ['price', 'price', num],
++    ['oldPrice', 'old_price', numOrNull],
++    ['rating', 'rating', num],
++    ['reviews'], ['sold'], ['stock'],
++    ['badges', 'badges', or([]), or([])],
++    ['gift'], ['installment'],
++    ['freeInstall', 'free_install'],
++    ['flashSale', 'flash_sale'],
++    ['attrs', 'attrs', or({})],
++    ['specs', 'specs', or({})],
++    ['highlights', 'highlights', or([])],
++    ['short', 'short', or('')],
++    ['warranty', 'warranty', or('')],
++    ['description', 'description', or(''), or('')],
++    ['options', 'options', or({}), or({})],
++    ['productTags', 'product_tags', or([]), or([])],
++    ['requiresShipping', 'requires_shipping', (v) => v !== false, (v) => v !== false],
++    ['weight', 'weight', numOr0, numOr0],
++    ['weightUnit', 'weight_unit', or('g'), or('g')],
++    ['art', 'art', or({ type: 'generic', color: 'white' })],
++    ['images', 'images', (v) => (v?.length ? v : ['art:0'])],
++    ['createdAt', 'created_at', (v) => String(v).slice(0, 10)],
++  ], { columns: '*' });
++
++  // Dịch vụ: website dùng desc, database lưu description
++  const service = resource([
++    ['id'], ['name'],
++    ['price', 'price', num],
++    ['unit'], ['icon'],
++    ['desc', 'description'],
++  ], { keepView: true, keepRow: true, columns: 'id,name,price,unit,icon,description' });
++
++  const project = resource([
++    ['slug'], ['title'], ['client'], ['industry'], ['location'], ['year'], ['units'], ['capacity'], ['duration'],
++    ['summary'], ['content'], ['testimonial'],
++    ['featured', 'featured', (v) => v, (v) => !!v],
++    ['beforeImage', 'before_image', (v) => v, (v) => v || null],
++    ['afterImage', 'after_image', (v) => v, (v) => v || null],
++    ['images', 'images', or([]), or([])],
++    ['testimonialName', 'testimonial_name'],
++    ['testimonialRole', 'testimonial_role'],
++  ], { keepView: true, columns: '*' });
++
++  const coupon = resource([
++    ['code'], ['type'],
++    ['value', 'value', num],
++    ['max', 'max', numOrNull, (v) => v ?? null],
++    ['min', 'min', num],
++    ['desc', 'description'],
++  ], { keepView: true, columns: '*' });
++
++  return { product, service, project, coupon };
++})();
+diff --git a/frontend/src/services/runtime.ts b/frontend/src/services/runtime.ts
+index 4509b43..0c0c966 100644
+--- a/frontend/src/services/runtime.ts
++++ b/frontend/src/services/runtime.ts
+@@ -16,7 +16,7 @@ function script(file: string): Promise<void> {
+   });
+ }
+ export async function bootstrap(): Promise<void> {
+-  for (const file of ['data/catalog','data/content','seo-config','backend-config','core/utils','components/icons','core/api','core/promotions','core/store','core/backend','components/art','core/payments']) await script(file);
++  for (const file of ['data/catalog','data/content','seo-config','backend-config','core/utils','components/icons','core/api','core/rows','core/promotions','core/store','core/backend','components/art','core/payments']) await script(file);
+   dt = window.DT;
+   let notices=document.getElementById('toasts');
+   if(!notices){notices=document.createElement('div');notices.id='toasts';document.body.append(notices);}
+diff --git a/frontend/src/types.ts b/frontend/src/types.ts
+index 90191e7..9ff5350 100644
+--- a/frontend/src/types.ts
++++ b/frontend/src/types.ts
+@@ -5,6 +5,8 @@ export interface Product {
+   badges: string[]; images: string[]; attrs: Record<string, string>; specs: Record<string, string>;
+   highlights: string[]; options: Record<string, string[]>; short: string; description: string;
+   warranty: string; gift?:string; freeInstall: boolean; flashSale: boolean; createdAt: string;
++  // Khớp với frontend/assets/js/core/rows.js (product.toView)
++  installment?: boolean; productTags: string[]; requiresShipping: boolean; weight: number; weightUnit: string; art: Row;
+ }
+ export interface Category { id: string; name: string; short: string; icon: string; image?:string; subs: {id:string;name:string}[]; filters: Row[]; product_ids?: number[]; }
+ export interface ShopState { cart: Row[]; wishlist: number[]; compare: number[]; viewed: number[]; user: Row | null; orders: Row[]; }
+diff --git a/package.json b/package.json
+index c2cbe0b..b5583f5 100644
+--- a/package.json
++++ b/package.json
+@@ -5,7 +5,8 @@
+   "description": "D&T Điện Lạnh - website và quản trị React/TypeScript, backend PHP/MySQL",
+   "scripts": {
+     "build": "node tools/prerender.mjs --out dist",
+-    "test": "npm run typecheck && npm run test:browser",
++    "test": "npm run typecheck && npm run test:unit && npm run test:browser",
++    "test:unit": "node --test tests/unit/rows.test.mjs",
+     "test:browser": "node tools/package-hosting.mjs && node tests/react/website.test.mjs && node tests/react/product-layout.test.mjs && node tests/react/visual-restore.test.mjs && node tests/react/admin.test.mjs",
+     "test:legacy:browser": "node tools/test-browser.mjs",
+     "test:build": "node tests/react/prerender.test.mjs dist",
+diff --git a/tests/unit/rows.test.mjs b/tests/unit/rows.test.mjs
+new file mode 100644
+index 0000000..551ba3d
+--- /dev/null
++++ b/tests/unit/rows.test.mjs
+@@ -0,0 +1,88 @@
++// Kiểm thử module Catalog Row (frontend/assets/js/core/rows.js) bằng node, không cần trình duyệt.
++// 1) Đối chiếu với ánh xạ cũ (chép nguyên từ backend.js mapProduct/apply và admin db.js seed trước khi gom về rows.js)
++// 2) Chuyển đi - chuyển về không làm mất / đổi dữ liệu.
++// Chạy: node --test tests/unit
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import fs from 'node:fs';
++import vm from 'node:vm';
++
++const root = new URL('../../', import.meta.url);
++const context = { console };
++context.window = context;
++vm.createContext(context);
++for (const file of ['frontend/assets/js/data/catalog.js', 'frontend/assets/js/data/content.js', 'frontend/assets/js/core/rows.js']) {
++  vm.runInContext(fs.readFileSync(new URL(file, root), 'utf8'), context, { filename: file });
++}
++const DT = context.DT;
++const plain = (x) => JSON.parse(JSON.stringify(x));
++
++// ---- Ánh xạ cũ (đặc tả hành vi phải giữ nguyên)
++const legacyProductToView = (r) => ({
++  id: r.id, sku: r.sku, slug: r.slug, name: r.name, cat: r.cat, sub: r.sub, brand: r.brand,
++  price: Number(r.price), oldPrice: r.old_price == null ? null : Number(r.old_price),
++  rating: Number(r.rating), reviews: r.reviews, sold: r.sold, stock: r.stock,
++  badges: r.badges || [], gift: r.gift, installment: r.installment, freeInstall: r.free_install, flashSale: r.flash_sale,
++  attrs: r.attrs || {}, specs: r.specs || {}, highlights: r.highlights || [], short: r.short || '', warranty: r.warranty || '',
++  description: r.description || '', options: r.options || {}, productTags: r.product_tags || [],
++  requiresShipping: r.requires_shipping !== false, weight: Number(r.weight || 0), weightUnit: r.weight_unit || 'g',
++  art: r.art || { type: 'generic', color: 'white' }, images: r.images?.length ? r.images : ['art:0'],
++  createdAt: String(r.created_at).slice(0, 10),
++});
++const legacyProductToRow = (p) => ({
++  id: p.id, sku: p.sku, slug: p.slug, name: p.name, cat: p.cat, sub: p.sub, brand: p.brand, price: p.price, old_price: p.oldPrice,
++  rating: p.rating, reviews: p.reviews, sold: p.sold, stock: p.stock, badges: p.badges, gift: p.gift, installment: p.installment,
++  free_install: p.freeInstall, flash_sale: p.flashSale, attrs: p.attrs, specs: p.specs, highlights: p.highlights, short: p.short,
++  description: p.description || '', options: p.options || {}, product_tags: p.productTags || [], requires_shipping: p.requiresShipping !== false,
++  weight: p.weight || 0, weight_unit: p.weightUnit || 'g', warranty: p.warranty, art: p.art, images: p.images, created_at: p.createdAt,
++});
++const legacyServiceToView = (s) => ({ ...s, price: Number(s.price), desc: s.description });
++const legacyServiceToRow = (s) => ({ id: s.id, name: s.name, price: s.price, unit: s.unit, icon: s.icon, description: s.desc });
++const legacyProjectToView = (r) => ({ ...r, beforeImage: r.before_image, afterImage: r.after_image, images: r.images || [], testimonialName: r.testimonial_name, testimonialRole: r.testimonial_role });
++const legacyProjectToRow = (p) => ({
++  slug: p.slug, title: p.title, client: p.client, industry: p.industry, location: p.location, year: p.year, units: p.units, capacity: p.capacity,
++  duration: p.duration, summary: p.summary, content: p.content, before_image: p.beforeImage || null, after_image: p.afterImage || null,
++  images: p.images || [], testimonial: p.testimonial, testimonial_name: p.testimonialName, testimonial_role: p.testimonialRole, featured: !!p.featured,
++});
++const legacyCouponToView = (c) => ({ ...c, value: Number(c.value), max: c.max == null ? null : Number(c.max), min: Number(c.min), desc: c.description });
++const legacyCouponToRow = (c) => ({ code: c.code, type: c.type, value: c.value, max: c.max ?? null, min: c.min, description: c.desc });
++
++const cases = [
++  ['product', DT.products, legacyProductToView, legacyProductToRow],
++  ['service', DT.services, legacyServiceToView, legacyServiceToRow],
++  ['project', DT.projects || [], legacyProjectToView, legacyProjectToRow],
++  ['coupon', DT.coupons, legacyCouponToView, legacyCouponToRow],
++];
++
++for (const [name, views, legacyToView, legacyToRow] of cases) {
++  test(`${name}: có dữ liệu mẫu để kiểm tra`, () => assert.ok(views.length > 0, `${name} rỗng`));
++  test(`${name}: toRow giống ánh xạ cũ (db.js seed)`, () => {
++    for (const v of views) assert.deepEqual(plain(DT.rows[name].toRow(v)), plain(legacyToRow(v)), `${name} ${v.id || v.slug || v.code}`);
++  });
++  test(`${name}: toView giống ánh xạ cũ (backend.js)`, () => {
++    for (const v of views) {
++      const row = legacyToRow(v);
++      assert.deepEqual(plain(DT.rows[name].toView(row)), plain(legacyToView(row)), `${name} ${v.id || v.slug || v.code}`);
++    }
++  });
++  test(`${name}: đọc - ghi - đọc lại không đổi dữ liệu`, () => {
++    for (const v of views) {
++      const once = DT.rows[name].toView(DT.rows[name].toRow(v));
++      assert.deepEqual(plain(DT.rows[name].toView(DT.rows[name].toRow(once))), plain(once));
++    }
++  });
++}
++
++test('product: bản ghi thiếu trường dùng giá trị mặc định', () => {
++  const v = DT.rows.product.toView({ id: 1, price: '1000', created_at: '2026-01-02T10:00:00Z' });
++  assert.equal(v.price, 1000);
++  assert.equal(v.oldPrice, null);
++  assert.deepEqual(plain(v.images), ['art:0']);
++  assert.equal(v.requiresShipping, true);
++  assert.equal(v.weightUnit, 'g');
++  assert.equal(v.createdAt, '2026-01-02');
++});
++
++test('service: cột select= giữ nguyên danh sách cũ', () => {
++  assert.equal(DT.rows.service.columns, 'id,name,price,unit,icon,description');
++});
+diff --git a/tools/build-mysql-seed.mjs b/tools/build-mysql-seed.mjs
+index 9a58467..47cf556 100644
+--- a/tools/build-mysql-seed.mjs
++++ b/tools/build-mysql-seed.mjs
+@@ -13,7 +13,7 @@ const localStorage = {
+ const context = { localStorage, sessionStorage: localStorage, console };
+ context.window = context;
+ vm.createContext(context);
+-for (const file of ['frontend/assets/js/data/catalog.js', 'frontend/assets/js/data/content.js', 'admin/assets/js/db.js']) {
++for (const file of ['frontend/assets/js/data/catalog.js', 'frontend/assets/js/data/content.js', 'frontend/assets/js/core/rows.js', 'admin/assets/js/db.js']) {
+   vm.runInContext(fs.readFileSync(new URL(file, root), 'utf8'), context, { filename: file });
+ }
+ const data = JSON.parse(storage.get(context.DT.ADMIN_DEMO_KEY || 'dt_admin_demo_v1'));

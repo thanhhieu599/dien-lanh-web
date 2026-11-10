@@ -4,7 +4,9 @@ window.DT = window.DT || {};
 
 DT.api = (() => {
   // Chỉ mục dựng lại khi DT.products được thay (sau khi nạp từ database)
-  let indexed = null; let byId; let bySlug;
+  let indexed = null;
+  let byId;
+  let bySlug;
   function idx() {
     if (indexed !== DT.products) {
       byId = new Map(DT.products.map((p) => [p.id, p]));
@@ -14,37 +16,91 @@ DT.api = (() => {
   }
   const n = (s) => DT.u.norm(s);
 
-  const productById = (id) => { idx(); return byId.get(Number(id)); };
-  const product = (key) => { idx(); return byId.get(Number(key)) || bySlug.get(key); };
+  const productById = (id) => {
+    idx();
+    return byId.get(Number(id));
+  };
+  const product = (key) => {
+    idx();
+    return byId.get(Number(key)) || bySlug.get(key);
+  };
   const category = (id) => DT.categories.find((c) => c.id === id);
-  const optionGroups = (p) => Object.entries(p.options || {}).map(([name, values]) => ({
-    name: name.trim(),
-    values: [...new Set((Array.isArray(values) ? values : String(values || '').split(/[,;\n|]/)).map((value) => String(value).trim()).filter(Boolean))],
-  })).filter((group) => group.name && group.values.length);
-  const optionText = (options) => Object.entries(options || {}).map(([name, value]) => `${name}: ${value}`).join(' · ');
+  const optionGroups = (p) =>
+    Object.entries(p.options || {})
+      .map(([name, values]) => ({
+        name: name.trim(),
+        values: [
+          ...new Set(
+            (Array.isArray(values)
+              ? values
+              : String(values || "").split(/[,;\n|]/)
+            )
+              .map((value) => String(value).trim())
+              .filter(Boolean),
+          ),
+        ],
+      }))
+      .filter((group) => group.name && group.values.length);
+  const optionText = (options) =>
+    Object.entries(options || {})
+      .map(([name, value]) => `${name}: ${value}`)
+      .join(" · ");
   const inCategory = (p, id) => {
     const c = category(id);
-    if (!c || (c.excluded_product_ids || []).some((value) => String(value) === String(p.id))) return false;
-    return p.cat === id || (c.product_ids || []).some((value) => String(value) === String(p.id));
+    if (
+      !c ||
+      (c.excluded_product_ids || []).some(
+        (value) => String(value) === String(p.id),
+      )
+    )
+      return false;
+    return (
+      p.cat === id ||
+      (c.product_ids || []).some((value) => String(value) === String(p.id))
+    );
   };
   // Thương hiệu bị ẩn / xóa trong quản trị: vẫn hiển thị được sản phẩm (dùng mã thương hiệu làm tên)
-  const brand = (id) => DT.brands.find((b) => b.id === id) || { id, name: String(id || '').replace(/(^|-)(\w)/g, (m, s, c) => (s ? ' ' : '') + c.toUpperCase()), origin: '', color: '#344054' };
+  const brand = (id) =>
+    DT.brands.find((b) => b.id === id) || {
+      id,
+      name: String(id || "").replace(
+        /(^|-)(\w)/g,
+        (m, s, c) => (s ? " " : "") + c.toUpperCase(),
+      ),
+      origin: "",
+      color: "#344054",
+    };
   // Loại con của danh mục; sản phẩm chưa chọn loại thì dùng chính danh mục
   const sub = (p) => category(p.cat)?.subs.find((s) => s.id === p.sub) || null;
   // URL thân thiện SEO (sp/<slug>.html...) khi site được build bằng tools/prerender.mjs (DT.SEO.prettyUrls = true)
   const pretty = () => !!DT.SEO?.prettyUrls;
-  const url = (p) => (pretty() ? `sp/${p.slug}.html` : `san-pham.html?id=${p.id}&${p.slug}`);
-  const catUrl = (cat, sub) => (pretty() ? `danh-muc/${cat}${sub ? `/${sub}` : ''}.html` : `danh-muc.html?cat=${cat}${sub ? `&sub=${sub}` : ''}`);
-  const postUrl = (slug) => (pretty() ? `tin-tuc/${slug}.html` : `bai-viet.html?slug=${slug}`);
-  const policyUrl = (type) => (pretty() ? `chinh-sach/${type}.html` : `chinh-sach.html?type=${type}`);
+  const url = (p) =>
+    pretty() ? `sp/${p.slug}.html` : `san-pham.html?id=${p.id}&${p.slug}`;
+  const catUrl = (cat, sub, sub2) =>
+    sub2
+      ? `danh-muc.html?cat=${cat}&sub=${sub}&sub2=${sub2}`
+      : pretty()
+        ? `danh-muc/${cat}${sub ? `/${sub}` : ""}.html`
+        : `danh-muc.html?cat=${cat}${sub ? `&sub=${sub}` : ""}`;
+  const postUrl = (slug) =>
+    pretty() ? `tin-tuc/${slug}.html` : `bai-viet.html?slug=${slug}`;
+  const policyUrl = (type) =>
+    pretty() ? `chinh-sach/${type}.html` : `chinh-sach.html?type=${type}`;
   const brandUrl = (id) => {
-    const slug = DT.brands.find((b) => b.id === id || b.slug === id)?.slug || id;
-    return id ? (pretty() ? `thuong-hieu/${encodeURIComponent(slug)}.html` : `thuong-hieu.html?id=${encodeURIComponent(slug)}`) : 'thuong-hieu.html';
+    const slug =
+      DT.brands.find((b) => b.id === id || b.slug === id)?.slug || id;
+    return id
+      ? pretty()
+        ? `thuong-hieu/${encodeURIComponent(slug)}.html`
+        : `thuong-hieu.html?id=${encodeURIComponent(slug)}`
+      : "thuong-hieu.html";
   };
 
   function matchQuery(p, q) {
     const words = n(q).split(/\s+/).filter(Boolean);
-    const hay = n(`${p.name} ${p.sku} ${brand(p.brand)?.name} ${category(p.cat)?.name} ${p.short}`);
+    const hay = n(
+      `${p.name} ${p.sku} ${brand(p.brand)?.name} ${category(p.cat)?.name} ${p.short}`,
+    );
     return words.every((w) => hay.includes(w));
   }
 
@@ -56,6 +112,7 @@ DT.api = (() => {
     let items = DT.products.filter((p) => {
       if (f.cat && !inCategory(p, f.cat)) return false;
       if (f.sub && p.sub !== f.sub) return false;
+      if (f.sub2 && p.sub2 !== f.sub2) return false;
       if (f.brands?.length && !f.brands.includes(p.brand)) return false;
       if (f.flash && !p.flashSale) return false;
       if (f.badge && !p.badges.includes(f.badge)) return false;
@@ -74,15 +131,28 @@ DT.api = (() => {
     });
     const sorters = {
       popular: (a, b) => b.sold - a.sold,
-      'price-asc': (a, b) => a.price - b.price,
-      'price-desc': (a, b) => b.price - a.price,
+      "price-asc": (a, b) => a.price - b.price,
+      "price-desc": (a, b) => b.price - a.price,
       discount: (a, b) => DT.u.discount(b) - DT.u.discount(a),
       newest: (a, b) => b.createdAt.localeCompare(a.createdAt),
       rating: (a, b) => b.rating - a.rating || b.reviews - a.reviews,
     };
-    const categoryOrder = new Map((category(f.cat)?.product_ids || []).map((id, index) => [String(id), index]));
-    const ordered = (a, b) => (categoryOrder.get(String(a.id)) ?? Infinity) - (categoryOrder.get(String(b.id)) ?? Infinity) || sorters.popular(a, b);
-    items = items.slice().sort(f.sort === 'category' || (!f.sort && categoryOrder.size) ? ordered : sorters[f.sort] || sorters.popular);
+    const categoryOrder = new Map(
+      (category(f.cat)?.product_ids || []).map((id, index) => [
+        String(id),
+        index,
+      ]),
+    );
+    const ordered = (a, b) =>
+      (categoryOrder.get(String(a.id)) ?? Infinity) -
+        (categoryOrder.get(String(b.id)) ?? Infinity) || sorters.popular(a, b);
+    items = items
+      .slice()
+      .sort(
+        f.sort === "category" || (!f.sort && categoryOrder.size)
+          ? ordered
+          : sorters[f.sort] || sorters.popular,
+      );
     const total = items.length;
     if (f.limit) {
       const page = Math.max(1, f.page || 1);
@@ -94,38 +164,83 @@ DT.api = (() => {
   function related(p, limit = 10) {
     return DT.products
       .filter((x) => x.id !== p.id && x.cat === p.cat)
-      .sort((a, b) => (b.sub === p.sub) - (a.sub === p.sub) || Math.abs(a.price - p.price) - Math.abs(b.price - p.price))
+      .sort(
+        (a, b) =>
+          (b.sub === p.sub) - (a.sub === p.sub) ||
+          Math.abs(a.price - p.price) - Math.abs(b.price - p.price),
+      )
       .slice(0, limit);
   }
 
   function suggest(q, limit = 6) {
     if (!q || q.trim().length < 2) return [];
-    return list({ q, sort: 'popular' }).items.slice(0, limit);
+    return list({ q, sort: "popular" }).items.slice(0, limit);
   }
 
   // Đánh giá đã duyệt từ DB (Promise). Chế độ demo trả về đánh giá mẫu.
   async function fetchReviews(p) {
     if (!DT.backend.enabled) return reviews(p);
-    const rows = await DT.backend.select('reviews', `product_id=eq.${p.id}&status=eq.approved&select=name,rating,text,verified,created_at&order=created_at.desc&limit=30`);
-    return rows.map((r) => ({ name: r.name, rating: r.rating, text: r.text, verified: r.verified, date: String(r.created_at).slice(0, 10) }));
+    const rows = await DT.backend.select(
+      "reviews",
+      `product_id=eq.${p.id}&status=eq.approved&select=name,rating,text,verified,created_at&order=created_at.desc&limit=30`,
+    );
+    return rows.map((r) => ({
+      name: r.name,
+      rating: r.rating,
+      text: r.text,
+      verified: r.verified,
+      date: String(r.created_at).slice(0, 10),
+    }));
   }
 
   // Đánh giá mẫu cho chế độ demo
   function reviews(p) {
-    const names = ['Nguyễn Văn An', 'Trần Thị Bích', 'Lê Hoàng Minh', 'Phạm Thu Hà', 'Công ty TNHH Minh Phát', 'Võ Quốc Bảo'];
+    const names = [
+      "Nguyễn Văn An",
+      "Trần Thị Bích",
+      "Lê Hoàng Minh",
+      "Phạm Thu Hà",
+      "Công ty TNHH Minh Phát",
+      "Võ Quốc Bảo",
+    ];
     const texts = [
-      'Sản phẩm chính hãng, giao nhanh, thợ lắp đặt cẩn thận, dọn dẹp sạch sẽ.',
-      'Máy chạy êm, tiết kiệm điện rõ rệt so với máy cũ. Rất hài lòng.',
-      'Tư vấn nhiệt tình, giá tốt hơn nhiều nơi khác. Sẽ ủng hộ tiếp.',
-      'Đặt hàng buổi sáng, chiều đã có thợ đến lắp. Dịch vụ tuyệt vời.',
-      'Mua số lượng cho văn phòng, được báo giá nhanh, xuất VAT đầy đủ.',
-      'Đóng gói kỹ, đúng mô tả. Trừ 1 sao vì giao trễ 30 phút.',
+      "Sản phẩm chính hãng, giao nhanh, thợ lắp đặt cẩn thận, dọn dẹp sạch sẽ.",
+      "Máy chạy êm, tiết kiệm điện rõ rệt so với máy cũ. Rất hài lòng.",
+      "Tư vấn nhiệt tình, giá tốt hơn nhiều nơi khác. Sẽ ủng hộ tiếp.",
+      "Đặt hàng buổi sáng, chiều đã có thợ đến lắp. Dịch vụ tuyệt vời.",
+      "Mua số lượng cho văn phòng, được báo giá nhanh, xuất VAT đầy đủ.",
+      "Đóng gói kỹ, đúng mô tả. Trừ 1 sao vì giao trễ 30 phút.",
     ];
     return [0, 1, 2, 3].map((i) => {
       const k = (p.id + i) % names.length;
-      return { name: names[k], rating: k === 5 ? 4 : 5, text: texts[k], date: `2026-0${9 - i}-1${i}`, verified: true };
+      return {
+        name: names[k],
+        rating: k === 5 ? 4 : 5,
+        text: texts[k],
+        date: `2026-0${9 - i}-1${i}`,
+        verified: true,
+      };
     });
   }
 
-  return { productById, product, category, optionGroups, optionText, inCategory, brand, sub, url, catUrl, postUrl, policyUrl, brandUrl, list, related, suggest, reviews, fetchReviews };
+  return {
+    productById,
+    product,
+    category,
+    optionGroups,
+    optionText,
+    inCategory,
+    brand,
+    sub,
+    url,
+    catUrl,
+    postUrl,
+    policyUrl,
+    brandUrl,
+    list,
+    related,
+    suggest,
+    reviews,
+    fetchReviews,
+  };
 })();

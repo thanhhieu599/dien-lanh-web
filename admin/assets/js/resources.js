@@ -3,333 +3,1292 @@ window.AD = window.AD || {};
 
 (() => {
   const { esc, money, badge, d, thumb } = AD.ui;
-  const yes = (v) => (v ? '<span class="st st-ok">Hiện</span>' : '<span class="st st-muted">Ẩn</span>');
+  const yes = (v) =>
+    v
+      ? '<span class="st st-ok">Hiện</span>'
+      : '<span class="st st-muted">Ẩn</span>';
   const catOpts = () => (AD.cache.categories || []).map((c) => [c.id, c.name]);
   const brandOpts = () => (AD.cache.brands || []).map((b) => [b.id, b.name]);
   const catOf = (id) => (AD.cache.categories || []).find((c) => c.id === id);
-  const slugRule = (v) => (v && !/^[a-z0-9-]+$/.test(v) ? 'Chỉ dùng chữ thường không dấu, số và dấu -' : null);
-  const ICONS = ['snow', 'fridge', 'box', 'washer', 'wind', 'drop', 'fan', 'tool', 'wrench', 'spray', 'building', 'truck', 'gift', 'zap'];
-  const ARTS = ['ac', 'ac-cassette', 'ac-floor', 'ac-duct', 'fridge', 'fridge-sbs', 'fridge-multi', 'fridge-mini', 'freezer', 'cooler-cabinet',
-    'washer', 'washer-top', 'purifier', 'dehumidifier', 'heater', 'cooler', 'pipe', 'pipe-drain', 'gas', 'bracket', 'gauge', 'generic'];
+  const slugRule = (v) =>
+    v && !/^[a-z0-9-]+$/.test(v)
+      ? "Chỉ dùng chữ thường không dấu, số và dấu -"
+      : null;
+  const ICONS = [
+    "snow",
+    "fridge",
+    "box",
+    "washer",
+    "wind",
+    "drop",
+    "fan",
+    "tool",
+    "wrench",
+    "spray",
+    "building",
+    "truck",
+    "gift",
+    "zap",
+  ];
+  const ARTS = [
+    "ac",
+    "ac-cassette",
+    "ac-floor",
+    "ac-duct",
+    "fridge",
+    "fridge-sbs",
+    "fridge-multi",
+    "fridge-mini",
+    "freezer",
+    "cooler-cabinet",
+    "washer",
+    "washer-top",
+    "purifier",
+    "dehumidifier",
+    "heater",
+    "cooler",
+    "pipe",
+    "pipe-drain",
+    "gas",
+    "bracket",
+    "gauge",
+    "generic",
+  ];
 
   AD.resources = {
     // ------------------------------------------------------------------ Sản phẩm
     products: {
-      title: 'Sản phẩm', icon: 'box', table: 'products', order: 'id.desc', pageSize: 20,
-      search: ['name', 'sku', 'slug'],
+      title: "Sản phẩm",
+      icon: "box",
+      table: "products",
+      order: "id.desc",
+      pageSize: 20,
+      search: ["name", "sku", "slug"],
       filters: [
-        { key: 'cat', label: 'Danh mục', options: catOpts },
-        { key: 'brand', label: 'Thương hiệu', options: brandOpts },
-        { key: 'active', label: 'Trạng thái', options: [['true', 'Đang bán'], ['false', 'Đã ẩn']] },
-        { key: 'flash_sale', label: 'Flash sale', options: [['true', 'Có']] },
-        { key: 'stock', label: 'Tồn kho', op: 'lte', options: [['0', 'Hết hàng'], ['5', 'Sắp hết (≤5)']] },
+        { key: "cat", label: "Danh mục", options: catOpts },
+        { key: "brand", label: "Thương hiệu", options: brandOpts },
+        {
+          key: "active",
+          label: "Trạng thái",
+          options: [
+            ["true", "Đang bán"],
+            ["false", "Đã ẩn"],
+          ],
+        },
+        { key: "flash_sale", label: "Flash sale", options: [["true", "Có"]] },
+        {
+          key: "stock",
+          label: "Tồn kho",
+          op: "lte",
+          options: [
+            ["0", "Hết hàng"],
+            ["5", "Sắp hết (≤5)"],
+          ],
+        },
       ],
       columns: [
-        { label: '', render: (r) => thumb(r), cls: 'w-thumb' },
-        { label: 'Sản phẩm', render: (r) => `<b>${esc(r.name)}</b><small>${esc(r.sku)} • ${esc(catOf(r.cat)?.short || r.cat)}</small>` },
-        { label: 'Giá bán', render: (r) => `<b class="price">${money(r.price)}</b>${r.old_price ? `<small><del>${money(r.old_price)}</del></small>` : ''}`, cls: 'num' },
-        { label: 'Tồn', render: (r) => `<span class="${r.stock <= 0 ? 'txt-danger' : r.stock <= 5 ? 'txt-warn' : ''}">${r.stock}</span>`, cls: 'num' },
-        { label: 'Đã bán', key: 'sold', cls: 'num' },
-        { label: 'Nhãn', render: (r) => [r.flash_sale && '<span class="st st-danger">Flash</span>', r.free_install && '<span class="st st-info">Free lắp</span>'].filter(Boolean).join(' ') },
-        { label: 'Hiển thị', render: (r) => yes(r.active) },
-      ],
-      csv: ['id', 'sku', 'name', 'cat', 'sub', 'brand', 'price', 'old_price', 'stock', 'sold', 'active', 'flash_sale', 'free_install', 'warranty'],
-      defaults: () => ({ active: true, installment: true, stock: 0, rating: 5, reviews: 0, sold: 0, badges: [], attrs: {}, specs: {}, highlights: [], images: [], art: { type: 'generic', color: 'white' }, cat: AD.cache.categories?.[0]?.id }),
-      fields: [
-        { key: '_g1', type: 'custom', render: () => '<h4 class="ad-sec">Thông tin cơ bản</h4>', read: () => undefined, col: 'full' },
-        { key: 'name', label: 'Tên sản phẩm', required: true, col: 'full' },
-        { key: 'sku', label: 'Mã SKU', required: true, col: 'third' },
-        { key: 'slug', label: 'Đường dẫn (slug)', col: 'third', validate: slugRule, help: 'Để trống = tự tạo từ tên sản phẩm' },
-        { key: 'brand', label: 'Thương hiệu', type: 'select', options: brandOpts, required: true, col: 'third' },
-        { key: 'cat', label: 'Danh mục', type: 'select', options: catOpts, required: true, col: 'third', rerender: true },
-        { key: 'sub', label: 'Loại', type: 'select', col: 'third', options: (ctx) => (catOf(ctx.values.cat)?.subs || []).map((s) => [s.id, s.name]) },
-        { key: 'warranty', label: 'Bảo hành', col: 'third', placeholder: '24 tháng' },
-        { key: '_g2', type: 'custom', render: () => '<h4 class="ad-sec">Giá & tồn kho</h4>', read: () => undefined, col: 'full' },
-        { key: 'price', label: 'Giá bán (₫)', type: 'money', step: 1, required: true, col: 'quarter', validate: (v) => (v < 0 ? 'Giá không hợp lệ' : null) },
-        { key: 'old_price', label: 'Giá gốc (₫)', type: 'money', step: 1, col: 'quarter', validate: (v, o) => (v != null && v < o.price ? 'Giá gốc phải ≥ giá bán' : null) },
-        { key: 'stock', label: 'Tồn kho', type: 'number', step: 1, col: 'quarter', required: true, validate: (v) => (v < 0 || !Number.isInteger(v) ? 'Số nguyên ≥ 0' : null) },
-        { key: 'sold', label: 'Đã bán', type: 'number', step: 1, col: 'quarter', def: 0 },
-        { key: 'rating', label: 'Điểm đánh giá (1-5)', type: 'number', step: 0.1, col: 'quarter', def: 5, help: 'Số sao hiện trên website', validate: (v) => (v != null && (v < 1 || v > 5) ? 'Từ 1 đến 5' : null) },
-        { key: 'reviews', label: 'Số lượt đánh giá', type: 'number', step: 1, col: 'quarter', def: 0 },
-        { key: 'active', label: 'Đang bán (hiện trên website)', type: 'bool', col: 'third' },
-        { key: 'flash_sale', label: 'Flash sale', type: 'bool', col: 'third' },
-        { key: 'free_install', label: 'Miễn phí lắp đặt', type: 'bool', col: 'third' },
-        { key: 'gift', label: 'Quà tặng / khuyến mãi kèm', col: 'third' },
-        { key: 'installment', label: 'Hỗ trợ trả góp', type: 'bool', col: 'half' },
-        { key: 'description', label: 'Nội dung mô tả', type: 'textarea', rows: 12, col: 'full', def: '', keepEmpty: true, placeholder: 'Giới thiệu sản phẩm, công dụng và hướng dẫn sử dụng…' },
-        { key: 'requires_shipping', label: 'Sản phẩm yêu cầu vận chuyển', type: 'bool', def: true, col: 'full' },
-        { key: 'weight', label: 'Khối lượng', type: 'number', step: 'any', def: 0, col: 'half', validate: (v) => v < 0 ? 'Khối lượng phải ≥ 0' : null },
-        { key: 'weight_unit', label: 'Đơn vị', type: 'select', options: [['g', 'g'], ['kg', 'kg']], def: 'g', col: 'half' },
-        { key: 'options', label: 'Tùy chọn sản phẩm', type: 'kv', col: 'full', help: 'Mỗi dòng là một nhóm lựa chọn trên trang sản phẩm, ngay trên Số lượng. Nhập các giá trị cách nhau bằng dấu phẩy, ví dụ: Kích thước — S, M, L; Model — R32, R410A.' },
-        { key: 'product_tags', label: 'Tags', type: 'tags', col: 'full', help: 'Phân tách bằng dấu phẩy, ví dụ: tiết kiệm điện, gia đình, văn phòng.' },
-        { key: '_g3', type: 'custom', render: () => '<h4 class="ad-sec">Bộ lọc & thông số</h4>', read: () => undefined, col: 'full' },
+        { label: "", render: (r) => thumb(r), cls: "w-thumb" },
         {
-          key: 'attrs', label: 'Thuộc tính bộ lọc', type: 'custom', col: 'full',
-          help: 'Dùng cho bộ lọc ở trang danh mục (theo cấu hình của danh mục)',
+          label: "Sản phẩm",
+          render: (r) =>
+            `<b>${esc(r.name)}</b><small>${esc(r.sku)} • ${esc(catOf(r.cat)?.short || r.cat)}</small>`,
+        },
+        {
+          label: "Giá bán",
+          render: (r) =>
+            `<b class="price">${money(r.price)}</b>${r.old_price ? `<small><del>${money(r.old_price)}</del></small>` : ""}`,
+          cls: "num",
+        },
+        {
+          label: "Tồn",
+          render: (r) =>
+            `<span class="${r.stock <= 0 ? "txt-danger" : r.stock <= 5 ? "txt-warn" : ""}">${r.stock}</span>`,
+          cls: "num",
+        },
+        { label: "Đã bán", key: "sold", cls: "num" },
+        {
+          label: "Nhãn",
+          render: (r) =>
+            [
+              r.flash_sale && '<span class="st st-danger">Flash</span>',
+              r.free_install && '<span class="st st-info">Free lắp</span>',
+            ]
+              .filter(Boolean)
+              .join(" "),
+        },
+        { label: "Hiển thị", render: (r) => yes(r.active) },
+      ],
+      csv: [
+        "id",
+        "sku",
+        "name",
+        "cat",
+        "sub",
+        "brand",
+        "price",
+        "old_price",
+        "stock",
+        "sold",
+        "active",
+        "flash_sale",
+        "free_install",
+        "warranty",
+        "technology",
+        "origin",
+      ],
+      defaults: () => ({
+        active: true,
+        installment: true,
+        stock: 0,
+        rating: 5,
+        reviews: 0,
+        sold: 0,
+        badges: [],
+        attrs: {},
+        specs: {},
+        highlights: [],
+        images: [],
+        art: { type: "generic", color: "white" },
+        cat: AD.cache.categories?.[0]?.id,
+      }),
+      fields: [
+        {
+          key: "_g1",
+          type: "custom",
+          render: () => '<h4 class="ad-sec">Thông tin cơ bản</h4>',
+          read: () => undefined,
+          col: "full",
+        },
+        { key: "name", label: "Tên sản phẩm", required: true, col: "full" },
+        { key: "sku", label: "Mã SKU", required: true, col: "third" },
+        {
+          key: "slug",
+          label: "Đường dẫn (slug)",
+          col: "third",
+          validate: slugRule,
+          help: "Để trống = tự tạo từ tên sản phẩm",
+        },
+        {
+          key: "brand",
+          label: "Thương hiệu",
+          type: "select",
+          options: brandOpts,
+          required: true,
+          col: "third",
+        },
+        {
+          key: "cat",
+          label: "Danh mục",
+          type: "select",
+          options: catOpts,
+          required: true,
+          col: "third",
+          rerender: true,
+        },
+        {
+          key: "sub",
+          label: "Nhóm (cấp 2)",
+          type: "select",
+          col: "third",
+          rerender: true,
+          options: (ctx) =>
+            (catOf(ctx.values.cat)?.subs || []).map((s) => [s.id, s.name]),
+        },
+        {
+          key: "sub2",
+          label: "Mục (cấp 3)",
+          type: "select",
+          col: "third",
+          options: (ctx) =>
+            (
+              (catOf(ctx.values.cat)?.subs || []).find(
+                (s) => s.id === ctx.values.sub,
+              )?.items || []
+            ).map((s) => [s.id, s.name]),
+          help: "Chọn nhóm trước. Danh sách mục sửa tại Danh mục.",
+        },
+        {
+          key: "warranty",
+          label: "Bảo hành",
+          col: "third",
+          placeholder: "Máy 3 năm, máy nén 7 năm",
+        },
+        {
+          key: "technology",
+          label: "Công nghệ",
+          col: "third",
+          placeholder: "Inverter",
+          help: "Để trống = lấy theo thuộc tính lọc",
+        },
+        {
+          key: "origin",
+          label: "Xuất xứ",
+          col: "third",
+          placeholder: "Malaysia",
+          help: "Để trống = lấy từ thông số kỹ thuật",
+        },
+        {
+          key: "_g2",
+          type: "custom",
+          render: () => '<h4 class="ad-sec">Giá & tồn kho</h4>',
+          read: () => undefined,
+          col: "full",
+        },
+        {
+          key: "price",
+          label: "Giá bán (₫)",
+          type: "money",
+          step: 1,
+          required: true,
+          col: "quarter",
+          validate: (v) => (v < 0 ? "Giá không hợp lệ" : null),
+        },
+        {
+          key: "old_price",
+          label: "Giá gốc (₫)",
+          type: "money",
+          step: 1,
+          col: "quarter",
+          validate: (v, o) =>
+            v != null && v < o.price ? "Giá gốc phải ≥ giá bán" : null,
+        },
+        {
+          key: "stock",
+          label: "Tồn kho",
+          type: "number",
+          step: 1,
+          col: "quarter",
+          required: true,
+          validate: (v) =>
+            v < 0 || !Number.isInteger(v) ? "Số nguyên ≥ 0" : null,
+        },
+        {
+          key: "sold",
+          label: "Đã bán",
+          type: "number",
+          step: 1,
+          col: "quarter",
+          def: 0,
+        },
+        {
+          key: "rating",
+          label: "Điểm đánh giá (1-5)",
+          type: "number",
+          step: 0.1,
+          col: "quarter",
+          def: 5,
+          help: "Số sao hiện trên website",
+          validate: (v) =>
+            v != null && (v < 1 || v > 5) ? "Từ 1 đến 5" : null,
+        },
+        {
+          key: "reviews",
+          label: "Số lượt đánh giá",
+          type: "number",
+          step: 1,
+          col: "quarter",
+          def: 0,
+        },
+        {
+          key: "active",
+          label: "Đang bán (hiện trên website)",
+          type: "bool",
+          col: "third",
+        },
+        { key: "flash_sale", label: "Flash sale", type: "bool", col: "third" },
+        {
+          key: "free_install",
+          label: "Miễn phí lắp đặt",
+          type: "bool",
+          col: "third",
+        },
+        { key: "gift", label: "Quà tặng / khuyến mãi kèm", col: "third" },
+        {
+          key: "installment",
+          label: "Hỗ trợ trả góp",
+          type: "bool",
+          col: "half",
+        },
+        {
+          key: "image",
+          label: "Ảnh dịch vụ",
+          type: "image",
+          folder: "services",
+          col: "full",
+          help: "Ảnh ngang 1200 × 750 px (tỉ lệ 16:10). Chưa có ảnh thì hiện biểu tượng.",
+        },
+        {
+          key: "description",
+          label: "Nội dung mô tả",
+          type: "textarea",
+          rows: 12,
+          col: "full",
+          def: "",
+          keepEmpty: true,
+          placeholder: "Giới thiệu sản phẩm, công dụng và hướng dẫn sử dụng…",
+        },
+        {
+          key: "requires_shipping",
+          label: "Sản phẩm yêu cầu vận chuyển",
+          type: "bool",
+          def: true,
+          col: "full",
+        },
+        {
+          key: "weight",
+          label: "Khối lượng",
+          type: "number",
+          step: "any",
+          def: 0,
+          col: "half",
+          validate: (v) => (v < 0 ? "Khối lượng phải ≥ 0" : null),
+        },
+        {
+          key: "weight_unit",
+          label: "Đơn vị",
+          type: "select",
+          options: [
+            ["g", "g"],
+            ["kg", "kg"],
+          ],
+          def: "g",
+          col: "half",
+        },
+        {
+          key: "options",
+          label: "Tùy chọn sản phẩm",
+          type: "kv",
+          col: "full",
+          help: "Mỗi dòng là một nhóm lựa chọn trên trang sản phẩm, ngay trên Số lượng. Nhập các giá trị cách nhau bằng dấu phẩy, ví dụ: Kích thước — S, M, L; Model — R32, R410A.",
+        },
+        {
+          key: "product_tags",
+          label: "Tags",
+          type: "tags",
+          col: "full",
+          help: "Phân tách bằng dấu phẩy, ví dụ: tiết kiệm điện, gia đình, văn phòng.",
+        },
+        {
+          key: "_g3",
+          type: "custom",
+          render: () => '<h4 class="ad-sec">Bộ lọc & thông số</h4>',
+          read: () => undefined,
+          col: "full",
+        },
+        {
+          key: "attrs",
+          label: "Thuộc tính bộ lọc",
+          type: "custom",
+          col: "full",
+          help: "Dùng cho bộ lọc ở trang danh mục (theo cấu hình của danh mục)",
           render: (v, ctx) => {
             const fs = catOf(ctx.values.cat)?.filters || [];
-            if (!fs.length) return '<div class="ad-ro">Danh mục chưa cấu hình bộ lọc</div>';
-            return `<div class="ad-grid">${fs.map((f) => `<div class="ad-field quarter"><label>${esc(f.label)}</label><select data-attr="${esc(f.key)}"><option value="">--</option>${f.options.map((o) => `<option ${v?.[f.key] === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></div>`).join('')}</div>`;
+            if (!fs.length)
+              return '<div class="ad-ro">Danh mục chưa cấu hình bộ lọc</div>';
+            return `<div class="ad-grid">${fs.map((f) => `<div class="ad-field quarter"><label>${esc(f.label)}</label><select data-attr="${esc(f.key)}"><option value="">--</option>${f.options.map((o) => `<option ${v?.[f.key] === o ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></div>`).join("")}</div>`;
           },
-          read: (form) => Object.fromEntries([...form.querySelectorAll('[data-attr]')].filter((s) => s.value).map((s) => [s.dataset.attr, s.value])),
+          read: (form) =>
+            Object.fromEntries(
+              [...form.querySelectorAll("[data-attr]")]
+                .filter((s) => s.value)
+                .map((s) => [s.dataset.attr, s.value]),
+            ),
         },
-        { key: 'specs', label: 'Thông số kỹ thuật', type: 'kv', col: 'half' },
-        { key: '_g4', type: 'custom', render: () => '<h4 class="ad-sec">Hình ảnh</h4>', read: () => undefined, col: 'full' },
-        { key: 'images', label: 'Ảnh sản phẩm', type: 'gallery', folder: 'products', max: 10, showHelp: false, col: 'full' },
+        { key: "specs", label: "Thông số kỹ thuật", type: "kv", col: "half" },
+        {
+          key: "_g4",
+          type: "custom",
+          render: () => '<h4 class="ad-sec">Hình ảnh</h4>',
+          read: () => undefined,
+          col: "full",
+        },
+        {
+          key: "images",
+          label: "Ảnh sản phẩm",
+          type: "gallery",
+          folder: "products",
+          max: 10,
+          showHelp: false,
+          col: "full",
+        },
       ],
-      beforeSave: (row) => { if (!row.slug) row.slug = DT.u.slugify(row.name); },
+      beforeSave: (row) => {
+        if (!row.slug) row.slug = DT.u.slugify(row.name);
+      },
       // Đường dẫn trùng (vd nhân bản, 2 sản phẩm cùng tên) -> thêm mã SKU vào cuối
-      onDuplicate: (row, msg) => (/slug/.test(msg) && row.sku ? { ...row, slug: `${row.slug}-${DT.u.slugify(row.sku)}` } : null),
+      onDuplicate: (row, msg) =>
+        /slug/.test(msg) && row.sku
+          ? { ...row, slug: `${row.slug}-${DT.u.slugify(row.sku)}` }
+          : null,
       preview: (row) => `../frontend/san-pham.html?id=${row.id}`,
       duplicate: true,
       formSections: {
         main: [
-          ['basic', 'Thông tin cơ bản', ['name', 'sku', 'slug', 'warranty']],
-          ['content', 'Mô tả sản phẩm', ['description']],
-          ['images', 'Ảnh sản phẩm', ['images']],
-          ['pricing', 'Giá & tồn kho', ['price', 'old_price', 'stock', 'sold', 'flash_sale', 'free_install', 'gift', 'installment']],
-          ['shipping', 'Vận chuyển', ['requires_shipping', 'weight', 'weight_unit']],
-          ['attributes', 'Thuộc tính', ['options', 'attrs', 'specs']],
-          ['reviews', 'Đánh giá', ['rating', 'reviews']],
+          [
+            "basic",
+            "Thông tin cơ bản",
+            ["name", "sku", "slug", "warranty", "technology", "origin"],
+          ],
+          ["content", "Mô tả sản phẩm", ["description"]],
+          ["images", "Ảnh sản phẩm", ["images"]],
+          [
+            "pricing",
+            "Giá & tồn kho",
+            [
+              "price",
+              "old_price",
+              "stock",
+              "sold",
+              "flash_sale",
+              "free_install",
+              "gift",
+              "installment",
+            ],
+          ],
+          [
+            "shipping",
+            "Vận chuyển",
+            ["requires_shipping", "weight", "weight_unit"],
+          ],
+          ["attributes", "Thuộc tính", ["options", "attrs", "specs"]],
+          ["reviews", "Đánh giá", ["rating", "reviews"]],
         ],
         aside: [
-          ['status', 'Trạng thái', ['active']],
-          ['classification', 'Phân loại', ['sub', 'brand', 'cat']],
-          ['tags', 'Tags sản phẩm', ['product_tags']],
+          ["status", "Trạng thái", ["active"]],
+          ["classification", "Phân loại", ["cat", "sub", "sub2", "brand"]],
+          ["tags", "Tags sản phẩm", ["product_tags"]],
         ],
       },
     },
 
     // ------------------------------------------------------------------ Danh mục
     categories: {
-      title: 'Danh mục', icon: 'grid', table: 'categories', order: 'sort.asc', search: ['name', 'id'],
+      title: "Danh mục",
+      icon: "grid",
+      table: "categories",
+      order: "sort.asc",
+      search: ["name", "id"],
       columns: [
-        { label: 'Thứ tự', key: 'sort', cls: 'num' },
-        { label: 'Danh mục', render: (r) => `${r.image ? `<img class="ad-category-thumb" src="${esc(r.image)}" alt="">` : DT.icon(r.icon)} <b>${esc(r.name)}</b><small>${esc(r.id)}</small>` },
-        { label: 'Loại con', render: (r) => (r.subs || []).map((s) => esc(s.name)).join(', ') },
-        { label: 'Bộ lọc', render: (r) => (r.filters || []).map((f) => esc(f.label)).join(', ') },
-        { label: 'Hiển thị', render: (r) => yes(r.active) },
+        { label: "Thứ tự", key: "sort", cls: "num" },
+        {
+          label: "Danh mục",
+          render: (r) =>
+            `${r.image ? `<img class="ad-category-thumb" src="${esc(r.image)}" alt="">` : DT.icon(r.icon)} <b>${esc(r.name)}</b><small>${esc(r.id)}</small>`,
+        },
+        {
+          label: "Loại con",
+          render: (r) => (r.subs || []).map((s) => esc(s.name)).join(", "),
+        },
+        {
+          label: "Bộ lọc",
+          render: (r) => (r.filters || []).map((f) => esc(f.label)).join(", "),
+        },
+        { label: "Hiển thị", render: (r) => yes(r.active) },
       ],
-      defaults: () => ({ active: true, icon: 'box', subs: [], filters: [], sort: (AD.cache.categories?.length || 0) }),
+      defaults: () => ({
+        active: true,
+        icon: "box",
+        subs: [],
+        filters: [],
+        sort: AD.cache.categories?.length || 0,
+      }),
       fields: [
-        { key: 'id', label: 'Mã (slug)', required: true, readonlyOnEdit: true, col: 'third', validate: slugRule },
-        { key: 'name', label: 'Tên danh mục', required: true, col: 'third' },
-        { key: 'short', label: 'Tên ngắn (menu)', required: true, col: 'third' },
-        { key: 'icon', label: 'Biểu tượng', type: 'select', options: ICONS, col: 'third', def: 'box' },
-        { key: 'art', label: 'Ảnh minh họa', type: 'select', options: ARTS, col: 'third' },
-        { key: 'sort', label: 'Thứ tự', type: 'number', step: 1, col: 'third', def: 0 },
-        { key: 'active', label: 'Hiển thị', type: 'bool', col: 'full' },
-        { key: 'image', label: 'Ảnh đại diện danh mục', type: 'image', folder: 'categories', col: 'full' },
-        { key: '_category_products', type: 'custom', col: 'full', render: () => '<div id="category-products" aria-live="polite">Đang tải sản phẩm…</div>', read: () => undefined },
+        {
+          key: "id",
+          label: "Mã (slug)",
+          required: true,
+          readonlyOnEdit: true,
+          col: "third",
+          validate: slugRule,
+        },
+        { key: "name", label: "Tên danh mục", required: true, col: "third" },
+        {
+          key: "short",
+          label: "Tên ngắn (menu)",
+          required: true,
+          col: "third",
+        },
+        {
+          key: "icon",
+          label: "Biểu tượng",
+          type: "select",
+          options: ICONS,
+          col: "third",
+          def: "box",
+        },
+        {
+          key: "art",
+          label: "Ảnh minh họa",
+          type: "select",
+          options: ARTS,
+          col: "third",
+        },
+        {
+          key: "sort",
+          label: "Thứ tự",
+          type: "number",
+          step: 1,
+          col: "third",
+          def: 0,
+        },
+        { key: "active", label: "Hiển thị", type: "bool", col: "full" },
+        {
+          key: "image",
+          label: "Ảnh đại diện danh mục",
+          type: "image",
+          folder: "categories",
+          col: "full",
+        },
+        {
+          key: "_category_products",
+          type: "custom",
+          col: "full",
+          render: () =>
+            '<div id="category-products" aria-live="polite">Đang tải sản phẩm…</div>',
+          read: () => undefined,
+        },
       ],
       afterSave: () => AD.loadCache(true),
     },
 
     brands: {
-      title: 'Thương hiệu', icon: 'tag', table: 'brands', order: 'sort.asc', search: ['name', 'id'],
+      title: "Thương hiệu",
+      icon: "tag",
+      table: "brands",
+      order: "sort.asc",
+      search: ["name", "id"],
       columns: [
-        { label: 'Thứ tự', key: 'sort', cls: 'num' },
-        { label: 'Logo', render: (r) => (r.logo ? `<img class="ad-brand-logo" src="${esc(r.logo)}" alt="">` : '<small class="txt-muted">Chưa có</small>') },
-        { label: 'Thương hiệu', render: (r) => `<b style="color:${esc(r.color || '#333')}">${esc(r.name)}</b><small>${esc(r.id)}</small>` },
-        { label: 'Xuất xứ', key: 'origin' },
-        { label: 'Hiển thị', render: (r) => yes(r.active) },
+        { label: "Thứ tự", key: "sort", cls: "num" },
+        {
+          label: "Logo",
+          render: (r) =>
+            r.logo
+              ? `<img class="ad-brand-logo" src="${esc(r.logo)}" alt="">`
+              : '<small class="txt-muted">Chưa có</small>',
+        },
+        {
+          label: "Thương hiệu",
+          render: (r) =>
+            `<b style="color:${esc(r.color || "#333")}">${esc(r.name)}</b><small>${esc(r.id)}</small>`,
+        },
+        { label: "Xuất xứ", key: "origin" },
+        { label: "Hiển thị", render: (r) => yes(r.active) },
       ],
-      defaults: () => ({ active: true, color: '#0b5ed7', sort: (AD.cache.brands?.length || 0) }),
+      defaults: () => ({
+        active: true,
+        color: "#0b5ed7",
+        sort: AD.cache.brands?.length || 0,
+      }),
       fields: [
-        { key: 'name', label: 'Tên thương hiệu', required: true, col: 'full' },
-        { key: '_brand_url', type: 'custom', col: 'full', render: () => '<p>Đường dẫn thương hiệu (tự tạo từ tên)</p><input id="brand-url" readonly aria-label="Đường dẫn thương hiệu">', read: () => undefined },
-        { key: 'active', label: 'Hiển thị thương hiệu trên website', type: 'bool', col: 'full' },
-        { key: 'logo', label: 'Ảnh đại diện thương hiệu', type: 'image', folder: 'brands', col: 'full' },
-        { key: '_brand_products', type: 'custom', col: 'full', render: () => '<div id="brand-products" aria-live="polite">Đang tải sản phẩm…</div>', read: () => undefined },
+        { key: "name", label: "Tên thương hiệu", required: true, col: "full" },
+        {
+          key: "_brand_url",
+          type: "custom",
+          col: "full",
+          render: () =>
+            '<p>Đường dẫn thương hiệu (tự tạo từ tên)</p><input id="brand-url" readonly aria-label="Đường dẫn thương hiệu">',
+          read: () => undefined,
+        },
+        {
+          key: "active",
+          label: "Hiển thị thương hiệu trên website",
+          type: "bool",
+          col: "full",
+        },
+        {
+          key: "logo",
+          label: "Ảnh đại diện thương hiệu",
+          type: "image",
+          folder: "brands",
+          col: "full",
+          help: "Logo nền trắng hoặc trong suốt, khổ ngang khoảng 400 × 200 px. Chưa có logo thì website hiện tên thương hiệu.",
+        },
+        {
+          key: "_brand_products",
+          type: "custom",
+          col: "full",
+          render: () =>
+            '<div id="brand-products" aria-live="polite">Đang tải sản phẩm…</div>',
+          read: () => undefined,
+        },
       ],
-      save: (data, { editing, id }) => AD.db.saveBrand(data, editing ? id : null),
-      preview: (row) => `../frontend/thuong-hieu.html?id=${encodeURIComponent(row.slug || row.id)}`,
+      save: (data, { editing, id }) =>
+        AD.db.saveBrand(data, editing ? id : null),
+      preview: (row) =>
+        `../frontend/thuong-hieu.html?id=${encodeURIComponent(row.slug || row.id)}`,
       afterSave: () => AD.loadCache(true),
     },
 
     // ------------------------------------------------------------------ Khuyến mãi
     coupons: {
-      title: 'Mã giảm giá', icon: 'percent', table: 'coupons', order: 'code.asc', search: ['code', 'description'],
+      title: "Mã giảm giá",
+      icon: "percent",
+      table: "coupons",
+      order: "code.asc",
+      search: ["code", "description"],
       columns: [
-        { label: 'Mã', render: (r) => `<b class="mono">${esc(r.code)}</b><small>${esc(r.description || '')}</small>` },
-        { label: 'Mức giảm', render: (r) => (r.type === 'percent' ? `${r.value}%${r.max ? ` (tối đa ${money(r.max)})` : ''}` : r.type === 'fixed' ? money(r.value) : 'Miễn phí ship') },
-        { label: 'Đơn tối thiểu', render: (r) => money(r.min), cls: 'num' },
-        { label: 'Đã dùng', render: (r) => `${r.used_count}${r.usage_limit ? ` / ${r.usage_limit}` : ''}`, cls: 'num' },
-        { label: 'Hiệu lực', render: (r) => `${r.starts_at ? d(r.starts_at) : '…'} → ${r.ends_at ? d(r.ends_at) : '…'}` },
-        { label: 'Trạng thái', render: (r) => `${r.active ? '<span class="st st-ok">Bật</span>' : '<span class="st st-muted">Tắt</span>'} ${r.is_public ? '' : '<span class="st st-info">Riêng</span>'}` },
+        {
+          label: "Mã",
+          render: (r) =>
+            `<b class="mono">${esc(r.code)}</b><small>${esc(r.description || "")}</small>`,
+        },
+        {
+          label: "Mức giảm",
+          render: (r) =>
+            r.type === "percent"
+              ? `${r.value}%${r.max ? ` (tối đa ${money(r.max)})` : ""}`
+              : r.type === "fixed"
+                ? money(r.value)
+                : "Miễn phí ship",
+        },
+        { label: "Đơn tối thiểu", render: (r) => money(r.min), cls: "num" },
+        {
+          label: "Đã dùng",
+          render: (r) =>
+            `${r.used_count}${r.usage_limit ? ` / ${r.usage_limit}` : ""}`,
+          cls: "num",
+        },
+        {
+          label: "Hiệu lực",
+          render: (r) =>
+            `${r.starts_at ? d(r.starts_at) : "…"} → ${r.ends_at ? d(r.ends_at) : "…"}`,
+        },
+        {
+          label: "Trạng thái",
+          render: (r) =>
+            `${r.active ? '<span class="st st-ok">Bật</span>' : '<span class="st st-muted">Tắt</span>'} ${r.is_public ? "" : '<span class="st st-info">Riêng</span>'}`,
+        },
       ],
-      defaults: () => ({ type: 'percent', value: 10, min: 0, active: true, is_public: true, used_count: 0 }),
+      defaults: () => ({
+        type: "percent",
+        value: 10,
+        min: 0,
+        active: true,
+        is_public: true,
+        used_count: 0,
+      }),
       fields: [
-        { key: 'code', label: 'Mã', required: true, readonlyOnEdit: true, col: 'third', validate: (v) => (!/^[A-Z0-9_-]{3,30}$/.test(String(v || '').toUpperCase()) ? 'Chữ không dấu / số, 3-30 ký tự' : null) },
-        { key: 'type', label: 'Loại', type: 'select', required: true, options: [['percent', 'Giảm %'], ['fixed', 'Giảm số tiền'], ['ship', 'Miễn phí vận chuyển']], col: 'third' },
-        { key: 'value', label: 'Giá trị (% hoặc ₫)', type: 'number', required: true, col: 'third', validate: (v, o) => (v < 0 || (o.type === 'percent' && v > 100) ? 'Giảm % phải từ 0 đến 100' : null) },
-        { key: 'max', label: 'Giảm tối đa (₫, cho loại %)', type: 'money', col: 'third' },
-        { key: 'min', label: 'Đơn tối thiểu (₫)', type: 'money', required: true, col: 'third' },
-        { key: 'usage_limit', label: 'Giới hạn lượt dùng', type: 'number', step: 1, col: 'third' },
-        { key: 'starts_at', label: 'Bắt đầu', type: 'datetime', col: 'third' },
-        { key: 'ends_at', label: 'Kết thúc', type: 'datetime', col: 'third', validate: (v, o) => (v && o.starts_at && v <= o.starts_at ? 'Phải sau thời điểm bắt đầu' : null) },
-        { key: 'used_count', label: 'Đã dùng', type: 'readonly', col: 'third' },
-        { key: 'description', label: 'Mô tả (hiện cho khách)', col: 'full' },
-        { key: 'active', label: 'Đang bật', type: 'bool', col: 'third' },
-        { key: 'is_public', label: 'Công khai (gợi ý ở giỏ hàng)', type: 'bool', col: 'third', help: 'Tắt = mã riêng, gửi cho khách VIP / doanh nghiệp' },
+        {
+          key: "code",
+          label: "Mã",
+          required: true,
+          readonlyOnEdit: true,
+          col: "third",
+          validate: (v) =>
+            !/^[A-Z0-9_-]{3,30}$/.test(String(v || "").toUpperCase())
+              ? "Chữ không dấu / số, 3-30 ký tự"
+              : null,
+        },
+        {
+          key: "type",
+          label: "Loại",
+          type: "select",
+          required: true,
+          options: [
+            ["percent", "Giảm %"],
+            ["fixed", "Giảm số tiền"],
+            ["ship", "Miễn phí vận chuyển"],
+          ],
+          col: "third",
+        },
+        {
+          key: "value",
+          label: "Giá trị (% hoặc ₫)",
+          type: "number",
+          required: true,
+          col: "third",
+          validate: (v, o) =>
+            v < 0 || (o.type === "percent" && v > 100)
+              ? "Giảm % phải từ 0 đến 100"
+              : null,
+        },
+        {
+          key: "max",
+          label: "Giảm tối đa (₫, cho loại %)",
+          type: "money",
+          col: "third",
+        },
+        {
+          key: "min",
+          label: "Đơn tối thiểu (₫)",
+          type: "money",
+          required: true,
+          col: "third",
+        },
+        {
+          key: "usage_limit",
+          label: "Giới hạn lượt dùng",
+          type: "number",
+          step: 1,
+          col: "third",
+        },
+        { key: "starts_at", label: "Bắt đầu", type: "datetime", col: "third" },
+        {
+          key: "ends_at",
+          label: "Kết thúc",
+          type: "datetime",
+          col: "third",
+          validate: (v, o) =>
+            v && o.starts_at && v <= o.starts_at
+              ? "Phải sau thời điểm bắt đầu"
+              : null,
+        },
+        { key: "used_count", label: "Đã dùng", type: "readonly", col: "third" },
+        { key: "description", label: "Mô tả (hiện cho khách)", col: "full" },
+        { key: "active", label: "Đang bật", type: "bool", col: "third" },
+        {
+          key: "is_public",
+          label: "Công khai (gợi ý ở giỏ hàng)",
+          type: "bool",
+          col: "third",
+          help: "Tắt = mã riêng, gửi cho khách VIP / doanh nghiệp",
+        },
       ],
-      beforeSave: (row) => { if (row.code) row.code = row.code.toUpperCase(); },
+      beforeSave: (row) => {
+        if (row.code) row.code = row.code.toUpperCase();
+      },
     },
 
     banners: {
-      title: 'Banner trang chủ', icon: 'zap', table: 'banners', order: 'sort.asc', search: ['title'],
+      title: "Banner trang chủ",
+      icon: "zap",
+      table: "banners",
+      order: "sort.asc",
+      search: ["title"],
       columns: [
-        { label: 'Thứ tự', key: 'sort', cls: 'num' },
-        { label: 'Ảnh', render: (r) => (r.image ? `<img class="ad-banner-thumb" src="${esc(r.image)}" alt="">` : '<small class="txt-muted">Chưa có ảnh</small>') },
-        { label: 'Tên banner', render: (r) => `<b>${esc(r.title)}</b>` },
-        { label: 'Liên kết', render: (r) => `<span class="mono">${esc(r.href || '')}</span>` },
-        { label: 'Hiển thị', render: (r) => yes(r.active) },
+        { label: "Thứ tự", key: "sort", cls: "num" },
+        {
+          label: "Ảnh",
+          render: (r) =>
+            r.image
+              ? `<img class="ad-banner-thumb" src="${esc(r.image)}" alt="">`
+              : '<small class="txt-muted">Chưa có ảnh</small>',
+        },
+        { label: "Tên banner", render: (r) => `<b>${esc(r.title)}</b>` },
+        {
+          label: "Liên kết",
+          render: (r) => `<span class="mono">${esc(r.href || "")}</span>`,
+        },
+        { label: "Hiển thị", render: (r) => yes(r.active) },
       ],
-      defaults: () => ({ active: true, theme: 'blue', art: 'ac', sort: 0 }),
+      defaults: () => ({ active: true, theme: "blue", art: "ac", sort: 0 }),
       fields: [
-        { key: 'image', label: 'Ảnh banner', type: 'image', folder: 'banners', col: 'full', help: 'Banner chỉ hiển thị hình. Kích thước khuyến nghị 1200 × 780 px (ngang), chữ và nút bấm thiết kế sẵn trong ảnh.' },
-        { key: 'title', label: 'Tên banner', required: true, col: 'half', help: 'Không hiện trên banner; dùng làm mô tả ảnh cho Google và người khiếm thị' },
-        { key: 'href', label: 'Liên kết khi bấm vào banner', col: 'half', placeholder: 'danh-muc.html?cat=may-lanh' },
-        { key: 'sort', label: 'Thứ tự', type: 'number', step: 1, col: 'third', def: 0 },
-        { key: 'active', label: 'Hiển thị', type: 'bool', col: 'third' },
+        {
+          key: "image",
+          label: "Ảnh banner",
+          type: "image",
+          folder: "banners",
+          col: "full",
+          help: "Banner chỉ hiển thị hình. Kích thước khuyến nghị 1200 × 780 px (ngang), chữ và nút bấm thiết kế sẵn trong ảnh.",
+        },
+        {
+          key: "title",
+          label: "Tên banner",
+          required: true,
+          col: "half",
+          help: "Không hiện trên banner; dùng làm mô tả ảnh cho Google và người khiếm thị",
+        },
+        {
+          key: "href",
+          label: "Liên kết khi bấm vào banner",
+          col: "half",
+          placeholder: "danh-muc.html?cat=may-lanh",
+        },
+        {
+          key: "sort",
+          label: "Thứ tự",
+          type: "number",
+          step: 1,
+          col: "third",
+          def: 0,
+        },
+        { key: "active", label: "Hiển thị", type: "bool", col: "third" },
       ],
     },
 
     // ------------------------------------------------------------------ Nội dung
     posts: {
-      title: 'Bài viết', icon: 'file', table: 'posts', order: 'date.desc', search: ['title', 'slug', 'cat'],
-      filters: [{ key: 'published', label: 'Trạng thái', options: [['true', 'Đã đăng'], ['false', 'Nháp']] }],
+      title: "Bài viết",
+      icon: "file",
+      table: "posts",
+      order: "date.desc",
+      search: ["title", "slug", "cat"],
+      filters: [
+        {
+          key: "published",
+          label: "Trạng thái",
+          options: [
+            ["true", "Đã đăng"],
+            ["false", "Nháp"],
+          ],
+        },
+      ],
       columns: [
-        { label: 'Bài viết', render: (r) => `<b>${esc(r.title)}</b><small>${esc(r.slug)}</small>` },
-        { label: 'Chuyên mục', key: 'cat' },
-        { label: 'Ngày', render: (r) => d(r.date) },
-        { label: 'Trạng thái', render: (r) => (r.published ? '<span class="st st-ok">Đã đăng</span>' : '<span class="st st-muted">Nháp</span>') },
+        {
+          label: "Bài viết",
+          render: (r) => `<b>${esc(r.title)}</b><small>${esc(r.slug)}</small>`,
+        },
+        { label: "Chuyên mục", key: "cat" },
+        { label: "Ngày", render: (r) => d(r.date) },
+        {
+          label: "Trạng thái",
+          render: (r) =>
+            r.published
+              ? '<span class="st st-ok">Đã đăng</span>'
+              : '<span class="st st-muted">Nháp</span>',
+        },
       ],
-      defaults: () => ({ published: false, date: AD.today(), author: 'Ban biên tập', art: 'ac', cat: 'Tư vấn chọn mua' }),
+      defaults: () => ({
+        published: false,
+        date: AD.today(),
+        author: "Ban biên tập",
+        art: "ac",
+        cat: "Tư vấn chọn mua",
+      }),
       fields: [
-        { key: 'title', label: 'Tiêu đề (H1, nên 50-65 ký tự, có từ khóa)', required: true, col: 'full' },
-        { key: 'slug', label: 'Đường dẫn (slug)', readonlyOnEdit: true, col: 'third', validate: slugRule, help: 'Để trống = tự tạo từ tiêu đề' },
-        { key: 'cat', label: 'Chuyên mục', col: 'third', type: 'select', options: ['Tư vấn chọn mua', 'Mẹo sử dụng', 'Kiến thức kỹ thuật', 'Giải pháp doanh nghiệp', 'Tin khuyến mãi'] },
-        { key: 'date', label: 'Ngày đăng', type: 'date', col: 'third', get def() { return AD.today(); } },
-        { key: 'author', label: 'Tác giả', col: 'third' },
-        { key: 'art', label: 'Ảnh minh họa', type: 'select', options: ARTS, col: 'third' },
-        { key: 'published', label: 'Đăng công khai', type: 'bool', col: 'third' },
-        { key: 'excerpt', label: 'Mô tả ngắn / meta description (140-160 ký tự)', type: 'textarea', col: 'full', rows: 2 },
-        { key: 'content', label: 'Nội dung (HTML: <h2>, <p>, <ul>, <table>…)', type: 'html', col: 'full', rows: 16 },
+        {
+          key: "title",
+          label: "Tiêu đề (H1, nên 50-65 ký tự, có từ khóa)",
+          required: true,
+          col: "full",
+        },
+        {
+          key: "slug",
+          label: "Đường dẫn (slug)",
+          readonlyOnEdit: true,
+          col: "third",
+          validate: slugRule,
+          help: "Để trống = tự tạo từ tiêu đề",
+        },
+        {
+          key: "cat",
+          label: "Chuyên mục",
+          col: "third",
+          type: "select",
+          options: [
+            "Tư vấn chọn mua",
+            "Mẹo sử dụng",
+            "Kiến thức kỹ thuật",
+            "Giải pháp doanh nghiệp",
+            "Tin khuyến mãi",
+          ],
+        },
+        {
+          key: "date",
+          label: "Ngày đăng",
+          type: "date",
+          col: "third",
+          get def() {
+            return AD.today();
+          },
+        },
+        { key: "author", label: "Tác giả", col: "third" },
+        {
+          key: "art",
+          label: "Ảnh minh họa",
+          type: "select",
+          options: ARTS,
+          col: "third",
+        },
+        {
+          key: "published",
+          label: "Đăng công khai",
+          type: "bool",
+          col: "third",
+        },
+        {
+          key: "excerpt",
+          label: "Mô tả ngắn / meta description (140-160 ký tự)",
+          type: "textarea",
+          col: "full",
+          rows: 2,
+        },
+        {
+          key: "content",
+          label: "Nội dung (HTML: <h2>, <p>, <ul>, <table>…)",
+          type: "html",
+          col: "full",
+          rows: 16,
+        },
       ],
-      beforeSave: (row, editing) => { if (!editing && !row.slug) row.slug = DT.u.slugify(row.title); },
+      beforeSave: (row, editing) => {
+        if (!editing && !row.slug) row.slug = DT.u.slugify(row.title);
+      },
       preview: (row) => `../frontend/bai-viet.html?slug=${row.slug}`,
-      pk: 'slug',
+      pk: "slug",
     },
 
     projects: {
-      title: 'Dự án tiêu biểu', icon: 'building', table: 'projects', order: 'sort.asc', search: ['title', 'slug', 'client', 'industry'],
-      filters: [{ key: 'published', label: 'Trạng thái', options: [['true', 'Đã đăng'], ['false', 'Nháp']] }],
+      title: "Dự án tiêu biểu",
+      icon: "building",
+      table: "projects",
+      order: "sort.asc",
+      search: ["title", "slug", "client", "industry"],
+      filters: [
+        {
+          key: "published",
+          label: "Trạng thái",
+          options: [
+            ["true", "Đã đăng"],
+            ["false", "Nháp"],
+          ],
+        },
+      ],
       columns: [
-        { label: 'Dự án', render: (r) => `<b>${esc(r.title)}</b><small>${esc([r.client, r.location].filter(Boolean).join(' • '))}</small>` },
-        { label: 'Quy mô', render: (r) => esc([r.units ? `${r.units} máy` : '', r.capacity].filter(Boolean).join(' • ')) },
-        { label: 'Năm', key: 'year' },
-        { label: 'Trạng thái', render: (r) => `${r.published ? '<span class="st st-ok">Đã đăng</span>' : '<span class="st st-muted">Nháp</span>'}${r.featured ? ' <span class="st st-info">Trang chủ</span>' : ''}` },
+        {
+          label: "Dự án",
+          render: (r) =>
+            `<b>${esc(r.title)}</b><small>${esc([r.client, r.location].filter(Boolean).join(" • "))}</small>`,
+        },
+        {
+          label: "Quy mô",
+          render: (r) =>
+            esc(
+              [r.units ? `${r.units} máy` : "", r.capacity]
+                .filter(Boolean)
+                .join(" • "),
+            ),
+        },
+        { label: "Năm", key: "year" },
+        {
+          label: "Trạng thái",
+          render: (r) =>
+            `${r.published ? '<span class="st st-ok">Đã đăng</span>' : '<span class="st st-muted">Nháp</span>'}${r.featured ? ' <span class="st st-info">Trang chủ</span>' : ""}`,
+        },
       ],
-      defaults: () => ({ published: false, featured: false, sort: 0, year: new Date().getFullYear(), images: [] }),
+      defaults: () => ({
+        published: false,
+        featured: false,
+        sort: 0,
+        year: new Date().getFullYear(),
+        images: [],
+      }),
       fields: [
-        { key: 'title', label: 'Tên dự án (H1, nên có loại máy + loại công trình)', required: true, col: 'full' },
-        { key: 'slug', label: 'Đường dẫn (slug)', readonlyOnEdit: true, col: 'third', validate: slugRule, help: 'Để trống = tự tạo từ tên' },
-        { key: 'client', label: 'Khách hàng', col: 'third', help: 'Có thể ghi chung "Nhà máy FDI" nếu khách không muốn công khai' },
-        { key: 'industry', label: 'Lĩnh vực', col: 'third', type: 'select', options: ['Nhà máy FDI', 'Nhà xưởng', 'Văn phòng', 'Nhà hàng – F&B', 'Bán lẻ – Showroom', 'Trường học – Bệnh viện', 'Nhà ở – Căn hộ', 'Khác'] },
-        { key: 'location', label: 'Địa điểm', col: 'third' },
-        { key: 'year', label: 'Năm', type: 'number', col: 'third' },
-        { key: 'sort', label: 'Thứ tự', type: 'number', col: 'third', def: 0 },
-        { key: 'units', label: 'Số máy / dàn lạnh', type: 'number', col: 'third' },
-        { key: 'capacity', label: 'Tổng công suất (vd 144 HP)', col: 'third' },
-        { key: 'duration', label: 'Thời gian thi công (vd 15 ngày)', col: 'third' },
-        { key: 'published', label: 'Đăng công khai', type: 'bool', col: 'third' },
-        { key: 'featured', label: 'Hiện ở trang chủ', type: 'bool', col: 'third' },
-        { key: 'summary', label: 'Tóm tắt (hiện ở thẻ dự án & mô tả Google, 140-200 ký tự)', type: 'textarea', col: 'full', rows: 2 },
-        { key: 'before_image', label: 'Ảnh TRƯỚC thi công', type: 'image', folder: 'projects', col: 'half' },
-        { key: 'after_image', label: 'Ảnh SAU thi công (ảnh đại diện)', type: 'image', folder: 'projects', col: 'half' },
-        { key: 'images', label: 'Thư viện ảnh thêm', type: 'gallery', folder: 'projects', max: 12, col: 'full' },
-        { key: 'content', label: 'Nội dung (HTML: <h2>Yêu cầu</h2>, <h2>Giải pháp</h2>, <h2>Kết quả</h2>…)', type: 'html', col: 'full', rows: 12 },
-        { key: 'testimonial', label: 'Cảm nhận của khách hàng', type: 'textarea', col: 'full', rows: 2 },
-        { key: 'testimonial_name', label: 'Người nhận xét', col: 'half' },
-        { key: 'testimonial_role', label: 'Chức vụ / đơn vị', col: 'half' },
+        {
+          key: "title",
+          label: "Tên dự án (H1, nên có loại máy + loại công trình)",
+          required: true,
+          col: "full",
+        },
+        {
+          key: "slug",
+          label: "Đường dẫn (slug)",
+          readonlyOnEdit: true,
+          col: "third",
+          validate: slugRule,
+          help: "Để trống = tự tạo từ tên",
+        },
+        {
+          key: "client",
+          label: "Khách hàng",
+          col: "third",
+          help: 'Có thể ghi chung "Nhà máy FDI" nếu khách không muốn công khai',
+        },
+        {
+          key: "industry",
+          label: "Lĩnh vực",
+          col: "third",
+          type: "select",
+          options: [
+            "Nhà máy FDI",
+            "Nhà xưởng",
+            "Văn phòng",
+            "Nhà hàng – F&B",
+            "Bán lẻ – Showroom",
+            "Trường học – Bệnh viện",
+            "Nhà ở – Căn hộ",
+            "Khác",
+          ],
+        },
+        { key: "location", label: "Địa điểm", col: "third" },
+        { key: "year", label: "Năm", type: "number", col: "third" },
+        { key: "sort", label: "Thứ tự", type: "number", col: "third", def: 0 },
+        {
+          key: "units",
+          label: "Số máy / dàn lạnh",
+          type: "number",
+          col: "third",
+        },
+        { key: "capacity", label: "Tổng công suất (vd 144 HP)", col: "third" },
+        {
+          key: "duration",
+          label: "Thời gian thi công (vd 15 ngày)",
+          col: "third",
+        },
+        {
+          key: "published",
+          label: "Đăng công khai",
+          type: "bool",
+          col: "third",
+        },
+        {
+          key: "featured",
+          label: "Hiện ở trang chủ",
+          type: "bool",
+          col: "third",
+        },
+        {
+          key: "summary",
+          label: "Tóm tắt (hiện ở thẻ dự án & mô tả Google, 140-200 ký tự)",
+          type: "textarea",
+          col: "full",
+          rows: 2,
+        },
+        {
+          key: "before_image",
+          label: "Ảnh TRƯỚC thi công",
+          type: "image",
+          folder: "projects",
+          col: "half",
+        },
+        {
+          key: "after_image",
+          label: "Ảnh SAU thi công (ảnh đại diện)",
+          type: "image",
+          folder: "projects",
+          col: "half",
+        },
+        {
+          key: "images",
+          label: "Thư viện ảnh thêm",
+          type: "gallery",
+          folder: "projects",
+          max: 12,
+          col: "full",
+        },
+        {
+          key: "content",
+          label:
+            "Nội dung (HTML: <h2>Yêu cầu</h2>, <h2>Giải pháp</h2>, <h2>Kết quả</h2>…)",
+          type: "html",
+          col: "full",
+          rows: 12,
+        },
+        {
+          key: "testimonial",
+          label: "Cảm nhận của khách hàng",
+          type: "textarea",
+          col: "full",
+          rows: 2,
+        },
+        { key: "testimonial_name", label: "Người nhận xét", col: "half" },
+        { key: "testimonial_role", label: "Chức vụ / đơn vị", col: "half" },
       ],
-      beforeSave: (row, editing) => { if (!editing && !row.slug) row.slug = DT.u.slugify(row.title); },
+      beforeSave: (row, editing) => {
+        if (!editing && !row.slug) row.slug = DT.u.slugify(row.title);
+      },
       preview: (row) => `../frontend/du-an-chi-tiet.html?slug=${row.slug}`,
-      pk: 'slug',
+      pk: "slug",
     },
 
     faqs: {
-      title: 'Hỏi đáp (FAQ)', icon: 'chat', table: 'faqs', order: 'sort.asc', search: ['question', 'category'],
-      filters: [{ key: 'active', label: 'Trạng thái', options: [['true', 'Hiện'], ['false', 'Ẩn']] }],
+      title: "Hỏi đáp (FAQ)",
+      icon: "chat",
+      table: "faqs",
+      order: "sort.asc",
+      search: ["question", "category"],
+      filters: [
+        {
+          key: "active",
+          label: "Trạng thái",
+          options: [
+            ["true", "Hiện"],
+            ["false", "Ẩn"],
+          ],
+        },
+      ],
       columns: [
-        { label: 'Câu hỏi', render: (r) => `<b>${esc(r.question)}</b><small>${esc(r.category)}</small>` },
-        { label: 'Thứ tự', key: 'sort' },
-        { label: 'Trạng thái', render: (r) => yes(r.active) },
+        {
+          label: "Câu hỏi",
+          render: (r) =>
+            `<b>${esc(r.question)}</b><small>${esc(r.category)}</small>`,
+        },
+        { label: "Thứ tự", key: "sort" },
+        { label: "Trạng thái", render: (r) => yes(r.active) },
       ],
-      defaults: () => ({ active: true, sort: 0, category: 'Chọn mua máy lạnh' }),
+      defaults: () => ({
+        active: true,
+        sort: 0,
+        category: "Chọn mua máy lạnh",
+      }),
       fields: [
-        { key: 'question', label: 'Câu hỏi (viết đúng cách khách hay hỏi / tìm trên Google)', required: true, col: 'full' },
-        { key: 'category', label: 'Nhóm', col: 'third', type: 'select', required: true, options: ['Chọn mua máy lạnh', 'Lắp đặt', 'Sử dụng & tiết kiệm điện', 'Bảo trì & sửa chữa', 'Doanh nghiệp & dự án', 'Mua hàng & bảo hành', 'Chung'] },
-        { key: 'sort', label: 'Thứ tự', type: 'number', col: 'third', def: 0 },
-        { key: 'active', label: 'Hiện trên website', type: 'bool', col: 'third' },
-        { key: 'answer', label: 'Trả lời (2-5 câu, trả lời thẳng vào câu hỏi ở câu đầu; cho phép <b>, <a>, <ul>)', type: 'html', required: true, col: 'full', rows: 6 },
+        {
+          key: "question",
+          label: "Câu hỏi (viết đúng cách khách hay hỏi / tìm trên Google)",
+          required: true,
+          col: "full",
+        },
+        {
+          key: "category",
+          label: "Nhóm",
+          col: "third",
+          type: "select",
+          required: true,
+          options: [
+            "Chọn mua máy lạnh",
+            "Lắp đặt",
+            "Sử dụng & tiết kiệm điện",
+            "Bảo trì & sửa chữa",
+            "Doanh nghiệp & dự án",
+            "Mua hàng & bảo hành",
+            "Chung",
+          ],
+        },
+        { key: "sort", label: "Thứ tự", type: "number", col: "third", def: 0 },
+        {
+          key: "active",
+          label: "Hiện trên website",
+          type: "bool",
+          col: "third",
+        },
+        {
+          key: "answer",
+          label:
+            "Trả lời (2-5 câu, trả lời thẳng vào câu hỏi ở câu đầu; cho phép <b>, <a>, <ul>)",
+          type: "html",
+          required: true,
+          col: "full",
+          rows: 6,
+        },
       ],
-      preview: () => '../frontend/hoi-dap.html',
+      preview: () => "../frontend/hoi-dap.html",
     },
 
     stores: {
-      title: 'Cửa hàng', icon: 'pin', table: 'stores', order: 'sort.asc', search: ['name', 'address', 'city'],
+      title: "Cửa hàng",
+      icon: "pin",
+      table: "stores",
+      order: "sort.asc",
+      search: ["name", "address", "city"],
       columns: [
-        { label: 'Cửa hàng', render: (r) => `<b>${esc(r.name)}</b><small>${esc(r.address)}, ${esc(r.city)}</small>` },
-        { label: 'Điện thoại', key: 'phone' },
-        { label: 'Giờ mở cửa', key: 'hours' },
-        { label: 'Hiển thị', render: (r) => yes(r.active) },
+        {
+          label: "Cửa hàng",
+          render: (r) =>
+            `<b>${esc(r.name)}</b><small>${esc(r.address)}, ${esc(r.city)}</small>`,
+        },
+        { label: "Điện thoại", key: "phone" },
+        { label: "Giờ mở cửa", key: "hours" },
+        { label: "Hiển thị", render: (r) => yes(r.active) },
       ],
-      defaults: () => ({ active: true, hours: '8:00 - 21:00', sort: 0 }),
+      defaults: () => ({ active: true, hours: "8:00 - 21:00", sort: 0 }),
       fields: [
-        { key: 'name', label: 'Tên cửa hàng', required: true, col: 'half' },
-        { key: 'city', label: 'Tỉnh / Thành phố', required: true, col: 'half' },
-        { key: 'address', label: 'Địa chỉ', required: true, col: 'full' },
-        { key: 'phone', label: 'Điện thoại', col: 'third' },
-        { key: 'hours', label: 'Giờ mở cửa', col: 'third' },
-        { key: 'sort', label: 'Thứ tự', type: 'number', step: 1, col: 'third', def: 0 },
-        { key: 'active', label: 'Hiển thị', type: 'bool', col: 'third' },
+        { key: "name", label: "Tên cửa hàng", required: true, col: "half" },
+        { key: "city", label: "Tỉnh / Thành phố", required: true, col: "half" },
+        { key: "address", label: "Địa chỉ", required: true, col: "full" },
+        { key: "phone", label: "Điện thoại", col: "third" },
+        { key: "hours", label: "Giờ mở cửa", col: "third" },
+        {
+          key: "sort",
+          label: "Thứ tự",
+          type: "number",
+          step: 1,
+          col: "third",
+          def: 0,
+        },
+        { key: "active", label: "Hiển thị", type: "bool", col: "third" },
       ],
     },
 
     services: {
-      title: 'Dịch vụ', icon: 'tool', table: 'services', order: 'sort.asc', search: ['name'],
+      title: "Dịch vụ",
+      icon: "tool",
+      table: "services",
+      order: "sort.asc",
+      search: ["name"],
       columns: [
-        { label: 'Dịch vụ', render: (r) => `<b>${esc(r.name)}</b><small>${esc(r.description || '')}</small>` },
-        { label: 'Giá từ', render: (r) => (r.price ? `${money(r.price)}/${esc(r.unit || '')}` : 'Báo giá') , cls: 'num' },
-        { label: 'Hiển thị', render: (r) => yes(r.active) },
+        {
+          label: "Dịch vụ",
+          render: (r) =>
+            `<b>${esc(r.name)}</b><small>${esc(r.description || "")}</small>`,
+        },
+        {
+          label: "Giá từ",
+          render: (r) =>
+            r.price ? `${money(r.price)}/${esc(r.unit || "")}` : "Báo giá",
+          cls: "num",
+        },
+        { label: "Hiển thị", render: (r) => yes(r.active) },
       ],
-      defaults: () => ({ active: true, price: 0, icon: 'tool', sort: 0 }),
+      defaults: () => ({ active: true, price: 0, icon: "tool", sort: 0 }),
       fields: [
-        { key: 'id', label: 'Mã (slug)', required: true, readonlyOnEdit: true, col: 'third', validate: slugRule },
-        { key: 'name', label: 'Tên dịch vụ', required: true, col: 'third' },
-        { key: 'icon', label: 'Biểu tượng', type: 'select', options: ICONS, col: 'third', def: 'tool' },
-        { key: 'price', label: 'Giá từ (₫, 0 = báo giá)', type: 'money', col: 'third', def: 0 },
-        { key: 'unit', label: 'Đơn vị', col: 'third', placeholder: 'máy' },
-        { key: 'sort', label: 'Thứ tự', type: 'number', step: 1, col: 'third', def: 0 },
-        { key: 'description', label: 'Mô tả', type: 'textarea', col: 'full' },
-        { key: 'active', label: 'Hiển thị', type: 'bool', col: 'third' },
+        {
+          key: "id",
+          label: "Mã (slug)",
+          required: true,
+          readonlyOnEdit: true,
+          col: "third",
+          validate: slugRule,
+        },
+        { key: "name", label: "Tên dịch vụ", required: true, col: "third" },
+        {
+          key: "icon",
+          label: "Biểu tượng",
+          type: "select",
+          options: ICONS,
+          col: "third",
+          def: "tool",
+        },
+        {
+          key: "price",
+          label: "Giá từ (₫, 0 = báo giá)",
+          type: "money",
+          col: "third",
+          def: 0,
+        },
+        { key: "unit", label: "Đơn vị", col: "third", placeholder: "máy" },
+        {
+          key: "sort",
+          label: "Thứ tự",
+          type: "number",
+          step: 1,
+          col: "third",
+          def: 0,
+        },
+        { key: "description", label: "Mô tả", type: "textarea", col: "full" },
+        { key: "active", label: "Hiển thị", type: "bool", col: "third" },
       ],
     },
 
     policies: {
-      title: 'Chính sách', icon: 'shield', table: 'policies', order: 'sort.asc', adminOnly: true,
+      title: "Chính sách",
+      icon: "shield",
+      table: "policies",
+      order: "sort.asc",
+      adminOnly: true,
       columns: [
-        { label: 'Chính sách', render: (r) => `<b>${esc(r.title)}</b><small>${esc(r.key)}</small>` },
-        { label: 'Thứ tự', key: 'sort', cls: 'num' },
+        {
+          label: "Chính sách",
+          render: (r) => `<b>${esc(r.title)}</b><small>${esc(r.key)}</small>`,
+        },
+        { label: "Thứ tự", key: "sort", cls: "num" },
       ],
       defaults: () => ({ sort: 0 }),
       fields: [
-        { key: 'key', label: 'Mã (slug)', required: true, readonlyOnEdit: true, col: 'third', validate: slugRule },
-        { key: 'title', label: 'Tiêu đề', required: true, col: 'third' },
-        { key: 'sort', label: 'Thứ tự', type: 'number', step: 1, col: 'third', def: 0 },
-        { key: 'body', label: 'Nội dung (HTML)', type: 'html', required: true, col: 'full', rows: 14 },
+        {
+          key: "key",
+          label: "Mã (slug)",
+          required: true,
+          readonlyOnEdit: true,
+          col: "third",
+          validate: slugRule,
+        },
+        { key: "title", label: "Tiêu đề", required: true, col: "third" },
+        {
+          key: "sort",
+          label: "Thứ tự",
+          type: "number",
+          step: 1,
+          col: "third",
+          def: 0,
+        },
+        {
+          key: "body",
+          label: "Nội dung (HTML)",
+          type: "html",
+          required: true,
+          col: "full",
+          rows: 14,
+        },
       ],
       preview: (row) => `../frontend/chinh-sach.html?type=${row.key}`,
     },

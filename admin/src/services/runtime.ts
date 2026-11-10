@@ -6,7 +6,7 @@ export const adminBase=new URL('./',document.baseURI);
 export const websiteBase=new URL('../frontend/',adminBase);
 async function script(path:string){await new Promise<void>((resolve,reject)=>{const el=document.createElement('script');const url=new URL(path,adminBase);url.searchParams.set('v',__BUILD_VERSION__);el.src=url.href;el.dataset.adminRuntime=path;el.onload=()=>resolve();el.onerror=()=>reject(new Error(`Không tải được ${path}`));document.head.append(el);});}
 export async function bootstrap(){
- for(const file of ['data/catalog','data/content','seo-config','backend-config','core/utils','components/icons','core/api','components/art'])await script(`../frontend/assets/js/${file}.js`);
+ for(const file of ['data/catalog','data/content','seo-config','backend-config','core/utils','components/icons','core/rows','core/api','components/art'])await script(`../frontend/assets/js/${file}.js`);
  dt=window.DT;window.AD={cache:{},me:null} as Admin;ad=window.AD;
  ad.today=()=>today();
  // Keep resource definitions and database contracts; none of the legacy page/UI renderers are loaded.
@@ -41,7 +41,7 @@ export async function loadCache(){
  const tables=role==='accountant'?['categories','brands','products']:['categories','brands','services','products'];
  const results=await Promise.all(tables.map(table=>ad.db.list(table,{limit:5000,order:table==='products'?'id.desc':'sort.asc'})));
  ad.cache={...ad.cache,...Object.fromEntries(tables.map((t,i)=>[t,results[i].rows]))};
- ad.cache.productMap=new Map((ad.cache.products || []).map((p:Row)=>[String(p.id),{...p,freeInstall:p.free_install}]));dt.brands=ad.cache.brands || dt.brands;
+ ad.cache.productMap=new Map((ad.cache.products || []).map((p:Row)=>[String(p.id),{...p,...dt.rows.product.toView(p)}]));dt.brands=ad.cache.brands || dt.brands;
 }
 export const money=(value:any)=>new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(Number(value)||0);
 export const date=(value:any)=>value?new Date(value).toLocaleString('vi-VN',{dateStyle:'short',timeStyle:'short'}):'—';

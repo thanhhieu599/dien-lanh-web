@@ -8,6 +8,7 @@ function script(file: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const element = document.createElement('script');
     const url=new URL(`assets/js/${file}.js`,siteBase);url.searchParams.set('v',__BUILD_VERSION__);
+    element.async=false; // tải song song nhưng vẫn chạy đúng thứ tự thêm vào
     element.src=url.href;
     element.dataset.sharedRuntime = file;
     element.onload = () => resolve();
@@ -16,7 +17,8 @@ function script(file: string): Promise<void> {
   });
 }
 export async function bootstrap(): Promise<void> {
-  for (const file of ['data/catalog','data/content','seo-config','backend-config','core/utils','components/icons','core/api','core/promotions','core/store','core/backend','components/art','core/payments']) await script(file);
+  // Tải song song; async=false giữ thứ tự thực thi, rows phải có trước backend.
+  await Promise.all(['data/catalog','data/content','seo-config','backend-config','core/utils','components/icons','core/api','core/rows','core/promotions','core/store','core/backend','components/art','core/payments'].map(script));
   dt = window.DT;
   let notices=document.getElementById('toasts');
   if(!notices){notices=document.createElement('div');notices.id='toasts';document.body.append(notices);}

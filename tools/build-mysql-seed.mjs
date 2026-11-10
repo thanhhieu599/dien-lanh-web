@@ -13,7 +13,7 @@ const localStorage = {
 const context = { localStorage, sessionStorage: localStorage, console };
 context.window = context;
 vm.createContext(context);
-for (const file of ['frontend/assets/js/data/catalog.js', 'frontend/assets/js/data/content.js', 'admin/assets/js/db.js']) {
+for (const file of ['frontend/assets/js/data/catalog.js', 'frontend/assets/js/data/content.js', 'frontend/assets/js/core/rows.js', 'admin/assets/js/db.js']) {
   vm.runInContext(fs.readFileSync(new URL(file, root), 'utf8'), context, { filename: file });
 }
 const data = JSON.parse(storage.get(context.DT.ADMIN_DEMO_KEY || 'dt_admin_demo_v1'));

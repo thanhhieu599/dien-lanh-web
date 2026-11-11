@@ -18,9 +18,9 @@ import {
   AddToCart,
   ProductGrid,
   ProductSection,
-  PRODUCTS_PER_PAGE,
+  LISTING_PER_PAGE,
 } from "../components/products";
-import { PagedList, MoreButton } from "../components/collections";
+import { PagedList } from "../components/collections";
 import type { Product, Row } from "../types";
 
 export { HomePage } from "./home";
@@ -64,12 +64,12 @@ export function ListingPage({
     flash: mode === "sale",
     attrs,
     page: mode === "sale" ? 1 : page,
-    limit: mode === "sale" ? Math.max(1, dt.products.length) : PRODUCTS_PER_PAGE,
+    limit: mode === "sale" ? Math.max(1, dt.products.length) : LISTING_PER_PAGE,
   };
   const { items, total } = dt.api.list(filters);
   useEffect(() => {
     if (mode === "sale") return;
-    const last = Math.max(1, Math.ceil(total / PRODUCTS_PER_PAGE));
+    const last = Math.max(1, Math.ceil(total / LISTING_PER_PAGE));
     if (page > last) {
       const next = new URLSearchParams(params);
       next.set("page", String(last));
@@ -102,7 +102,11 @@ export function ListingPage({
       <Breadcrumb items={[{ label: title }]} />
       <div className="container">
         <div className="cat-hero">
-          {cat?.image && <Media src={cat.image} alt={cat.name} />}
+          {cat?.image && (
+            <span className="cat-hero-img">
+              <Media src={cat.image} alt={cat.name} />
+            </span>
+          )}
           <div>
             <h1 id="cat-title">{title}</h1>
             {mode !== "category" && (
@@ -252,15 +256,18 @@ export function ListingPage({
                 })()}
               </div>
             )}
-            <ProductGrid products={items} paginated={mode !== "sale"} />
-            {mode !== "sale" && total > PRODUCTS_PER_PAGE && (
-              <MoreButton
-                onClick={() =>
-                  change(
-                    "page",
-                    String(page * PRODUCTS_PER_PAGE >= total ? 1 : page + 1),
-                  )
-                }
+            <ProductGrid products={items} paginated={false} />
+            {mode !== "sale" && total > LISTING_PER_PAGE && (
+              <Pagination
+                page={page}
+                pages={Math.ceil(total / LISTING_PER_PAGE)}
+                onPage={(p) => {
+                  change("page", p > 1 ? String(p) : "");
+                  // Về đầu danh sách sản phẩm khi đổi trang
+                  requestAnimationFrame(() =>
+                    document.querySelector(".listing-main")?.scrollIntoView({ block: "start" }),
+                  );
+                }}
               />
             )}
           </section>
@@ -886,3 +893,28 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
     </>
   );
 }
+
+// Chọn trang dạng « 1 2 3 … 29 »: luôn có trang đầu, trang cuối và 1 trang hai bên trang hiện tại
+export function pageList(page: number, pages: number): (number | "…")[] {
+  const keep = new Set([1, pages, page - 1, page, page + 1, ...(page <= 3 ? [2, 3] : []), ...(page >= pages - 2 ? [pages - 1, pages - 2] : [])]);
+  const list = [...keep].filter((n) => n >= 1 && n <= pages).sort((a, b) => a - b);
+  return list.flatMap((n, i) => (i && n - list[i - 1] > 1 ? (["…", n] as const) : ([n] as const)));
+}
+function Pagination({ page, pages, onPage }: { page: number; pages: number; onPage: (p: number) => void }) {
+  return (
+    <nav className="pager-num" aria-label="Chọn trang sản phẩm">
+      <button type="button" aria-label="Trang trước" disabled={page <= 1} onClick={() => onPage(page - 1)}>«</button>
+      {pageList(page, pages).map((n, i) =>
+        n === "…" ? (
+          <span key={`gap-${i}`} className="pager-gap" aria-hidden="true">…</span>
+        ) : (
+          <button type="button" key={n} className={n === page ? "active" : ""} aria-label={`Trang ${n}`} aria-current={n === page ? "page" : undefined} onClick={() => n !== page && onPage(n)}>
+            {n}
+          </button>
+        ),
+      )}
+      <button type="button" aria-label="Trang sau" disabled={page >= pages} onClick={() => onPage(page + 1)}>»</button>
+    </nav>
+  );
+}
+

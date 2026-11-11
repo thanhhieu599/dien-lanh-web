@@ -182,6 +182,8 @@ export function ProductGrid({
   );
 }
 export const PRODUCTS_PER_PAGE = ITEMS_PER_PAGE;
+// Trang danh mục / tìm kiếm: hiện đủ 20 sản phẩm mỗi trang, chọn trang ở cuối danh sách
+export const LISTING_PER_PAGE = 20;
 function ProductResults({
   products,
   flash,

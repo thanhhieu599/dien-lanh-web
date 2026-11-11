@@ -28,7 +28,8 @@ try {
    if(document.querySelector('.product-pagination'))issues.push('Vẫn còn dòng đếm/nút quay lại cũ');
    for(const grid of document.querySelectorAll('.pgrid')) {
     const cards=[...grid.querySelectorAll(':scope > .pcard')];
-    if(cards.length>5 && !(location.pathname.endsWith('/khuyen-mai.html') && grid.closest('.listing-main')))issues.push('Hiện quá 5 sản phẩm');
+    // Trang danh mục/khuyến mãi hiện đủ sản phẩm (tối đa 20/trang, có chọn trang); các dải sản phẩm khác tối đa 5
+    if(grid.closest('.listing-main')?(cards.length>20&&!location.pathname.endsWith('/khuyen-mai.html')):cards.length>5)issues.push('Hiện quá số sản phẩm cho phép');
     if(grid.scrollWidth>grid.clientWidth+1)issues.push('Lưới cuộn ngang');
     const boxes=cards.map(card=>card.getBoundingClientRect());
     for(let i=0;i<cards.length;i++) {
@@ -77,13 +78,23 @@ try {
   if(categoryCount>5)await quick.getByRole('button',{name:'Xem thêm',exact:true}).click();
  }
  assert.equal(allCategoryNames.size,categoryCount);
- await open(`danh-muc.html?cat=${sample.category}`);
+ // Trang danh mục: hiện đủ 20 sản phẩm mỗi trang, chọn trang « 1 2 3 … » ở cuối, không còn nút Xem thêm
+ await open('danh-muc.html');
  const listing=page.locator('.listing-main');
+ const totalProducts=await page.evaluate(()=>DT.products.length);
+ assert.equal(await listing.locator('.pcard').count(),Math.min(20,totalProducts));
+ assert.equal(await listing.getByRole('button',{name:'Xem thêm',exact:true}).count(),0);
  const firstPage=await listing.locator('.pcard').evaluateAll(cards=>cards.map(card=>card.dataset.id));
- await listing.getByRole('button',{name:'Xem thêm',exact:true}).click();await page.waitForURL('**page=2');
+ assert.equal(await page.getByRole('button',{name:'Trang 1',exact:true}).getAttribute('aria-current'),'page');
+ assert.ok(await page.getByRole('button',{name:'Trang trước'}).isDisabled());
+ await page.getByRole('button',{name:'Trang 2',exact:true}).click();await page.waitForURL('**page=2');
  await page.waitForFunction(previous=>[...document.querySelectorAll('.listing-main .pcard')].every(card=>!previous.includes(card.dataset.id)),firstPage);
- assert.equal(await listing.locator('.pcard').count(),5);
  assert.ok((await listing.locator('.pcard').evaluateAll(cards=>cards.map(card=>card.dataset.id))).every(id=>!firstPage.includes(id)));
+ await page.getByRole('button',{name:'Trang trước'}).click();await page.waitForFunction(()=>!new URL(location.href).searchParams.has('page'));
+ // Ảnh danh mục là ảnh nhỏ cạnh tên
+ await open(`danh-muc.html?cat=${sample.category}`);
+ const heroImg=await page.locator('.cat-hero-img').count()?await page.locator('.cat-hero-img').boundingBox():null;
+ if(heroImg)assert.ok(heroImg.height<=80&&heroImg.width<=80,'Ảnh danh mục không được chiếm cả màn hình');
  await page.getByLabel('Sắp xếp').selectOption('price-asc');
  await page.waitForURL('**sort=price-asc');
  assert.ok(!new URL(page.url()).searchParams.has('page'),'Đổi bộ lọc trở về lượt đầu');

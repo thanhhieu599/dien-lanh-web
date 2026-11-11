@@ -23,13 +23,19 @@ function orderByCode(string $code, string $phone, bool $lock = false): array {
     if ($row === false) fail('Không tìm thấy đơn hàng', 404);
     return record('orders', $row, $lock) ?? throw new HttpError('Không tìm thấy đơn hàng', 404);
 }
-function couponResult(?array $coupon, array $lines, string $phone): array {
+function moneyVnd($n): string { return number_format((float)$n, 0, ',', '.') . '₫'; }
+// Luật mã giảm giá: PHẢI khớp DT.promotions.evaluate (frontend/assets/js/core/promotions.js); kiểm bằng tests/fixtures/pricing.json.
+// $data cho phép truyền nguồn dữ liệu (test không cần MySQL); mặc định đọc từ database.
+function couponResult(?array $coupon, array $lines, string $phone, array $data = []): array {
+    $categoryOf = $data['category'] ?? fn(string $id) => record('categories', $id);
+    $ordersOf = $data['orders'] ?? fn() => allRecords('orders');
+    $customersOf = $data['customers'] ?? fn() => allRecords('crm_customers');
     $bad = fn($msg) => ['ok' => false, 'msg' => $msg, 'discount' => 0, 'free_ship' => false];
     if (!$coupon || !($coupon['active'] ?? true)) return $bad('Mã giảm giá không tồn tại hoặc đã tắt');
     foreach (['starts_at','ends_at'] as $field) {
         if (!empty($coupon[$field]) && ($field === 'starts_at' ? time() < strtotime($coupon[$field]) : time() >= strtotime($coupon[$field]))) return $bad('Mã giảm giá chưa có hiệu lực hoặc đã hết hạn');
     }
-    if (isset($coupon['usage_limit']) && ($coupon['used_count'] ?? 0) >= $coupon['usage_limit']) return $bad('Mã đã hết lượt sử dụng');
+    if (isset($coupon['usage_limit']) && ($coupon['used_count'] ?? 0) >= $coupon['usage_limit']) return $bad('Mã giảm giá đã hết lượt sử dụng');
     $subtotal = 0; $base = 0; $qty = 0;
     foreach ($lines as $line) {
         $p = $line['product']; $amount = $p['price'] * $line['qty']; $subtotal += $amount;
@@ -38,7 +44,7 @@ function couponResult(?array $coupon, array $lines, string $phone): array {
         if (($coupon['scope'] ?? '') === 'categories') {
             $eligible = false;
             foreach ($coupon['category_ids'] ?? [] as $cat) {
-                $category = record('categories', $cat);
+               $category = $categoryOf((string)$cat) ?? [];
                 $excluded = array_map('strval', $category['excluded_product_ids'] ?? []);
                 if (!in_array((string)$p['id'], $excluded, true) && ($p['cat'] === $cat || in_array((string)$p['id'], array_map('strval', $category['product_ids'] ?? []), true))) $eligible = true;
             }
@@ -46,27 +52,43 @@ function couponResult(?array $coupon, array $lines, string $phone): array {
         }
         $base += $amount; $qty += $line['qty'];
     }
-    if (!$qty || $subtotal < ($coupon['min'] ?? 0)) return $bad('Giỏ hàng chưa đủ điều kiện áp dụng mã');
-    if (($coupon['condition_type'] ?? '') === 'eligible_min' && $base < ($coupon['condition_value'] ?? 0) || ($coupon['condition_type'] ?? '') === 'eligible_qty' && $qty < ($coupon['condition_value'] ?? 0)) return $bad('Chưa đạt điều kiện khuyến mãi');
+       if (!$qty) return $bad('Giỏ hàng chưa có sản phẩm đủ điều kiện áp dụng mã');
+    if ($subtotal < ($coupon['min'] ?? 0)) return $bad('Đơn hàng tối thiểu ' . moneyVnd($coupon['min']) . ' để dùng mã này');
+    if (($coupon['condition_type'] ?? '') === 'eligible_min' && $base < ($coupon['condition_value'] ?? 0)) return $bad('Giá trị sản phẩm được khuyến mãi tối thiểu ' . moneyVnd($coupon['condition_value']));
+    if (($coupon['condition_type'] ?? '') === 'eligible_qty' && $qty < ($coupon['condition_value'] ?? 0)) return $bad('Cần ít nhất ' . $coupon['condition_value'] . ' sản phẩm đủ điều kiện khuyến mãi');
     if (!empty($coupon['once_per_customer']) || !empty($coupon['customer_groups'])) {
-        if (!$phone) return $bad('Vui lòng nhập số điện thoại');
-        if (!empty($coupon['once_per_customer'])) foreach (allRecords('orders') as $o) {
+        if (!$phone) return $bad('Vui lòng đăng nhập hoặc nhập số điện thoại thanh toán để áp dụng mã');
+        if (!empty($coupon['once_per_customer'])) foreach ($ordersOf() as $o) {
             if ($o['phone'] === $phone && $o['coupon'] === $coupon['code'] && $o['status'] !== 'cancelled') return $bad('Khách hàng đã sử dụng mã này');
         }
         if (!empty($coupon['customer_groups'])) {
             $ok = false;
-            foreach (allRecords('crm_customers') as $c) if (phoneKey($c['phone'] ?? '') === $phone) {
+            foreach ($customersOf() as $c) if (phoneKey($c['phone'] ?? '') === $phone) {
                 foreach ($coupon['customer_groups'] as $group) {
                     if ($group === 'vip' && in_array('VIP', $c['tags'] ?? [], true) || $group === 'marketing' && ($c['marketing_opt_in'] ?? false) || str_starts_with($group, 'tag:') && in_array(substr($group, 4), $c['tags'] ?? [], true)) $ok = true;
                 }
             }
-            if (!$ok) return $bad('Mã chỉ dành cho nhóm khách hàng được chọn');
+            if (!$ok) return $bad('Mã chỉ dành cho nhóm khách hàng đã được chọn');
         }
     }
     $discount = $coupon['type'] === 'percent' ? (int)floor($base * $coupon['value'] / 100) : ($coupon['type'] === 'fixed' ? min($base, $coupon['value']) : 0);
     if ($coupon['type'] === 'percent' && isset($coupon['max'])) $discount = min($discount, $coupon['max']);
     return ['ok' => true, 'coupon' => $coupon, 'discount' => max(0, min($base, $discount)), 'free_ship' => $coupon['type'] === 'ship'];
 }
+// Tổng tiền đơn hàng: PHẢI khớp DT.promotions.quote (frontend/assets/js/core/promotions.js); kiểm bằng tests/fixtures/pricing.json.
+// $coupon: kết quả couponResult() hợp lệ hoặc null
+function orderQuote(array $lines, array $config, string $method, ?array $coupon): array {
+    $subtotal = 0; $install = 0;
+    foreach ($lines as $line) {
+        $p = $line['product']; $subtotal += $p['price'] * $line['qty'];
+        if (($line['install'] ?? false) && !($p['free_install'] ?? false) && $p['cat'] === 'may-lanh') $install += ($config['installFee'] ?? 300000) * $line['qty'];
+    }
+    $shipping = $method === 'pickup' || $subtotal === 0 || $subtotal >= ($config['freeShipThreshold'] ?? 2000000) ? 0 : ($config['shippingFee'] ?? 50000);
+    $discount = $coupon ? $coupon['discount'] : 0;
+    if ($coupon['free_ship'] ?? false) $shipping = 0;
+    return ['subtotal' => $subtotal, 'install' => $install, 'shipping' => $shipping, 'discount' => $discount, 'total' => max(0, $subtotal + $install + $shipping - $discount)];
+}
+
 function cartLines(array $items, bool $lock): array {
     if (!$items || count($items) > 100) fail('Giỏ hàng không hợp lệ');
     usort($items, fn($a, $b) => ($a['id'] ?? 0) <=> ($b['id'] ?? 0));
@@ -131,21 +153,15 @@ function placeOrder(array $args): array {
         if (!in_array($args['p_payment'] ?? '', ['cod','bank'], true)) fail('Cổng thanh toán online chưa được cấu hình. Vui lòng chọn COD hoặc chuyển khoản.');
         $lines = cartLines($args['p_items'] ?? [], true);
         $config = record('settings', 'store')['value'] ?? [];
-        $subtotal = 0; $install = 0;
-        foreach ($lines as $line) {
-            $p = $line['product']; $subtotal += $p['price'] * $line['qty'];
-            if ($line['install'] && !($p['free_install'] ?? false) && $p['cat'] === 'may-lanh') $install += ($config['installFee'] ?? 300000) * $line['qty'];
-        }
-        $shippingFee = $shipping['method'] === 'pickup' || $subtotal >= ($config['freeShipThreshold'] ?? 2000000) ? 0 : ($config['shippingFee'] ?? 50000);
-        $code = !empty($args['p_coupon']) ? strtoupper(trim($args['p_coupon'])) : null;
-        $discount = 0;
+                $code = !empty($args['p_coupon']) ? strtoupper(trim($args['p_coupon'])) : null;
+        $result = null;
         if ($code) {
             $coupon = record('coupons', $code, true);
             $result = couponResult($coupon, $lines, $customer['phone']);
             if (!$result['ok']) fail($result['msg']);
-            $discount = $result['discount']; if ($result['free_ship']) $shippingFee = 0;
             $coupon['used_count'] = ($coupon['used_count'] ?? 0) + 1; put('coupons', $coupon);
         }
+        $quote = orderQuote($lines, $config, $shipping['method'], $result);
         $customerId = 'phone:' . $customer['phone'];
         $crm = record('crm_customers', $customerId, true);
         if (!$crm) $crm = put('crm_customers', ['id'=>$customerId, 'phone'=>$customer['phone'], 'name'=>$customer['name'], 'email'=>$customer['email'] ?? '', 'addresses'=> $shipping['method'] === 'delivery' ? [$shipping] : [], 'tags'=>[], 'marketing_opt_in'=>false], true);
@@ -154,9 +170,9 @@ function placeOrder(array $args): array {
             'code' => 'DT' . strtoupper(bin2hex(random_bytes(6))), 'user_id' => actor()['id'] ?? null,
             'status' => 'pending', 'phone' => $customer['phone'], 'customer' => $customer, 'shipping' => $shipping,
             'payment' => $args['p_payment'], 'payment_status' => 'unpaid', 'invoice' => $args['p_invoice'] ?? null,
-            'note' => $args['p_note'] ?? '', 'staff_note' => '', 'subtotal' => $subtotal, 'install_fee' => $install,
-            'shipping_fee' => $shippingFee, 'discount' => $discount, 'coupon' => $code,
-            'total' => max(0, $subtotal + $install + $shippingFee - $discount),
+              'note' => $args['p_note'] ?? '', 'staff_note' => '', 'subtotal' => $quote['subtotal'], 'install_fee' => $quote['install'],
+            'shipping_fee' => $quote['shipping'], 'discount' => $quote['discount'], 'coupon' => $code,
+            'total' => $quote['total'],
         ], true);
         foreach ($lines as $line) {
             $p = record('products', $line['product']['id'], true);

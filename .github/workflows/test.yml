@@ -24,14 +24,15 @@ jobs:
         run: docker compose exec -T web sh -c 'find server -name "*.php" -exec php -l {} \;'
       - run: docker compose exec -T web php server/cli.php seed
       - run: npm run test:unit
+      - run: npm run test:pricing:php
       - run: npm run test:api
         env:
-          TEST_ADMIN_PHONE: '0912345698'
+          TEST_ADMIN_PHONE: "0912345698"
       - run: docker compose exec -T web php server/cli.php admin 0912345698
       - run: npm run test:hosting
         env:
-          TEST_ADMIN_PHONE: '0912345698'
-          TEST_ADMIN_PASSWORD: 'MysqlTest!2026'
+          TEST_ADMIN_PHONE: "0912345698"
+          TEST_ADMIN_PASSWORD: "MysqlTest!2026"
       - run: npm run test:browser
       - name: SEO build using MySQL
         run: npm run build -- --backend http://127.0.0.1:8080/server/api.php --limit 3

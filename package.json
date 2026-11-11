@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node tools/prerender.mjs --out dist",
     "test": "npm run typecheck && npm run test:unit && npm run test:browser",
-    "test:unit": "node --test tests/unit/rows.test.mjs",
+    "test:unit": "node --test tests/unit/rows.test.mjs tests/unit/pricing.test.mjs tests/unit/datasource.test.mjs",
+    "test:pricing:php": "php tests/unit/pricing.test.php",
     "test:browser": "node tools/package-hosting.mjs && node tests/react/website.test.mjs && node tests/react/product-layout.test.mjs && node tests/react/visual-restore.test.mjs && node tests/react/admin.test.mjs",
     "test:legacy:browser": "node tools/test-browser.mjs",
     "test:build": "node tests/react/prerender.test.mjs dist",

@@ -85,47 +85,50 @@ export function QuotePage({ productId }: { productId?: string }) {
         </div>
       </section>
       <div className="container">
-        <div className="two-col">
-          <section className="section-box">
-            <h2>Tư vấn giải pháp theo nhu cầu</h2>
-            <p>{content.title}</p>
-            <PagedList
+        <div className="quote-layout">
+          <section className="section-box b2b-overview" aria-labelledby="b2b-overview-title">
+            <div className="b2b-overview-top">
+              <div className="b2b-overview-intro">
+                <span className="b2b-eyebrow">Giải pháp cho doanh nghiệp</span>
+                <h2 id="b2b-overview-title">Tư vấn giải pháp<br />theo nhu cầu</h2>
+                <p>{content.title}</p>
+              </div>
+              <PagedList
               items={content.points as string[]}
               className="b2b-points"
               label="Giải pháp doanh nghiệp"
               renderItem={(p, i) => (
                 <div key={i}>
                   <Icon name="check" />
-                  {p}
+                  <span>{p}</span>
                 </div>
               )}
-            />
-            <h3>Quy trình triển khai</h3>
-            <div className="process">
+              />
+            </div>
+            <div className="b2b-process-heading"><h3>Quy trình triển khai</h3><span>4 bước đồng hành cùng bạn</span></div>
+            <ol className="b2b-process">
               {[
                 ["Tiếp nhận", "Yêu cầu, bản vẽ và khối lượng"],
                 ["Khảo sát", "Tư vấn cấu hình phù hợp"],
                 ["Báo giá", "Chi phí và tiến độ rõ ràng"],
                 ["Bàn giao", "Nghiệm thu và bảo hành"],
-              ].map(([title, sub]) => (
-                <div key={title}>
-                  <b>{title}</b>
-                  <span className="muted">{sub}</span>
-                </div>
+              ].map(([title, sub], index) => (
+                <li key={title}>
+                  <span className="b2b-step-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                  <div><h4>{title}</h4><p>{sub}</p></div>
+                </li>
               ))}
-            </div>
-            <p>
-              Hotline doanh nghiệp:{" "}
+            </ol>
+            <div className="b2b-overview-actions">
               <a
-                className="link"
+                className="b2b-phone"
                 href={`tel:${dt.u.tel(dt.config.hotlineB2B || dt.config.hotline)}`}
               >
-                {dt.config.hotlineB2B || dt.config.hotline}
+                <span className="b2b-phone-icon"><Icon name="phone" /></span>
+                <span><small>Hotline doanh nghiệp</small><strong>{dt.config.hotlineB2B || dt.config.hotline}</strong></span>
               </a>
-            </p>
-            <ShopLink className="link" href="du-an.html">
-              Dự án tiêu biểu →
-            </ShopLink>
+              <ShopLink className="btn btn-outline" href="du-an.html">Xem dự án tiêu biểu <Icon name="right" /></ShopLink>
+            </div>
           </section>
           <LeadForm
             type="b2b-quote"

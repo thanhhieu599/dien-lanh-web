@@ -293,18 +293,7 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
         .fetchReviews(p)
         .then((rows: Row[]) => {
           if (!active) return;
-          let local: Row[] = [];
-          if (!dt.backend.enabled) {
-            try {
-              local = (
-                JSON.parse(localStorage.getItem("dt_reviews_v1") || "{}")[
-                  p.id
-                ] || []
-              ).filter((r: Row) => !r.status || r.status === "approved");
-            } catch {
-              /* Dữ liệu demo bị lỗi không ngăn trang sản phẩm hoạt động. */
-            }
-          }
+          const local: Row[] = dt.dataSource.current().localReviews(p.id);
           setReviews([...local, ...rows]);
         })
         .catch(() => {
@@ -420,24 +409,12 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
         rating: Number(data.rating),
         text: data.text.trim(),
       };
-      if (dt.backend.enabled) {
-        await dt.backend.insert("reviews", {
-          ...entry,
-          product_id: product.id,
-        });
-        toast("Đã gửi đánh giá, chờ cửa hàng duyệt");
-      } else {
-        const stored = JSON.parse(
-          localStorage.getItem("dt_reviews_v1") || "{}",
-        );
-        const added = {
-          ...entry,
-          date: new Date().toISOString(),
-          verified: false,
-        };
-        stored[product.id] = [added, ...(stored[product.id] || [])];
-        localStorage.setItem("dt_reviews_v1", JSON.stringify(stored));
-        setReviews([added, ...reviews]);
+      const result = await dt.dataSource
+        .current()
+        .submitReview(product.id, entry);
+      if (result.pending) toast("Đã gửi đánh giá");
+      else {
+        setReviews([result.review, ...reviews]);
         toast("Đã gửi đánh giá");
       }
       form.reset();

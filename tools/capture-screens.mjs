@@ -101,8 +101,6 @@ const closeModal = (page) => page.evaluate(() => document.querySelectorAll('.mod
   await p.click('#co-form button[type=submit]'); await p.waitForURL(/dat-hang-thanh-cong/).catch(() => {});
   await shot(p, 'web-desktop', 'dat-hang-thanh-cong', 'Đặt hàng thành công');
   const code = new URL(p.url()).searchParams.get('code');
-  await go(p, 'frontend/ket-qua-thanh-toan.html');
-  await shot(p, 'web-desktop', 'ket-qua-thanh-toan', 'Kết quả thanh toán online', { full: false });
   await go(p, 'frontend/tra-cuu-don-hang.html');
   await shot(p, 'web-desktop', 'tra-cuu', 'Tra cứu đơn hàng');
   await go(p, `frontend/tra-cuu-don-hang.html?code=${code}&phone=0901234567`);

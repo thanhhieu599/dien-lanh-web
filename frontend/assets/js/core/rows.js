@@ -43,7 +43,7 @@ DT.rows = (() => {
     ['rating', 'rating', num],
     ['reviews'], ['sold'], ['stock'],
     ['badges', 'badges', or([]), or([])],
-    ['gift'], ['installment'],
+    ['gift'],
     ['freeInstall', 'free_install'],
     ['flashSale', 'flash_sale'],
     ['attrs', 'attrs', or({})],

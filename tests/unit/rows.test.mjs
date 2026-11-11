@@ -22,7 +22,7 @@ const legacyProductToView = (r) => ({
   id: r.id, sku: r.sku, slug: r.slug, name: r.name, cat: r.cat, sub: r.sub, sub2: r.sub2 || '', brand: r.brand,
   price: Number(r.price), oldPrice: r.old_price == null ? null : Number(r.old_price),
   rating: Number(r.rating), reviews: r.reviews, sold: r.sold, stock: r.stock,
-  badges: r.badges || [], gift: r.gift, installment: r.installment, freeInstall: r.free_install, flashSale: r.flash_sale,
+  badges: r.badges || [], gift: r.gift, freeInstall: r.free_install, flashSale: r.flash_sale,
   attrs: r.attrs || {}, specs: r.specs || {}, highlights: r.highlights || [], short: r.short || '', warranty: r.warranty || '',
   technology: r.technology || '', origin: r.origin || '',
   description: r.description || '', options: r.options || {}, productTags: r.product_tags || [],
@@ -32,7 +32,7 @@ const legacyProductToView = (r) => ({
 });
 const legacyProductToRow = (p) => ({
   id: p.id, sku: p.sku, slug: p.slug, name: p.name, cat: p.cat, sub: p.sub, sub2: p.sub2 || '', brand: p.brand, price: p.price, old_price: p.oldPrice,
-  rating: p.rating, reviews: p.reviews, sold: p.sold, stock: p.stock, badges: p.badges, gift: p.gift, installment: p.installment,
+  rating: p.rating, reviews: p.reviews, sold: p.sold, stock: p.stock, badges: p.badges, gift: p.gift,
   free_install: p.freeInstall, flash_sale: p.flashSale, attrs: p.attrs, specs: p.specs, highlights: p.highlights, short: p.short,
   description: p.description || '', options: p.options || {}, product_tags: p.productTags || [], requires_shipping: p.requiresShipping !== false,
   weight: p.weight || 0, weight_unit: p.weightUnit || 'g', warranty: p.warranty, technology: p.technology || '', origin: p.origin || '', art: p.art, images: p.images, created_at: p.createdAt,

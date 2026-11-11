@@ -43,7 +43,7 @@ Quản trị › **Xuất Excel MISA** (hoặc nút *Xuất Excel MISA* ở tran
 |---|---|---|
 | Đơn chưa thu tiền / thu một phần | 131 | 5111 (hàng), 5113 (lắp đặt, vận chuyển) |
 | Đã thu – COD (tiền mặt) | 1111 | như trên |
-| Đã thu – chuyển khoản, thẻ, ví, trả góp | 1121 | như trên |
+| Đã thu – chuyển khoản | 1121 | như trên |
 | Thuế GTGT đầu ra | | 33311 |
 | Mã giảm giá (chiết khấu thương mại) | 5211 (TT200) – TT133 để trống | |
 

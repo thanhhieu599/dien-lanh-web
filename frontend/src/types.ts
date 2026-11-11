@@ -29,7 +29,6 @@ export interface Product {
   freeInstall: boolean;
   flashSale: boolean;
   createdAt: string;
-  installment?: boolean;
   productTags: string[];
   requiresShipping: boolean;
   weight: number;

@@ -42,7 +42,7 @@ Menu/route hạn chế theo vai trò; API PHP vẫn kiểm tra quyền ở máy 
 
 CRUD gồm sản phẩm, danh mục/thương hiệu và thứ tự sản phẩm, mã giảm giá nâng cao, banner, bài viết, dự án, FAQ, cửa hàng, dịch vụ, chính sách. Đơn hàng hỗ trợ trạng thái, thanh toán, ghi chú, in và CSV. CRM hỗ trợ khách hàng, địa chỉ, nhãn, ghi chú và lịch sử mua. Nội dung có trang chủ/catalog, tầm nhìn và uy tín. Báo cáo/MISA giữ quy tắc tính hiện hành.
 
-VNPay/MoMo và worker gửi email/Zalo/Telegram chưa được triển khai trên PHP. Trang nhật ký/bảo trì hiển thị dữ liệu và thao tác hàng đợi; không tuyên bố thông báo đã được gửi.
+Thanh toán chỉ có COD và chuyển khoản ngân hàng. Worker gửi email/Zalo/Telegram chưa được triển khai trên PHP. Trang nhật ký/bảo trì hiển thị dữ liệu và thao tác hàng đợi; không tuyên bố thông báo đã được gửi.
 
 ## Quy chuẩn giao diện và nghiệm thu
 

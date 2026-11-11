@@ -191,10 +191,8 @@ export function CheckoutPage() {
   const [invoice, setInvoice] = useState(false);
   const [payment, setPayment] = useState("cod");
   const [busy, setBusy] = useState(false);
-  const [gateways, setGateways] = useState<Row>({});
   useMeta("Thanh toán");
   useEffect(() => {
-    dt.payments.config().then(setGateways);
     dt.analytics?.beginCheckout?.(dt.store.totals());
   }, []);
   const totals = dt.store.totals(undefined, method);
@@ -246,11 +244,6 @@ export function CheckoutPage() {
       });
       if (!order) throw new Error("Giỏ hàng không còn sản phẩm");
       dt.analytics?.purchase?.(order);
-      const provider = dt.payments.PROVIDER[payment];
-      if (provider && gateways[provider]) {
-        await dt.payments.redirect(order.code, order.customer.phone, provider);
-        return;
-      }
       navigate(`/dat-hang-thanh-cong.html?code=${order.code}`);
     } catch (e) {
       toast(e instanceof Error ? e.message : String(e), true);
@@ -377,13 +370,7 @@ export function CheckoutPage() {
             <section className="co-section">
               <h2>3. Phương thức thanh toán</h2>
               <div className="radio-cards">
-                {[
-                  ["cod", "Thanh toán khi nhận hàng (COD)", true],
-                  ["bank", "Chuyển khoản ngân hàng / VietQR", true],
-                  ["card", "Thẻ ATM / Visa / VNPay", !!gateways.vnpay],
-                  ["wallet", "Ví MoMo", !!gateways.momo],
-                ]
-                  .filter(([, , enabled]) => enabled)
+                {Object.entries(dt.payments.METHODS as Record<string, string>)
                   .map(([v, l]) => (
                     <label className="radio-card" key={String(v)}>
                       <input
@@ -638,41 +625,6 @@ export function SuccessPage({ code }: { code: string }) {
     </div>
   ) : (
     <TrackingPage code={code} />
-  );
-}
-export function PaymentResultPage() {
-  const [result, setResult] = useState<Row | null>(null);
-  const [error, setError] = useState("");
-  useMeta("Kết quả thanh toán");
-  useEffect(() => {
-    let current = true;
-    dt.payments
-      .verifyReturn(Object.fromEntries(new URLSearchParams(location.search)))
-      .then((r: Row) => {
-        if (current) setResult(r);
-      })
-      .catch((e: Error) => {
-        if (current) setError(e.message);
-      });
-    return () => {
-      current = false;
-    };
-  }, []);
-  return (
-    <div className="container react-narrow">
-      <h1>Kết quả thanh toán</h1>
-      {error ? (
-        <p role="alert">{error}</p>
-      ) : result ? (
-        <>
-          <p>{result.message}</p>
-          {result.order && <OrderDetails order={result.order} />}
-        </>
-      ) : (
-        <p>Đang kiểm tra giao dịch…</p>
-      )}
-      <ShopLink href="tra-cuu-don-hang.html">Tra cứu đơn hàng</ShopLink>
-    </div>
   );
 }
 export function CollectionPage({ compare = false }: { compare?: boolean }) {

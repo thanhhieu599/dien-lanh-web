@@ -12,7 +12,6 @@ const Checkout = lazy(()=>import('./pages/commerce').then(m=>({default:m.Checkou
 const Tracking = lazy(()=>import('./pages/commerce').then(m=>({default:m.TrackingPage})));
 const Success = lazy(()=>import('./pages/commerce').then(m=>({default:m.SuccessPage})));
 const Collection = lazy(()=>import('./pages/commerce').then(m=>({default:m.CollectionPage})));
-const PaymentResult = lazy(()=>import('./pages/commerce').then(m=>({default:m.PaymentResultPage})));
 const Account = lazy(()=>import('./pages/account').then(m=>({default:m.AccountPage})));
 const Contact = lazy(()=>import('./pages/content').then(m=>({default:m.ContactPage})));
 const Quote = lazy(()=>import('./pages/content').then(m=>({default:m.QuotePage})));
@@ -62,7 +61,6 @@ function CurrentPage() {
     case 'thanh-toan.html':return <Checkout/>;
     case 'dat-hang-thanh-cong.html':return <Success code={query.get('code') || ''}/>;
     case 'tra-cuu-don-hang.html':return <Tracking code={query.get('code') || ''}/>;
-    case 'ket-qua-thanh-toan.html':return <PaymentResult/>;
     case 'tai-khoan.html':return <Account/>;
     case 'yeu-thich.html':return <Collection/>;
     case 'so-sanh.html':return <Collection compare/>;

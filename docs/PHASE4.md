@@ -1,5 +1,7 @@
 # Giai đoạn 4: Thanh toán online, SEO pre-render, thông báo Email/Zalo tự động
 
+> **Đã hủy phần thanh toán online (11/2026).** Cửa hàng chỉ nhận COD và chuyển khoản ngân hàng (VietQR). Các mục VNPay / MoMo bên dưới thuộc bản Supabase cũ, chỉ giữ để tham khảo, không dùng trên hệ thống PHP/MySQL hiện tại.
+
 Tài liệu này hướng dẫn **bật từng tính năng**. Phần nào chưa cấu hình thì website vẫn chạy bình thường: khách vẫn đặt hàng, nhân viên gọi hướng dẫn thanh toán như trước.
 
 ## 1. Đã làm gì, mang lại gì

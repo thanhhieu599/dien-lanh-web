@@ -138,7 +138,6 @@ window.AD = window.AD || {};
       ],
       defaults: () => ({
         active: true,
-        installment: true,
         stock: 0,
         rating: 5,
         reviews: 0,
@@ -304,12 +303,6 @@ window.AD = window.AD || {};
         },
         { key: "gift", label: "Quà tặng / khuyến mãi kèm", col: "third" },
         {
-          key: "installment",
-          label: "Hỗ trợ trả góp",
-          type: "bool",
-          col: "half",
-        },
-        {
           key: "image",
           label: "Ảnh dịch vụ",
           type: "image",
@@ -442,7 +435,6 @@ window.AD = window.AD || {};
               "flash_sale",
               "free_install",
               "gift",
-              "installment",
             ],
           ],
           [

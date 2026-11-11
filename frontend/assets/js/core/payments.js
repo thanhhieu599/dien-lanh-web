@@ -1,44 +1,10 @@
-// Thanh toán qua API PHP/MySQL. COD và VietQR dùng trực tiếp trên hosting.
-// VNPay (thẻ ATM / Visa / Master / JCB / QR ngân hàng), ví MoMo, chuyển khoản VietQR (đối soát tự động qua SePay).
+// Thanh toán: chỉ có 2 phương thức là COD (trả tiền khi nhận hàng) và chuyển khoản ngân hàng (VietQR).
+// Không dùng cổng thanh toán online (thẻ, ví điện tử, trả góp).
 window.DT = window.DT || {};
 
 DT.payments = (() => {
-  const cfg = DT.BACKEND || {};
-  const base = (path) => DT.apiEndpoint(`/payments/${path}`);
-  let cached = null;
-
-  async function call(path, body) {
-    let res;
-    try {
-      res = await fetch(base(path), {
-        method: body === undefined ? 'GET' : 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json', 'X-DT-Request': '1' },
-        body: body === undefined ? undefined : JSON.stringify(body),
-      });
-    } catch {
-      throw new Error('Không kết nối được máy chủ thanh toán, vui lòng kiểm tra mạng');
-    }
-    const d = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(d.error || 'Có lỗi xảy ra, vui lòng thử lại hoặc gọi hotline');
-    return d;
-  }
-
-  // Cổng online chỉ bật sau khi triển khai ký giao dịch và webhook trên máy chủ.
-  function config() {
-    if (!DT.backend?.enabled) return Promise.resolve({ vnpay: false, momo: false, bankAuto: false });
-    cached = cached || call('config').catch(() => ({ vnpay: false, momo: false, bankAuto: false }));
-    return cached;
-  }
-
-  const PROVIDER = { card: 'vnpay', wallet: 'momo' };
-  const start = (code, phone, provider) => call('create', { code, phone, provider });
-  const verifyReturn = (params) => call('return', { params });
-
-  async function redirect(code, phone, provider) {
-    const { payUrl } = await start(code, phone, provider);
-    location.href = payUrl;
-  }
+  // Phương thức hợp lệ, khớp với kiểm tra phía máy chủ (server/shop.php)
+  const METHODS = { cod: 'Thanh toán khi nhận hàng (COD)', bank: 'Chuyển khoản ngân hàng / VietQR' };
 
   // Ảnh QR VietQR: mọi app ngân hàng quét được, tự điền số tiền + nội dung (mã đơn)
   function qrUrl(amount, content) {
@@ -48,7 +14,7 @@ DT.payments = (() => {
     return `https://img.vietqr.io/image/${encodeURIComponent(c.bankBin)}-${encodeURIComponent(c.bankAccount)}-compact2.png?${q}`;
   }
 
-  // Khối thanh toán dưới thông tin đơn (trang đặt hàng thành công, tra cứu đơn, kết quả thanh toán)
+  // Khối thanh toán dưới thông tin đơn (trang đặt hàng thành công, tra cứu đơn)
   function boxHtml(o) {
     const { esc, money } = DT.u;
     if (!o || o.status === 'cancelled' || o.paymentStatus === 'paid') return '';
@@ -67,47 +33,15 @@ DT.payments = (() => {
         <p class="muted" data-bank-note>Quét mã QR bằng app ngân hàng: số tiền và nội dung được điền sẵn. ${o.paymentStatus === 'partial' ? '<b>Đơn hàng đã nhận thanh toán một phần, vui lòng chuyển phần còn lại hoặc gọi hotline.</b>' : ''}</p>
       </div>`;
     }
-    if (o.payment === 'card' || o.payment === 'wallet') {
-      return `<div class="pay-box" data-paybox data-code="${esc(o.code)}" data-phone="${esc(o.customer?.phone || '')}" data-method="${o.payment}">
-        <h3>${DT.icon('card')} Đơn hàng chưa được thanh toán</h3><p class="muted">Đang kiểm tra cổng thanh toán…</p></div>`;
-    }
     return '';
   }
 
-  // Gắn nút thanh toán vào khối data-paybox (cần biết cổng nào đang bật)
-  async function mount(root = document) {
+  // Gắn nút "Sao chép" số tài khoản / nội dung chuyển khoản
+  function mount(root = document) {
     root.querySelectorAll('[data-copy]').forEach((b) => {
       b.onclick = () => { navigator.clipboard?.writeText(b.dataset.copy).then(() => DT.u.toast('Đã sao chép')).catch(() => {}); };
     });
-    const box = root.querySelector('[data-paybox]');
-    const bankNote = root.querySelector('[data-bank-note]');
-    const c = await config();
-    if (bankNote && c.bankAuto) bankNote.insertAdjacentHTML('beforeend', ' Hệ thống <b>tự xác nhận</b> trong 1–2 phút sau khi nhận tiền.');
-    if (!box) return;
-    const p = box.querySelector('p');
-    const opts = [c.vnpay && ['vnpay', 'Thanh toán qua VNPay', 'Thẻ ATM nội địa, Visa, Master, JCB, QR ngân hàng'],
-      c.momo && ['momo', 'Thanh toán bằng ví MoMo', 'Quét mã bằng ứng dụng MoMo']].filter(Boolean);
-    if (!opts.length) {
-      p.innerHTML = DT.backend?.enabled
-        ? `Nhân viên sẽ gọi hướng dẫn thanh toán. Cần hỗ trợ gấp: <a class="link" href="tel:${DT.u.tel(DT.config.hotline)}">${DT.u.esc(DT.config.hotline)}</a>.`
-        : 'Chế độ demo: chưa kết nối cổng thanh toán (xem docs/PHASE4.md để kích hoạt VNPay / MoMo).';
-      return;
-    }
-    const preferred = PROVIDER[box.dataset.method];
-    opts.sort((a, b) => (b[0] === preferred) - (a[0] === preferred));
-    p.outerHTML = `<div class="pay-btns">${opts.map(([k, l, s], i) => `<button type="button" class="btn ${i ? 'btn-outline' : 'btn-accent'} btn-lg" data-pay="${k}"><b>${l}</b><small>${s}</small></button>`).join('')}</div>`;
-    box.querySelectorAll('[data-pay]').forEach((b) => {
-      b.onclick = async () => {
-        box.querySelectorAll('[data-pay]').forEach((x) => { x.disabled = true; });
-        b.querySelector('b').textContent = 'Đang chuyển tới cổng thanh toán…';
-        try { await redirect(box.dataset.code, box.dataset.phone, b.dataset.pay); } catch (e) {
-          DT.u.toast(e.message, 'error');
-          box.querySelectorAll('[data-pay]').forEach((x) => { x.disabled = false; });
-          b.querySelector('b').textContent = opts.find(([k]) => k === b.dataset.pay)[1];
-        }
-      };
-    });
   }
 
-  return { config, start, redirect, verifyReturn, qrUrl, boxHtml, mount, PROVIDER };
+  return { METHODS, qrUrl, boxHtml, mount };
 })();

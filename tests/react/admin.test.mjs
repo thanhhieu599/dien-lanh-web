@@ -384,6 +384,11 @@ try {
   assert.ok((await page.getByRole("textbox").count()) > 0);
   assert.equal(await page.locator(".ce-section .ar-panel, .ce-section .ar-tree").count(), 0);
   await saved("#view .ar-form-foot button", "Đã lưu nội dung website.");
+  await open("orders");
+  // Bộ lọc thanh toán chỉ có COD và chuyển khoản
+  assert.deepEqual(await page.locator("select[name=payment] option").evaluateAll((els) => els.map((el) => el.textContent)), ["Tất cả", "COD", "Chuyển khoản"]);
+  await open("products/1001");
+  assert.equal(await page.getByText("Hỗ trợ trả góp").count(), 0);
   await open("content");
   // Mỗi thẻ cạnh banner trang chủ có ô chọn ảnh nền
   assert.equal(await page.getByText("Ảnh nền thẻ", { exact: true }).count(), 2);

@@ -48,6 +48,14 @@ try {
     }
     await page.click('.b2b-hero-actions a[href="#bao-gia"]');
     await page.waitForFunction(()=>{const r=document.querySelector('#bao-gia').getBoundingClientRect();return r.top<innerHeight&&r.bottom>0;});
+    if (width===1440) {
+      // Thanh toán: chỉ có COD và chuyển khoản ngân hàng
+      await page.evaluate(()=>DT.store.addToCart(DT.products[0].id,1));
+      await open('thanh-toan.html');
+      const methods=await page.locator('input[name=payment]').evaluateAll(els=>els.map(el=>el.value));
+      assert.deepEqual(methods,['cod','bank']);
+      assert.equal(await page.getByText(/VNPay|MoMo|trả góp/i).count(),0);
+    }
     assert.deepEqual(errors,[]);
     await context.close();
   }

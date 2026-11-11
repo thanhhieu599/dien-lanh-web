@@ -157,7 +157,6 @@ function add(p) {
     stock: Math.floor(rand() * 60),
     badges: p.badges || [],
     gift: p.gift || null,
-    installment: price >= 3e6,
     freeInstall: !!p.freeInstall,
     attrs: p.attrs,
     specs: p.specs,

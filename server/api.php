@@ -89,7 +89,6 @@ try {
     }
     if (str_starts_with($route, 'data/')) jsonResponse(dataEndpoint(substr($route, 5), $method, $body));
     if (str_starts_with($route, 'rpc/') && $method === 'POST') jsonResponse(rpcEndpoint(substr($route, 4), $body));
-    if ($route === 'payments/config') jsonResponse(['vnpay'=>false, 'momo'=>false, 'bankAuto'=>false]);
     fail('Không tìm thấy API', 404);
 } catch (HttpError $e) {
     jsonResponse(['message'=>$e->getMessage(), 'error'=>$e->getMessage()], $e->getCode() ?: 400);

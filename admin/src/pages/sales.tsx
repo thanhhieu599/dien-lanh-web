@@ -7,7 +7,8 @@ import type {Row} from '../types';
 export const orderFlow=['pending','confirmed','shipping','installing','done'];
 export const paymentStates=['unpaid','partial','paid','refunded'];
 const leadStates=['new','contacted','quoted','won','lost','spam'];
-const paymentLabels:Row={cod:'COD',bank:'Chuyển khoản',card:'Thẻ (VNPay)',wallet:'Ví MoMo',installment:'Trả góp'};
+// Cửa hàng chỉ nhận 2 phương thức: COD và chuyển khoản ngân hàng
+const paymentLabels:Row={cod:'COD',bank:'Chuyển khoản'};
 export function SalesPage({resource}:{resource:string}){const location=useLocation();const id=location.pathname.split('/')[2];return id?<SaleDetail resource={resource} id={decodeURIComponent(id)}/>:<SaleList resource={resource}/>;}
 function SaleList({resource:key}:{resource:string}){
  const [params]=useSearchParams();const page=Math.max(1,Number(params.get('page'))||1);const size=25;const notice=useNotice();

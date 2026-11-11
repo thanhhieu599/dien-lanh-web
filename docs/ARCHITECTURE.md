@@ -37,7 +37,7 @@ Frontend (`assets/js/core/backend.js`) tự nhận chế độ:
 | Đánh giá | `POST /rest/v1/reviews` (chờ duyệt), `GET` đánh giá đã duyệt |
 | Đăng ký / đăng nhập | Supabase Auth (SĐT ánh xạ thành email nội bộ), bảng `profiles` |
 
-Việc còn lại cho giai đoạn sau: thanh toán online (VNPay/MoMo cần server ký IPN → Supabase Edge Functions), email/Zalo thông báo đơn mới (Database Webhooks), OTP xác minh số điện thoại, SSR/pre-render cho SEO.
+Việc còn lại cho giai đoạn sau: email/Zalo thông báo đơn mới (Database Webhooks), OTP xác minh số điện thoại, SSR/pre-render cho SEO.
 
 ## Giai đoạn 3 – Quản trị (đã triển khai: `admin/`)
 
@@ -50,7 +50,7 @@ Việc còn lại cho giai đoạn sau: thanh toán online (VNPay/MoMo cần ser
 
 ## Giai đoạn 4 – Thanh toán, thông báo, SEO (đã triển khai, hướng dẫn: `docs/PHASE4.md`)
 
-- **Thanh toán**: Edge Function `payments` (Deno, chỉ dùng Web API) tạo link VNPay 2.1.0 / MoMo v2 sau khi `payment_start()` kiểm tra mã đơn + SĐT; nhận IPN, kiểm chữ ký HMAC, `payment_confirm()` so số tiền và chống ghi trùng. Chuyển khoản: VietQR trên website/email, webhook SePay → `payment_bank_transfer()` tìm mã đơn trong nội dung, cộng dồn.
+- **Thanh toán** *(bản Supabase cũ, đã bỏ; hiện chỉ COD + chuyển khoản)*: Edge Function `payments` (Deno, chỉ dùng Web API) tạo link VNPay 2.1.0 / MoMo v2 sau khi `payment_start()` kiểm tra mã đơn + SĐT; nhận IPN, kiểm chữ ký HMAC, `payment_confirm()` so số tiền và chống ghi trùng. Chuyển khoản: VietQR trên website/email, webhook SePay → `payment_bank_transfer()` tìm mã đơn trong nội dung, cộng dồn.
 - **Thông báo**: trigger trên `orders` / `leads` ghi sự kiện vào bảng `notifications` (outbox). pg_cron gọi Edge Function `notify` mỗi phút; mỗi sự kiện gửi tới các kênh đã cấu hình, lưu kết quả từng kênh, kênh lỗi thử lại với độ trễ tăng dần, kênh đã gửi không gửi lại.
 - **SEO**: `tools/prerender.mjs` dùng Chromium chụp HTML sau khi JavaScript vẽ xong → trang tĩnh link đẹp. Trang con có `<base href="../">` và `<body data-q-*>` để script chạy lại như trang gốc (`DT.u.param` đọc từ đó). Link chưa build → `404.html` chuyển về trang động.
 - Logic Edge Function nằm ở `handler.ts` (thuần Web API) nên kiểm thử được bằng Node 22 với database PostgreSQL thật (`supabase/functions/tests/`).

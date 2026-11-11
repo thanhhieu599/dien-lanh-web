@@ -41,4 +41,4 @@ Kiểm thử PHP cần database thử nghiệm đã seed; file `tests/server/adm
 
 ## Giới hạn
 
-Chưa kiểm tra trên hosting production. VNPay/MoMo và worker gửi email/Zalo/Telegram vẫn chưa được triển khai trong backend PHP hiện tại; kiểm thử hàng đợi/bảo trì chỉ xác nhận thao tác dữ liệu, không xác nhận gửi thông báo thực tế.
+Chưa kiểm tra trên hosting production. Thanh toán chỉ có COD và chuyển khoản; worker gửi email/Zalo/Telegram vẫn chưa được triển khai trong backend PHP hiện tại; kiểm thử hàng đợi/bảo trì chỉ xác nhận thao tác dữ liệu, không xác nhận gửi thông báo thực tế.

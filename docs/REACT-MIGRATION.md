@@ -82,7 +82,7 @@ frontend/assets/js/components/trust.js
 
 Giữ lại `assets/js/core/`, `data/`, cấu hình, `components/icons.js`, `art.js`, `analytics.js`, CSS và ảnh vì React hoặc admin đang sử dụng. Giữ các bộ test cũ để đối chiếu hành vi; quản trị hiện hành đã dùng React. Một số test trong `tests/browser/` còn tham chiếu API giao diện cũ như `DT.ui` và `DT.sales`; cần chuyển đổi chúng trước khi chạy với React. Bộ kiểm tra giao diện hiện hành nằm trong `tests/react/`.
 
-VNPay/MoMo và worker thông báo PHP vẫn là các phần chưa triển khai từ giai đoạn MySQL; chuyển giao diện sang React không tự bật các tích hợp này.
+Thanh toán chỉ dùng COD và chuyển khoản (đã bỏ VNPay/MoMo/trả góp, 11/2026). Worker thông báo PHP vẫn là phần chưa triển khai từ giai đoạn MySQL; chuyển giao diện sang React không tự bật các tích hợp này.
 
 ## Quy chuẩn thiết kế storefront
 

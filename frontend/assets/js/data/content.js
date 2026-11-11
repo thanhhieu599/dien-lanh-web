@@ -159,7 +159,7 @@ DT.policies = {
   'doi-tra': { title: 'Chính sách đổi trả', body: `<ul><li><strong>1 đổi 1 trong 30 ngày</strong> nếu lỗi do nhà sản xuất.</li><li>Đổi sang sản phẩm khác trong 7 ngày (sản phẩm còn nguyên hộp, chưa lắp đặt), phí 10%.</li><li>Hoàn tiền trong 3 - 5 ngày làm việc sau khi nhận lại hàng.</li></ul>` },
   'van-chuyen': { title: 'Chính sách vận chuyển & lắp đặt', body: `<ul><li>Miễn phí giao hàng nội thành cho đơn từ 2.000.000₫.</li><li>Giao nhanh trong 2 - 4 giờ tại TP.HCM, Bình Dương, Đồng Nai.</li><li>Lắp đặt chuẩn kỹ thuật hãng; vật tư phát sinh (ống đồng ngoài 3m tiêu chuẩn, giá đỡ…) tính theo bảng giá niêm yết.</li></ul>` },
   'bao-mat': { title: 'Chính sách bảo mật thông tin', body: `<p>Chúng tôi cam kết bảo mật thông tin khách hàng theo Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân. Thông tin chỉ được dùng để xử lý đơn hàng, giao hàng, bảo hành và chăm sóc khách hàng.</p>` },
-  'thanh-toan': { title: 'Phương thức thanh toán', body: `<ul><li>Thanh toán khi nhận hàng (COD).</li><li>Chuyển khoản ngân hàng / QR.</li><li>Thẻ ATM, Visa, Master, JCB qua cổng thanh toán.</li><li>Ví điện tử MoMo, ZaloPay, VNPay.</li><li>Doanh nghiệp: công nợ theo hợp đồng, xuất hóa đơn VAT.</li></ul>` },
+  'thanh-toan': { title: 'Phương thức thanh toán', body: `<ul><li>Thanh toán khi nhận hàng (COD).</li><li>Chuyển khoản ngân hàng (quét mã VietQR, nội dung là mã đơn hàng).</li><li>Doanh nghiệp: chuyển khoản theo kỳ công nợ trong hợp đồng, xuất hóa đơn VAT.</li></ul>` },
 };
 
 // ---------------------------------------------------------------- Uy tín & SEO
@@ -228,7 +228,7 @@ DT.faqs = [
   ['Doanh nghiệp & dự án', 'Có hợp đồng bảo trì định kỳ cho doanh nghiệp không?', 'Có. Hợp đồng bảo trì gồm lịch vệ sinh định kỳ, kiểm tra thông số vận hành, báo cáo tình trạng thiết bị sau mỗi lần và ưu tiên xử lý sự cố.'],
   ['Mua hàng & bảo hành', 'Sản phẩm được bảo hành như thế nào?', 'Sản phẩm chính hãng được bảo hành theo chính sách của nhà sản xuất (thời hạn ghi trên trang sản phẩm). Công lắp đặt do chúng tôi thực hiện được bảo hành 12 tháng. Xem <a href="chinh-sach.html?type=bao-hanh">chính sách bảo hành</a>.'],
   ['Mua hàng & bảo hành', 'Giao hàng và lắp đặt mất bao lâu?', 'Nội thành giao nhanh trong khoảng 2 giờ với sản phẩm có sẵn; lắp đặt theo lịch hẹn của khách hàng. Khu vực khác và đơn số lượng lớn sẽ được thông báo thời gian cụ thể khi xác nhận đơn.'],
-  ['Mua hàng & bảo hành', 'Có những hình thức thanh toán nào?', 'Thanh toán khi nhận hàng (COD), chuyển khoản / quét mã VietQR, thẻ ATM – Visa – Master qua VNPay, và ví MoMo.'],
+  ['Mua hàng & bảo hành', 'Có những hình thức thanh toán nào?', 'Cửa hàng nhận 2 hình thức: thanh toán khi nhận hàng (COD) và chuyển khoản ngân hàng (quét mã VietQR, nội dung là mã đơn hàng). Khách doanh nghiệp có thể thanh toán công nợ theo hợp đồng và nhận hóa đơn VAT.'],
   ['Mua hàng & bảo hành', 'Chính sách đổi trả ra sao?', 'Hỗ trợ 1 đổi 1 trong 30 ngày nếu sản phẩm lỗi do nhà sản xuất. Xem chi tiết tại <a href="chinh-sach.html?type=doi-tra">chính sách đổi trả</a>.'],
 ].map(([category, question, answer], i) => ({ id: i + 1, category, question, answer, sort: i }));
 

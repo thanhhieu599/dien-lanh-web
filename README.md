@@ -56,7 +56,7 @@ Upload nội dung `dist/`, tạo database rồi cấu hình `server/config.local
 - Website và quản trị kết nối API PHP/MySQL mặc định; thông tin database chỉ nằm phía máy chủ.
 - Phiên đăng nhập dùng cookie HttpOnly; mật khẩu dùng `password_hash`, quyền kiểm tra ở mỗi yêu cầu.
 - Máy chủ tính lại giá, phí và mã giảm giá; đặt/hủy đơn dùng transaction, khóa hàng để cập nhật tồn kho.
-- Hỗ trợ COD, VietQR, quản trị nội dung và ảnh trên hosting. VNPay/MoMo, webhook, gửi email/Zalo và cron nhắc bảo trì của bản Supabase cũ **chưa được chuyển sang PHP**; không được bật như tính năng đã hoạt động.
+- **Phương thức thanh toán (chốt 11/2026): chỉ COD và chuyển khoản ngân hàng (VietQR).** Không dùng cổng thẻ, ví điện tử hay trả góp. Gửi email/Zalo và cron nhắc bảo trì của bản Supabase cũ **chưa được chuyển sang PHP**.
 - MySQL lưu bản ghi theo resource/key và JSON để giữ tương thích mô hình dữ liệu hiện có; SKU/slug sản phẩm có unique index. Chưa có bộ nhập dữ liệu từ project Supabase đang chạy.
 
 ## Kiểm thử và SEO

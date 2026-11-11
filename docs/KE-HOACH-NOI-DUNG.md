@@ -40,7 +40,7 @@ Thứ 2 – Thứ 4 – Thứ 6, đăng lúc 8:00. Mỗi tuần 1 bài cụm D (
 | 8 | [B] Có cần nạp gas máy lạnh định kỳ? Dấu hiệu thiếu gas | [A] Chọn vị trí lắp dàn lạnh, cục nóng đúng kỹ thuật | [D] Chi phí lắp điều hòa cho văn phòng: bảng dự toán tham khảo |
 | 9 | [C] Tiền điện máy lạnh 1 tháng bao nhiêu? Cách tự tính theo giá EVN | [B] Vệ sinh máy lạnh tại nhà: làm được gì, khi nào cần thợ | [D] Dự án: tòa văn phòng 6 tầng (case study) |
 | 10 | [A] Tủ đông, tủ mát cho cửa hàng: chọn dung tích & loại cửa | [B] Bảo trì hệ thống điều hòa nhà hàng – môi trường dầu mỡ | [D] Làm mát nhà xưởng mái tôn: giải pháp chống nóng tổng thể |
-| 11 | [C] Máy lạnh cũ hơn 10 năm: sửa hay thay? Bài toán chi phí | [A] Mua máy lạnh trả góp 0%: điều kiện, lưu ý | [D] Quy trình khảo sát – thiết kế – thi công điều hòa dự án |
+| 11 | [C] Máy lạnh cũ hơn 10 năm: sửa hay thay? Bài toán chi phí | [A] Mua máy lạnh cho văn phòng: COD hay chuyển khoản, xuất hóa đơn VAT thế nào | [D] Quy trình khảo sát – thiết kế – thi công điều hòa dự án |
 | 12 | [B] Thu hồi gas & xử lý máy lạnh cũ đúng quy định | [C] Tổng kết: 10 sai lầm khiến máy lạnh tốn điện | [D] Checklist chọn nhà thầu điều hòa cho doanh nghiệp |
 
 ## Sau mỗi bài đăng

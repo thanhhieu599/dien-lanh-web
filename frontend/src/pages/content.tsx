@@ -11,7 +11,7 @@ import {
   useJsonLd,
   useMeta,
 } from "../components/common";
-import { PagedList } from "../components/collections";
+import { NumberedList, PagedList } from "../components/collections";
 import { ProductSection } from "../components/products";
 import type { Row } from "../types";
 import { TrustSection } from "../components/trust";
@@ -144,7 +144,9 @@ export function BlogPage({ slug }: { slug?: string }) {
                 </ShopLink>
               </article>
             ) : (
-              <PagedList
+              <NumberedList
+                key={category}
+                perPage={10}
                 items={dt.posts.filter((p) => !category || p.cat === category)}
                 className="blog-list"
                 label="Bài viết"
@@ -217,16 +219,10 @@ export function BlogPage({ slug }: { slug?: string }) {
   );
 }
 export function FaqPage() {
-  const [query, setQuery] = useState(""),
-    [category, setCategory] = useState("");
-  useMeta("Hỏi đáp thường gặp");
-  const faqs = dt.faqs.filter(
-    (f) =>
-      (!category || f.category === category) &&
-      dt.u
-        .norm(`${f.question} ${f.answer.replace(/<[^>]+>/g, "")}`)
-        .includes(dt.u.norm(query)),
-  );
+  const [category, setCategory] = useState("");
+  useMeta("Hỏi đáp điện lạnh");
+  // Câu hỏi lấy từ Admin › Hỏi đáp (FAQ): chỉ câu đang hiện, theo thứ tự đã đặt
+  const faqs = dt.faqs.filter((f) => !category || f.category === category);
   useJsonLd("FAQPage", {
     mainEntity: dt.faqs.map((f) => ({
       "@type": "Question",
@@ -241,24 +237,7 @@ export function FaqPage() {
     <>
       <section className="page-banner">
         <div className="container">
-          <h1>Hỏi đáp về máy lạnh & điện lạnh</h1>
-          <p>
-            Câu trả lời cho những thắc mắc thường gặp – từ chọn mua, lắp đặt đến
-            sử dụng tiết kiệm điện và bảo trì.
-          </p>
-          <form
-            className="faq-search"
-            role="search"
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <input
-              type="search"
-              aria-label="Tìm câu hỏi"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Nhập câu hỏi, ví dụ: gas R32, 1 HP bao nhiêu m²…"
-            />
-          </form>
+          <h1>Hỏi đáp điện lạnh</h1>
         </div>
       </section>
       <div className="container">
@@ -284,11 +263,10 @@ export function FaqPage() {
           <div>
             <section className="faq-group">
               <h2>
-                {query
-                  ? `Kết quả cho “${query}”`
-                  : category || "Câu hỏi thường gặp"}
+                {category || "Câu hỏi thường gặp"}
               </h2>
-              <PagedList
+              <NumberedList
+                key={category}
                 items={faqs}
                 initialIndex={Math.max(
                   0,
@@ -310,7 +288,7 @@ export function FaqPage() {
                   </details>
                 )}
               />
-              {!faqs.length && <p>Không tìm thấy câu hỏi phù hợp.</p>}
+              {!faqs.length && <p>Chưa có câu hỏi trong nhóm này.</p>}
             </section>
             <section className="section-box faq-ask">
               <div>

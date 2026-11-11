@@ -227,6 +227,21 @@ try {
   await page.locator("[name=promo_title]").fill("");
   await page.locator("[name=promo_href]").fill("");
   await saved();
+  // Hỏi đáp: câu hỏi tạo trong admin hiện trên trang Hỏi đáp điện lạnh của website
+  await open("faqs/new");
+  await page.locator("[name=question]").fill("Câu hỏi kiểm thử React QA?");
+  await page.locator("[name=category]").selectOption("Lắp đặt");
+  await page.locator("[name=answer]").fill("Trả lời kiểm thử.");
+  await saved();
+  const faqId = decodeURIComponent(new URL(page.url()).hash.split("/")[2]);
+  await page.goto(base + "frontend/hoi-dap.html");
+  await page.getByRole("heading", { name: "Hỏi đáp điện lạnh", exact: true }).waitFor();
+  assert.equal(await page.locator(".faq-search").count(), 0, "Không còn ô nhập câu hỏi");
+  await page.locator(".faq-cat", { hasText: "Lắp đặt" }).click();
+  await page.getByText("Câu hỏi kiểm thử React QA?").waitFor();
+  await open("faqs/" + faqId);
+  await page.locator(".ar-head").getByRole("button", { name: "Xóa", exact: true }).click();
+  await page.waitForURL("**/#/faqs");
   // Dịch vụ có ô ảnh dịch vụ; Thương hiệu chia 2 mục: Thông tin & logo, Sản phẩm
   await open("services/ve-sinh");
   assert.equal(await page.locator('[data-field="image"]').count(), 1);

@@ -20,7 +20,7 @@ import {
   ProductSection,
   LISTING_PER_PAGE,
 } from "../components/products";
-import { PagedList } from "../components/collections";
+import { PagedList, Pagination } from "../components/collections";
 import type { Product, Row } from "../types";
 
 export { HomePage } from "./home";
@@ -924,30 +924,6 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
         />
       </div>
     </>
-  );
-}
-
-// Chọn trang dạng « 1 2 3 … 29 »: luôn có trang đầu, trang cuối và 1 trang hai bên trang hiện tại
-export function pageList(page: number, pages: number): (number | "…")[] {
-  const keep = new Set([1, pages, page - 1, page, page + 1, ...(page <= 3 ? [2, 3] : []), ...(page >= pages - 2 ? [pages - 1, pages - 2] : [])]);
-  const list = [...keep].filter((n) => n >= 1 && n <= pages).sort((a, b) => a - b);
-  return list.flatMap((n, i) => (i && n - list[i - 1] > 1 ? (["…", n] as const) : ([n] as const)));
-}
-function Pagination({ page, pages, onPage }: { page: number; pages: number; onPage: (p: number) => void }) {
-  return (
-    <nav className="pager-num" aria-label="Chọn trang sản phẩm">
-      <button type="button" aria-label="Trang trước" disabled={page <= 1} onClick={() => onPage(page - 1)}>«</button>
-      {pageList(page, pages).map((n, i) =>
-        n === "…" ? (
-          <span key={`gap-${i}`} className="pager-gap" aria-hidden="true">…</span>
-        ) : (
-          <button type="button" key={n} className={n === page ? "active" : ""} aria-label={`Trang ${n}`} aria-current={n === page ? "page" : undefined} onClick={() => n !== page && onPage(n)}>
-            {n}
-          </button>
-        ),
-      )}
-      <button type="button" aria-label="Trang sau" disabled={page >= pages} onClick={() => onPage(page + 1)}>»</button>
-    </nav>
   );
 }
 

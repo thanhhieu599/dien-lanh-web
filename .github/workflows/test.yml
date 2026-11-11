@@ -21,6 +21,9 @@ jobs:
       - run: npx playwright install --with-deps chromium
         timeout-minutes: 10
       - run: npm run db:seed
+      # Ảnh tải lên lưu ở server/uploads (không nằm trong git). Apache trong container chạy bằng user khác
+      # chủ thư mục checkout nên không tự tạo được thư mục này -> tạo sẵn và cho phép ghi.
+      - run: mkdir -p server/uploads && chmod 777 server/uploads
       - run: docker compose up -d --build --wait
       - name: PHP syntax
         run: docker compose exec -T web sh -c 'find server -name "*.php" -exec php -l {} \;'

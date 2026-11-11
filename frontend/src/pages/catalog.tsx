@@ -29,17 +29,23 @@ export function ListingPage({
   mode,
   categoryId,
   subId,
+  brandId,
 }: {
-  mode: "category" | "search" | "sale";
+  mode: "category" | "search" | "sale" | "brand";
   categoryId?: string;
   subId?: string;
+  /** Trang thương hiệu: luôn lọc theo thương hiệu này, bộ lọc bên trái giữ nguyên */
+  brandId?: string;
 }) {
   const [params, setParams] = useSearchParams();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const catId = params.get("cat") ?? categoryId ?? "";
   const cat = dt.api.category(catId);
+  const brand = mode === "brand" ? dt.brands.find((b) => b.id === brandId) : undefined;
   const title =
-    mode === "sale"
+    mode === "brand"
+      ? brand?.name || "Thương hiệu"
+      : mode === "sale"
       ? "Khuyến mãi"
       : mode === "search"
         ? `Tìm kiếm: ${params.get("q") || ""}`
@@ -58,7 +64,7 @@ export function ListingPage({
     sub: params.get("sub") ?? (params.has("cat") ? "" : subId || ""),
     sub2: params.get("sub2") || "",
     q: params.get("q") || "",
-    brands: (params.get("brand") || "").split(",").filter(Boolean),
+    brands: brand ? [brand.id] : (params.get("brand") || "").split(",").filter(Boolean),
     price: params.get("price") || "",
     sort: params.get("sort") || "popular",
     flash: mode === "sale",
@@ -99,8 +105,20 @@ export function ListingPage({
     return <Empty heading={1} title="Danh mục không tồn tại" />;
   return (
     <>
-      <Breadcrumb items={[{ label: title }]} />
+      <Breadcrumb items={brand ? [{ label: "Thương hiệu", href: "thuong-hieu.html" }, { label: title }] : [{ label: title }]} />
       <div className="container">
+        {brand ? (
+          // Trang thương hiệu: logo vừa phải và tên thương hiệu ở chính giữa
+          <div className="brand-hero">
+            {brand.logo && (
+              <span className="brand-hero-logo">
+                <Media src={brand.logo} alt={`Logo ${brand.name}`} />
+              </span>
+            )}
+            <h1 id="cat-title">{brand.name}</h1>
+            <p>{brand.origin ? `Xuất xứ ${brand.origin} · ` : ""}{total} sản phẩm chính hãng</p>
+          </div>
+        ) : (
         <div className="cat-hero">
           {cat?.image && (
             <span className="cat-hero-img">
@@ -118,6 +136,7 @@ export function ListingPage({
             )}
           </div>
         </div>
+        )}
         <div className="listing listing-layout">
           <button
             className="btn btn-outline react-filter-toggle"
@@ -140,13 +159,16 @@ export function ListingPage({
                 onChange={(e) => change("cat", e.target.value)}
               >
                 <option value="">Tất cả</option>
-                {dt.categories.map((c) => (
+                {dt.categories
+                  .filter((c) => !brand || dt.products.some((p) => p.brand === brand.id && p.cat === c.id))
+                  .map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
                   </option>
                 ))}
               </select>
             </label>
+            {!brand && (
             <fieldset>
               <legend>Thương hiệu</legend>
               {dt.brands.map((b) => (
@@ -160,6 +182,7 @@ export function ListingPage({
                 </label>
               ))}
             </fieldset>
+            )}
             <label>
               Khoảng giá
               <select
@@ -192,7 +215,7 @@ export function ListingPage({
             <button
               className="btn btn-light"
               onClick={() =>
-                setParams(mode === "category" ? { cat: catId } : {})
+                setParams(mode === "category" ? { cat: catId } : mode === "brand" && params.get("id") ? { id: params.get("id")! } : {})
               }
             >
               Xóa bộ lọc

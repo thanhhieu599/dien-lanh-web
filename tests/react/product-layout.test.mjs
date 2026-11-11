@@ -91,6 +91,15 @@ try {
  await page.waitForFunction(previous=>[...document.querySelectorAll('.listing-main .pcard')].every(card=>!previous.includes(card.dataset.id)),firstPage);
  assert.ok((await listing.locator('.pcard').evaluateAll(cards=>cards.map(card=>card.dataset.id))).every(id=>!firstPage.includes(id)));
  await page.getByRole('button',{name:'Trang trước'}).click();await page.waitForFunction(()=>!new URL(location.href).searchParams.has('page'));
+ // Trang thương hiệu: logo + tên ở giữa, bộ lọc bên trái, chỉ sản phẩm của thương hiệu
+ await open(`thuong-hieu.html?id=${sample.brand}`);
+ const brandName=await page.evaluate(id=>DT.brands.find(b=>b.id===id).name,sample.brand);
+ assert.equal((await page.locator('.brand-hero h1').textContent()).trim(),brandName);
+ assert.equal(await page.locator('#filters').count(),1);
+ assert.equal(await page.locator('#filters legend',{hasText:'Thương hiệu'}).count(),0,'Không cần lọc thương hiệu trong trang thương hiệu');
+ await page.getByLabel('Danh mục').selectOption(sample.category);
+ await page.waitForURL(url=>new URL(url).searchParams.get('cat')===sample.category&&new URL(url).searchParams.get('id')===sample.brand);
+ assert.ok(await page.evaluate(([brand])=>[...document.querySelectorAll('.listing-main .pcard')].every(card=>DT.products.find(p=>String(p.id)===card.dataset.id)?.brand===brand),[sample.brand]));
  // Tên danh mục ở giữa phía trên, ảnh danh mục lớn bên dưới, cao tối đa 400px
  await open(`danh-muc.html?cat=${sample.category}`);
  const heroImg=await page.locator('.cat-hero-img').count()?await page.locator('.cat-hero-img').boundingBox():null;

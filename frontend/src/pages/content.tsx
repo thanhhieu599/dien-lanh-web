@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ListingPage } from "./catalog";
 import { dt, safeImage } from "../services/runtime";
 import {
   Empty,
@@ -59,10 +60,11 @@ export function BrandsPage({ id }: { id?: string }) {
     ? dt.brands.find((b) => b.id === id || b.slug === id)
     : undefined;
   useMeta(brand ? `Thương hiệu ${brand.name}` : "Thương hiệu");
+  // Một thương hiệu: dùng trang danh sách sản phẩm có bộ lọc bên trái, đầu trang là logo + tên ở giữa
+  if (brand) return <ListingPage mode="brand" brandId={brand.id} />;
   return (
     <div className="container">
-      <h1>{brand ? brand.name : "Thương hiệu"}</h1>
-      {!brand ? (
+      <h1>Thương hiệu</h1>
         <div className="brand-wall">
           {dt.brands.map((b) => (
             <ShopLink
@@ -82,35 +84,6 @@ export function BrandsPage({ id }: { id?: string }) {
             </ShopLink>
           ))}
         </div>
-      ) : (
-        <>
-          {brand.logo && (
-            <img
-              className="react-brand-logo"
-              src={safeImage(brand.logo)}
-              alt={brand.name}
-            />
-          )}
-          <p>{brand.origin}</p>
-          {dt.categories
-            .filter((c) =>
-              dt.products.some((p) => p.brand === brand.id && p.cat === c.id),
-            )
-            .map((c) => (
-              <ProductSection
-                key={c.id}
-                title={c.name}
-                href={`${dt.api.catUrl(c.id)}${dt.api.catUrl(c.id).includes("?") ? "&" : "?"}brand=${brand.id}`}
-                products={dt.products.filter(
-                  (p) => p.brand === brand.id && p.cat === c.id,
-                )}
-              />
-            ))}
-          {!dt.products.some((p) => p.brand === brand.id) && (
-            <Empty title="Thương hiệu chưa có sản phẩm" />
-          )}
-        </>
-      )}
     </div>
   );
 }

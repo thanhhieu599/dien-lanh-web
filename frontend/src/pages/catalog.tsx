@@ -47,8 +47,8 @@ export function ListingPage({
       ? brand?.name || "Thương hiệu"
       : mode === "sale"
       ? "Khuyến mãi"
-      : mode === "search"
-        ? `Tìm kiếm: ${params.get("q") || ""}`
+      : mode === "search" && params.get("q")
+        ? `Kết quả tìm kiếm "${params.get("q")}"`
         : cat?.name || "Tất cả sản phẩm";
   const requestedPage = Number(params.get("page"));
   const page =
@@ -65,6 +65,11 @@ export function ListingPage({
     sub2: params.get("sub2") || "",
     q: params.get("q") || "",
     brands: brand ? [brand.id] : (params.get("brand") || "").split(",").filter(Boolean),
+    // Bộ lọc chuyên môn
+    inStock: params.get("stock") === "1",
+    deals: (params.get("deal") || "").split(",").filter(Boolean),
+    origins: (params.get("origin") || "").split(",").filter(Boolean),
+    rating: Number(params.get("rating")) || 0,
     price: params.get("price") || "",
     sort: params.get("sort") || "popular",
     flash: mode === "sale",
@@ -73,6 +78,14 @@ export function ListingPage({
     limit: mode === "sale" ? Math.max(1, dt.products.length) : LISTING_PER_PAGE,
   };
   const { items, total } = dt.api.list(filters);
+  // Xuất xứ có trong phạm vi đang xem (bỏ qua chính bộ lọc xuất xứ để vẫn chọn thêm được)
+  const originChoices: string[] = [
+    ...new Set(
+      (dt.api.list({ ...filters, origins: [], page: 1, limit: dt.products.length || 1 }).items as Product[])
+        .map((p) => dt.api.originOf(p) as string)
+        .filter(Boolean),
+    ),
+  ].sort((a, b) => a.localeCompare(b, "vi"));
   useEffect(() => {
     if (mode === "sale") return;
     const last = Math.max(1, Math.ceil(total / LISTING_PER_PAGE));
@@ -118,6 +131,9 @@ export function ListingPage({
             <h1 id="cat-title">{brand.name}</h1>
             <p>{brand.origin ? `Xuất xứ ${brand.origin} · ` : ""}{total} sản phẩm chính hãng</p>
           </div>
+        ) : mode === "search" ? (
+          // Trang Sản phẩm / tìm kiếm: không dùng khung tiêu đề riêng, tiêu đề nằm trên thanh kết quả
+          <h1 id="cat-title" className="listing-title">{title}</h1>
         ) : (
         <div className="cat-hero">
           {cat?.image && (
@@ -169,19 +185,7 @@ export function ListingPage({
               </select>
             </label>
             {!brand && (
-            <fieldset>
-              <legend>Thương hiệu</legend>
-              {dt.brands.map((b) => (
-                <label className="fopt" key={b.id}>
-                  <input
-                    type="checkbox"
-                    checked={filters.brands.includes(b.id)}
-                    onChange={() => multiple("brand", b.id)}
-                  />
-                  {b.name}
-                </label>
-              ))}
-            </fieldset>
+              <BrandFilter selected={filters.brands} onToggle={(id) => multiple("brand", id)} />
             )}
             <label>
               Khoảng giá
@@ -212,6 +216,12 @@ export function ListingPage({
                 ))}
               </fieldset>
             ))}
+            <ProFilters
+              params={params}
+              origins={originChoices}
+              onToggle={multiple}
+              onSet={change}
+            />
             <button
               className="btn btn-light"
               onClick={() =>
@@ -938,6 +948,97 @@ function Pagination({ page, pages, onPage }: { page: number; pages: number; onPa
       )}
       <button type="button" aria-label="Trang sau" disabled={page >= pages} onClick={() => onPage(page + 1)}>»</button>
     </nav>
+  );
+}
+
+// Thương hiệu: 2 cột, hiện 6 thương hiệu đầu (thương hiệu đang chọn luôn hiện), còn lại bấm "Xem thêm"
+function BrandFilter({ selected, onToggle }: { selected: string[]; onToggle: (id: string) => void }) {
+  const [all, setAll] = useState(false);
+  const brands = dt.brands;
+  const shown = all ? brands : brands.filter((b, i) => i < 6 || selected.includes(b.id));
+  return (
+    <fieldset className="filter-group">
+      <legend>Thương hiệu</legend>
+      <div className="fopt-grid">
+        {shown.map((b) => (
+          <label className={`fopt${selected.includes(b.id) ? " on" : ""}`} key={b.id}>
+            <input type="checkbox" checked={selected.includes(b.id)} onChange={() => onToggle(b.id)} />
+            {b.name}
+          </label>
+        ))}
+      </div>
+      {brands.length > 6 && (
+        <button type="button" className="filter-more" aria-expanded={all} onClick={() => setAll(!all)}>
+          {all ? "Thu gọn" : `Xem thêm ${brands.length - shown.length} thương hiệu`}
+        </button>
+      )}
+    </fieldset>
+  );
+}
+
+// Bộ lọc chuyên môn: tình trạng hàng, ưu đãi & dịch vụ, xuất xứ, đánh giá
+const DEALS: [string, string][] = [
+  ["sale", "Đang giảm giá"],
+  ["flash", "Flash sale"],
+  ["install", "Miễn phí lắp đặt"],
+  ["gift", "Có quà tặng kèm"],
+];
+function ProFilters({
+  params,
+  origins,
+  onToggle,
+  onSet,
+}: {
+  params: URLSearchParams;
+  origins: string[];
+  onToggle: (key: string, value: string) => void;
+  onSet: (key: string, value: string) => void;
+}) {
+  const list = (key: string) => (params.get(key) || "").split(",").filter(Boolean);
+  return (
+    <>
+      <fieldset className="filter-group">
+        <legend>Tình trạng</legend>
+        <label className="fopt">
+          <input type="checkbox" checked={params.get("stock") === "1"} onChange={(e) => onSet("stock", e.target.checked ? "1" : "")} />
+          Chỉ hiện hàng còn sẵn
+        </label>
+      </fieldset>
+      <fieldset className="filter-group">
+        <legend>Ưu đãi & dịch vụ</legend>
+        {DEALS.map(([v, label]) => (
+          <label className="fopt" key={v}>
+            <input type="checkbox" checked={list("deal").includes(v)} onChange={() => onToggle("deal", v)} />
+            {label}
+          </label>
+        ))}
+      </fieldset>
+      {origins.length > 1 && (
+        <fieldset className="filter-group">
+          <legend>Xuất xứ</legend>
+          <div className="fopt-grid">
+            {origins.map((o) => (
+              <label className="fopt" key={o}>
+                <input type="checkbox" checked={list("origin").includes(o)} onChange={() => onToggle("origin", o)} />
+                {o}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
+      <fieldset className="filter-group">
+        <legend>Đánh giá</legend>
+        {[["4.5", "Từ 4.5 sao trở lên"], ["4", "Từ 4 sao trở lên"]].map(([v, label]) => (
+          <label className="fopt" key={v}>
+            <input type="radio" name="rating" checked={params.get("rating") === v} onChange={() => onSet("rating", v)} />
+            {label}
+          </label>
+        ))}
+        {params.get("rating") && (
+          <button type="button" className="filter-more" onClick={() => onSet("rating", "")}>Bỏ lọc đánh giá</button>
+        )}
+      </fieldset>
+    </>
   );
 }
 

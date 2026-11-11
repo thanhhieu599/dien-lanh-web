@@ -91,6 +91,17 @@ try {
  await page.waitForFunction(previous=>[...document.querySelectorAll('.listing-main .pcard')].every(card=>!previous.includes(card.dataset.id)),firstPage);
  assert.ok((await listing.locator('.pcard').evaluateAll(cards=>cards.map(card=>card.dataset.id))).every(id=>!firstPage.includes(id)));
  await page.getByRole('button',{name:'Trang trước'}).click();await page.waitForFunction(()=>!new URL(location.href).searchParams.has('page'));
+ // Trang Sản phẩm: không còn khung "Tìm kiếm:"; bộ lọc chuyên môn lọc đúng
+ await open('tim-kiem.html');
+ assert.equal(await page.locator('.cat-hero').count(),0);
+ assert.equal((await page.locator('#cat-title').textContent()).trim(),'Tất cả sản phẩm');
+ await page.getByLabel('Chỉ hiện hàng còn sẵn').click();await page.waitForURL('**stock=1*');
+ await page.getByLabel('Đang giảm giá').click();await page.waitForURL('**deal=sale*');
+ await page.waitForFunction(()=>{const cards=[...document.querySelectorAll('.listing-main .pcard')];return cards.length>0&&cards.every(card=>{const p=DT.products.find(p=>String(p.id)===card.dataset.id);return p.stock>0&&p.oldPrice>p.price;});});
+ const origin=await page.locator('#filters fieldset',{hasText:'Xuất xứ'}).locator('label').first().innerText();
+ await page.locator('#filters fieldset',{hasText:'Xuất xứ'}).getByLabel(origin.trim()).click();await page.waitForURL('**origin=*');
+ await page.waitForFunction(o=>{const cards=[...document.querySelectorAll('.listing-main .pcard')];return cards.length>0&&cards.every(card=>DT.api.originOf(DT.products.find(p=>String(p.id)===card.dataset.id))===o);},origin.trim());
+ await page.getByRole('button',{name:'Xóa bộ lọc'}).click();await page.waitForFunction(()=>!location.search.includes('stock'));
  // Trang thương hiệu: logo + tên ở giữa, bộ lọc bên trái, chỉ sản phẩm của thương hiệu
  await open(`thuong-hieu.html?id=${sample.brand}`);
  const brandName=await page.evaluate(id=>DT.brands.find(b=>b.id===id).name,sample.brand);

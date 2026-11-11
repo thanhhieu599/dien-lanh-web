@@ -108,6 +108,8 @@ DT.api = (() => {
    * Lọc sản phẩm.
    * @param {{cat?, sub?, brands?: string[], price?: string, attrs?: Object<string,string[]>, q?, sort?, flash?, badge?, page?, limit?}} f
    */
+  // Xuất xứ: trường riêng của sản phẩm, nếu trống lấy từ bảng thông số kỹ thuật
+  const originOf = (p) => String(p.origin || p.specs?.['Xuất xứ'] || '').trim();
   function list(f = {}) {
     let items = DT.products.filter((p) => {
       if (f.cat && !inCategory(p, f.cat)) return false;
@@ -115,6 +117,14 @@ DT.api = (() => {
       if (f.sub2 && p.sub2 !== f.sub2) return false;
       if (f.brands?.length && !f.brands.includes(p.brand)) return false;
       if (f.flash && !p.flashSale) return false;
+      // Bộ lọc chuyên môn: còn hàng, ưu đãi & dịch vụ, xuất xứ, đánh giá tối thiểu
+      if (f.inStock && !(p.stock > 0)) return false;
+      if (f.deals?.length) {
+        const has = { sale: p.oldPrice > p.price, flash: !!p.flashSale, install: !!p.freeInstall, gift: !!p.gift };
+        if (!f.deals.every((d) => has[d])) return false;
+      }
+      if (f.origins?.length && !f.origins.includes(originOf(p))) return false;
+      if (f.rating && !(Number(p.rating) >= f.rating)) return false;
       if (f.badge && !p.badges.includes(f.badge)) return false;
       if (f.ids && !f.ids.includes(p.id)) return false;
       if (f.price) {
@@ -237,6 +247,7 @@ DT.api = (() => {
     postUrl,
     policyUrl,
     brandUrl,
+    originOf,
     list,
     related,
     suggest,

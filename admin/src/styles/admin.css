@@ -67,3 +67,49 @@
 @media(max-width:700px){.ce-thead{display:none}.ce-thead+.ce-trow{border-top:0}.ce-trow{grid-template-columns:minmax(0,1fr)!important;padding:var(--ar-space-3) 0;border-top:1px solid var(--ar-border)}.ce-trow>.ce-tools{justify-self:end}}
 .ce-row-inline{padding:var(--ar-space-2) 0}
 .ce-trow>.ce-tools{justify-content:flex-end}
+/* Bảo trì: tab, chọn kỳ, ô số liệu, biểu đồ, danh sách cần bảo trì */
+.mt-tabs{display:flex;gap:var(--ar-space-1);margin-bottom:var(--ar-space-5);border-bottom:1px solid var(--ar-border);overflow-x:auto}
+.mt-tabs button{padding:10px var(--ar-space-4);border:0;border-bottom:2px solid transparent;background:none;color:var(--ar-muted);font-size:var(--ar-font-14);font-weight:600;white-space:nowrap;cursor:pointer}
+.mt-tabs button.active{border-bottom-color:var(--ar-brand);color:var(--ar-brand)}
+.mt-bar,.mt-filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--ar-space-3);margin-bottom:var(--ar-space-5)}
+.mt-bar>.btn{margin-left:auto}
+.mt-filters>label{display:grid;gap:4px;min-width:180px;font-size:var(--ar-font-13);font-weight:600}
+.mt-count,.mt-range{color:var(--ar-muted);font-size:var(--ar-font-13);align-self:center}
+.mt-count{margin-left:auto}
+.mt-period{display:inline-flex;border:1px solid var(--ar-border);border-radius:8px;overflow:hidden;background:var(--ar-surface)}
+.mt-period button{padding:8px 14px;border:0;border-left:1px solid var(--ar-border);background:none;font-size:var(--ar-font-13);cursor:pointer}
+.mt-period button:first-child{border-left:0}
+.mt-period button.active{background:var(--ar-brand);color:#fff;font-weight:700}
+.mt-kpis small{display:block;margin-top:var(--ar-space-1);color:var(--ar-muted);font-size:var(--ar-font-12)}
+.mt-kpis strong{font-size:var(--ar-font-20)}
+.mt-import{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--ar-space-3)}
+.mt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--ar-space-5);align-items:start}
+.mt-grid>.ar-panel{margin:0}
+.mt-span{grid-column:1/-1}
+.mt-grid h2 small{margin-left:var(--ar-space-2);color:var(--ar-muted);font-size:var(--ar-font-13);font-weight:400}
+.mt-h2{margin-top:var(--ar-space-6)}
+.mt-chart>div{cursor:default}
+.mt-chart span{min-height:2px}
+.mt-empty{margin:0;color:var(--ar-muted);font-size:var(--ar-font-14)}
+.mt-table-toggle summary{cursor:pointer;color:var(--ar-brand);font-size:var(--ar-font-13);font-weight:600;margin-bottom:var(--ar-space-3)}
+.mt-due{font-weight:600;white-space:nowrap}
+.mt-due.overdue{color:var(--ar-danger)}
+.mt-due.soon{color:var(--ar-warning)}
+.mt-due.ok{color:var(--ar-success)}
+.mt-quick{min-height:34px;padding:4px 12px;font-size:var(--ar-font-13)}
+.mt-quick-form{display:flex;flex-wrap:wrap;align-items:center;gap:var(--ar-space-2);min-width:320px}
+.mt-quick-form input,.mt-quick-form select{min-height:36px;padding:4px 8px;font-size:var(--ar-font-13)}
+.mt-quick-form input[type=date]{width:140px}.mt-quick-form input[type=number]{width:120px}.mt-quick-form input[name=technician]{width:130px}
+.mt-quick-form .btn{min-height:36px;padding:4px 12px}
+.mt-rank{margin:0;padding:0 0 0 var(--ar-space-5);display:grid;gap:var(--ar-space-2)}
+.mt-rank li{display:list-item;padding:6px 0;border-bottom:1px solid var(--ar-border)}
+.mt-rank li a{display:inline}
+.mt-rank li b{float:right}
+.mt-share{list-style:none;margin:0;padding:0;display:grid;gap:var(--ar-space-2)}
+.mt-share li{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:var(--ar-space-3);align-items:center;padding:6px 0;border-bottom:1px solid var(--ar-border);font-size:var(--ar-font-14)}
+.mt-share small{color:var(--ar-muted);min-width:90px;text-align:right}
+.mt-share i{position:absolute;left:0;bottom:-1px;height:2px;background:var(--ar-brand)}
+@media(max-width:900px){.mt-grid{grid-template-columns:minmax(0,1fr)}.mt-bar>.btn{margin-left:0}}
+@media(max-width:700px){.mt-filters>label{min-width:100%}.mt-count{margin-left:0}.mt-period{display:flex;width:100%;overflow-x:auto}.mt-period button{flex:1;white-space:nowrap}.mt-quick-form{min-width:0}}
+.mt-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1100px){.mt-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}

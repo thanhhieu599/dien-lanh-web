@@ -48,6 +48,9 @@ const Settings = lazy(() =>
 const Content = lazy(() =>
   import("./pages/content").then((m) => ({ default: m.ContentPage })),
 );
+const Maintenance = lazy(() =>
+  import("./pages/maintenance").then((m) => ({ default: m.MaintenancePage })),
+);
 const Operations = lazy(() =>
   import("./pages/operations").then((m) => ({ default: m.OperationsPage })),
 );
@@ -183,7 +186,8 @@ function CurrentPage() {
   if (resource === "settings") return <Settings />;
   if (["content", "vision", "trust"].includes(resource))
     return <Content resource={resource} />;
-  if (["reports", "notifications", "maintenance", "misa"].includes(resource))
+  if (resource === "maintenance") return <Maintenance />;
+  if (["reports", "notifications", "misa"].includes(resource))
     return <Operations resource={resource} />;
   return (
     <section className="ar-panel">

@@ -38,8 +38,8 @@ export async function bootstrap(){
 export async function loadCache(){
  // Sales/accounts must not fetch resources outside their server-side permissions.
  const role=ad.me?.role;if(role==='sales'){ad.cache={};return;}
- const tables=role==='accountant'?['categories','brands','products']:['categories','brands','services','products'];
- const results=await Promise.all(tables.map(table=>ad.db.list(table,{limit:5000,order:table==='products'?'id.desc':'sort.asc'})));
+ const tables=role==='accountant'?['categories','brands','products']:['categories','brands','services','products','maintenance_contracts'];
+ const results=await Promise.all(tables.map(table=>ad.db.list(table,{limit:5000,order:table==='products'?'id.desc':table==='maintenance_contracts'?'name.asc':'sort.asc'})));
  ad.cache={...ad.cache,...Object.fromEntries(tables.map((t,i)=>[t,results[i].rows]))};
  ad.cache.productMap=new Map((ad.cache.products || []).map((p:Row)=>[String(p.id),{...p,...dt.rows.product.toView(p)}]));dt.brands=ad.cache.brands || dt.brands;
 }

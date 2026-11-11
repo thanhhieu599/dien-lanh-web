@@ -49,9 +49,17 @@ export function ResourceList({ resource: key }: { resource: string }) {
     [key, params.toString()],
   );
   const summary = (row: Row) =>
-    row.name || row.title || row.question || row.code || row.id || row.key;
-  const extra =
-    key === "products"
+    row.name || row.title || row.question || row.code || (row.contract_id ? `Bảo trì ${row.date}` : row.id) || row.key;
+  // Cột riêng khai báo trong resources.js (listColumns): tiền, đúng/sai, tên khách bảo trì
+  const contractName = (id: unknown) =>
+    (ad.cache.maintenance_contracts || []).find((c: Row) => String(c.id) === String(id))?.name || id;
+  const extra = r.listColumns
+    ? r.listColumns.map((c: Row) => ({
+        label: c.label,
+        render: (row: Row) =>
+          c.money ? money(row[c.key]) : c.bool ? (row[c.key] ? "Có" : "Chưa") : c.contract ? contractName(row[c.key]) : row[c.key],
+      }))
+    : key === "products"
       ? [
           { label: "Giá bán", render: (row: Row) => money(row.price) },
           { label: "Tồn kho", key: "stock" },

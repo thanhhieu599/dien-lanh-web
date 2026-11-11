@@ -373,8 +373,13 @@ try {
   const bytes = await fs.readFile(await xlsx.path());
   assert.equal(bytes.subarray(0, 2).toString(), "PK");
   assert.ok(bytes.length > 3000);
-  await open("maintenance");
+  await open("maintenance?tab=reminders");
   assert.match(await page.locator("#view").textContent(), /DTREACTQA/);
+  // Đơn DTREACTQA (đã hoàn thành, có chọn nhắc bảo trì) được gợi ý thêm vào danh sách khách bảo trì
+  await open("maintenance");
+  await page.locator(".mt-import").getByRole("button", { name: "Thêm vào danh sách" }).click();
+  await page.locator(".ar-notices").filter({ hasText: "khách bảo trì từ đơn hàng" }).waitFor();
+  assert.ok((await page.evaluate(() => AD.db.list("maintenance_contracts", { filters: [["source", "eq", "order"]] }))).rows.some((c) => c.order_code === "DTREACTQA"));
   await open("vision");
   assert.equal(await page.locator(".ar-gallery").count(), 10);
   await saved("#view .ar-form-foot button", "Đã lưu nội dung website.");
@@ -384,6 +389,34 @@ try {
   assert.ok((await page.getByRole("textbox").count()) > 0);
   assert.equal(await page.locator(".ce-section .ar-panel, .ce-section .ar-tree").count(), 0);
   await saved("#view .ar-form-foot button", "Đã lưu nội dung website.");
+  // Bảo trì: thống kê, thêm khách, ghi nhận nhanh 1 lần bảo trì có chi phí
+  await open("maintenance");
+  assert.equal(await page.locator(".mt-kpis > div").count(), 8);
+  await open("maintenance_contracts/new");
+  await page.locator("[name=name]").fill("Khách bảo trì QA");
+  await page.locator("[name=phone]").fill("0912 345 699");
+  await page.locator("[name=cycle_months]").selectOption("3");
+  await page.locator("[name=fee_per_visit]").fill("450000");
+  await saved();
+  const qaId = decodeURIComponent(new URL(page.url()).hash.split("/")[2]);
+  const qa = await read("maintenance_contracts", qaId);
+  assert.equal(qa.phone, "0912345699");
+  assert.equal(qa.cycle_months, 3);
+  await open("maintenance");
+  const qaRow = page.locator(".ar-table tr", { hasText: "Khách bảo trì QA" });
+  await qaRow.getByRole("button", { name: "Ghi nhận" }).click();
+  await qaRow.getByLabel("Kỹ thuật viên").fill("KTV QA");
+  await qaRow.getByLabel("Đã thu").check();
+  await qaRow.getByRole("button", { name: "Lưu" }).click();
+  await page.locator(".ar-notices").filter({ hasText: "Đã ghi nhận bảo trì" }).waitFor();
+  const qaVisits = (await page.evaluate((id) => AD.db.list("maintenance_visits", { filters: [["contract_id", "eq", Number(id)]] }), qaId)).rows;
+  assert.equal(qaVisits.length, 1);
+  assert.equal(qaVisits[0].amount, 450000);
+  assert.equal(qaVisits[0].paid, true);
+  await page.locator(".mt-tabs button", { hasText: "Khách đăng ký" }).click();
+  await page.locator(".ar-table").filter({ hasText: "Khách bảo trì QA" }).waitFor();
+  await page.locator(".mt-tabs button", { hasText: "Lịch sử & chi phí" }).click();
+  await page.locator(".ar-table").filter({ hasText: "450.000" }).waitFor();
   await open("orders");
   // Bộ lọc thanh toán chỉ có COD và chuyển khoản
   assert.deepEqual(await page.locator("select[name=payment] option").evaluateAll((els) => els.map((el) => el.textContent)), ["Tất cả", "COD", "Chuyển khoản"]);

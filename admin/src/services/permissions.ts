@@ -4,7 +4,7 @@ export const roles:Record<string,{label:string;home:string}>= {
 };
 export const navigation=[
  {title:'Tổng quan',items:[['dashboard','home','Tổng quan']]},
- {title:'Bán hàng',items:[['orders','cart','Đơn hàng'],['leads','chat','Khách hàng tiềm năng'],['customers','user','Khách hàng'],['maintenance','wrench','Lịch bảo trì']]},
+ {title:'Bán hàng',items:[['orders','cart','Đơn hàng'],['leads','chat','Khách hàng tiềm năng'],['customers','user','Khách hàng'],['maintenance','wrench','Bảo trì']]},
  {title:'Sản phẩm',items:[['products','box','Sản phẩm'],['categories','grid','Danh mục'],['brands','tag','Thương hiệu'],['reviews','star','Đánh giá']]},
  {title:'Marketing',items:[['coupons','percent','Mã giảm giá'],['banners','zap','Banner'],['posts','file','Bài viết'],['vision','eye','Trang Tầm nhìn'],['projects','building','Dự án tiêu biểu'],['faqs','chat','Hỏi đáp (FAQ)'],['trust','shield','Uy tín & đánh giá'],['content','file','Nội dung website']]},
  {title:'Phân tích',items:[['reports','grid','Báo cáo'],['notifications','mail','Nhật ký thông báo'],['misa','file','Xuất Excel MISA']]},

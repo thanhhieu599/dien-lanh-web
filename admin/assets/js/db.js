@@ -23,6 +23,8 @@ AD.PK = {
   profiles: "id",
   payments: "id",
   notifications: "id",
+  maintenance_contracts: "id",
+  maintenance_visits: "id",
 };
 // Bảng có cột riêng tư không cấp quyền đọc (số điện thoại người đánh giá): chỉ đọc các cột công khai
 AD.COLS = {
@@ -431,11 +433,38 @@ AD.demo = () => {
     "services",
     "policies",
   ];
+  // Dữ liệu bảo trì mẫu cho bản demo (đánh dấu [MẪU]): 6 khách, các lần bảo trì trong 14 tháng gần đây
+  function demoMaintenance() {
+    const pad = (n) => String(n).padStart(2, "0");
+    const day = (monthsAgo, d = 10) => {
+      const t = new Date();
+      t.setDate(1);
+      t.setMonth(t.getMonth() - monthsAgo);
+      return `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(d)}`;
+    };
+    const contracts = [
+      { id: 1, name: "[MẪU] Công ty TNHH Điện tử Minh Phát", phone: "0912345601", company: "Minh Phát Electronics", address: "KCN Tân Bình, TP.HCM", devices: "12 × máy âm trần 2.5 HP", units: 12, cycle_months: 3, start_date: day(14, 5), fee_per_visit: 3600000, contract_value: 14400000, status: "active", source: "contract", order_code: "", note: "Bảo trì theo hợp đồng năm" },
+      { id: 2, name: "[MẪU] Nhà hàng Bếp Việt", phone: "0912345602", company: "Bếp Việt", address: "Q.1, TP.HCM", devices: "4 × máy treo tường 2 HP, 1 × tủ mát", units: 5, cycle_months: 4, start_date: day(12, 12), fee_per_visit: 1500000, contract_value: 0, status: "active", source: "referral", order_code: "", note: "" },
+      { id: 3, name: "[MẪU] Anh Trần Văn Nam", phone: "0912345603", company: "", address: "Q.7, TP.HCM", devices: "2 × máy treo tường 1 HP", units: 2, cycle_months: 6, start_date: day(11, 20), fee_per_visit: 300000, contract_value: 0, status: "active", source: "order", order_code: "", note: "" },
+      { id: 4, name: "[MẪU] Văn phòng Luật Hòa An", phone: "0912345604", company: "Hòa An Law", address: "Q.3, TP.HCM", devices: "6 × máy treo tường 1.5 HP", units: 6, cycle_months: 6, start_date: day(9, 3), fee_per_visit: 900000, contract_value: 0, status: "active", source: "website", order_code: "", note: "" },
+      { id: 5, name: "[MẪU] Chị Lê Thu Hà", phone: "0912345605", company: "", address: "Thủ Đức, TP.HCM", devices: "1 × máy treo tường 1 HP", units: 1, cycle_months: 12, start_date: day(13, 8), fee_per_visit: 180000, contract_value: 0, status: "paused", source: "phone", order_code: "", note: "Khách hẹn gọi lại" },
+      { id: 6, name: "[MẪU] Trường Mầm non Hoa Sen", phone: "0912345606", company: "MN Hoa Sen", address: "Bình Tân, TP.HCM", devices: "8 × máy treo tường 1.5 HP", units: 8, cycle_months: 6, start_date: day(1, 15), fee_per_visit: 1200000, contract_value: 0, status: "active", source: "website", order_code: "", note: "Khách mới" },
+    ];
+    const plan = [[1, [14, 11, 8, 5, 2]], [2, [12, 8, 4]], [3, [11, 5]], [4, [9, 3]], [5, [13]]];
+    let id = 0;
+    const visits = plan.flatMap(([cid, months]) => months.map((m, i) => {
+      const c = contracts.find((x) => x.id === cid);
+      return { id: ++id, contract_id: cid, date: day(m, c.start_date.slice(8) * 1), units: c.units, technician: ["Anh Tuấn", "Anh Phúc", "Anh Long"][id % 3], work: "Vệ sinh dàn nóng, dàn lạnh; kiểm tra gas, điện", amount: c.fee_per_visit, payment: id % 2 ? "bank" : "cod", paid: !(cid === 2 && i === months.length - 1), status: "done", note: "", created_at: new Date().toISOString() };
+    }));
+    return { maintenance_contracts: contracts, maintenance_visits: visits };
+  }
   let db = read(KEY, null);
   if (!db) db = seed();
   db.touched = db.touched || {};
   db.crm_customers = db.crm_customers || [];
   db.crm_order_links = db.crm_order_links || {};
+  // Bảo trì: bản demo có sẵn vài khách mẫu để xem thống kê; dữ liệu thật nằm trên MySQL
+  if (!db.maintenance_contracts) Object.assign(db, demoMaintenance());
   const fresh = seed();
   CONTENT.forEach((t) => {
     if (!db.touched[t] || !db[t]) db[t] = fresh[t];
@@ -1060,6 +1089,7 @@ AD.demo = () => {
 
       db.crm_customers = customers;
       db.crm_order_links = links;
+      Object.assign(db, demoMaintenance());
 
       persist();
     },

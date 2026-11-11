@@ -1263,6 +1263,87 @@ window.AD = window.AD || {};
       ],
     },
 
+    // ------------------------------------------------------------------ Bảo trì
+    // Khách đăng ký bảo trì định kỳ. Hạn bảo trì tiếp theo được tính tự động từ lần bảo trì gần nhất + chu kỳ.
+    maintenance_contracts: {
+      title: "Khách đăng ký bảo trì",
+      icon: "wrench",
+      table: "maintenance_contracts",
+      order: "start_date.desc",
+      pageSize: 20,
+      search: ["name", "phone", "company", "address", "devices"],
+      filters: [
+        { key: "status", label: "Trạng thái", options: [["active", "Đang bảo trì"], ["paused", "Tạm dừng"], ["ended", "Đã kết thúc"]] },
+        { key: "cycle_months", label: "Chu kỳ", options: [["1", "Hàng tháng"], ["3", "3 tháng"], ["4", "4 tháng"], ["6", "6 tháng"], ["12", "12 tháng"]] },
+      ],
+      listColumns: [
+        { label: "Điện thoại", key: "phone" },
+        { label: "Thiết bị", key: "units" },
+        { label: "Chu kỳ (tháng)", key: "cycle_months" },
+        { label: "Phí/lần", key: "fee_per_visit", money: true },
+      ],
+      csv: ["id", "name", "phone", "company", "address", "devices", "units", "cycle_months", "start_date", "fee_per_visit", "contract_value", "status", "source", "order_code", "note"],
+      defaults: () => ({ status: "active", cycle_months: 6, units: 1, fee_per_visit: 0, source: "manual", start_date: AD.today() }),
+      fields: [
+        { key: "name", label: "Tên khách hàng", required: true, col: "half" },
+        { key: "phone", label: "Số điện thoại", required: true, col: "half", validate: (v) => (!/^0\d{9,10}$/.test(String(v || "").replace(/\D/g, "")) ? "Số điện thoại 10–11 số, bắt đầu bằng 0" : null) },
+        { key: "company", label: "Công ty / đơn vị", col: "half" },
+        { key: "address", label: "Địa chỉ bảo trì", col: "half" },
+        { key: "devices", label: "Thiết bị bảo trì", type: "textarea", rows: 2, col: "full", placeholder: "Ví dụ: 4 × máy treo tường 1.5 HP Daikin, 1 × tủ mát" },
+        { key: "units", label: "Số thiết bị", type: "number", step: 1, col: "third", def: 1, validate: (v) => (v != null && (v < 0 || !Number.isInteger(v)) ? "Số nguyên ≥ 0" : null) },
+        { key: "cycle_months", label: "Chu kỳ bảo trì", type: "select", required: true, col: "third", options: [["1", "Hàng tháng"], ["2", "2 tháng/lần"], ["3", "3 tháng/lần"], ["4", "4 tháng/lần"], ["6", "6 tháng/lần"], ["12", "12 tháng/lần"]] },
+        { key: "start_date", label: "Ngày bảo trì đầu tiên", type: "date", required: true, col: "third", help: "Hạn tiếp theo = lần bảo trì gần nhất + chu kỳ" },
+        { key: "fee_per_visit", label: "Phí mỗi lần (₫)", type: "money", step: 1, col: "third", def: 0 },
+        { key: "contract_value", label: "Giá trị hợp đồng/năm (₫)", type: "money", step: 1, col: "third", help: "Để trống nếu tính theo từng lần" },
+        { key: "status", label: "Trạng thái", type: "select", required: true, col: "third", options: [["active", "Đang bảo trì"], ["paused", "Tạm dừng"], ["ended", "Đã kết thúc"]] },
+        { key: "source", label: "Nguồn khách", type: "select", col: "third", options: [["order", "Đơn hàng website"], ["website", "Form website"], ["phone", "Gọi điện / Zalo"], ["referral", "Giới thiệu"], ["contract", "Hợp đồng doanh nghiệp"], ["manual", "Nhập tay"]] },
+        { key: "order_code", label: "Mã đơn hàng liên quan", col: "third" },
+        { key: "note", label: "Ghi chú", type: "textarea", rows: 2, col: "full" },
+      ],
+      beforeSave: (row) => {
+        if (row.phone) row.phone = String(row.phone).replace(/\D/g, "");
+        if (row.cycle_months != null) row.cycle_months = Number(row.cycle_months);
+      },
+    },
+
+    // Từng lần bảo trì đã làm / đã hẹn và chi phí khách trả
+    maintenance_visits: {
+      title: "Lần bảo trì & chi phí",
+      icon: "wrench",
+      table: "maintenance_visits",
+      order: "date.desc",
+      pageSize: 20,
+      search: ["technician", "work", "note"],
+      filters: [
+        { key: "contract_id", label: "Khách hàng", options: () => (AD.cache.maintenance_contracts || []).map((c) => [String(c.id), c.name]) },
+        { key: "status", label: "Trạng thái", options: [["done", "Đã bảo trì"], ["scheduled", "Đã hẹn"], ["cancelled", "Đã hủy"]] },
+        { key: "paid", label: "Thanh toán", options: [["true", "Đã thu"], ["false", "Chưa thu"]] },
+      ],
+      listColumns: [
+        { label: "Khách hàng", key: "contract_id", contract: true },
+        { label: "Ngày", key: "date" },
+        { label: "Chi phí", key: "amount", money: true },
+        { label: "Đã thu", key: "paid", bool: true },
+      ],
+      csv: ["id", "contract_id", "date", "status", "units", "technician", "work", "amount", "payment", "paid", "note"],
+      defaults: () => ({ date: AD.today(), status: "done", payment: "cod", paid: false, amount: 0 }),
+      fields: [
+        { key: "contract_id", label: "Khách hàng", type: "select", required: true, col: "half", options: () => (AD.cache.maintenance_contracts || []).map((c) => [String(c.id), `${c.name} · ${c.phone}`]) },
+        { key: "date", label: "Ngày bảo trì", type: "date", required: true, col: "quarter" },
+        { key: "status", label: "Trạng thái", type: "select", required: true, col: "quarter", options: [["done", "Đã bảo trì"], ["scheduled", "Đã hẹn"], ["cancelled", "Đã hủy"]] },
+        { key: "units", label: "Số thiết bị đã làm", type: "number", step: 1, col: "quarter" },
+        { key: "technician", label: "Kỹ thuật viên", col: "quarter" },
+        { key: "amount", label: "Chi phí khách trả (₫)", type: "money", step: 1, required: true, col: "quarter", validate: (v) => (v < 0 || !Number.isInteger(v) ? "Số nguyên ≥ 0" : null) },
+        { key: "payment", label: "Thanh toán", type: "select", col: "quarter", options: [["cod", "Tiền mặt / COD"], ["bank", "Chuyển khoản"]] },
+        { key: "paid", label: "Đã thu tiền", type: "bool", col: "half" },
+        { key: "work", label: "Công việc đã làm", type: "textarea", rows: 2, col: "full", placeholder: "Vệ sinh dàn nóng/lạnh, kiểm tra gas, thay linh kiện…" },
+        { key: "note", label: "Ghi chú", type: "textarea", rows: 2, col: "full" },
+      ],
+      beforeSave: (row) => {
+        if (row.contract_id != null && /^\d+$/.test(String(row.contract_id))) row.contract_id = Number(row.contract_id);
+      },
+    },
+
     policies: {
       title: "Chính sách",
       icon: "shield",

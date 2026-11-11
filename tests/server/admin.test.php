@@ -38,6 +38,22 @@ try {
     checkAdmin(count(endpoint('crm_customer_summary', query:['id'=>'eq.' . $customerId])) === 1, 'CLI profile is visible in CRM');
     $saved = patchAdmin('crm_customers', $customerId, ['tags'=>['VIP'], 'note'=>'Follow up', 'profile_id'=>'forged', 'role'=>'admin']);
     checkAdmin($saved['tags'] === ['VIP'] && $saved['note'] === 'Follow up', 'CRM metadata saves for a profile without a CRM row');
+    // Bảo trì: khách đăng ký + lần bảo trì có chi phí; dữ liệu sai bị chặn
+    $contract = endpoint('maintenance_contracts', 'POST', ['name'=>'QA bảo trì', 'phone'=>'0900000093', 'cycle_months'=>6, 'start_date'=>'2026-01-15', 'fee_per_visit'=>500000, 'units'=>3, 'status'=>'active', 'source'=>'manual'])[0];
+    $created[] = ['maintenance_contracts', $contract['id']];
+    $visit = endpoint('maintenance_visits', 'POST', ['contract_id'=>$contract['id'], 'date'=>'2026-01-15', 'amount'=>500000, 'payment'=>'bank', 'paid'=>true, 'status'=>'done'])[0];
+    $created[] = ['maintenance_visits', $visit['id']];
+    checkAdmin(count(endpoint('maintenance_visits', query:['contract_id'=>'eq.' . $contract['id']])) === 1, 'Maintenance visit is stored for its customer');
+    foreach ([
+        ['maintenance_contracts', ['name'=>'Sai', 'phone'=>'123', 'cycle_months'=>6, 'start_date'=>'2026-01-01', 'status'=>'active'], 'invalid phone'],
+        ['maintenance_contracts', ['name'=>'Sai', 'phone'=>'0900000094', 'cycle_months'=>5, 'start_date'=>'2026-01-01', 'status'=>'active'], 'invalid cycle'],
+        ['maintenance_visits', ['contract_id'=>'missing', 'date'=>'2026-01-15', 'amount'=>1, 'payment'=>'cod'], 'unknown customer'],
+        ['maintenance_visits', ['contract_id'=>$contract['id'], 'date'=>'2026-01-15', 'amount'=>-1, 'payment'=>'cod'], 'negative amount'],
+        ['maintenance_visits', ['contract_id'=>$contract['id'], 'date'=>'2026-01-15', 'amount'=>1, 'payment'=>'card'], 'card payment'],
+    ] as [$table, $row, $label]) {
+        try { endpoint($table, 'POST', $row); throw new RuntimeException("Maintenance must reject $label"); }
+        catch (HttpError $e) { checkAdmin($e->getCode() === 400, "Maintenance rejects $label"); }
+    }
     checkAdmin($saved['profile_id'] === $profile['id'] && $saved['role'] === 'customer', 'CRM edit preserves account identity and role');
     patchAdmin('crm_customers', $customerId, ['phone'=>'0900000093', 'name'=>'Edited customer']);
     $summary = endpoint('crm_customer_summary', query:['profile_id'=>'eq.' . $profile['id']]);

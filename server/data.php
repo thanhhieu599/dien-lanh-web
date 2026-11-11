@@ -15,7 +15,7 @@ function allowed(string $table, string $method, ?array $user, ?array $row = null
         if ($table === 'profiles') return $method === 'GET' && in_array($row['role'] ?? '', ['admin', 'staff', 'sales'], true);
     }
     if ($role === 'accountant') {
-        return $method === 'GET' && in_array($table, ['orders', 'order_items', 'order_status_history', 'payments', 'products', 'categories', 'brands', 'settings', 'profiles', 'crm_customers', 'crm_customer_summary', 'crm_customer_products'], true)
+        return $method === 'GET' && in_array($table, ['orders', 'order_items', 'order_status_history', 'payments', 'products', 'categories', 'brands', 'settings', 'profiles', 'crm_customers', 'crm_customer_summary', 'crm_customer_products', 'maintenance_contracts', 'maintenance_visits'], true)
             || $table === 'orders' && $method === 'PATCH';
     }
     if ($method !== 'GET') return false;
@@ -114,6 +114,21 @@ function validateRow(string $table, array $row): void {
         foreach (['price', 'stock'] as $field) if (!isset($row[$field]) || !is_numeric($row[$field]) || $row[$field] < 0 || floor((float)$row[$field]) != $row[$field]) fail("{$field} không hợp lệ");
         if (!record('categories', $row['cat']) || !record('brands', $row['brand'])) fail('Danh mục hoặc thương hiệu không tồn tại');
     }
+    // Bảo trì: khách đăng ký (hợp đồng) và từng lần bảo trì kèm chi phí
+    if ($table === 'maintenance_contracts') {
+        if (trim((string)($row['name'] ?? '')) === '' || !preg_match('/^0\d{9,10}$/', (string)($row['phone'] ?? ''))) fail('Cần tên khách và số điện thoại hợp lệ');
+        if (!in_array((int)($row['cycle_months'] ?? 0), [1, 2, 3, 4, 6, 12], true)) fail('Chu kỳ bảo trì không hợp lệ');
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($row['start_date'] ?? ''))) fail('Ngày bắt đầu không hợp lệ');
+        if (!in_array($row['status'] ?? '', ['active', 'paused', 'ended'], true)) fail('Trạng thái không hợp lệ');
+        foreach (['units', 'fee_per_visit', 'contract_value'] as $field) if (isset($row[$field]) && $row[$field] !== null && (!is_numeric($row[$field]) || $row[$field] < 0 || floor((float)$row[$field]) != $row[$field])) fail("{$field} phải là số nguyên ≥ 0");
+    }
+    if ($table === 'maintenance_visits') {
+        if (!record('maintenance_contracts', $row['contract_id'] ?? '')) fail('Khách hàng bảo trì không tồn tại');
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($row['date'] ?? ''))) fail('Ngày bảo trì không hợp lệ');
+        if (!isset($row['amount']) || !is_numeric($row['amount']) || $row['amount'] < 0 || floor((float)$row['amount']) != $row['amount']) fail('Chi phí phải là số nguyên ≥ 0');
+        if (!in_array($row['payment'] ?? 'cod', ['cod', 'bank'], true)) fail('Phương thức thanh toán chỉ có COD hoặc chuyển khoản');
+        if (!in_array($row['status'] ?? 'done', ['done', 'scheduled', 'cancelled'], true)) fail('Trạng thái không hợp lệ');
+    }
     if ($table === 'coupons') {
         if (!in_array($row['type'] ?? '', ['percent', 'fixed', 'ship'], true) || ($row['value'] ?? -1) < 0 || ($row['type'] === 'percent' && $row['value'] > 100)) fail('Mã giảm giá không hợp lệ');
     }
@@ -162,7 +177,7 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
     }
     if (!$user) fail('Vui lòng đăng nhập', 401);
     if ($method === 'POST') {
-        if (!allowed($table, $method, $user, $body) || !in_array($table, ['products','categories','brands','coupons','posts','banners','stores','services','policies','settings','projects','faqs','crm_customers'], true)) fail('Không có quyền tạo dữ liệu', 403);
+        if (!allowed($table, $method, $user, $body) || !in_array($table, ['products','categories','brands','coupons','posts','banners','stores','services','policies','settings','projects','faqs','crm_customers','maintenance_contracts','maintenance_visits'], true)) fail('Không có quyền tạo dữ liệu', 403);
         validateRow($table, $body);
         return [put($table, $body, true)];
     }

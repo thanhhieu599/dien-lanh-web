@@ -91,10 +91,10 @@ try {
  await page.waitForFunction(previous=>[...document.querySelectorAll('.listing-main .pcard')].every(card=>!previous.includes(card.dataset.id)),firstPage);
  assert.ok((await listing.locator('.pcard').evaluateAll(cards=>cards.map(card=>card.dataset.id))).every(id=>!firstPage.includes(id)));
  await page.getByRole('button',{name:'Trang trước'}).click();await page.waitForFunction(()=>!new URL(location.href).searchParams.has('page'));
- // Ảnh danh mục là ảnh nhỏ cạnh tên
+ // Tên danh mục ở giữa phía trên, ảnh danh mục lớn bên dưới, cao tối đa 400px
  await open(`danh-muc.html?cat=${sample.category}`);
  const heroImg=await page.locator('.cat-hero-img').count()?await page.locator('.cat-hero-img').boundingBox():null;
- if(heroImg)assert.ok(heroImg.height<=80&&heroImg.width<=80,'Ảnh danh mục không được chiếm cả màn hình');
+ if(heroImg)assert.ok(heroImg.height<=400,'Ảnh danh mục lớn nhưng không vượt 400px chiều cao');
  await page.getByLabel('Sắp xếp').selectOption('price-asc');
  await page.waitForURL('**sort=price-asc');
  assert.ok(!new URL(page.url()).searchParams.has('page'),'Đổi bộ lọc trở về lượt đầu');

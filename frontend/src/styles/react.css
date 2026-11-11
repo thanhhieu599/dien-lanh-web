@@ -2767,36 +2767,55 @@ button:disabled {
   }
 }
 
-/* Trang danh mục: ảnh danh mục nhỏ bên cạnh tên, không chiếm cả màn hình */
-.cat-hero {
-  justify-content: flex-start;
+/* Trang danh mục: tên danh mục ở chính giữa phía trên, ảnh danh mục lớn bên dưới */
+.cat-hero:has(.cat-hero-img) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.cat-hero:has(.cat-hero-img) > div:last-child {
+  order: -1;
+  padding: 20px 24px 8px;
+  text-align: center;
+}
+.cat-hero:has(.cat-hero-img) h1 {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.25;
 }
 .cat-hero-img {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 72px;
-  height: 72px;
+  display: block;
+  height: 400px;
   overflow: hidden;
-  background: var(--bg, #f5f7fa);
+  background: #fff;
 }
 .cat-hero-img img,
 .cat-hero-img .react-placeholder {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
+  padding: 8px 24px 20px;
 }
-@media (max-width: 768px) {
-  .cat-hero {
-    flex-direction: row;
-    align-items: center;
-    padding: 14px 16px;
-  }
+@media (max-width: 992px) {
   .cat-hero-img {
-    width: 56px;
-    height: 56px;
+    height: 300px;
   }
-  .cat-hero h1 {
+  .cat-hero:has(.cat-hero-img) h1 {
+    font-size: 24px;
+  }
+}
+@media (max-width: 600px) {
+  .cat-hero-img {
+    height: 220px;
+  }
+  .cat-hero:has(.cat-hero-img) > div:last-child {
+    padding: 14px 16px 4px;
+  }
+  .cat-hero:has(.cat-hero-img) h1 {
     font-size: 20px;
   }
 }

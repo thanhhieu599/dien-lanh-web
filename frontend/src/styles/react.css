@@ -2744,3 +2744,25 @@ button:disabled {
   display: inline;
   overflow-wrap: anywhere;
 }
+
+/* Trang Giới thiệu: ô số liệu co theo màn hình, không đẩy trang tràn ngang ở 320px */
+.about-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.about-stat {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 768px) {
+  .about-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 380px) {
+  .about-stat {
+    padding: 14px 10px;
+  }
+  .about-stat b {
+    font-size: 24px;
+  }
+}

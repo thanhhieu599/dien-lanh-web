@@ -379,11 +379,20 @@ try {
   assert.equal(await page.locator(".ar-gallery").count(), 10);
   await saved("#view .ar-form-foot button", "Đã lưu nội dung website.");
   await open("trust");
+  // Mỗi mục hiện riêng, chọn ở cột trái; không còn khung lồng khung
+  await page.locator(".ce-nav button", { hasText: "Google Business" }).click();
   assert.ok((await page.getByRole("textbox").count()) > 0);
+  assert.equal(await page.locator(".ce-section .ar-panel, .ce-section .ar-tree").count(), 0);
   await saved("#view .ar-form-foot button", "Đã lưu nội dung website.");
   await open("content");
   // Mỗi thẻ cạnh banner trang chủ có ô chọn ảnh nền
   assert.equal(await page.getByText("Ảnh nền thẻ", { exact: true }).count(), 2);
+  // Sửa 1 số liệu ở mục Giới thiệu thương hiệu, lưu và đọc lại từ dữ liệu
+  await page.locator(".ce-nav button", { hasText: "Giới thiệu thương hiệu" }).click();
+  await page.getByLabel("Giá trị 1", { exact: true }).fill("12+");
+  await saved("#view .ar-form-foot button", "Đã lưu nội dung website.");
+  assert.equal((await read("settings", "home")).value.story.stats[0].value, "12+");
+  await page.getByLabel("Giá trị 1", { exact: true }).fill("10+");
   await saved("#view .ar-form-foot button", "Đã lưu nội dung website.");
   await open("settings");
   assert.equal(

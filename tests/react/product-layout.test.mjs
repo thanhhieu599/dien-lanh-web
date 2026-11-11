@@ -24,7 +24,11 @@ try {
   const issues=await page.evaluate(()=>{
    const issues=[];
    if(document.documentElement.scrollWidth>innerWidth+1)issues.push('Tràn ngang trang');
-   for(const list of document.querySelectorAll('[data-collection-items]'))if(list.children.length>5)issues.push('Danh sách hiển thị quá 5 mục');
+   // Cột chân trang hiện đủ liên kết (tối đa 12), các danh sách khác tối đa 5
+   for(const list of document.querySelectorAll('[data-collection-items]'))if(list.children.length>(list.closest('.footer-col')?12:5))issues.push('Danh sách hiển thị quá số mục cho phép');
+   // Cột "Về công ty" (8 liên kết) hiện đủ, không cần bấm "Xem thêm"
+   const about=[...document.querySelectorAll('.footer-col')].find(c=>c.querySelector('h4')?.textContent.startsWith('Về '));
+   if(about&&about.querySelectorAll('[data-collection-items] > *').length<8)issues.push('Cột chân trang chưa hiện đủ liên kết');
    if(document.querySelector('.product-pagination'))issues.push('Vẫn còn dòng đếm/nút quay lại cũ');
    for(const grid of document.querySelectorAll('.pgrid')) {
     const cards=[...grid.querySelectorAll(':scope > .pcard')];

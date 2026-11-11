@@ -13,6 +13,9 @@ import type { Row } from "../types";
 import { PagedList } from "../components/collections";
 import { Icon, Picture, ShopLink, Rich } from "../components/common";
 
+// Cột chân trang hiện đủ liên kết; chỉ hiện "Xem thêm" khi danh sách dài hơn mức này
+const FOOTER_LINKS = 12;
+
 export function ShopLayout({ children }: { children: ReactNode }) {
   const state = useShop();
   const navigate = useNavigate();
@@ -575,6 +578,7 @@ export function ShopLayout({ children }: { children: ReactNode }) {
                   },
                 ]}
                 label="Hỗ trợ khách hàng"
+                pageSize={FOOTER_LINKS}
                 renderItem={(p) => (
                   <ShopLink key={p.key} href={p.href}>
                     {p.title}
@@ -605,6 +609,7 @@ export function ShopLayout({ children }: { children: ReactNode }) {
                   { title: "Liên hệ - Góp ý", href: "lien-he.html" },
                 ]}
                 label="Thông tin công ty"
+                pageSize={FOOTER_LINKS}
                 renderItem={(m) => (
                   <ShopLink href={m.href} key={m.href}>
                     {m.title}

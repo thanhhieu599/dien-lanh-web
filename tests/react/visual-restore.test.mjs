@@ -119,7 +119,7 @@ try {
         if (document.documentElement.scrollWidth > innerWidth + 1)
           issues.push("Tràn ngang");
         for (const list of document.querySelectorAll("[data-collection-items]"))
-          if (list.children.length > 5) issues.push("Quá 5 mục");
+          if (list.children.length > (list.closest(".footer-col") ? 12 : 5)) issues.push("Quá 5 mục");
         for (const section of document.querySelectorAll(
           ".gallery,.pd-info,.aside-box,.svc-book>.react-form,.blog-item,.map-box,.auth-wrap",
         )) {

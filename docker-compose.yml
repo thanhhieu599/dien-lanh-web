@@ -25,7 +25,9 @@ services:
       - mysql-data:/var/lib/mysql
       - ./server/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u$$MYSQL_USER -p$$MYSQL_PASSWORD --silent"]
+      # Kiểm tra qua TCP (127.0.0.1): MySQL chạy bản tạm khi khởi tạo chỉ mở socket nội bộ,
+      # ping qua "localhost" (socket) báo sẵn sàng quá sớm rồi máy chủ tắt để khởi động lại.
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --protocol=TCP -u$$MYSQL_USER -p$$MYSQL_PASSWORD --silent"]
       interval: 5s
       timeout: 5s
       retries: 30

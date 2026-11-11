@@ -194,6 +194,17 @@ try {
     (await read("categories", "may-lanh")).subs,
     category.subs || [],
   );
+  // Ảnh quảng cáo trang chủ của danh mục: có ô tải ảnh, chữ và liên kết lưu đúng
+  assert.equal(await page.locator('[data-field="promo_image"]').count(), 1);
+  await page.locator("[name=promo_title]").fill("Máy lạnh QA");
+  await page.locator("[name=promo_href]").fill("khuyen-mai.html");
+  await saved();
+  const promoCat = await read("categories", "may-lanh");
+  assert.equal(promoCat.promo_title, "Máy lạnh QA");
+  assert.equal(promoCat.promo_href, "khuyen-mai.html");
+  await page.locator("[name=promo_title]").fill("");
+  await page.locator("[name=promo_href]").fill("");
+  await saved();
   await open("brands/new");
   await page.locator("[name=name]").fill("Thương hiệu React QA");
   await saved();
@@ -371,6 +382,8 @@ try {
   assert.ok((await page.getByRole("textbox").count()) > 0);
   await saved("#view .ar-form-foot button", "Đã lưu nội dung website.");
   await open("content");
+  // Mỗi thẻ cạnh banner trang chủ có ô chọn ảnh nền
+  assert.equal(await page.getByText("Ảnh nền thẻ", { exact: true }).count(), 2);
   await saved("#view .ar-form-foot button", "Đã lưu nội dung website.");
   await open("settings");
   assert.equal(

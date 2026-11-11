@@ -261,7 +261,7 @@ DT.trustData = () => {
 // [chữ có {ký hiệu}|chữ thay thế] = dùng chữ thay thế khi ký hiệu chưa có dữ liệu (vd chưa đặt ngưỡng miễn phí ship).
 DT.siteContentDefaults = {
   mini: [
-    { title: 'Flash Sale\ngiảm đến 25%', sub: 'Số lượng có hạn mỗi ngày', cta: 'Săn ngay', href: 'khuyen-mai.html' },
+    { title: 'Flash Sale\ngiảm đến 25%', sub: 'Số lượng có hạn mỗi ngày', cta: 'Săn ngay', href: 'khuyen-mai.html', image: '' },
     { title: 'Vệ sinh máy lạnh\n[chỉ từ {gia_ve_sinh}|tận nơi]', sub: 'Thợ đến trong 2 giờ', cta: 'Đặt lịch', href: 'dich-vu.html' },
   ],
   story: {
@@ -297,7 +297,7 @@ DT.siteContent = (saved = DT.homeContent) => {
   const d = DT.siteContentDefaults; const o = saved || {};
   const obj = (k) => ({ ...d[k], ...(o[k] || {}) });
   const list = (k) => (Array.isArray(o[k]) && o[k].length ? o[k] : d[k]);
-  return { mini: list('mini'), story: obj('story'), b2b: obj('b2b'), flash: obj('flash'), benefits: list('benefits'), salesPolicy: list('salesPolicy'), newsletter: obj('newsletter') };
+  return { mini: list('mini').map((m) => ({ image: '', ...m })), story: obj('story'), b2b: obj('b2b'), flash: obj('flash'), benefits: list('benefits'), salesPolicy: list('salesPolicy'), newsletter: obj('newsletter') };
 };
 // Thay ký hiệu & định dạng chữ (đã an toàn HTML)
 DT.siteText = (s, { rich = false } = {}) => {

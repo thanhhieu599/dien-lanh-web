@@ -32,6 +32,7 @@ export function PagedList<T>({
   label = "Danh sách",
   initialIndex = 0,
   variant = "button",
+  pageSize = ITEMS_PER_PAGE,
 }: {
   items: T[];
   renderItem: (item: T, index: number) => ReactNode;
@@ -39,6 +40,7 @@ export function PagedList<T>({
   label?: string;
   initialIndex?: number;
   variant?: Variant;
+  pageSize?: number;
 }) {
   const identity = items
     .map(
@@ -60,6 +62,7 @@ export function PagedList<T>({
       label={label}
       initialIndex={initialIndex}
       variant={variant}
+      pageSize={pageSize}
     />
   );
 }
@@ -70,6 +73,7 @@ function CollectionPage<T>({
   label,
   initialIndex,
   variant,
+  pageSize,
 }: {
   items: T[];
   renderItem: (item: T, index: number) => ReactNode;
@@ -77,16 +81,17 @@ function CollectionPage<T>({
   label: string;
   initialIndex: number;
   variant: Variant;
+  pageSize: number;
 }) {
   const [page, setPage] = useState(
-    Math.max(0, Math.floor(initialIndex / ITEMS_PER_PAGE)),
+    Math.max(0, Math.floor(initialIndex / pageSize)),
   );
   const id = useId(),
     list = useRef<HTMLDivElement>(null);
-  const pages = Math.ceil(items.length / ITEMS_PER_PAGE);
+  const pages = Math.ceil(items.length / pageSize);
   const current = Math.min(page, Math.max(0, pages - 1));
-  const start = current * ITEMS_PER_PAGE;
-  const more = items.length > ITEMS_PER_PAGE;
+  const start = current * pageSize;
+  const more = items.length > pageSize;
   function go(target: number) {
     setPage(target);
     requestAnimationFrame(() => {
@@ -111,7 +116,7 @@ function CollectionPage<T>({
         data-collection-items
       >
         {items
-          .slice(start, start + ITEMS_PER_PAGE)
+          .slice(start, start + pageSize)
           .map((item, index) => renderItem(item, start + index))}
       </div>
       {more &&

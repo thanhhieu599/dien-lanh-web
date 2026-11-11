@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { dt, money, toast } from "../services/runtime";
+import { dt, money, safeImage, toast } from "../services/runtime";
 import { useShop } from "../hooks/useShop";
 import { Empty, Icon, Modal, Picture, ShopLink, Stars } from "./common";
 import type { Product } from "../types";
@@ -151,10 +151,12 @@ export function ProductGrid({
   products,
   flash = false,
   paginated = true,
+  pageSize,
 }: {
   products: Product[];
   flash?: boolean;
   paginated?: boolean;
+  pageSize?: number;
 }) {
   return products.length ? (
     paginated ? (
@@ -162,6 +164,7 @@ export function ProductGrid({
         key={products.map((p) => p.id).join(",")}
         products={products}
         flash={flash}
+        pageSize={pageSize}
       />
     ) : (
       <div className="product-results">
@@ -182,9 +185,11 @@ export const PRODUCTS_PER_PAGE = ITEMS_PER_PAGE;
 function ProductResults({
   products,
   flash,
+  pageSize,
 }: {
   products: Product[];
   flash: boolean;
+  pageSize?: number;
 }) {
   return (
     <div className="product-results">
@@ -193,6 +198,7 @@ function ProductResults({
         className="pgrid"
         label="Sản phẩm"
         variant="arrow"
+        pageSize={pageSize}
         renderItem={(p) => <ProductCard key={p.id} product={p} flash={flash} />}
       />
     </div>
@@ -204,6 +210,8 @@ export function CategorySection({
   category: import("../types").Category;
 }) {
   const products = dt.api.list({ cat: c.id, sort: "category" }).items;
+  // Ảnh quảng cáo cột đầu: chọn trong Admin › Danh mục › Ảnh quảng cáo trang chủ
+  const promo = safeImage(c.promo_image);
   return (
     <section className="section section-box" data-block={c.id}>
       <div className="section-head">
@@ -213,9 +221,26 @@ export function CategorySection({
           <Icon name="right" />
         </ShopLink>
       </div>
-      <div className="block-body">
-        <ProductGrid products={products} />
-      </div>
+      {promo ? (
+        <div className="block-body cat-promo-layout">
+          <ShopLink
+            className="cat-promo"
+            href={c.promo_href || dt.api.catUrl(c.id)}
+            aria-label={`${c.promo_title || c.name} - Xem ngay`}
+          >
+            <img src={promo} alt="" loading="lazy" />
+            <span className="cat-promo-text">
+              <b>{c.promo_title || c.name}</b>
+              <em>Xem ngay</em>
+            </span>
+          </ShopLink>
+          <ProductGrid products={products} pageSize={4} />
+        </div>
+      ) : (
+        <div className="block-body">
+          <ProductGrid products={products} />
+        </div>
+      )}
     </section>
   );
 }

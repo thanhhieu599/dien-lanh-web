@@ -47,6 +47,10 @@ export interface Category {
   short: string;
   icon: string;
   image?: string;
+  /** Ảnh quảng cáo dọc ở cột đầu dải sản phẩm trang chủ */
+  promo_image?: string;
+  promo_title?: string;
+  promo_href?: string;
   subs: SubGroup[];
   filters: Row[];
   product_ids?: number[];

@@ -540,6 +540,28 @@ window.AD = window.AD || {};
           col: "full",
         },
         {
+          key: "promo_image",
+          label: "Ảnh quảng cáo trang chủ (cột đầu dải sản phẩm)",
+          type: "image",
+          folder: "categories",
+          col: "full",
+          help: "Ảnh dọc khoảng 600 × 900 px (tỉ lệ 2:3), hiện ở cột đầu tiên của dải danh mục trên trang chủ. Để trống = dải chỉ có sản phẩm như cũ.",
+        },
+        {
+          key: "promo_title",
+          label: "Chữ trên ảnh quảng cáo",
+          col: "half",
+          placeholder: "GĂNG TAY TOWA",
+          help: "Để trống = dùng tên danh mục",
+        },
+        {
+          key: "promo_href",
+          label: "Liên kết khi bấm ảnh quảng cáo",
+          col: "half",
+          placeholder: "danh-muc.html?cat=may-lanh",
+          help: "Để trống = mở trang danh mục này",
+        },
+        {
           key: "_category_products",
           type: "custom",
           col: "full",

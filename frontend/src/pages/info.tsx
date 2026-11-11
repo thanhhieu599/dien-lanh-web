@@ -76,65 +76,92 @@ export function ContactPage() {
 export function QuotePage({ productId }: { productId?: string }) {
   useMeta("Báo giá dự án doanh nghiệp");
   const content = dt.siteContent().b2b;
+  const hotline = dt.config.hotlineB2B || dt.config.hotline;
+  const pointIcons = ["building", "file", "card", "tool", "shield", "clock"];
+  const steps = [
+    ["Tiếp nhận", "Yêu cầu, bản vẽ và khối lượng"],
+    ["Khảo sát", "Đo đạc hiện trạng, tư vấn cấu hình phù hợp"],
+    ["Báo giá", "Chi phí, tiến độ và điều khoản rõ ràng"],
+    ["Thi công & bàn giao", "Nghiệm thu, hồ sơ và bảo hành"],
+  ];
   return (
     <>
-      <section className="page-banner">
+      <section className="page-banner b2b-hero">
         <div className="container">
-          <h1>Giải pháp điều hòa & điện lạnh cho doanh nghiệp</h1>
+          <span className="b2b-eyebrow">Khách hàng doanh nghiệp</span>
+          <h1>{content.title}</h1>
           <p>{content.desc}</p>
+          <div className="b2b-hero-actions">
+            <a className="btn btn-primary" href="#bao-gia">
+              {content.btn || "Yêu cầu báo giá dự án"}
+            </a>
+            <a className="btn b2b-btn-light" href={`tel:${dt.u.tel(hotline)}`}>
+              <Icon name="phone" /> {hotline}
+            </a>
+          </div>
+          {(content.stats || []).length > 0 && (
+            <dl className="b2b-hero-stats">
+              {(content.stats as Row[]).slice(0, 4).map((st) => (
+                <div key={st.label}>
+                  <dt>{st.label}</dt>
+                  <dd>{st.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
         </div>
       </section>
       <div className="container">
-        <div className="quote-layout">
-          <section className="section-box b2b-overview" aria-labelledby="b2b-overview-title">
-            <div className="b2b-overview-top">
-              <div className="b2b-overview-intro">
-                <span className="b2b-eyebrow">Giải pháp cho doanh nghiệp</span>
-                <h2 id="b2b-overview-title">Tư vấn giải pháp<br />theo nhu cầu</h2>
-                <p>{content.title}</p>
+        <div className="quote-layout b2b-layout">
+          <div className="b2b-main">
+            <section className="section-box b2b-card" aria-labelledby="b2b-why">
+              <h2 id="b2b-why">Vì sao doanh nghiệp chọn chúng tôi</h2>
+              <ul className="b2b-benefits">
+                {(content.points as string[]).slice(0, 6).map((p, i) => (
+                  <li key={i}>
+                    <span className="b2b-benefit-icon"><Icon name={pointIcons[i % pointIcons.length]} /></span>
+                    <span>{p}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+            <section className="section-box b2b-card" aria-labelledby="b2b-steps">
+              <div className="b2b-card-head">
+                <h2 id="b2b-steps">Quy trình triển khai</h2>
+                <span>{steps.length} bước đồng hành cùng bạn</span>
               </div>
-              <PagedList
-              items={content.points as string[]}
-              className="b2b-points"
-              label="Giải pháp doanh nghiệp"
-              renderItem={(p, i) => (
-                <div key={i}>
-                  <Icon name="check" />
-                  <span>{p}</span>
-                </div>
-              )}
-              />
-            </div>
-            <div className="b2b-process-heading"><h3>Quy trình triển khai</h3><span>4 bước đồng hành cùng bạn</span></div>
-            <ol className="b2b-process">
-              {[
-                ["Tiếp nhận", "Yêu cầu, bản vẽ và khối lượng"],
-                ["Khảo sát", "Tư vấn cấu hình phù hợp"],
-                ["Báo giá", "Chi phí và tiến độ rõ ràng"],
-                ["Bàn giao", "Nghiệm thu và bảo hành"],
-              ].map(([title, sub], index) => (
-                <li key={title}>
-                  <span className="b2b-step-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
-                  <div><h4>{title}</h4><p>{sub}</p></div>
-                </li>
-              ))}
-            </ol>
-            <div className="b2b-overview-actions">
-              <a
-                className="b2b-phone"
-                href={`tel:${dt.u.tel(dt.config.hotlineB2B || dt.config.hotline)}`}
-              >
-                <span className="b2b-phone-icon"><Icon name="phone" /></span>
-                <span><small>Hotline doanh nghiệp</small><strong>{dt.config.hotlineB2B || dt.config.hotline}</strong></span>
+              <ol className="b2b-timeline">
+                {steps.map(([title, sub], index) => (
+                  <li key={title}>
+                    <span className="b2b-step-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                    <h3>{title}</h3>
+                    <p>{sub}</p>
+                  </li>
+                ))}
+              </ol>
+            </section>
+            <section className="section-box b2b-card" aria-labelledby="b2b-sectors">
+              <h2 id="b2b-sectors">Lĩnh vực phục vụ</h2>
+              <ul className="b2b-sectors">
+                {["Nhà máy FDI", "Nhà xưởng sản xuất", "Văn phòng – tòa nhà", "Nhà hàng – bếp công nghiệp", "Chuỗi bán lẻ – showroom", "Trường học – bệnh viện"].map((name) => (
+                  <li key={name}><Icon name="check" />{name}</li>
+                ))}
+              </ul>
+            </section>
+            <section className="section-box b2b-contact">
+              <a className="b2b-phone" href={`tel:${dt.u.tel(hotline)}`}>
+                <span className="b2b-phone-icon"><Icon name="headset" /></span>
+                <span><small>Hotline doanh nghiệp</small><strong>{hotline}</strong></span>
               </a>
-              <ShopLink className="btn btn-outline" href="du-an.html">Xem dự án tiêu biểu <Icon name="right" /></ShopLink>
-            </div>
-          </section>
-          <LeadForm
-            type="b2b-quote"
-            title="Nhận báo giá dự án"
-            productId={productId}
-          />
+              <p>Cần xem năng lực thi công trước khi gửi yêu cầu?</p>
+              <ShopLink className="btn btn-outline" href="du-an.html">
+                Xem dự án tiêu biểu <Icon name="right" />
+              </ShopLink>
+            </section>
+          </div>
+          <aside className="b2b-aside" id="bao-gia">
+            <LeadForm type="b2b-quote" title="Nhận báo giá dự án" productId={productId} />
+          </aside>
         </div>
       </div>
     </>

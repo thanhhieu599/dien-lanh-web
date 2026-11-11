@@ -9,7 +9,7 @@
     "test:unit": "node --test tests/unit/rows.test.mjs tests/unit/pricing.test.mjs tests/unit/datasource.test.mjs tests/unit/admin-db.test.mjs",
     "test:admin:api": "php tests/server/admin.test.php",
     "test:pricing:php": "php tests/unit/pricing.test.php",
-    "test:browser": "node tools/package-hosting.mjs && node tests/react/website.test.mjs && node tests/react/product-layout.test.mjs && node tests/react/visual-restore.test.mjs && node tests/react/admin.test.mjs",
+    "test:browser": "node tools/package-hosting.mjs && node tests/react/website.test.mjs && node tests/react/product-layout.test.mjs && node tests/react/visual-restore.test.mjs && node tests/react/home-media.test.mjs && node tests/react/admin.test.mjs",
     "test:legacy:browser": "node tools/test-browser.mjs",
     "test:build": "node tests/react/prerender.test.mjs dist",
     "test:legacy:functions": "node --test supabase/functions/tests/unit.test.ts",

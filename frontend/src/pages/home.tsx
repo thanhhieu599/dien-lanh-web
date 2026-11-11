@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { dt, money } from "../services/runtime";
+import { dt, money, safeImage } from "../services/runtime";
 import { useShop } from "../hooks/useShop";
 import {
   ContentCard,
@@ -186,14 +186,18 @@ export function HomePage() {
             .filter((m: Row) => m.title)
             .map((m: Row, i: number) => (
               <ShopLink
-                className={`mini-banner mb-${i + 1}`}
+                className={`mini-banner mb-${i + 1}${safeImage(m.image) ? " has-image" : ""}`}
                 href={m.href || "#"}
                 key={i}
               >
+                {safeImage(m.image) ? (
+                  <img className="mini-banner-bg" src={safeImage(m.image)} alt="" loading="eager" />
+                ) : (
+                  <Icon name={i ? "tool" : "zap"} />
+                )}
                 <b>{rich(m.title)}</b>
                 <span>{rich(m.sub)}</span>
                 {m.cta && <em>{m.cta}</em>}
-                <Icon name={i ? "tool" : "zap"} />
               </ShopLink>
             ))}
           <div className="hero-user">

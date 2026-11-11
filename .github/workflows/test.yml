@@ -17,17 +17,23 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run typecheck
-      # Trình duyệt test: dùng lại bản đã lưu giữa các lần chạy. Việc tải đôi khi treo không tự thoát
-      # (gặp cả trên Node 24/26) -> mỗi lần thử tối đa 3 phút, thử lại 3 lần.
+      # Trình duyệt test: dùng lại bản đã lưu giữa các lần chạy (cache).
       - uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      # Thư viện hệ thống cho Chromium (apt). Máy chạy GitHub thường đã có sẵn; kho apt đôi khi lỗi mạng
+      # và treo giữ khóa -> chỉ thử 1 lần, lỗi thì bỏ qua để không chặn cả bộ test.
+      - name: Install browser system libraries (best effort)
+        continue-on-error: true
+        timeout-minutes: 6
+        run: timeout 300 npx playwright install-deps chromium
+      # Tải trình duyệt (không dùng apt). Việc tải đôi khi treo không tự thoát -> mỗi lần tối đa 3 phút, thử lại 3 lần.
       - name: Install Playwright browser
-        timeout-minutes: 12
+        timeout-minutes: 11
         run: |
           for attempt in 1 2 3; do
-            timeout 180 npx playwright install --with-deps chromium && exit 0
+            timeout 180 npx playwright install chromium && exit 0
             echo "Lần $attempt tải trình duyệt bị lỗi hoặc treo, thử lại..."
           done
           exit 1

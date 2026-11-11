@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import {
   Link,
   useNavigate,
@@ -231,6 +231,7 @@ function Editor({
   const [errors, setErrors] = useState<Row>({});
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState(0);
+  const [catTab, setCatTab] = useState("general");
   const notice = useNotice();
   const navigate = useNavigate();
   const r = ad.resources[key];
@@ -276,19 +277,9 @@ function Editor({
         filters: row.filters || [],
       });
       if (subs.error) problems.subs = subs.error;
-      if (
-        !Array.isArray(data.filters) ||
-        data.filters.some(
-          (f: Row) =>
-            !f ||
-            typeof f.key !== "string" ||
-            typeof f.label !== "string" ||
-            !Array.isArray(f.options) ||
-            f.options.some((v: any) => typeof v !== "string"),
-        )
-      )
-        problems.filters =
-          "Bộ lọc cần có key, label và options là danh sách chuỗi.";
+      const filters = normalizeFilters(row.filters);
+      data.filters = filters.list;
+      if (filters.error) problems.filters = filters.error;
     }
     if (key === "coupons") {
       if (!editing) data.code = String(data.code || "").toUpperCase();
@@ -320,6 +311,9 @@ function Editor({
       if (data.type !== "percent") data.max = null;
     }
     setErrors(problems);
+    // Danh mục chia nhiều mục: tự mở mục đang có lỗi để người dùng thấy ngay
+    if (key === "categories" && Object.keys(problems).length)
+      setCatTab(problems.subs ? "menu" : problems.filters ? "filters" : CAT_IMAGES.some((k) => problems[k]) ? "images" : "general");
     if (Object.keys(problems).length) {
       notice("Vui lòng kiểm tra các trường báo lỗi.", true);
       return;
@@ -459,7 +453,17 @@ function Editor({
       </Head>
       <form id="frm" className="ar-editor" onSubmit={submit}>
         <fieldset disabled={busy} className="ar-fieldset">
-          {key === "products" && r.formSections ? (
+          {key === "categories" ? (
+            <CategoryLayout
+              tab={catTab}
+              onTab={setCatTab}
+              row={row}
+              errors={errors}
+              fields={fields}
+              field={field}
+              patch={patch}
+            />
+          ) : key === "products" && r.formSections ? (
             <div className="ar-editor-columns">
               {["main", "aside"].map((group) => (
                 <div key={group}>
@@ -481,37 +485,12 @@ function Editor({
               <div className="ar-grid">{fields.map(field)}</div>
             </Panel>
           )}
-          {key === "categories" && (
-            <Panel title="Loại con và bộ lọc">
-              <SubsEditor
-                value={row.subs || []}
-                error={errors.subs}
-                onChange={(v) => patch({ subs: v })}
-              />
-              <EditorField
-                field={{
-                  key: "filters",
-                  label: "Bộ lọc",
-                  type: "json",
-                  help: "Mảng đối tượng gồm key, label và options (mảng chuỗi).",
-                }}
-                value={row.filters || []}
-                row={row}
-                error={errors.filters}
-                onChange={(v) => patch({ filters: v })}
-              />
-            </Panel>
-          )}
-          {["categories", "brands"].includes(key) && (
-            <ProductMembership
-              row={row}
-              kind={key as "categories" | "brands"}
-              onChange={patch}
-            />
+          {key === "brands" && (
+            <ProductMembership row={row} kind="brands" onChange={patch} />
           )}
           {key === "coupons" && <CouponRules row={row} onChange={patch} />}
         </fieldset>
-        <div className="ar-form-foot">
+        <div className={`ar-form-foot${key === "categories" ? " ce-savebar" : ""}`}>
           <button
             id="save"
             className="btn btn-primary"
@@ -690,131 +669,186 @@ function SubsEditor({
     [next[i], next[i + d]] = [next[i + d], next[i]];
     return next;
   };
+  // Nút ↑ ↓ Xóa dùng chung cho nhóm và mục
+  const tools = (name: string, i: number, total: number, onMove: (d: number) => void, onRemove: () => void, removeLabel = "Xóa") => (
+    <div className="ce-tools">
+      <button type="button" className="btn btn-light btn-icon" aria-label={`Đưa ${name} lên`} disabled={i === 0} onClick={() => onMove(-1)}>↑</button>
+      <button type="button" className="btn btn-light btn-icon" aria-label={`Đưa ${name} xuống`} disabled={i === total - 1} onClick={() => onMove(1)}>↓</button>
+      <button type="button" className="btn btn-light ce-del" onClick={onRemove}>{removeLabel}</button>
+    </div>
+  );
   return (
-    <fieldset className="ar-tree ar-subs">
-      <legend>Nhóm và mục (menu 2 bậc)</legend>
-      <p>
-        Nhóm là tiêu đề cột trong menu Sản phẩm (ví dụ "Máy khoan"), mục là các
-        dòng bên dưới (ví dụ "Máy khoan sắt"). Mã được tạo tự động khi lưu; đổi
-        tên sau này không làm hỏng link.
-      </p>
-      {error && (
-        <p className="ar-error" role="alert">
-          {error}
-        </p>
-      )}
+    <div className="ce-list cat-menu">
+      {error && <p className="ar-error" role="alert">{error}</p>}
+      {subs.length === 0 && <p className="ce-empty">Danh mục chưa có nhóm nào.</p>}
       {subs.map((s, i) => {
         const items = s.items || [];
         return (
-          <div className="ar-tree-item" key={s.id || `new-${i}`}>
-            <div className="ar-subs-row">
-              <label>
-                Tên nhóm {i + 1}
-                <input
-                  value={s.name || ""}
-                  onChange={(e) => setGroup(i, { name: e.target.value })}
-                />
+          <div className="ce-row ar-tree-item cat-group" key={s.id || `new-${i}`}>
+            <div className="cat-group-head">
+              <label className="cat-group-name">
+                <span>Tên nhóm {i + 1}</span>
+                <input value={s.name || ""} placeholder="Ví dụ: Máy lạnh treo tường" onChange={(e) => setGroup(i, { name: e.target.value })} />
               </label>
-              {s.id && <small>Mã: {s.id}</small>}
-              <button
-                type="button"
-                className="btn btn-light"
-                aria-label={`Đưa nhóm ${s.name || i + 1} lên`}
-                disabled={i === 0}
-                onClick={() => onChange(move(subs, i, -1))}
-              >
-                ↑
-              </button>
-              <button
-                type="button"
-                className="btn btn-light"
-                aria-label={`Đưa nhóm ${s.name || i + 1} xuống`}
-                disabled={i === subs.length - 1}
-                onClick={() => onChange(move(subs, i, 1))}
-              >
-                ↓
-              </button>
-              <button
-                type="button"
-                className="btn btn-light"
-                onClick={() => {
-                  if (
-                    !items.length ||
-                    confirm(
-                      `Xóa nhóm "${s.name}" và ${items.length} mục bên trong?`,
-                    )
-                  )
-                    onChange(subs.filter((_, j) => j !== i));
-                }}
-              >
-                Xóa nhóm
-              </button>
+              {tools(`nhóm ${s.name || i + 1}`, i, subs.length, (d) => onChange(move(subs, i, d)), () => {
+                if (!items.length || confirm(`Xóa nhóm "${s.name}" và ${items.length} mục bên trong?`)) onChange(subs.filter((_, j) => j !== i));
+              }, "Xóa nhóm")}
             </div>
-            <ol className="ar-subs-items">
+            {s.id && <small className="cat-code">Mã: {s.id}</small>}
+            <ol className="cat-items">
               {items.map((it, k) => (
                 <li key={it.id || `new-${k}`}>
                   <label>
-                    Mục {k + 1}
-                    <input
-                      value={it.name || ""}
-                      onChange={(e) =>
-                        setGroup(i, {
-                          items: items.map((x, m) =>
-                            m === k ? { ...x, name: e.target.value } : x,
-                          ),
-                        })
-                      }
-                    />
+                    <span>Mục {k + 1}</span>
+                    <input value={it.name || ""} placeholder="Tên mục" onChange={(e) => setGroup(i, { items: items.map((x, m) => (m === k ? { ...x, name: e.target.value } : x)) })} />
                   </label>
-                  <button
-                    type="button"
-                    className="btn btn-light"
-                    aria-label={`Đưa mục ${it.name || k + 1} lên`}
-                    disabled={k === 0}
-                    onClick={() => setGroup(i, { items: move(items, k, -1) })}
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-light"
-                    aria-label={`Đưa mục ${it.name || k + 1} xuống`}
-                    disabled={k === items.length - 1}
-                    onClick={() => setGroup(i, { items: move(items, k, 1) })}
-                  >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-light"
-                    onClick={() =>
-                      setGroup(i, { items: items.filter((_, m) => m !== k) })
-                    }
-                  >
-                    Xóa
-                  </button>
+                  {tools(`mục ${it.name || k + 1}`, k, items.length, (d) => setGroup(i, { items: move(items, k, d) }), () => setGroup(i, { items: items.filter((_, m) => m !== k) }))}
                 </li>
               ))}
             </ol>
-            <button
-              type="button"
-              className="btn btn-light"
-              onClick={() =>
-                setGroup(i, { items: [...items, { id: "", name: "" }] })
-              }
-            >
+            <button type="button" className="btn btn-light cat-add-item" onClick={() => setGroup(i, { items: [...items, { id: "", name: "" }] })}>
               + Thêm mục vào nhóm
             </button>
           </div>
         );
       })}
-      <button
-        type="button"
-        className="btn btn-primary"
-        onClick={() => onChange([...subs, { id: "", name: "", items: [] }])}
-      >
+      <button type="button" className="btn btn-primary ce-add" onClick={() => onChange([...subs, { id: "", name: "", items: [] }])}>
         + Thêm nhóm
       </button>
-    </fieldset>
+    </div>
   );
 }
+
+// ---------------------------------------------------------------- Trang sửa danh mục
+// Chia 5 mục chọn ở cột trái, mỗi lần chỉ hiện 1 mục trong 1 khung phẳng (không lồng khung).
+const CAT_GENERAL = ["name", "short", "id", "icon", "art", "sort", "active"];
+const CAT_IMAGES = ["image", "promo_image", "promo_title", "promo_href"];
+function CategoryLayout({
+  tab,
+  onTab,
+  row,
+  errors,
+  fields,
+  field,
+  patch,
+}: {
+  tab: string;
+  onTab: (t: string) => void;
+  row: Row;
+  errors: Row;
+  fields: FieldSpec[];
+  field: (f: FieldSpec) => ReactNode;
+  patch: (data: Row) => void;
+}) {
+  const products: Row[] = ad.cache.products || [];
+  const productCount = Array.isArray(row.product_ids)
+    ? row.product_ids.length
+    : products.filter((p) => p.cat === row.id && !(row.excluded_product_ids || []).map(String).includes(String(p.id))).length;
+  const groups = (row.subs || []) as SubGroup[];
+  const tabs: [string, string, string, number | null][] = [
+    ["general", "Thông tin chung", "Tên, mã đường dẫn, biểu tượng và thứ tự hiển thị của danh mục.", null],
+    ["images", "Hình ảnh", "Ảnh đại diện danh mục và ảnh quảng cáo ở cột đầu dải sản phẩm trên trang chủ.", null],
+    ["menu", "Nhóm & mục menu", "Nhóm là tiêu đề cột trong menu Sản phẩm (vd \"Máy lạnh treo tường\"), mục là các dòng bên dưới. Mã được tạo tự động khi lưu.", groups.length],
+    ["filters", "Bộ lọc sản phẩm", "Các bộ lọc khách dùng ở trang danh mục (vd Công suất: 1 HP, 1.5 HP…). Giá trị của từng sản phẩm chọn trong trang sửa sản phẩm.", (row.filters || []).length],
+    ["products", "Sản phẩm", "Sản phẩm thuộc danh mục và thứ tự hiển thị trên website.", productCount],
+  ];
+  const current = tabs.find((t) => t[0] === tab) || tabs[0];
+  const has = (keys: string[]) => keys.some((k) => errors[k]);
+  const pick = (keys: string[]) => keys.map((k) => fields.find((f) => f.key === k)).filter(Boolean) as FieldSpec[];
+  return (
+    <div className="ce-layout cat-editor">
+      <nav className="ce-nav" aria-label="Các mục của danh mục">
+        {tabs.map(([k, label, , count]) => (
+          <div key={k}>
+            <button
+              type="button"
+              className={`${k === current[0] ? "active" : ""}${(k === "general" && has(CAT_GENERAL)) || (k === "images" && has(CAT_IMAGES)) || (k === "menu" && errors.subs) || (k === "filters" && errors.filters) ? " has-error" : ""}`}
+              aria-current={k === current[0] ? "true" : undefined}
+              onClick={() => onTab(k)}
+            >
+              {label}
+              {count != null && <span className="ce-count">{count}</span>}
+            </button>
+          </div>
+        ))}
+      </nav>
+      <section className="ar-panel ce-section" aria-labelledby="cat-tab-title">
+        <h2 id="cat-tab-title" className="ce-title">{current[1]}</h2>
+        <p className="ce-hint">{current[2]}</p>
+        {current[0] === "general" && <div className="ar-grid ce-grid">{pick(CAT_GENERAL).map(field)}</div>}
+        {current[0] === "images" && <div className="ar-grid ce-grid cat-images">{pick(CAT_IMAGES).map(field)}</div>}
+        {current[0] === "menu" && <SubsEditor value={groups} error={errors.subs} onChange={(v) => patch({ subs: v })} />}
+        {current[0] === "filters" && <FiltersEditor value={row.filters || []} error={errors.filters} onChange={(v) => patch({ filters: v })} />}
+        {current[0] === "products" && <ProductMembership row={row} kind="categories" onChange={patch} bare />}
+      </section>
+    </div>
+  );
+}
+
+// Bộ lọc: mỗi dòng 1 bộ lọc gồm tên và các giá trị cách nhau bằng dấu phẩy. Mã (key) giữ nguyên để sản phẩm cũ không mất giá trị.
+type CatFilter = { key: string; label: string; options: string[] };
+function normalizeFilters(value: unknown): { list: CatFilter[]; error?: string } {
+  if (!Array.isArray(value)) return { list: [], error: "Danh sách bộ lọc không hợp lệ." };
+  const taken = new Set<string>(value.map((f: Row) => f?.key).filter(Boolean));
+  let error: string | undefined;
+  const list = value
+    .filter((f: Row) => f && (String(f.label || "").trim() || (f.options || []).length))
+    .map((f: Row) => {
+      const label = String(f.label || "").trim();
+      const options = (Array.isArray(f.options) ? f.options : []).map((o: unknown) => String(o).trim()).filter(Boolean);
+      if (!label || !options.length) error = "Mỗi bộ lọc cần có tên và ít nhất 1 giá trị.";
+      const key = typeof f.key === "string" && /^[a-z0-9_-]+$/.test(f.key) ? f.key : uniqueSlug(label, taken);
+      return { key, label, options: [...new Set(options)] };
+    });
+  return { list, error };
+}
+function FiltersEditor({ value, onChange, error }: { value: Row[]; onChange: (v: Row[]) => void; error?: string }) {
+  const list = Array.isArray(value) ? value : [];
+  const set = (i: number, data: Row) => onChange(list.map((f, j) => (j === i ? { ...f, ...data } : f)));
+  const move = (i: number, d: number) => {
+    const next = [...list];
+    [next[i], next[i + d]] = [next[i + d], next[i]];
+    onChange(next);
+  };
+  return (
+    <div className="ce-list ce-table cat-filters">
+      {error && <p className="ar-error" role="alert">{error}</p>}
+      {list.length > 0 && (
+        <div className="ce-thead" aria-hidden="true">
+          <span>Tên bộ lọc</span>
+          <span>Giá trị (cách nhau bằng dấu phẩy)</span>
+          <span />
+        </div>
+      )}
+      {list.length === 0 && <p className="ce-empty">Danh mục chưa có bộ lọc.</p>}
+      {list.map((f, i) => (
+        <div className="ce-trow" key={i}>
+          <input aria-label={`Tên bộ lọc ${i + 1}`} placeholder="Ví dụ: Công suất" value={f.label || ""} onChange={(e) => set(i, { label: e.target.value })} />
+          <FilterOptions index={i} value={f.options || []} onChange={(options) => set(i, { options })} />
+          <div className="ce-tools">
+            <button type="button" className="btn btn-light btn-icon" aria-label={`Đưa bộ lọc ${i + 1} lên`} disabled={i === 0} onClick={() => move(i, -1)}>↑</button>
+            <button type="button" className="btn btn-light btn-icon" aria-label={`Đưa bộ lọc ${i + 1} xuống`} disabled={i === list.length - 1} onClick={() => move(i, 1)}>↓</button>
+            <button type="button" className="btn btn-light ce-del" aria-label={`Xóa bộ lọc ${i + 1}`} onClick={() => onChange(list.filter((_, j) => j !== i))}>Xóa</button>
+          </div>
+        </div>
+      ))}
+      <button type="button" className="btn btn-light ce-add" onClick={() => onChange([...list, { key: "", label: "", options: [] }])}>+ Thêm bộ lọc</button>
+    </div>
+  );
+}
+// Ô giá trị: giữ nguyên chữ đang gõ (kể cả dấu phẩy cuối), chỉ tách thành danh sách khi lưu vào dữ liệu
+function FilterOptions({ index, value, onChange }: { index: number; value: string[]; onChange: (v: string[]) => void }) {
+  const [draft, setDraft] = useState(() => value.join(", "));
+  return (
+    <input
+      aria-label={`Giá trị bộ lọc ${index + 1}`}
+      placeholder="1 HP, 1.5 HP, 2 HP"
+      value={draft}
+      onChange={(e) => {
+        setDraft(e.target.value);
+        onChange(e.target.value.split(",").map((v) => v.trim()).filter(Boolean));
+      }}
+    />
+  );
+}
+

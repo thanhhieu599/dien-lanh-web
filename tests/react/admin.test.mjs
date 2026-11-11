@@ -154,47 +154,59 @@ try {
   await open("products?q=khong-co-san-pham-xyz");
   assert.match(await page.locator("#view").textContent(), /Chưa có dữ liệu/);
 
-  // Category JSON must fail safely; membership changes use the existing data contract.
+  // Danh mục: 5 mục ở cột trái, mỗi lần hiện 1 mục; không còn ô JSON
+  const catTab = (name) => page.locator(".ce-nav button").filter({ hasText: new RegExp("^" + name) }).click();
   await open("categories/may-lanh");
   const category = await read("categories", "may-lanh");
   const groups = (category.subs || []).length;
+  assert.equal(await page.locator(".ce-nav button").count(), 5);
+  assert.equal(await page.locator("textarea").count(), 0, "Không còn ô nhập JSON");
   // Menu 2 bậc: thêm nhóm + mục, mã tự tạo khi lưu, xóa nhóm trả lại như cũ
+  await catTab("Nhóm & mục menu");
   await page.getByRole("button", { name: "+ Thêm nhóm", exact: true }).click();
+  await catTab("Thông tin chung");
   await page.click("#save");
-  await page
-    .locator(".ar-error")
-    .filter({ hasText: "không được để trống" })
-    .waitFor();
-  await page
-    .getByLabel(`Tên nhóm ${groups + 1}`, { exact: true })
-    .fill("Nhóm React QA");
-  await page
-    .locator(".ar-tree-item")
-    .last()
-    .getByRole("button", { name: "+ Thêm mục vào nhóm" })
-    .click();
-  await page
-    .locator(".ar-tree-item")
-    .last()
-    .getByLabel("Mục 1", { exact: true })
-    .fill("Mục React QA");
+  // Lỗi ở mục khác: tự mở mục có lỗi
+  await page.locator(".ar-error").filter({ hasText: "không được để trống" }).waitFor();
+  await page.getByLabel(`Tên nhóm ${groups + 1}`, { exact: true }).fill("Nhóm React QA");
+  await page.locator(".ar-tree-item").last().getByRole("button", { name: "+ Thêm mục vào nhóm" }).click();
+  await page.locator(".ar-tree-item").last().getByLabel("Mục 1", { exact: true }).fill("Mục React QA");
   await saved();
   assert.deepEqual((await read("categories", "may-lanh")).subs.at(-1), {
     id: "nhom-react-qa",
     name: "Nhóm React QA",
     items: [{ id: "muc-react-qa", name: "Mục React QA" }],
   });
-  await page
-    .locator(".ar-tree-item")
-    .last()
-    .getByRole("button", { name: "Xóa nhóm" })
-    .click();
+  await catTab("Nhóm & mục menu");
+  await page.locator(".ar-tree-item").last().getByRole("button", { name: "Xóa nhóm" }).click();
   await saved();
-  assert.deepEqual(
-    (await read("categories", "may-lanh")).subs,
-    category.subs || [],
-  );
+  assert.deepEqual((await read("categories", "may-lanh")).subs, category.subs || []);
+  // Bộ lọc: bảng tên + giá trị; mã cũ giữ nguyên, bộ lọc mới tự tạo mã
+  await catTab("Bộ lọc sản phẩm");
+  await page.getByLabel("Giá trị bộ lọc 1", { exact: true }).fill("1 HP, 1.5 HP, 2 HP");
+  await page.getByRole("button", { name: "+ Thêm bộ lọc" }).click();
+  const nextFilter = (category.filters || []).length + 1;
+  await page.getByLabel(`Tên bộ lọc ${nextFilter}`, { exact: true }).fill("Màu sắc");
+  await page.click("#save");
+  await page.locator(".ar-error").filter({ hasText: "ít nhất 1 giá trị" }).waitFor();
+  await page.getByLabel(`Giá trị bộ lọc ${nextFilter}`, { exact: true }).fill("Trắng, Đen,");
+  await saved();
+  const filtered = (await read("categories", "may-lanh")).filters;
+  assert.equal(filtered[0].key, category.filters[0].key);
+  assert.deepEqual(filtered[0].options, ["1 HP", "1.5 HP", "2 HP"]);
+  assert.deepEqual(filtered.at(-1), { key: "mau-sac", label: "Màu sắc", options: ["Trắng", "Đen"] });
+  await catTab("Bộ lọc sản phẩm");
+  await page.getByRole("button", { name: `Xóa bộ lọc ${nextFilter}` }).click();
+  await page.getByLabel("Giá trị bộ lọc 1", { exact: true }).fill(category.filters[0].options.join(", "));
+  await saved();
+  assert.deepEqual((await read("categories", "may-lanh")).filters, category.filters);
+  // Sản phẩm: kết quả tìm chỉ hiện khi gõ
+  await catTab("Sản phẩm");
+  assert.equal(await page.getByRole("button", { name: "Thêm", exact: true }).count(), 0);
+  await page.getByLabel("Tìm sản phẩm").fill("DT1050");
+  assert.equal(await page.getByRole("button", { name: "Thêm", exact: true }).count(), 1);
   // Ảnh quảng cáo trang chủ của danh mục: có ô tải ảnh, chữ và liên kết lưu đúng
+  await catTab("Hình ảnh");
   assert.equal(await page.locator('[data-field="promo_image"]').count(), 1);
   await page.locator("[name=promo_title]").fill("Máy lạnh QA");
   await page.locator("[name=promo_href]").fill("khuyen-mai.html");
@@ -202,6 +214,7 @@ try {
   const promoCat = await read("categories", "may-lanh");
   assert.equal(promoCat.promo_title, "Máy lạnh QA");
   assert.equal(promoCat.promo_href, "khuyen-mai.html");
+  await catTab("Hình ảnh");
   await page.locator("[name=promo_title]").fill("");
   await page.locator("[name=promo_href]").fill("");
   await saved();

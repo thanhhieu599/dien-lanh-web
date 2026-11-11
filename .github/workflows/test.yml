@@ -17,9 +17,20 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run typecheck
-      # Node 26 làm tiến trình tải trình duyệt của Playwright 1.56 treo vô hạn -> dùng Node 24 (.nvmrc) và đặt giới hạn thời gian
-      - run: npx playwright install --with-deps chromium
-        timeout-minutes: 10
+      # Trình duyệt test: dùng lại bản đã lưu giữa các lần chạy. Việc tải đôi khi treo không tự thoát
+      # (gặp cả trên Node 24/26) -> mỗi lần thử tối đa 3 phút, thử lại 3 lần.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright browser
+        timeout-minutes: 12
+        run: |
+          for attempt in 1 2 3; do
+            timeout 180 npx playwright install --with-deps chromium && exit 0
+            echo "Lần $attempt tải trình duyệt bị lỗi hoặc treo, thử lại..."
+          done
+          exit 1
       - run: npm run db:seed
       # Ảnh tải lên lưu ở server/uploads (không nằm trong git). Apache trong container chạy bằng user khác
       # chủ thư mục checkout nên không tự tạo được thư mục này -> tạo sẵn và cho phép ghi.

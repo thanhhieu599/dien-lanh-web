@@ -28,7 +28,7 @@ try {
    if(document.querySelector('.product-pagination'))issues.push('Vẫn còn dòng đếm/nút quay lại cũ');
    for(const grid of document.querySelectorAll('.pgrid')) {
     const cards=[...grid.querySelectorAll(':scope > .pcard')];
-    if(cards.length>5)issues.push('Hiện quá 5 sản phẩm');
+    if(cards.length>5 && !(location.pathname.endsWith('/khuyen-mai.html') && grid.closest('.listing-main')))issues.push('Hiện quá 5 sản phẩm');
     if(grid.scrollWidth>grid.clientWidth+1)issues.push('Lưới cuộn ngang');
     const boxes=cards.map(card=>card.getBoundingClientRect());
     for(let i=0;i<cards.length;i++) {
@@ -50,6 +50,11 @@ try {
   await page.setViewportSize({width,height:1000});
   for(const route of ['index.html',`danh-muc.html?cat=${sample.category}`,`san-pham.html?id=${sample.product}`,'khuyen-mai.html',`thuong-hieu.html?id=${sample.brand}`,'dich-vu.html','he-thong-cua-hang.html','tin-tuc.html','du-an.html','gioi-thieu.html','hoi-dap.html','thuong-hieu.html']) {
    await open(route);await geometry(`${width}px ${route}`);
+   if(route==='khuyen-mai.html') {
+    const expected=await page.evaluate(()=>DT.api.list({flash:true,page:1,limit:Math.max(1,DT.products.length)}).total);
+    assert.equal(await page.locator('.listing-main .pcard').count(),expected,'Khuyến mãi hiển thị toàn bộ sản phẩm');
+    assert.equal(await page.locator('.listing-main').getByRole('button',{name:'Xem thêm',exact:true}).count(),0);
+   }
   }
  }
  await page.setViewportSize({width:1440,height:1000});
@@ -113,5 +118,5 @@ try {
  await page.setViewportSize({width:390,height:844});await geometry('Ảnh hỏng/tên dài mobile');
  await page.screenshot({path:'.cache/product-layout/mobile.png',fullPage:true});
  assert.deepEqual(errors,[],'Không có lỗi JavaScript');
- console.log(`PASS: mọi danh sách tối đa 5 mục, danh mục không trùng, một nút Xem thêm ở cuối, reset bộ lọc và responsive 320–1440px (${hosted?'MySQL thật':'demo build'}).`);
+ console.log(`PASS: khuyến mãi hiển thị toàn bộ, các danh sách khác tối đa 5 mục, danh mục không trùng, reset bộ lọc và responsive 320–1440px (${hosted?'MySQL thật':'demo build'}).`);
 } finally {await browser.close();local?.server.close();}

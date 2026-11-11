@@ -29,7 +29,15 @@ function allowed(string $table, string $method, ?array $user, ?array $row = null
 }
 function matchFilter(array $row, string $column, string $expression): bool {
     [$op, $value] = array_pad(explode('.', $expression, 2), 2, '');
-    $actual = $row[$column] ?? null;
+    $actual = $row;
+    foreach (explode('.', str_replace('->>', '.', $column)) as $key) {
+        $actual = is_array($actual) ? ($actual[$key] ?? null) : null;
+    }
+    if ($op === 'cs') {
+        $values = json_decode($value, true);
+        return is_array($actual) && is_array($values) && array_is_list($values)
+            && count(array_filter($values, fn($v) => !in_array($v, $actual, true))) === 0;
+    }
     if ($op === 'in') return in_array((string)$actual, array_map(fn($v) => trim($v, '" '), explode(',', trim($value, '()'))), true);
     if ($op === 'is') return $actual === match ($value) { 'null' => null, 'true' => true, 'false' => false, default => $value };
     if ($op === 'ilike') return preg_match('/^' . str_replace(['\*', '%'], '.*', preg_quote($value, '/')) . '$/iu', (string)$actual) === 1;
@@ -51,7 +59,11 @@ function matches(array $row, array $query): bool {
                 $ok = $ok || matchFilter($row, $column, $filter);
             }
             if (!$ok) return false;
-        } elseif (!matchFilter($row, $key, $value)) return false;
+        } else {
+            foreach (is_array($value) ? $value : [$value] as $expression) {
+                if (!is_string($expression) || !matchFilter($row, $key, $expression)) return false;
+            }
+        }
     }
     return true;
 }
@@ -71,7 +83,8 @@ function crmSummary(): array {
     foreach (allRecords('profiles') as $profile) {
         $found = false;
         foreach ($customers as &$c) {
-            if (phoneKey($c['phone'] ?? '') === phoneKey($profile['phone'] ?? '')) {
+            if (($c['profile_id'] ?? null) === $profile['id'] ||
+                empty($c['profile_id']) && phoneKey($c['phone'] ?? '') === phoneKey($profile['phone'] ?? '')) {
                 $c = array_merge($profile, $c, ['profile_id' => $profile['id'], 'role' => $profile['role']]); $found = true; break;
             }
         }
@@ -158,6 +171,11 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
     $id = substr($filter, 3);
     return transaction(function() use ($table, $method, $body, $user, $id) {
         $row = record($table, $id, true);
+        // Profiles created by CLI/seed can appear in CRM before a CRM row exists.
+        if (!$row && $table === 'crm_customers' && $method === 'PATCH' && str_starts_with($id, 'profile:')) {
+            $profile = record('profiles', substr($id, 8), true);
+            if ($profile) $row = array_merge($profile, ['id'=>$id, 'profile_id'=>$profile['id'], 'tags'=>[], 'note'=>'', 'marketing_opt_in'=>null]);
+        }
         if (!$row) fail('Không tìm thấy bản ghi', 404);
         if (!allowed($table, $method, $user, $row)) fail('Không có quyền', 403);
         if ($method === 'DELETE') {
@@ -172,6 +190,9 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
         if (in_array($table, ['order_items','order_status_history','payments'], true)) fail('Không được sửa trực tiếp dữ liệu giao dịch', 403);
         $patch = $body;
         unset($patch[pk($table)], $patch['created_at']);
+        if ($table === 'crm_customers') {
+            $patch = array_intersect_key($patch, array_flip(['name','phone','email','addresses','tags','note','marketing_opt_in']));
+        }
         if ($table === 'profiles') {
             $fields = $user['role'] === 'admin' ? ['name','email','addresses','role'] : ['name','email','addresses'];
             $patch = array_intersect_key($patch, array_flip($fields));

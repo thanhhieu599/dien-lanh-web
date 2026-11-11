@@ -16,11 +16,29 @@ try {
   await page.locator('#login button').click();
   await page.waitForSelector('.ad-side');
   assert.equal(await page.evaluate(() => AD.db.mode), 'mysql');
-  const routes = ['orders','products','categories','brands','customers','settings','content'];
+  const routes = ['dashboard','orders','leads','products','categories','brands','customers','reviews','coupons','banners','posts','vision','projects','faqs','trust','reports','notifications','maintenance','misa','settings','stores','services','policies','content'];
   for (const route of routes) {
     await page.goto(`${base}admin/#/${route}`);
     await page.waitForSelector('.ad-head h1');
+    await page.waitForFunction(() => !document.querySelector('#view [role="status"]'));
     assert.equal(await page.locator('.ad-error').count(), 0, route);
+  }
+  const futureOrders = await page.evaluate(async () => {
+    const from = new Date(Date.now() + 86400000).toISOString();
+    const to = new Date(Date.now() + 7 * 86400000).toISOString();
+    return (await AD.db.list('orders', {filters:[['created_at','gte',from],['created_at','lt',to]]})).rows;
+  });
+  assert.equal(futureOrders.length, 0, 'Date range must preserve its start bound through the real HTTP/PHP adapter');
+  const paymentOrder = await page.evaluate(async () => (await AD.db.list('orders', {limit:1})).rows[0]);
+  assert.ok(paymentOrder, 'API test must seed an order for payment testing');
+  try {
+    await page.goto(`${base}admin/#/orders/${encodeURIComponent(paymentOrder.id)}`);
+    await page.locator('#view form [name=payment_status]').selectOption('partial');
+    await page.locator('#view form').getByRole('button', {name:'Lưu thay đổi',exact:true}).click();
+    await page.locator('.ar-toast').filter({hasText:'Đã cập nhật đơn hàng.'}).waitFor();
+    assert.equal(await page.evaluate(async id => (await AD.db.get('orders',id)).payment_status, paymentOrder.id), 'partial');
+  } finally {
+    await page.evaluate(async order => AD.db.update('orders', order.id, {payment_status:order.payment_status}), paymentOrder);
   }
   const result = await page.evaluate(async () => {
     const {rows} = await AD.db.list('products', {limit:1});

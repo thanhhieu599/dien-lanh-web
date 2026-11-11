@@ -338,6 +338,13 @@ try {
     customerId,
   );
   await open("customers");
+  await page.locator('select[name=segment]').selectOption("vip");
+  await page.getByRole("button", {name:"Lọc", exact:true}).click();
+  await page.waitForURL("**/customers?segment=vip");
+  await page.waitForFunction(() => document.querySelectorAll('.ar-table tbody tr').length === 1);
+  assert.equal(await page.locator('.ar-table tbody tr').count(), 1, 'VIP filter excludes regular customers');
+  assert.match(await page.locator('.ar-table').textContent(), /Khách CRM React/);
+  await open("customers");
   const csvPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Xuất CSV", exact: true }).click();
   const csv = await csvPromise;

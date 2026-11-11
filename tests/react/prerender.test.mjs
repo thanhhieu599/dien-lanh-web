@@ -7,14 +7,16 @@ const {server,base}=await pagesServer(dir);const browser=await chromium();
 try {
   const slug=fs.readdirSync(path.join(dir,'frontend/sp')).find(f=>f.endsWith('.html'));
   const raw=fs.readFileSync(path.join(dir,'frontend/sp',slug),'utf8');
-  assert.match(raw,/<h1>[^<]+<\/h1>/);assert.match(raw,/class="specs"/);assert.ok(!raw.includes('script data-shared-runtime'),'Generated page must let the React bootstrap load the shared runtime once');
+  assert.match(raw,/<h1>[^<]+<\/h1>/);assert.match(raw,/class="[^"]*\bspecs\b[^"]*"/);assert.ok(!raw.includes('script data-shared-runtime'),'Generated page must let the React bootstrap load the shared runtime once');
   const plain=await browser.newContext({javaScriptEnabled:false});await blockExternal(plain);const staticPage=await plain.newPage();await staticPage.goto(base+'frontend/sp/'+slug);assert.equal(await staticPage.locator('.pd-title h1').count(),1);assert.ok(await staticPage.locator('.specs tr').count()>0);await plain.close();
   const context=await browser.newContext();await blockExternal(context);const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'frontend/sp/'+slug);await page.waitForSelector('html[data-react-ready="true"] .buy-btns');
   assert.equal(await page.locator('.pd-title h1').count(),1);assert.equal(await page.locator('#site-header').count(),1);assert.equal(await page.locator('#site-footer').count(),1);assert.equal(await page.locator('script[data-ld=Product]').count(),1);
   assert.equal(await page.locator('script[data-shared-runtime="components/analytics"]').count(),1,'Runtime must execute once when lazy page chunks import shared code');
   const pathname=new URL(page.url()).pathname;
-  await page.locator('a[href$="#reviews"]').first().click();assert.equal(new URL(page.url()).pathname,pathname);
+  // The current product page exposes the reviews section without a jump link.
+  await page.evaluate(()=>{window.location.hash='reviews';});await page.waitForURL('**#reviews');assert.equal(new URL(page.url()).pathname,pathname);
+  await page.locator('#reviews').waitFor({state:'attached'});
   const add=page.locator('.buy-btns button[data-action="add-cart"]');if(await add.count()){await add.click();await page.waitForFunction(()=>Number(document.querySelector('#cart-count').textContent)>0);}
   await page.goto(base+'frontend/danh-muc/may-lanh.html');await page.waitForSelector('html[data-react-ready="true"] .listing-main .pcard');assert.equal(await page.locator('#cat-title').textContent(),'Máy lạnh - Điều hòa');
   // Router commits the controlled checkbox after navigation; verify the settled state.

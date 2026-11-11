@@ -63,18 +63,19 @@ export function ListingPage({
     sort: params.get("sort") || "popular",
     flash: mode === "sale",
     attrs,
-    page,
-    limit: PRODUCTS_PER_PAGE,
+    page: mode === "sale" ? 1 : page,
+    limit: mode === "sale" ? Math.max(1, dt.products.length) : PRODUCTS_PER_PAGE,
   };
   const { items, total } = dt.api.list(filters);
   useEffect(() => {
+    if (mode === "sale") return;
     const last = Math.max(1, Math.ceil(total / PRODUCTS_PER_PAGE));
     if (page > last) {
       const next = new URLSearchParams(params);
       next.set("page", String(last));
       setParams(next, { replace: true });
     }
-  }, [page, total, params, setParams]);
+  }, [mode, page, total, params, setParams]);
   useMeta(title);
   function change(key: string, value: string) {
     const next = new URLSearchParams(params);
@@ -251,8 +252,8 @@ export function ListingPage({
                 })()}
               </div>
             )}
-            <ProductGrid products={items} />
-            {total > PRODUCTS_PER_PAGE && (
+            <ProductGrid products={items} paginated={mode !== "sale"} />
+            {mode !== "sale" && total > PRODUCTS_PER_PAGE && (
               <MoreButton
                 onClick={() =>
                   change(

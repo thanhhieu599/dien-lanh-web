@@ -162,10 +162,10 @@ AD.mysql = (cfg) => {
     filters.forEach(([c, op, v]) => {
       if (v === undefined || v === "" || (v === null && op !== "is")) return;
       p.append(
-        c,
+        filters.filter(([column]) => column === c).length > 1 ? `${c}[]` : c,
         op === "in"
           ? `in.(${v.map((x) => `"${x}"`).join(",")})`
-          : `${op}.${op === "ilike" ? `*${v}*` : v}`,
+          : `${op}.${op === "ilike" ? `*${v}*` : op === "cs" ? JSON.stringify(v) : v}`,
       );
     });
     if (search?.q)
@@ -806,6 +806,8 @@ AD.demo = () => {
         return x <= v;
       case "in":
         return v.map(String).includes(String(x));
+      case "cs":
+        return Array.isArray(x) && Array.isArray(v) && v.every((item) => x.includes(item));
       case "is":
         return v === null ? x == null : x === v;
       case "ilike":

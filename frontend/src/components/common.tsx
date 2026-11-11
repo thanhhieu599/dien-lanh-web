@@ -274,10 +274,6 @@ export function ProjectCard({ project: p }: { project: Row }) {
         )}
       </ShopLink>
       <div className="pj-body">
-        <span className="pj-ind">
-          {p.industry || "Dự án"}
-          {p.year && ` • ${p.year}`}
-        </span>
         <h3>
           <ShopLink href={href}>{p.title}</ShopLink>
         </h3>
@@ -287,13 +283,6 @@ export function ProjectCard({ project: p }: { project: Row }) {
             {p.location}
           </p>
         )}
-        <ul className="pj-facts">
-          {[p.units ? `${p.units} máy` : "", p.capacity, p.duration]
-            .filter(Boolean)
-            .map((fact, i) => (
-              <li key={i}>{fact}</li>
-            ))}
-        </ul>
       </div>
     </article>
   );

@@ -117,7 +117,7 @@ function cartLines(array $items, bool $lock): array {
 function updateOrder(array $order, array $patch, array $user): array {
     $fields = $user['role'] === 'accountant' ? ['payment_status','staff_note'] : ['status','payment_status','staff_note','maintenance_optin'];
     $patch = array_intersect_key($patch, array_flip($fields));
-    if (isset($patch['payment_status']) && !in_array($patch['payment_status'], ['unpaid','paid','refunded'], true)) fail('Trạng thái thanh toán không hợp lệ');
+    if (isset($patch['payment_status']) && !in_array($patch['payment_status'], ['unpaid','partial','paid','refunded'], true)) fail('Trạng thái thanh toán không hợp lệ');
     if (isset($patch['status']) && $patch['status'] !== $order['status']) {
         $transitions = ['pending' => ['confirmed','cancelled'], 'confirmed' => ['shipping','cancelled'], 'shipping' => ['installing','done'], 'installing' => ['done'], 'done' => [], 'cancelled' => []];
         if (!in_array($patch['status'], $transitions[$order['status']] ?? [], true)) fail('Không thể chuyển trạng thái này');

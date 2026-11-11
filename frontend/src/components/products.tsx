@@ -150,16 +150,28 @@ export function ProductCard({
 export function ProductGrid({
   products,
   flash = false,
+  paginated = true,
 }: {
   products: Product[];
   flash?: boolean;
+  paginated?: boolean;
 }) {
   return products.length ? (
-    <ProductResults
-      key={products.map((p) => p.id).join(",")}
-      products={products}
-      flash={flash}
-    />
+    paginated ? (
+      <ProductResults
+        key={products.map((p) => p.id).join(",")}
+        products={products}
+        flash={flash}
+      />
+    ) : (
+      <div className="product-results">
+        <div className="pgrid">
+          {products.map((p) => (
+            <ProductCard key={p.id} product={p} flash={flash} />
+          ))}
+        </div>
+      </div>
+    )
   ) : (
     <Empty title="Không tìm thấy sản phẩm phù hợp">
       <p>Thử thay đổi bộ lọc hoặc tìm kiếm khác.</p>

@@ -231,7 +231,8 @@ function Editor({
   const [errors, setErrors] = useState<Row>({});
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState(0);
-  const [catTab, setCatTab] = useState("general");
+  const tabs = RESOURCE_TABS[key];
+  const [tab, setTab] = useState(tabs?.[0].id || "");
   const notice = useNotice();
   const navigate = useNavigate();
   const r = ad.resources[key];
@@ -311,9 +312,9 @@ function Editor({
       if (data.type !== "percent") data.max = null;
     }
     setErrors(problems);
-    // Danh mục chia nhiều mục: tự mở mục đang có lỗi để người dùng thấy ngay
-    if (key === "categories" && Object.keys(problems).length)
-      setCatTab(problems.subs ? "menu" : problems.filters ? "filters" : CAT_IMAGES.some((k) => problems[k]) ? "images" : "general");
+    // Trang chia mục: tự mở mục đầu tiên đang có lỗi để người dùng thấy ngay
+    const errorTab = tabs?.find((t) => Object.keys(problems).some((k) => t.keys.includes(k) || t.extra === k));
+    if (errorTab) setTab(errorTab.id);
     if (Object.keys(problems).length) {
       notice("Vui lòng kiểm tra các trường báo lỗi.", true);
       return;
@@ -453,15 +454,17 @@ function Editor({
       </Head>
       <form id="frm" className="ar-editor" onSubmit={submit}>
         <fieldset disabled={busy} className="ar-fieldset">
-          {key === "categories" ? (
-            <CategoryLayout
-              tab={catTab}
-              onTab={setCatTab}
+          {tabs ? (
+            <ResourceTabs
+              tabs={tabs}
+              tab={tab}
+              onTab={setTab}
               row={row}
               errors={errors}
               fields={fields}
               field={field}
               patch={patch}
+              resource={key}
             />
           ) : key === "products" && r.formSections ? (
             <div className="ar-editor-columns">
@@ -485,12 +488,8 @@ function Editor({
               <div className="ar-grid">{fields.map(field)}</div>
             </Panel>
           )}
-          {key === "brands" && (
-            <ProductMembership row={row} kind="brands" onChange={patch} />
-          )}
-          {key === "coupons" && <CouponRules row={row} onChange={patch} />}
         </fieldset>
-        <div className={`ar-form-foot${key === "categories" ? " ce-savebar" : ""}`}>
+        <div className={`ar-form-foot${tabs ? " ce-savebar" : ""}`}>
           <button
             id="save"
             className="btn btn-primary"
@@ -507,109 +506,72 @@ function Editor({
     </>
   );
 }
-function CouponRules({
-  row,
-  onChange,
-}: {
-  row: Row;
-  onChange: (patch: Row) => void;
-}) {
+// Mã giảm giá: chọn danh mục / sản phẩm được giảm (theo "Phạm vi sản phẩm")
+function toggleIn(row: Row, key: string, value: any) {
+  const list = row[key] || [];
+  return { [key]: list.map(String).includes(String(value)) ? list.filter((v: any) => String(v) !== String(value)) : [...list, value] };
+}
+function CouponScope({ row, onChange, error }: { row: Row; onChange: (patch: Row) => void; error?: string }) {
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(20);
-  const groups = useData(async () => {
-    const result = await ad.db.list("crm_customer_summary", { limit: 50000 });
-    return Array.from(new Set(result.rows.flatMap((r) => r.tags || []))).map(
-      String,
-    );
-  });
-  function toggle(key: string, value: any) {
-    const list = row[key] || [];
-    onChange({
-      [key]: list.map(String).includes(String(value))
-        ? list.filter((v: any) => String(v) !== String(value))
-        : [...list, value],
-    });
-  }
-  const products = (ad.cache.products || []).filter((p: Row) =>
-    `${p.name} ${p.sku}`.toLowerCase().includes(query.toLowerCase()),
-  );
+  const all: Row[] = ad.cache.products || [];
+  const chosen = (row.product_ids || []).map(String);
+  // Chưa gõ tìm: chỉ hiện sản phẩm đã chọn; gõ tìm: hiện sản phẩm khớp
+  const products = query.trim() ? all.filter((p) => `${p.name} ${p.sku}`.toLowerCase().includes(query.trim().toLowerCase())) : all.filter((p) => chosen.includes(String(p.id)));
+  if (row.scope !== "categories" && row.scope !== "products") return <p className="ce-empty">Phạm vi đang là "Tất cả sản phẩm". Chọn "Danh mục đã chọn" hoặc "Sản phẩm đã chọn" ở trên để giới hạn.</p>;
   return (
-    <Panel title="Sản phẩm và nhóm khách hàng áp dụng">
+    <div className="ce-sub coupon-scope">
+      {error && <p className="ar-error" role="alert">{error}</p>}
       {row.scope === "categories" && (
-        <fieldset className="ar-tree">
-          <legend>Chọn danh mục</legend>
-          {(ad.cache.categories || []).map((c: Row) => (
-            <label className="ar-check" key={c.id}>
-              <input
-                type="checkbox"
-                checked={(row.category_ids || []).includes(c.id)}
-                onChange={() => toggle("category_ids", c.id)}
-              />
-              {c.name}
-            </label>
-          ))}
-        </fieldset>
-      )}
-      {row.scope === "products" && (
         <>
-          <label>
-            Tìm sản phẩm
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setLimit(20);
-              }}
-            />
-          </label>
-          <p>{(row.product_ids || []).length} sản phẩm đã chọn</p>
-          <div className="ar-members">
-            {products.slice(0, limit).map((p: Row) => (
-              <label className="ar-check" key={p.id}>
-                <input
-                  type="checkbox"
-                  checked={(row.product_ids || [])
-                    .map(String)
-                    .includes(String(p.id))}
-                  onChange={() => toggle("product_ids", p.id)}
-                />
-                {p.name} · {p.sku}
+          <h3>Danh mục được giảm</h3>
+          <div className="coupon-checks">
+            {(ad.cache.categories || []).map((c: Row) => (
+              <label className="ar-check" key={c.id}>
+                <input type="checkbox" checked={(row.category_ids || []).includes(c.id)} onChange={() => onChange(toggleIn(row, "category_ids", c.id))} />
+                {c.name}
               </label>
             ))}
           </div>
-          {products.length > limit && (
-            <button
-              type="button"
-              className="btn btn-light"
-              onClick={() => setLimit((v) => v + 20)}
-            >
-              Xem thêm sản phẩm
-            </button>
-          )}
         </>
       )}
-      <fieldset className="ar-tree">
-        <legend>Nhóm khách hàng</legend>
-        <p>Không chọn nhóm = áp dụng cho tất cả khách hàng.</p>
-        {[
-          ["vip", "Khách VIP"],
-          ["marketing", "Khách đồng ý nhận quảng cáo"],
-          ...(groups.data || [])
-            .filter((t) => t !== "VIP")
-            .map((t) => [`tag:${t}`, t]),
-        ].map(([value, label]) => (
-          <label className="ar-check" key={value}>
-            <input
-              type="checkbox"
-              checked={(row.customer_groups || []).includes(value)}
-              onChange={() => toggle("customer_groups", value)}
-            />
-            {label}
+      {row.scope === "products" && (
+        <>
+          <h3>Sản phẩm được giảm <small>{chosen.length} đã chọn</small></h3>
+          <label className="pm-add">
+            Tìm sản phẩm
+            <input type="search" value={query} placeholder="Gõ tên hoặc mã SKU để tìm và chọn thêm…" onChange={(e) => { setQuery(e.target.value); setLimit(20); }} />
           </label>
-        ))}
-      </fieldset>
-    </Panel>
+          <div className="coupon-checks coupon-products">
+            {products.slice(0, limit).map((p: Row) => (
+              <label className="ar-check" key={p.id}>
+                <input type="checkbox" checked={chosen.includes(String(p.id))} onChange={() => onChange(toggleIn(row, "product_ids", p.id))} />
+                {p.name} · {p.sku}
+              </label>
+            ))}
+            {!products.length && <p className="ce-empty">{query.trim() ? "Không tìm thấy sản phẩm phù hợp." : "Chưa chọn sản phẩm nào. Gõ vào ô tìm để chọn."}</p>}
+          </div>
+          {products.length > limit && <button type="button" className="btn btn-light" onClick={() => setLimit((v) => v + 20)}>Xem thêm sản phẩm</button>}
+        </>
+      )}
+    </div>
+  );
+}
+// Mã giảm giá: nhóm khách hàng được dùng mã
+function CouponGroups({ row, onChange }: { row: Row; onChange: (patch: Row) => void }) {
+  const groups = useData(async () => {
+    const result = await ad.db.list("crm_customer_summary", { limit: 50000 });
+    return Array.from(new Set(result.rows.flatMap((r) => r.tags || []))).map(String);
+  });
+  return (
+    <div className="coupon-checks">
+      {[["vip", "Khách VIP"], ["marketing", "Khách đồng ý nhận quảng cáo"], ...(groups.data || []).filter((t) => t !== "VIP").map((t) => [`tag:${t}`, t])].map(([value, label]) => (
+        <label className="ar-check" key={value}>
+          <input type="checkbox" checked={(row.customer_groups || []).includes(value)} onChange={() => onChange(toggleIn(row, "customer_groups", value))} />
+          {label}
+        </label>
+      ))}
+    </div>
   );
 }
 // Nhóm (cấp 2) và mục (cấp 3) của danh mục: hiện thành menu 2 bậc trên website
@@ -719,19 +681,59 @@ function SubsEditor({
   );
 }
 
-// ---------------------------------------------------------------- Trang sửa danh mục
-// Chia 5 mục chọn ở cột trái, mỗi lần chỉ hiện 1 mục trong 1 khung phẳng (không lồng khung).
-const CAT_GENERAL = ["name", "short", "id", "icon", "art", "sort", "active"];
-const CAT_IMAGES = ["image", "promo_image", "promo_title", "promo_href"];
-function CategoryLayout({
-  tab,
+// ---------------------------------------------------------------- Trang sửa chia mục
+// Các trang sửa dài chia thành mục ở cột trái; mỗi lần chỉ hiện 1 mục trong 1 khung phẳng (không lồng khung).
+// extra = khối riêng ngoài các trường thường (menu nhóm/mục, bộ lọc, sản phẩm, phạm vi mã giảm giá…).
+type ResourceTab = { id: string; label: string; hint: string; keys: string[]; extra?: string };
+const tab = (id: string, label: string, hint: string, keys: string[], extra?: string): ResourceTab => ({ id, label, hint, keys, extra });
+export const RESOURCE_TABS: Record<string, ResourceTab[]> = {
+  categories: [
+    tab("general", "Thông tin chung", "Tên, mã đường dẫn, biểu tượng và thứ tự hiển thị của danh mục.", ["name", "short", "id", "icon", "art", "sort", "active"]),
+    tab("images", "Hình ảnh", "Ảnh danh mục (hiện lớn ở đầu trang danh mục) và ảnh quảng cáo ở cột đầu dải sản phẩm trên trang chủ.", ["image", "promo_image", "promo_title", "promo_href"]),
+    tab("menu", "Nhóm & mục menu", "Nhóm là tiêu đề cột trong menu Sản phẩm (vd \"Máy lạnh treo tường\"), mục là các dòng bên dưới. Mã được tạo tự động khi lưu.", [], "subs"),
+    tab("filters", "Bộ lọc sản phẩm", "Các bộ lọc khách dùng ở trang danh mục (vd Công suất: 1 HP, 1.5 HP…). Giá trị của từng sản phẩm chọn trong trang sửa sản phẩm.", [], "filters"),
+    tab("products", "Sản phẩm", "Sản phẩm thuộc danh mục và thứ tự hiển thị trên website.", [], "productMembership"),
+  ],
+  brands: [
+    tab("general", "Thông tin & logo", "Tên thương hiệu, trạng thái hiển thị và logo trên trang Thương hiệu.", ["name", "active", "logo"]),
+    tab("products", "Sản phẩm", "Sản phẩm thuộc thương hiệu và thứ tự hiển thị trên website.", [], "productMembership"),
+  ],
+  products: [
+    tab("basic", "Thông tin chung", "Tên, mã, phân loại và trạng thái bán trên website.", ["name", "sku", "slug", "active", "cat", "sub", "sub2", "brand", "warranty", "technology", "origin", "product_tags"]),
+    tab("pricing", "Giá & tồn kho", "Giá bán, giá gốc, tồn kho, khuyến mãi và vận chuyển.", ["price", "old_price", "stock", "sold", "flash_sale", "free_install", "gift", "requires_shipping", "weight", "weight_unit"]),
+    tab("content", "Mô tả", "Nội dung giới thiệu sản phẩm hiện ở trang chi tiết.", ["description"]),
+    tab("images", "Hình ảnh", "Ảnh sản phẩm; ảnh đầu tiên là ảnh đại diện.", ["images"]),
+    tab("attributes", "Thuộc tính & thông số", "Tùy chọn khách chọn khi mua, giá trị bộ lọc của danh mục và bảng thông số kỹ thuật.", ["options", "attrs", "specs"]),
+    tab("reviews", "Đánh giá", "Số sao và số lượt đánh giá hiển thị trên website.", ["rating", "reviews"]),
+  ],
+  coupons: [
+    tab("main", "Mã & mức giảm", "Mã khách nhập, loại giảm, mức giảm, thời gian hiệu lực và trạng thái.", ["code", "type", "value", "max", "min", "usage_limit", "used_count", "starts_at", "ends_at", "description", "active", "is_public"]),
+    tab("scope", "Phạm vi & điều kiện", "Sản phẩm / danh mục được giảm và điều kiện áp dụng.", ["scope", "condition_type", "condition_value", "combine_discounts", "once_per_customer"], "couponScope"),
+    tab("groups", "Nhóm khách hàng", "Không chọn nhóm nào = áp dụng cho tất cả khách hàng.", [], "couponGroups"),
+  ],
+  projects: [
+    tab("info", "Thông tin dự án", "Tên, khách hàng, quy mô và trạng thái đăng.", ["title", "slug", "client", "industry", "location", "year", "sort", "units", "capacity", "duration", "published", "featured", "summary"]),
+    tab("images", "Hình ảnh", "Ảnh trước / sau thi công và thư viện ảnh.", ["before_image", "after_image", "images"]),
+    tab("content", "Nội dung", "Bài viết chi tiết: yêu cầu, giải pháp, kết quả.", ["content"]),
+    tab("testimonial", "Cảm nhận khách hàng", "Lời nhận xét của khách hàng về dự án.", ["testimonial", "testimonial_name", "testimonial_role"]),
+  ],
+  posts: [
+    tab("info", "Thông tin bài viết", "Tiêu đề, đường dẫn, chuyên mục, ngày đăng và mô tả ngắn cho Google.", ["title", "slug", "cat", "date", "author", "art", "published", "excerpt"]),
+    tab("content", "Nội dung", "Nội dung bài viết.", ["content"]),
+  ],
+};
+function ResourceTabs({
+  tabs,
+  tab: active,
   onTab,
   row,
   errors,
   fields,
   field,
   patch,
+  resource,
 }: {
+  tabs: ResourceTab[];
   tab: string;
   onTab: (t: string) => void;
   row: Row;
@@ -739,47 +741,47 @@ function CategoryLayout({
   fields: FieldSpec[];
   field: (f: FieldSpec) => ReactNode;
   patch: (data: Row) => void;
+  resource: string;
 }) {
   const products: Row[] = ad.cache.products || [];
-  const productCount = Array.isArray(row.product_ids)
+  const field2 = resource === "brands" ? "brand" : "cat";
+  const memberCount = Array.isArray(row.product_ids)
     ? row.product_ids.length
-    : products.filter((p) => p.cat === row.id && !(row.excluded_product_ids || []).map(String).includes(String(p.id))).length;
-  const groups = (row.subs || []) as SubGroup[];
-  const tabs: [string, string, string, number | null][] = [
-    ["general", "Thông tin chung", "Tên, mã đường dẫn, biểu tượng và thứ tự hiển thị của danh mục.", null],
-    ["images", "Hình ảnh", "Ảnh đại diện danh mục và ảnh quảng cáo ở cột đầu dải sản phẩm trên trang chủ.", null],
-    ["menu", "Nhóm & mục menu", "Nhóm là tiêu đề cột trong menu Sản phẩm (vd \"Máy lạnh treo tường\"), mục là các dòng bên dưới. Mã được tạo tự động khi lưu.", groups.length],
-    ["filters", "Bộ lọc sản phẩm", "Các bộ lọc khách dùng ở trang danh mục (vd Công suất: 1 HP, 1.5 HP…). Giá trị của từng sản phẩm chọn trong trang sửa sản phẩm.", (row.filters || []).length],
-    ["products", "Sản phẩm", "Sản phẩm thuộc danh mục và thứ tự hiển thị trên website.", productCount],
-  ];
-  const current = tabs.find((t) => t[0] === tab) || tabs[0];
-  const has = (keys: string[]) => keys.some((k) => errors[k]);
+    : products.filter((p) => String(p[field2]) === String(row.id) && !(row.excluded_product_ids || []).map(String).includes(String(p.id))).length;
+  // Trường không nằm trong mục nào (vd trường mới thêm) được đưa vào mục đầu tiên để không bị mất
+  const listed = new Set(tabs.flatMap((t) => t.keys));
+  const leftovers = fields.filter((f) => !listed.has(f.key)).map((f) => f.key);
+  const keysOf = (t: ResourceTab, i: number) => (i === 0 ? [...t.keys, ...leftovers] : t.keys);
+  const count = (t: ResourceTab) =>
+    t.extra === "subs" ? (row.subs || []).length : t.extra === "filters" ? (row.filters || []).length : t.extra === "productMembership" ? memberCount : t.extra === "couponGroups" ? (row.customer_groups || []).length || null : null;
+  const index = Math.max(0, tabs.findIndex((t) => t.id === active));
+  const current = tabs[index];
   const pick = (keys: string[]) => keys.map((k) => fields.find((f) => f.key === k)).filter(Boolean) as FieldSpec[];
   return (
     <div className="ce-layout cat-editor">
-      <nav className="ce-nav" aria-label="Các mục của danh mục">
-        {tabs.map(([k, label, , count]) => (
-          <div key={k}>
-            <button
-              type="button"
-              className={`${k === current[0] ? "active" : ""}${(k === "general" && has(CAT_GENERAL)) || (k === "images" && has(CAT_IMAGES)) || (k === "menu" && errors.subs) || (k === "filters" && errors.filters) ? " has-error" : ""}`}
-              aria-current={k === current[0] ? "true" : undefined}
-              onClick={() => onTab(k)}
-            >
-              {label}
-              {count != null && <span className="ce-count">{count}</span>}
-            </button>
-          </div>
-        ))}
+      <nav className="ce-nav" aria-label="Các mục">
+        {tabs.map((t, i) => {
+          const c = count(t);
+          const bad = keysOf(t, i).some((k) => errors[k]) || (t.extra && errors[t.extra]);
+          return (
+            <div key={t.id}>
+              <button type="button" className={`${t.id === current.id ? "active" : ""}${bad ? " has-error" : ""}`} aria-current={t.id === current.id ? "true" : undefined} onClick={() => onTab(t.id)}>
+                {t.label}
+                {c != null && <span className="ce-count">{c}</span>}
+              </button>
+            </div>
+          );
+        })}
       </nav>
-      <section className="ar-panel ce-section" aria-labelledby="cat-tab-title">
-        <h2 id="cat-tab-title" className="ce-title">{current[1]}</h2>
-        <p className="ce-hint">{current[2]}</p>
-        {current[0] === "general" && <div className="ar-grid ce-grid">{pick(CAT_GENERAL).map(field)}</div>}
-        {current[0] === "images" && <div className="ar-grid ce-grid cat-images">{pick(CAT_IMAGES).map(field)}</div>}
-        {current[0] === "menu" && <SubsEditor value={groups} error={errors.subs} onChange={(v) => patch({ subs: v })} />}
-        {current[0] === "filters" && <FiltersEditor value={row.filters || []} error={errors.filters} onChange={(v) => patch({ filters: v })} />}
-        {current[0] === "products" && <ProductMembership row={row} kind="categories" onChange={patch} bare />}
+      <section className="ar-panel ce-section" aria-labelledby="tab-title">
+        <h2 id="tab-title" className="ce-title">{current.label}</h2>
+        <p className="ce-hint">{current.hint}</p>
+        {keysOf(current, index).length > 0 && <div className={`ar-grid ce-grid tab-${current.id}`}>{pick(keysOf(current, index)).map(field)}</div>}
+        {current.extra === "subs" && <SubsEditor value={row.subs || []} error={errors.subs} onChange={(v) => patch({ subs: v })} />}
+        {current.extra === "filters" && <FiltersEditor value={row.filters || []} error={errors.filters} onChange={(v) => patch({ filters: v })} />}
+        {current.extra === "productMembership" && <ProductMembership row={row} kind={resource as "categories" | "brands"} onChange={patch} bare />}
+        {current.extra === "couponScope" && <CouponScope row={row} onChange={patch} error={errors.scope} />}
+        {current.extra === "couponGroups" && <CouponGroups row={row} onChange={patch} />}
       </section>
     </div>
   );

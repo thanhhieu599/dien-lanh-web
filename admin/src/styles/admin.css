@@ -152,3 +152,14 @@
 .pm-results .pm-row .btn{min-height:32px;padding:2px 12px;font-size:var(--ar-font-13)}
 @media(max-width:700px){.cat-group-head,.cat-items li{flex-wrap:wrap}.cat-items{padding-left:var(--ar-space-3)}.cat-add-item{margin-left:var(--ar-space-3)}.cat-items label span{display:none}.pm-row{flex-wrap:wrap}}
 .ce-grid input[type=checkbox],.ce-grid input[type=radio]{width:auto}
+/* Trang chỉ có 1 mục (vd Trang Tầm nhìn): không có cột mục bên trái -> dùng toàn bộ chiều ngang */
+.ce-layout:not(:has(> .ce-nav)){grid-template-columns:minmax(0,1fr)}
+/* Mã giảm giá: danh sách chọn danh mục / sản phẩm / nhóm khách */
+.coupon-scope h3 small{margin-left:var(--ar-space-2);color:var(--ar-muted);font-size:var(--ar-font-13);font-weight:400}
+.coupon-scope .pm-add{display:grid;gap:4px;margin-bottom:var(--ar-space-3);font-size:var(--ar-font-13);font-weight:700}
+.coupon-scope .pm-add input{width:100%}
+.coupon-checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:var(--ar-space-2) var(--ar-space-5)}
+.coupon-products{grid-template-columns:minmax(0,1fr);max-height:420px;overflow:auto}
+.coupon-checks .ce-empty{grid-column:1/-1}
+/* Ảnh trong trang sửa chia mục: xem trước gọn */
+.tab-images .ar-gallery-list,.tab-general .ar-gallery-list{grid-template-columns:repeat(auto-fill,minmax(140px,180px))}

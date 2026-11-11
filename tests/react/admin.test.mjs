@@ -25,6 +25,8 @@ try {
     );
     assert.equal(await page.locator("#view .ad-error").count(), 0, route);
   }
+  // Trang sửa chia mục: bấm mục ở cột trái theo tên
+  const tabTo = (name) => page.locator(".ce-nav button").filter({ hasText: new RegExp("^" + name) }).click();
   async function read(table, id) {
     return page.evaluate(([table, id]) => AD.db.get(table, id), [table, id]);
   }
@@ -85,8 +87,12 @@ try {
   // Exercise validation, typed lists, key/value options, image conversion and persistence.
   await open("products/1001");
   const original = await read("products", 1001);
+  assert.equal(await page.locator("[name=image]").count(), 0, "Sản phẩm không có ô Ảnh dịch vụ");
+  await tabTo("Giá & tồn kho");
   await page.locator("[name=price]").fill("-1");
+  await tabTo("Thông tin chung");
   await page.click("#save");
+  // Lưu bị lỗi: tự mở mục chứa ô lỗi
   await page.locator("[data-field=price] [role=alert]").waitFor();
   assert.equal(
     (await read("products", 1001)).price,
@@ -94,9 +100,11 @@ try {
     "Invalid price must not persist",
   );
   await page.locator("[name=price]").fill(String(original.price + 1000));
+  await tabTo("Thông tin chung");
   await page.locator("[name=name]").fill("Máy lạnh kiểm thử React");
   await page.locator("[name=product_tags]").fill("");
   await page.locator("[name=product_tags]").pressSequentially("React, Demo");
+  await tabTo("Thuộc tính & thông số");
   const options = page.locator("[data-field=options]");
   await options.getByRole("button", { name: "Thêm thuộc tính" }).click();
   await options
@@ -107,6 +115,7 @@ try {
     .getByRole("textbox", { name: /Giá trị thuộc tính/ })
     .last()
     .fill("Trắng, Đen");
+  await tabTo("Hình ảnh");
   const gallery = page.locator("[data-field=images]");
   while (await gallery.getByRole("button", { name: /Bỏ ảnh/ }).count())
     await gallery
@@ -155,7 +164,7 @@ try {
   assert.match(await page.locator("#view").textContent(), /Chưa có dữ liệu/);
 
   // Danh mục: 5 mục ở cột trái, mỗi lần hiện 1 mục; không còn ô JSON
-  const catTab = (name) => page.locator(".ce-nav button").filter({ hasText: new RegExp("^" + name) }).click();
+  const catTab = tabTo;
   await open("categories/may-lanh");
   const category = await read("categories", "may-lanh");
   const groups = (category.subs || []).length;
@@ -218,7 +227,11 @@ try {
   await page.locator("[name=promo_title]").fill("");
   await page.locator("[name=promo_href]").fill("");
   await saved();
+  // Dịch vụ có ô ảnh dịch vụ; Thương hiệu chia 2 mục: Thông tin & logo, Sản phẩm
+  await open("services/ve-sinh");
+  assert.equal(await page.locator('[data-field="image"]').count(), 1);
   await open("brands/new");
+  assert.equal(await page.locator(".ce-nav button").count(), 2);
   await page.locator("[name=name]").fill("Thương hiệu React QA");
   await saved();
   const brandId = decodeURIComponent(new URL(page.url()).hash.split("/")[2]);
@@ -229,6 +242,7 @@ try {
     (await AD.db.list("coupons")).rows.find((c) => c.min > 0),
   );
   await open("coupons/" + coupon.code);
+  await tabTo("Phạm vi & điều kiện");
   assert.equal(
     await page.locator("[name=condition_type]").inputValue(),
     "order_min",
@@ -239,6 +253,7 @@ try {
   await page.locator("[name=code]").fill("REACTQA");
   await page.locator("[name=type]").selectOption("percent");
   await page.locator("[name=value]").fill("10");
+  await tabTo("Phạm vi & điều kiện");
   await page.locator("[name=scope]").selectOption("products");
   await page
     .getByLabel("Tìm sản phẩm", { exact: true })
@@ -446,6 +461,8 @@ try {
   await page.getByLabel("Giá trị 1", { exact: true }).fill("10+");
   await saved("#view .ar-form-foot button", "Đã lưu nội dung website.");
   await open("settings");
+  assert.ok((await page.locator(".ce-nav button").count()) >= 5, "Cài đặt chia nhóm ở cột trái");
+  await tabTo("Nhắc bảo trì");
   assert.equal(
     await page.locator("[name=maintenanceMonths]").inputValue(),
     "6",

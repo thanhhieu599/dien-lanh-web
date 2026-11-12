@@ -185,6 +185,8 @@ function Totals({ totals }: { totals: Row }) {
   );
 }
 export function CheckoutPage() {
+  // Giá / tồn kho mới nhất trước khi khách đặt (admin có thể vừa sửa)
+  useEffect(() => { dt.backend?.refresh?.(); }, []);
   const state = useShop();
   const navigate = useNavigate();
   const [method, setMethod] = useState("delivery");

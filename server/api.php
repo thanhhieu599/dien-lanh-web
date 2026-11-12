@@ -16,6 +16,12 @@ try {
     if ($method !== 'GET') requireMutation();
     $route = trim($_GET['route'] ?? '', '/');
     if ($route === 'health' && $method === 'GET') { sql('SELECT 1'); jsonResponse(['ok' => true, 'database' => 'mysql']); }
+    // Phiên bản dữ liệu công khai: website so với bản lưu tạm để thấy ngay giá / tồn kho / nội dung admin vừa sửa
+    if ($route === 'version' && $method === 'GET') {
+        $row = sql("SELECT COUNT(*), MAX(JSON_UNQUOTE(JSON_EXTRACT(data,'$.updated_at'))) FROM records WHERE resource IN ('settings','categories','brands','products','stores','posts','banners','services','policies','coupons','projects','faqs')")->fetch(PDO::FETCH_NUM);
+        header('Cache-Control: no-store');
+        jsonResponse(['version' => $row[0] . ':' . ($row[1] ?? '')]);
+    }
 
     if (str_starts_with($route, 'media/')) {
         $path = substr($route, 6);

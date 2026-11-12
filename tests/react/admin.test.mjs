@@ -25,6 +25,15 @@ try {
     );
     assert.equal(await page.locator("#view .ad-error").count(), 0, route);
   }
+  // Chờ điều kiện bất đồng bộ trong trang (waitForFunction không chờ được hàm async: Promise luôn "đúng")
+  async function waitUntil(fn, arg, timeout = 15000) {
+    const end = Date.now() + timeout;
+    while (Date.now() < end) {
+      if (await page.evaluate(fn, arg)) return;
+      await page.waitForTimeout(100);
+    }
+    throw new Error("Hết thời gian chờ: " + fn.toString().slice(0, 140));
+  }
   // Trang sửa chia mục: bấm mục ở cột trái theo tên
   const tabTo = (name) => page.locator(".ce-nav button").filter({ hasText: new RegExp("^" + name) }).click();
   async function read(table, id) {
@@ -352,7 +361,7 @@ try {
   });
   await open("orders/DTREACTQA");
   await page.getByRole("button", { name: "Chuyển sang:" }).click();
-  await page.waitForFunction(
+  await waitUntil(
     async () => (await AD.db.get("orders", "DTREACTQA")).status === "confirmed",
   );
   await page.locator("[name=status]").selectOption("done");
@@ -398,7 +407,7 @@ try {
   await page.locator("[name=tags]").fill("VIP, React");
   await page.locator("[name=note]").fill("Chăm sóc sau bán");
   await page.getByRole("button", { name: "Lưu ghi chú và nhãn" }).click();
-  await page.waitForFunction(
+  await waitUntil(
     async (id) => (await AD.db.get("crm_customers", id)).tags.includes("React"),
     customerId,
   );
@@ -626,7 +635,7 @@ try {
     assert.equal(supplier.debt, 3400000, "Công nợ NCC = tổng - đã trả");
     await page.locator("input[aria-label='Số tiền thanh toán']").fill("3400000");
     await page.locator("#po-pay").click();
-    await page.waitForFunction(async (id) => (await AD.db.get("purchase_orders", id)).status === "done", po.id);
+    await waitUntil(async (id) => (await AD.db.get("purchase_orders", id)).status === "done", po.id);
     supplier = await read("suppliers", po.supplier_id);
     assert.equal(supplier.debt, 0, "Trả đủ: hết công nợ");
     // Kiểm hàng: thực tế ít hơn 2 -> cân bằng kho
@@ -637,7 +646,7 @@ try {
     await page.locator(`input[aria-label^="Lý do"]`).fill("Thất thoát");
     assert.match(await page.locator(".inv-lines").innerText(), /-2/);
     await page.locator("#adj-balance").click();
-    await page.waitForFunction(async ([id, n]) => (await AD.db.get("products", id)).stock === n, [pid, afterPo.stock - 2]);
+    await waitUntil(async ([id, n]) => (await AD.db.get("products", id)).stock === n, [pid, afterPo.stock - 2]);
     const adj = (await page.evaluate(() => AD.db.list("stock_adjustments", { order: "id.desc", limit: 1 }))).rows[0];
     assert.equal(adj.status, "balanced");
     assert.match(adj.code, /^IAN\d{5}$/);
@@ -647,7 +656,7 @@ try {
     await page.locator(".inv-picker input").fill(before.sku);
     await page.keyboard.press("Enter");
     await page.locator("#exp-confirm").click();
-    await page.waitForFunction(async ([id, n]) => (await AD.db.get("products", id)).stock === n, [pid, afterPo.stock - 3]);
+    await waitUntil(async ([id, n]) => (await AD.db.get("products", id)).stock === n, [pid, afterPo.stock - 3]);
     // Xuất quá tồn bị chặn, không ghi gì
     await open("stock-exports/new");
     await page.locator("[name=reason]").selectOption("damaged");

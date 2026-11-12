@@ -315,15 +315,48 @@ DT.backend = (() => {
     }
   }
 
+  let lastVersion = null;
+  let watching = false;
+  let refreshing = null;
+  // Nạp lại danh mục nếu dữ liệu trên máy chủ đã đổi (giá, tồn kho, nội dung); báo giao diện vẽ lại
+  function refresh() {
+    if (!enabled || refreshing) return refreshing;
+    refreshing = (async () => {
+      try {
+        const version = (await http("/version", { auth: false }))?.version;
+        if (!version || version === lastVersion) return false;
+        const data = await fetchCatalog();
+        apply(data);
+        lastVersion = version;
+        try {
+          sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), v: version, data }));
+        } catch {
+          /* quá dung lượng */
+        }
+        DT.store.save();
+        return true;
+      } catch {
+        return false;
+      } finally {
+        refreshing = null;
+      }
+    })();
+    return refreshing;
+  }
+
   async function load() {
     if (!enabled) {
       demoAdmin();
       return;
     }
     let data = null;
+    // Bản lưu tạm chỉ dùng khi máy chủ báo dữ liệu chưa đổi (admin vừa sửa giá / tồn kho thì tải lại ngay)
+    const version = await http("/version", { auth: false })
+      .then((r) => r?.version || null)
+      .catch(() => null);
     try {
       const c = JSON.parse(sessionStorage.getItem(CACHE_KEY) || "null");
-      if (c && Date.now() - c.t < (cfg.cacheMinutes ?? 5) * 60000)
+      if (c && version && c.v === version && Date.now() - c.t < (cfg.cacheMinutes ?? 5) * 60000)
         data = c.data;
     } catch {
       /* bỏ qua */
@@ -334,13 +367,21 @@ DT.backend = (() => {
         try {
           sessionStorage.setItem(
             CACHE_KEY,
-            JSON.stringify({ t: Date.now(), data }),
+            JSON.stringify({ t: Date.now(), v: version, data }),
           );
         } catch {
           /* quá dung lượng */
         }
       }
       apply(data);
+      lastVersion = version;
+      if (!watching) {
+        watching = true;
+        // Khách quay lại tab sau một lúc: kiểm tra admin có sửa giá / tồn kho không
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") refresh();
+        });
+      }
     } catch (e) {
       console.warn(
         "[Website] Không nạp được dữ liệu từ máy chủ, dùng dữ liệu dự phòng:",
@@ -390,6 +431,7 @@ DT.backend = (() => {
     enabled,
     offline: false,
     load,
+    refresh,
     clearCache,
     select,
     rpc,

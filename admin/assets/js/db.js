@@ -764,9 +764,16 @@ AD.demo = () => {
       const ov = (db.overlay.orders[id] = db.overlay.orders[id] || {});
       if (o && patch.status && patch.status !== o.status) {
         o.status = patch.status;
+        // COD: giao xong = đã thu tiền (giống máy chủ PHP updateOrder)
+        let note = "";
+        const pay = patch.payment_status ?? ov.payment_status ?? o.paymentStatus ?? "unpaid";
+        if (patch.status === "done" && o.payment === "cod" && ["unpaid", "partial"].includes(pay)) {
+          patch = { ...patch, payment_status: "paid" };
+          note = "Đã thu tiền COD khi giao";
+        }
         ov.history = [
           ...(ov.history || [{ status: "pending", created_at: o.createdAt }]),
-          { status: patch.status, created_at: now },
+          { status: patch.status, created_at: now, note },
         ];
         write(SHOP, shop);
       }

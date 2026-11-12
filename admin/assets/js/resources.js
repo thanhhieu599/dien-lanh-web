@@ -693,7 +693,6 @@ window.AD = window.AD || {};
           options: [
             ["percent", "Giảm %"],
             ["fixed", "Giảm số tiền"],
-            ["ship", "Miễn phí vận chuyển"],
           ],
           col: "third",
         },

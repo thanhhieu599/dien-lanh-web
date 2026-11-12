@@ -31,6 +31,21 @@ const orderBody = { p_items:[{id:product.id,qty:2,price:1}], p_customer:{phone,n
 result = await request('/rpc/place_order', { method:'POST', body:orderBody });
 assert.equal(result.status, 200, JSON.stringify(result.data));
 assert.equal(result.data.subtotal, product.price * 2, 'Server must ignore forged prices');
+// Giao hàng miễn phí cho mọi đơn: tổng = tạm tính (không lắp đặt, không mã giảm)
+assert.equal(result.data.shippingFee, 0, 'COD order has no shipping fee');
+assert.equal(result.data.total, result.data.subtotal, 'COD total equals subtotal');
+assert.equal(result.data.payment, 'cod');
+assert.equal(result.data.paymentStatus, 'unpaid', 'COD starts unpaid until delivered');
+const bank = await request('/rpc/place_order', { method:'POST', body:{...orderBody, p_items:[{id:product.id,qty:1}], p_payment:'bank'} });
+assert.equal(bank.status, 200, JSON.stringify(bank.data));
+assert.equal(bank.data.payment, 'bank');
+assert.equal(bank.data.shippingFee, 0, 'Bank transfer order has no shipping fee');
+assert.equal(bank.data.total, product.price, 'Bank total equals subtotal');
+assert.equal(bank.data.paymentStatus, 'unpaid', 'Bank transfer waits for staff confirmation');
+const tracked = await request('/rpc/track_order', {method:'POST',body:{p_code:bank.data.code,p_phone:phone}});
+assert.equal(tracked.data.total, bank.data.total, 'Stored bank order keeps the same total');
+assert.equal((await request('/rpc/cancel_order', {method:'POST',body:{p_code:bank.data.code,p_phone:phone}})).data.status, 'cancelled');
+assert.equal((await request('/rpc/place_order', {method:'POST',body:{...orderBody,p_payment:'vnpay'}})).status, 400, 'Only COD and bank are accepted');
 const order = result.data;
 assert.equal((await request(`/data/products?id=eq.${product.id}`)).data[0].stock, product.stock - 2);
 assert.equal((await request('/rpc/track_order', {method:'POST',body:{p_code:order.code,p_phone:'0900000000'}})).status, 404);

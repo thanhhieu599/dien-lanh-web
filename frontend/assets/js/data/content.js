@@ -17,8 +17,6 @@ DT.config = {
   workingHours: '7:30 - 21:30 (Cả CN & ngày lễ)',
   openTime: '07:30',   // giờ mở / đóng cửa: khung chat & form tự hẹn giờ gọi lại khi ngoài giờ
   closeTime: '21:30',
-  freeShipThreshold: 2000000,
-  shippingFee: 50000,
   installFee: 300000,
   // Tài khoản nhận chuyển khoản (sửa trong Quản trị > Cài đặt cửa hàng). bankBin: mã ngân hàng theo chuẩn VietQR
   // (Vietcombank 970436, Techcombank 970407, MB 970422, ACB 970416, BIDV 970418, VietinBank 970415, VPBank 970432)
@@ -66,7 +64,6 @@ DT.bundleRules = [
 DT.coupons = [
   { code: 'COOL10', type: 'percent', value: 10, max: 1000000, min: 5000000, desc: 'Giảm 10% tối đa 1 triệu cho đơn từ 5 triệu' },
   { code: 'GIAM300K', type: 'fixed', value: 300000, min: 3000000, desc: 'Giảm 300.000₫ cho đơn từ 3 triệu' },
-  { code: 'FREESHIP', type: 'ship', value: 0, min: 0, desc: 'Miễn phí vận chuyển mọi đơn hàng' },
 ];
 
 DT.banners = [
@@ -157,7 +154,7 @@ DT.posts = [
 DT.policies = {
   'bao-hanh': { title: 'Chính sách bảo hành', body: `<p>Tất cả sản phẩm tại cửa hàng là hàng chính hãng, được bảo hành theo tiêu chuẩn của nhà sản xuất.</p><ul><li>Bảo hành tại nhà đối với máy lạnh, tủ lạnh, máy giặt.</li><li>Tiếp nhận bảo hành qua hotline ${DT.config.hotline} hoặc tại showroom.</li><li>Thời gian xử lý: 24 - 72 giờ làm việc.</li></ul><p>Không bảo hành với các trường hợp: hư hỏng do thiên tai, sử dụng sai hướng dẫn, tự ý tháo dỡ sửa chữa.</p>` },
   'doi-tra': { title: 'Chính sách đổi trả', body: `<ul><li><strong>1 đổi 1 trong 30 ngày</strong> nếu lỗi do nhà sản xuất.</li><li>Đổi sang sản phẩm khác trong 7 ngày (sản phẩm còn nguyên hộp, chưa lắp đặt), phí 10%.</li><li>Hoàn tiền trong 3 - 5 ngày làm việc sau khi nhận lại hàng.</li></ul>` },
-  'van-chuyen': { title: 'Chính sách vận chuyển & lắp đặt', body: `<ul><li>Miễn phí giao hàng nội thành cho đơn từ 2.000.000₫.</li><li>Giao nhanh trong 2 - 4 giờ tại TP.HCM, Bình Dương, Đồng Nai.</li><li>Lắp đặt chuẩn kỹ thuật hãng; vật tư phát sinh (ống đồng ngoài 3m tiêu chuẩn, giá đỡ…) tính theo bảng giá niêm yết.</li></ul>` },
+  'van-chuyen': { title: 'Chính sách vận chuyển & lắp đặt', body: `<ul><li>Miễn phí giao hàng cho mọi đơn hàng, thanh toán COD hay chuyển khoản.</li><li>Giao nhanh trong 2 - 4 giờ tại TP.HCM, Bình Dương, Đồng Nai.</li><li>Lắp đặt chuẩn kỹ thuật hãng; vật tư phát sinh (ống đồng ngoài 3m tiêu chuẩn, giá đỡ…) tính theo bảng giá niêm yết.</li></ul>` },
   'bao-mat': { title: 'Chính sách bảo mật thông tin', body: `<p>Chúng tôi cam kết bảo mật thông tin khách hàng theo Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân. Thông tin chỉ được dùng để xử lý đơn hàng, giao hàng, bảo hành và chăm sóc khách hàng.</p>` },
   'thanh-toan': { title: 'Phương thức thanh toán', body: `<ul><li>Thanh toán khi nhận hàng (COD).</li><li>Chuyển khoản ngân hàng (quét mã VietQR, nội dung là mã đơn hàng).</li><li>Doanh nghiệp: chuyển khoản theo kỳ công nợ trong hợp đồng, xuất hóa đơn VAT.</li></ul>` },
 };
@@ -280,12 +277,12 @@ DT.siteContentDefaults = {
   benefits: [
     { icon: 'shield', title: '100% chính hãng', sub: 'Đầy đủ hóa đơn, phiếu bảo hành' },
     { icon: 'tool', title: 'Lắp đặt chuẩn hãng', sub: 'Thợ có chứng chỉ, bảo hành lắp đặt' },
-    { icon: 'truck', title: 'Giao nhanh 2h', sub: '[Miễn phí đơn từ {nguong}|Giao tận nơi]' },
+    { icon: 'truck', title: 'Giao nhanh 2h', sub: 'Miễn phí giao hàng' },
     { icon: 'refresh', title: '1 đổi 1 trong 30 ngày', sub: 'Nếu lỗi do nhà sản xuất' },
   ],
   salesPolicy: [
     { icon: 'shield', title: 'Hàng chính hãng 100%', sub: 'Đầy đủ hóa đơn VAT, CO/CQ' },
-    { icon: 'truck', title: 'Giao hàng miễn phí', sub: '[Đơn từ {nguong_vnd} nội thành|Giao tận nơi]' },
+    { icon: 'truck', title: 'Giao hàng miễn phí', sub: 'Mọi đơn hàng' },
     { icon: 'tool', title: 'Lắp đặt chuyên nghiệp', sub: 'Thợ có chứng chỉ, bảo hành lắp đặt 12 tháng' },
     { icon: 'refresh', title: '1 đổi 1 trong 30 ngày', sub: 'Nếu lỗi do nhà sản xuất' },
   ],

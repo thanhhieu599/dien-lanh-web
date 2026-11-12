@@ -50,7 +50,7 @@ export function buildTestSeed(source, dt, clock = new Date()) {
     const customer = result.crm_customers[i], product = result.products[i];
     const id = `test-order-${key(i)}`, status = statuses[i];
     const qty = i % 3 + 1, subtotal = product.price * qty;
-    const shippingFee = i % 2 ? 50000 : 0, installFee = i % 3 ? 300000 : 0, discount = i % 4 === 0 ? Math.min(100000, subtotal) : 0;
+    const shippingFee = 0, installFee = i % 3 ? 300000 : 0, discount = i % 4 === 0 ? Math.min(100000, subtotal) : 0;
     const total = subtotal + shippingFee + installFee - discount;
     const paymentStatus = status === 'done' ? 'paid' : status === 'cancelled' ? 'refunded' : 'unpaid';
     // Các đơn hoàn tất nằm trong tháng hiện tại để báo cáo MISA mặc định có dữ liệu.

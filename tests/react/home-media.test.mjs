@@ -55,6 +55,11 @@ try {
       const methods=await page.locator('input[name=payment]').evaluateAll(els=>els.map(el=>el.value));
       assert.deepEqual(methods,['cod','bank']);
       assert.equal(await page.getByText(/VNPay|MoMo|trả góp/i).count(),0);
+      // Mọi đơn đều miễn phí giao hàng (kể cả đơn nhỏ): tổng = tạm tính
+      const ship=page.locator('.sum-row',{hasText:'Giao hàng'});
+      assert.match(await ship.innerText(),/Miễn phí/);
+      const sums=await page.evaluate(()=>[...document.querySelectorAll('.sum-row b, .sum-total b')].map(b=>b.textContent));
+      assert.equal(sums.at(-1),sums[0],'Tổng thanh toán phải bằng tạm tính');
     }
     assert.deepEqual(errors,[]);
     await context.close();

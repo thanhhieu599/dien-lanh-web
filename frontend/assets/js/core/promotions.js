@@ -110,8 +110,6 @@ DT.promotions = (() => {
   // method: 'delivery' | 'pickup'; coupon: kết quả evaluate() hợp lệ hoặc null
   function quote(lines, config = {}, method = "delivery", coupon = null) {
     const installFee = config.installFee ?? 300000;
-    const freeShipThreshold = config.freeShipThreshold ?? 2000000;
-    const shippingFee = config.shippingFee ?? 50000;
     const subtotal = lines.reduce((sum, l) => sum + l.product.price * l.qty, 0);
     const install = lines.reduce(
       (sum, l) =>
@@ -121,12 +119,9 @@ DT.promotions = (() => {
           : 0),
       0,
     );
-    let shipping =
-      method === "pickup" || subtotal === 0 || subtotal >= freeShipThreshold
-        ? 0
-        : shippingFee;
+    // Cửa hàng miễn phí giao hàng cho mọi đơn (COD hay chuyển khoản)
+    const shipping = 0;
     const discount = coupon ? coupon.discount : 0;
-    if (coupon?.free_ship) shipping = 0;
     return {
       subtotal,
       install,

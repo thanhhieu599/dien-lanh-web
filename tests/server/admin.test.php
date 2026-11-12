@@ -71,6 +71,22 @@ try {
     $order = fixture('orders', ['id'=>$prefix . '-order', 'code'=>$prefix, 'phone'=>'0900000093', 'customer_id'=>$customerId, 'status'=>'pending', 'payment_status'=>'unpaid', 'total'=>1000]);
     $paid = patchAdmin('orders', $order['id'], ['payment_status'=>'partial']);
     checkAdmin($paid['payment_status'] === 'partial', 'Admin can save partial payment');
+    // Thanh toán COD / chuyển khoản -> CRM: chỉ đơn đã thu tiền được tính vào chi tiêu
+    $spentBefore = endpoint('crm_customer_summary', query:['id'=>'eq.' . $customerId])[0]['total_spent'];
+    $cod = fixture('orders', ['id'=>$prefix . '-cod', 'code'=>$prefix . 'COD', 'phone'=>'0900000093', 'customer_id'=>$customerId, 'status'=>'shipping', 'payment'=>'cod', 'payment_status'=>'unpaid', 'shipping_fee'=>0, 'total'=>2500000]);
+    $bank = fixture('orders', ['id'=>$prefix . '-bank', 'code'=>$prefix . 'BANK', 'phone'=>'0900000093', 'customer_id'=>$customerId, 'status'=>'shipping', 'payment'=>'bank', 'payment_status'=>'unpaid', 'shipping_fee'=>0, 'total'=>4000000]);
+    $doneCod = patchAdmin('orders', $cod['id'], ['status'=>'done', 'payment_status'=>'unpaid']);
+    checkAdmin($doneCod['payment_status'] === 'paid' && !empty($doneCod['paid_at']), 'COD order delivered is marked paid automatically');
+    $history = array_values(array_filter(allRecords('order_status_history'), fn($h) => $h['order_id'] === $cod['id']));
+    foreach ($history as $h) $created[] = ['order_status_history', $h['id']];
+    checkAdmin(($history[0]['note'] ?? '') === 'Đã thu tiền COD khi giao', 'COD collection is written to order history');
+    $doneBank = patchAdmin('orders', $bank['id'], ['status'=>'done']);
+    foreach (allRecords('order_status_history') as $h) if ($h['order_id'] === $bank['id']) $created[] = ['order_status_history', $h['id']];
+    checkAdmin($doneBank['payment_status'] === 'unpaid', 'Bank order stays unpaid until the transfer is confirmed');
+    checkAdmin(endpoint('crm_customer_summary', query:['id'=>'eq.' . $customerId])[0]['total_spent'] == $spentBefore + 2500000, 'CRM counts the collected COD order only');
+    checkAdmin(patchAdmin('orders', $bank['id'], ['payment_status'=>'paid'])['payment_status'] === 'paid', 'Staff confirms the bank transfer');
+    checkAdmin(endpoint('crm_customer_summary', query:['id'=>'eq.' . $customerId])[0]['total_spent'] == $spentBefore + 6500000, 'CRM adds the confirmed bank transfer');
+    checkAdmin(orderQuote([['product'=>['price'=>500000, 'cat'=>'vat-tu'], 'qty'=>1]], ['shippingFee'=>50000, 'freeShipThreshold'=>2000000], 'delivery', null)['shipping'] === 0, 'Old shipping settings no longer add a fee');
     $lead = fixture('leads', ['id'=>$prefix . '-lead', 'status'=>'new', 'assigned_to'=>null, 'notes'=>[]]);
     $otherLead = fixture('leads', ['id'=>$prefix . '-other-lead', 'status'=>'new', 'assigned_to'=>null]);
     $assigned = patchAdmin('leads', $lead['id'], ['assigned_to'=>$admin['id'], 'staff_note'=>'Call back']);

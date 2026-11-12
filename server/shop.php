@@ -83,9 +83,9 @@ function orderQuote(array $lines, array $config, string $method, ?array $coupon)
         $p = $line['product']; $subtotal += $p['price'] * $line['qty'];
         if (($line['install'] ?? false) && !($p['free_install'] ?? false) && $p['cat'] === 'may-lanh') $install += ($config['installFee'] ?? 300000) * $line['qty'];
     }
-    $shipping = $method === 'pickup' || $subtotal === 0 || $subtotal >= ($config['freeShipThreshold'] ?? 2000000) ? 0 : ($config['shippingFee'] ?? 50000);
+    // Cửa hàng miễn phí giao hàng cho mọi đơn (COD hay chuyển khoản)
+    $shipping = 0;
     $discount = $coupon ? $coupon['discount'] : 0;
-    if ($coupon['free_ship'] ?? false) $shipping = 0;
     return ['subtotal' => $subtotal, 'install' => $install, 'shipping' => $shipping, 'discount' => $discount, 'total' => max(0, $subtotal + $install + $shipping - $discount)];
 }
 
@@ -133,7 +133,15 @@ function updateOrder(array $order, array $patch, array $user): array {
                 if ($coupon) { $coupon['used_count'] = max(0, ($coupon['used_count'] ?? 0) - 1); put('coupons', $coupon); }
             }
         }
-        put('order_status_history', ['order_id' => $order['id'], 'status' => $patch['status'], 'note' => '', 'changed_by' => $user['id'] ?? null], true);
+        // COD: giao xong nghĩa là đã thu tiền -> tính vào doanh số CRM ngay
+        $note = '';
+        if ($patch['status'] === 'done' && ($order['payment'] ?? '') === 'cod' && in_array($patch['payment_status'] ?? $order['payment_status'], ['unpaid','partial'], true)) {
+            $patch['payment_status'] = 'paid'; $note = 'Đã thu tiền COD khi giao';
+        }
+        put('order_status_history', ['order_id' => $order['id'], 'status' => $patch['status'], 'note' => $note, 'changed_by' => $user['id'] ?? null], true);
+    }
+    if (isset($patch['payment_status']) && $patch['payment_status'] !== $order['payment_status']) {
+        $patch['paid_at'] = $patch['payment_status'] === 'paid' ? now() : null;
     }
     return put('orders', array_merge($order, $patch));
 }
@@ -165,6 +173,16 @@ function placeOrder(array $args): array {
         $customerId = 'phone:' . $customer['phone'];
         $crm = record('crm_customers', $customerId, true);
         if (!$crm) $crm = put('crm_customers', ['id'=>$customerId, 'phone'=>$customer['phone'], 'name'=>$customer['name'], 'email'=>$customer['email'] ?? '', 'addresses'=> $shipping['method'] === 'delivery' ? [$shipping] : [], 'tags'=>[], 'marketing_opt_in'=>false], true);
+        else {
+            // Khách cũ: bổ sung email còn trống và địa chỉ giao hàng mới (giữ tối đa 5)
+            $changed = false;
+            if (empty($crm['email']) && !empty($customer['email'])) { $crm['email'] = $customer['email']; $changed = true; }
+            if ($shipping['method'] === 'delivery') {
+                $key = fn($a) => mb_strtolower(trim(($a['address'] ?? '') . '|' . ($a['district'] ?? '') . '|' . ($a['province'] ?? '')));
+                if (!in_array($key($shipping), array_map($key, $crm['addresses'] ?? []), true)) { $crm['addresses'] = array_slice(array_merge([$shipping], $crm['addresses'] ?? []), 0, 5); $changed = true; }
+            }
+            if ($changed) $crm = put('crm_customers', $crm);
+        }
         $order = put('orders', [
             'customer_id' => $crm['id'],
             'code' => 'DT' . strtoupper(bin2hex(random_bytes(6))), 'user_id' => actor()['id'] ?? null,

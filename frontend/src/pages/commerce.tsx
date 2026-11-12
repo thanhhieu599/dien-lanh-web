@@ -170,8 +170,8 @@ function Totals({ totals }: { totals: Row }) {
         <b>{money(totals.install)}</b>
       </div>
       <div className="sum-row">
-        <span>Vận chuyển</span>
-        <b>{money(totals.shipping)}</b>
+        <span>Giao hàng</span>
+        <b className="free-ship">{totals.shipping ? money(totals.shipping) : "Miễn phí"}</b>
       </div>
       <div className="sum-row">
         <span>Giảm giá</span>

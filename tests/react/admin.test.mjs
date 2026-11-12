@@ -281,7 +281,7 @@ try {
   await page.evaluate(() => {
     const now = new Date().toISOString();
     const p = AD.cache.products.find((p) => p.id === 1001);
-    const total = p.price * 2 + 50000 - 10001;
+    const total = p.price * 2 - 10001;
     localStorage.setItem(
       "dt_shop_v1",
       JSON.stringify({
@@ -312,7 +312,7 @@ try {
               },
             ],
             subtotal: p.price * 2,
-            shippingFee: 50000,
+            shippingFee: 0,
             discount: 10001,
             total,
             maintenance: true,

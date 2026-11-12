@@ -53,23 +53,9 @@ export const settingsFields:FieldSpec[] = [
       key: "_c",
       type: "custom",
       render: () =>
-        '<h4 class="ad-sec">Phí & chính sách giá</h4><p class="muted">Áp dụng ngay cho tính tiền phía máy chủ khi khách đặt hàng.</p>',
+        '<h4 class="ad-sec">Phí & chính sách giá</h4><p class="muted">Áp dụng ngay cho tính tiền phía máy chủ khi khách đặt hàng. Giao hàng luôn miễn phí (COD và chuyển khoản).</p>',
       read: () => undefined,
       col: "full",
-    },
-    {
-      key: "freeShipThreshold",
-      label: "Miễn phí ship cho đơn từ (₫)",
-      type: "money",
-      required: true,
-      col: "third",
-    },
-    {
-      key: "shippingFee",
-      label: "Phí vận chuyển (₫)",
-      type: "money",
-      required: true,
-      col: "third",
     },
     {
       key: "installFee",

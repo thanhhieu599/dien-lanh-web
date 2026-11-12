@@ -81,7 +81,6 @@ export function HomePage() {
   const rich = (text: string) => (
     <Rich as="span" html={dt.siteText(text, { rich: true })} />
   );
-  const b2b = content.b2b;
   return (
     <div className="container react-home">
       <h1 className="hidden">
@@ -309,39 +308,6 @@ export function HomePage() {
           </div>
         ))}
       </div>
-      <section className="section b2b-banner" id="b2b-banner">
-        <div>
-          <h2>{rich(b2b.title)}</h2>
-          <p>{rich(b2b.desc)}</p>
-          <PagedList
-            items={b2b.points as string[]}
-            className="b2b-points"
-            label="Giải pháp doanh nghiệp"
-            renderItem={(point, i) => (
-              <div key={i}>
-                <Icon name="check" />
-                {rich(point)}
-              </div>
-            )}
-          />
-          <ShopLink
-            className="btn btn-primary btn-lg"
-            href={b2b.btnHref || "bao-gia-du-an.html"}
-          >
-            {b2b.btn}
-          </ShopLink>
-        </div>
-        <div className="b2b-stats">
-          {b2b.stats
-            ?.filter((s: Row) => s.value)
-            .map((s: Row, i: number) => (
-              <div key={i}>
-                <b>{rich(s.value)}</b>
-                {rich(s.label)}
-              </div>
-            ))}
-        </div>
-      </section>
       {dt.projects.length > 0 && (
         <section className="section section-box" id="home-projects">
           <div className="section-head">

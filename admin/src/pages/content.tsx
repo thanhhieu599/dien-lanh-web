@@ -68,6 +68,8 @@ function Block({value,path,onChange,onPending}:{value:any;path:Path;onChange:(v:
 function sectionsOf(value:Row):{id:string;path:string[];title:string;group?:string}[]{
  const out:{id:string;path:string[];title:string;group?:string}[]=[];
  for(const [k,v] of Object.entries(value)){
+  // Mục đã gỡ khỏi website: khối Giải pháp doanh nghiệp ở trang chủ, Khách hàng & đối tác
+  if(k==='b2b'||k==='logos')continue;
   if((k==='home'||k==='catalog')&&v&&typeof v==='object'&&!Array.isArray(v))for(const sub of Object.keys(v))out.push({id:`${k}.${sub}`,path:[k,sub],title:label(sub),group:k==='home'?'Trang chủ':'Danh mục & phụ kiện'});
   else out.push({id:k,path:[k],title:label(k)});
  }

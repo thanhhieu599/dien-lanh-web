@@ -54,8 +54,10 @@ try {
     "Trang chủ không còn dải giới thiệu thương hiệu",
   );
   assert.ok((await page.locator(".qcat .qcat-img").count()) > 0);
-  assert.ok((await page.locator(".b2b-banner .b2b-stats>div").count()) > 0);
   assert.ok((await page.locator(".svc-grid .svc-ic").count()) > 0);
+  // Đã gỡ: khối Giải pháp doanh nghiệp ở trang chủ, mục Khách hàng & đối tác
+  assert.equal(await page.locator(".b2b-banner, .tr-logos").count(), 0);
+  assert.equal(await page.getByText("Khách hàng & đối tác tin tưởng").count(), 0);
   assert.equal(
     await page.locator("[data-block] .tabs").count(),
     0,

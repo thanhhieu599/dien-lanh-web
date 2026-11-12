@@ -167,6 +167,11 @@ export const settingsFields:FieldSpec[] = [
       placeholder: "VD: 1C26TKL",
       help: "In trên Hóa đơn bán hàng; số hóa đơn tự tăng 0000001, 0000002…",
     },
+    { key: "warehouseName", label: "Tên kho (in trên phiếu nhập/xuất)", col: "third", placeholder: "VD: Kho hàng hóa" },
+    { key: "warehouseAddress", label: "Địa điểm kho", col: "third", placeholder: "Để trống: dùng địa chỉ cửa hàng" },
+    { key: "storekeeper", label: "Thủ kho (họ tên)", col: "third" },
+    { key: "chiefAccountant", label: "Kế toán trưởng (họ tên)", col: "third" },
+    { key: "director", label: "Giám đốc (họ tên)", col: "third" },
     {
       key: "invoiceNote",
       label: "Ghi chú cuối hóa đơn",

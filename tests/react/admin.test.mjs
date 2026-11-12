@@ -573,6 +573,7 @@ try {
       "purchases/new",
       "stocktakes/new",
       "invoice/DTREACTQA",
+      "voucher/ban/DTREACTQA",
     ]) {
       await open(route);
       assert.ok(
@@ -660,6 +661,40 @@ try {
     await open(`stock-history?product=${pid}`);
     const history = await page.locator("#view .ar-table tbody").innerText();
     assert.match(history, /Nhập hàng/); assert.match(history, /Kiểm hàng/); assert.match(history, /Xuất kho/);
+    // Phiếu nhập kho (01-VT) của đơn nhập: tổng = tiền hàng chưa VAT, chữ, chữ ký
+    await open(`purchases/${po.id}`);
+    await page.locator("#view a", { hasText: "Phiếu nhập kho" }).click();
+    await page.locator(".vc-sheet").waitFor();
+    let sheet = await page.locator(".vc-sheet").innerText();
+    assert.match(sheet, /PHIẾU NHẬP KHO/); assert.match(sheet, /Mẫu số: 01 - VT/); assert.match(sheet, /99\/2025\/TT-BTC/); assert.match(sheet, /Thủ kho/);
+    assert.match(sheet, new RegExp(`PNK${po.code.slice(3)}`));
+    assert.equal(await page.locator(".vc-total").innerText(), "5.000.000");
+    assert.match(sheet, /Năm triệu đồng chẵn/);
+    assert.equal(await page.locator("#vc-print").isEnabled(), true);
+    assert.equal(await page.locator(".vc-no").evaluate((el) => getComputedStyle(el).color), "rgb(0, 0, 0)", "Phiếu in trắng đen");
+    // Phiếu xuất kho (02-VT) của phiếu xuất quà tặng: Nợ 641 / Có 156
+    const exp = (await page.evaluate(() => AD.db.list("stock_exports", { order: "id.desc", limit: 1 }))).rows[0];
+    assert.equal(exp.status, "done");
+    await open(`stock-exports/${exp.id}`);
+    await page.locator("#view a", { hasText: "In phiếu xuất kho" }).click();
+    await page.locator(".vc-sheet").waitFor();
+    sheet = await page.locator(".vc-sheet").innerText();
+    assert.match(sheet, /PHIẾU XUẤT KHO/); assert.match(sheet, /Mẫu số: 02 - VT/); assert.match(sheet, /Nợ: 641/); assert.match(sheet, /Có: 156/); assert.match(sheet, /Quà tặng doanh nghiệp/); assert.match(sheet, /Giám đốc/);
+    assert.equal(await page.locator(".vc-sheet tbody tr").count(), 1);
+    // Phiếu xuất kho bán hàng theo đơn
+    await open("orders/DTREACTQA");
+    await page.locator("#view a", { hasText: "Phiếu xuất kho" }).click();
+    await page.locator(".vc-sheet").waitFor();
+    sheet = await page.locator(".vc-sheet").innerText();
+    assert.match(sheet, /Xuất bán hàng theo đơn DTREACTQA/); assert.match(sheet, /Nợ: 632/);
+    assert.match(sheet, /PXK-DTREACTQA/);
+    // Đơn nhập chưa nhập kho: không in được phiếu nhập
+    const draftPo = await page.evaluate(([sid, pid]) => AD.db.inventory("purchase_save", { supplier_id: sid, items: [{ product_id: pid, qty: 1, price: 1000 }] }), [po.supplier_id, pid]);
+    await open(`voucher/nhap/${draftPo.id}`);
+    await page.locator(".vc-sheet").waitFor();
+    assert.equal(await page.locator("#vc-print").isDisabled(), true);
+    assert.match(await page.locator("#view [role=alert]").innerText(), /chưa nhập kho/);
+    await page.evaluate((id) => AD.db.inventory("purchase_cancel", { p_id: id }), draftPo.id);
     // Quản lý kho: dòng sản phẩm hiện tồn & giá vốn
     await open("inventory");
     await page.locator(".ar-toolbar input[type=search]").fill(before.sku);
@@ -674,10 +709,12 @@ try {
     await page.locator(".inv-sheet").waitFor();
     await page.locator("#inv-issue").click();
     await page.locator(".inv-no", { hasText: /^\d{7}$/ }).waitFor();
-    const sheet = await page.locator(".inv-sheet").innerText();
-    assert.match(sheet, /HÓA ĐƠN BÁN HÀNG/);
-    assert.match(sheet, /Tổng cộng tiền thanh toán/);
-    assert.match(sheet, /đồng chẵn/);
+    const invSheet = await page.locator(".inv-sheet").innerText();
+    assert.match(invSheet, /HÓA ĐƠN BÁN HÀNG/);
+    assert.match(invSheet, /Tổng cộng tiền thanh toán/);
+    assert.match(invSheet, /đồng chẵn/);
+    assert.equal(await page.locator(".inv-no").evaluate((el) => getComputedStyle(el).color), "rgb(0, 0, 0)", "Hóa đơn trắng đen");
+    assert.equal(await page.locator(".inv-table th").first().evaluate((el) => getComputedStyle(el).backgroundColor), "rgb(255, 255, 255)");
     const inv = await read("orders", "DTREACTQA");
     assert.match(inv.invoice_no, /^\d{7}$/);
     await page.reload();

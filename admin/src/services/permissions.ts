@@ -12,5 +12,5 @@ export const navigation=[
  {title:'Cấu hình',items:[['settings','tool','Cài đặt cửa hàng'],['stores','pin','Cửa hàng'],['services','wrench','Dịch vụ'],['policies','shield','Chính sách']]},
 ];
 export const adminOnly=['settings','vision','trust','content','policies'];
-export function allowed(user:User|null,key:string){if(!user || !roles[user.role])return false;if(user.role==='admin')return true;if(user.role==='staff')return !adminOnly.includes(key);return (user.role==='sales'?['leads']:['orders','invoice','reports','misa','inventory','purchases','suppliers','stock-history']).includes(key);}
+export function allowed(user:User|null,key:string){if(!user || !roles[user.role])return false;if(user.role==='admin')return true;if(user.role==='staff')return !adminOnly.includes(key);return (user.role==='sales'?['leads']:['orders','invoice','voucher','reports','misa','inventory','purchases','suppliers','stock-history']).includes(key);}
 export const operational=(user:User|null)=>!!user && ['admin','staff'].includes(user.role);

@@ -189,7 +189,7 @@ function PurchaseView({doc}: {doc: Row}) {
   const step = doc.status === 'done' ? 3 : doc.received ? 2 : 1;
   return <><Head title={`Đơn nhập ${doc.code}`} subtitle={`Tạo lúc ${date(doc.created_at)} · ${doc.created_by || ''}`}>
     <Link className="btn btn-light" to="/purchases">Quay lại</Link>
-    <button type="button" className="btn btn-light" onClick={() => window.print()}>In đơn</button>
+    {doc.received && doc.status !== 'cancelled' && <Link className="btn btn-light" to={`/voucher/nhap/${doc.id}`}>Phiếu nhập kho</Link>}
     {canWrite() && !doc.received && doc.status !== 'cancelled' && <>
       <Link className="btn btn-light" to={`/purchases/${doc.id}?edit=1`}>Sửa đơn</Link>
       {!num(doc.paid) && <Action confirm="Hủy đơn nhập này?" run={async () => { await invOp('purchase_cancel', {p_id: doc.id}); notice('Đã hủy đơn nhập.'); reload(); }}>Hủy đơn</Action>}
@@ -317,7 +317,7 @@ function ExportDoc({id}: {id: string}) {
   }
   return <DataState state={state}>{state.data && <><Head title={doc ? `Phiếu xuất ${doc.code}` : 'Tạo phiếu xuất kho'} subtitle={doc?.status === 'done' ? `Đã xuất ${date(doc.done_at)} · ${doc.done_by} · Giá trị ${money(doc.value)}` : 'Hàng ra khỏi kho không qua đơn bán.'}>
     <Link className="btn btn-light" to="/stock-exports">Thoát</Link>
-    {doc && <button type="button" className="btn btn-light" onClick={() => window.print()}>In phiếu</button>}
+    {doc?.status === 'done' && <Link className="btn btn-light" to={`/voucher/xuat/${doc.id}`}>In phiếu xuất kho</Link>}
     {!readonly && <><Action run={() => save(false)}>Lưu nháp</Action><Action className="btn btn-primary" id="exp-confirm" confirm="Xuất kho: trừ tồn kho các sản phẩm trong phiếu?" run={() => save(true)}>Xuất kho</Action></>}
     {doc?.status === 'draft' && canWrite() && <Action confirm="Xóa phiếu nháp này?" run={async () => { await invOp('delete_draft', {p_id: doc.id, p_kind: 'export'}); navigate('/stock-exports'); }}>Xóa phiếu</Action>}
   </Head>

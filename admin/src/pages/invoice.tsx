@@ -48,8 +48,8 @@ export function InvoicePage() {
         {!o.invoice_no && o.status !== 'cancelled' && <Action className="btn btn-primary" id="inv-issue" run={async () => { await issueInvoice(o.id); notice('Đã cấp số hóa đơn.'); navigate(`/invoice/${encodeURIComponent(o.id)}?r=${Date.now()}`, {replace: true}); }}>Cấp số hóa đơn</Action>}
         <button type="button" className="btn btn-primary" onClick={() => window.print()} disabled={!o.invoice_no}>In hóa đơn</button>
       </Head>
-      {o.status === 'cancelled' && <p className="ar-error ad-error" role="alert">Đơn đã hủy: không xuất hóa đơn.</p>}
-      <article className="inv-sheet" aria-label="Hóa đơn bán hàng">
+      {o.status === 'cancelled' && <p className="ar-notice" role="alert">Đơn đã hủy: không xuất hóa đơn.</p>}
+      <article className="inv-sheet doc-sheet" aria-label="Hóa đơn bán hàng">
         <header className="inv-sheet-head">
           <div><b className="inv-seller">{cfg.company || cfg.name}</b>
             <p>Mã số thuế: <b>{cfg.taxCode || '—'}</b></p><p>Địa chỉ: {cfg.address}</p><p>Điện thoại: {cfg.hotline}{cfg.email ? ` · Email: ${cfg.email}` : ''}</p>

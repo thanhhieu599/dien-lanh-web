@@ -75,7 +75,7 @@ try {
   const id = await page.evaluate(() => DT.products.find((p) => p.stock > 0).id);
   await open(`san-pham.html?id=${id}`);
   assert.equal(await page.locator(".gallery-feats>div").count(), 3);
-  assert.equal(await page.locator(".pd-title .pd-sub").count(), 1);
+  assert.equal(await page.locator(".pd-gallery > .pd-title .pd-sub").count(), 1, "Tên sản phẩm nằm chung khung ảnh");
   assert.equal(await page.locator(".promo-box h4").count(), 1);
   assert.equal(await page.locator(".pd-aside .aside-box").count(), 2);
   const columns = await page.evaluate(() => ({

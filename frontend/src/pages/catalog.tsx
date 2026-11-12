@@ -478,47 +478,47 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
       />
       <div className="container">
         <div className="pd" id="pd">
-          <div className="pd-title">
-            <h1>{p.name}</h1>
-            <div className="pd-sub">
-              <div className="actions">
-                <button
-                  aria-pressed={state.wishlist.includes(p.id)}
-                  className={state.wishlist.includes(p.id) ? "active" : ""}
-                  onClick={() => dt.store.toggleWishlist(p.id)}
-                >
-                  <Icon name="heart" />
-                  Yêu thích
-                </button>
-                <button
-                  aria-pressed={state.compare.includes(p.id)}
-                  onClick={() => dt.store.toggleCompare(p.id)}
-                >
-                  <Icon name="compare" />
-                  So sánh
-                </button>
-                <button
-                  onClick={async () => {
-                    try {
-                      if (navigator.share)
-                        await navigator.share({
-                          title: p.name,
-                          url: location.href,
-                        });
-                      else {
-                        await navigator.clipboard.writeText(location.href);
-                        toast("Đã sao chép liên kết sản phẩm");
-                      }
-                    } catch {}
-                  }}
-                >
-                  <Icon name="share" />
-                  Chia sẻ
-                </button>
+          <div className="gallery pd-gallery">
+            <div className="pd-title">
+              <h1>{p.name}</h1>
+              <div className="pd-sub">
+                <div className="actions">
+                  <button
+                    aria-pressed={state.wishlist.includes(p.id)}
+                    className={state.wishlist.includes(p.id) ? "active" : ""}
+                    onClick={() => dt.store.toggleWishlist(p.id)}
+                  >
+                    <Icon name="heart" />
+                    Yêu thích
+                  </button>
+                  <button
+                    aria-pressed={state.compare.includes(p.id)}
+                    onClick={() => dt.store.toggleCompare(p.id)}
+                  >
+                    <Icon name="compare" />
+                    So sánh
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        if (navigator.share)
+                          await navigator.share({
+                            title: p.name,
+                            url: location.href,
+                          });
+                        else {
+                          await navigator.clipboard.writeText(location.href);
+                          toast("Đã sao chép liên kết sản phẩm");
+                        }
+                      } catch {}
+                    }}
+                  >
+                    <Icon name="share" />
+                    Chia sẻ
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="gallery pd-gallery">
             <div className="gallery-main" id="g-main">
               <div className="g-pic">
                 <Picture product={p} index={image} />

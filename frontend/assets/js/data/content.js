@@ -299,7 +299,8 @@ DT.siteContent = (saved = DT.homeContent) => {
 // Thay ký hiệu & định dạng chữ (đã an toàn HTML)
 DT.siteText = (s, { rich = false } = {}) => {
   const svc = (DT.services || []).filter((x) => x.price > 0 && /vệ sinh/i.test(x.name)).map((x) => x.price);
-  const ship = DT.config.freeShipThreshold;
+  // Giao hàng miễn phí mọi đơn: không còn ngưỡng, chữ cũ có {nguong} tự dùng phần thay thế
+  const ship = 0;
   const values = {
     ten: DT.config.name || '',
     nguong_vnd: ship ? DT.u.money(ship) : '',

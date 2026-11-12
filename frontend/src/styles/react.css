@@ -574,6 +574,20 @@
 .pd-gallery {
   height: 100%;
 }
+/* Tên sản phẩm nằm chung khung với ảnh, ngay trên ảnh */
+.pd-gallery > .pd-title {
+  grid-column: auto;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0 0 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.pd-gallery > .pd-title h1 {
+  font-size: 20px;
+  line-height: 1.35;
+}
 .gallery-main .g-pic > .react-placeholder {
   width: 100%;
   height: 100%;

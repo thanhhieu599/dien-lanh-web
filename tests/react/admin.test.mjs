@@ -144,6 +144,8 @@ try {
   assert.deepEqual(product.options["Màu"], ["Trắng", "Đen"]);
   assert.match(product.images[0], /^data:image\/webp;base64,/);
   await open("products/1001");
+  // Mở lại cùng sản phẩm có thể giữ mục đang xem (Hình ảnh): chọn lại mục đầu tiên
+  await page.locator(".ce-nav button", { hasText: "Thông tin chung" }).click();
   assert.equal(await page.locator("[name=name]").inputValue(), product.name);
   await page
     .locator("#view")

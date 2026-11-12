@@ -233,7 +233,7 @@ try {
   await open("faqs/new");
   await page.locator("[name=question]").fill("Câu hỏi kiểm thử React QA?");
   await page.locator("[name=category]").selectOption("Lắp đặt");
-  await page.locator("[name=answer]").fill("Trả lời kiểm thử.");
+  await page.locator("[data-field=answer] .re-area").fill("Trả lời kiểm thử.");
   await saved();
   const faqId = decodeURIComponent(new URL(page.url()).hash.split("/")[2]);
   await page.goto(base + "frontend/hoi-dap.html");
@@ -584,6 +584,38 @@ try {
     () => document.activeElement?.getAttribute("aria-label") === "Mở menu",
   );
   await page.setViewportSize({ width: 1440, height: 900 });
+  // Trình soạn thảo nội dung bài viết: định dạng, bảng, liên kết, mã HTML, lưu và đọc lại
+  {
+    const post = (await page.evaluate(() => AD.db.list("posts", { limit: 1 }))).rows[0];
+    await open(`posts/${encodeURIComponent(post.slug || post.id)}`);
+    await tabTo("Nội dung");
+    const area = page.locator(".re-area");
+    await area.click();
+    await page.keyboard.press("Control+A");
+    await page.keyboard.press("Delete");
+    await page.keyboard.type("Hướng dẫn vệ sinh máy lạnh");
+    await page.keyboard.press("Control+A");
+    await page.locator(".re-bar button[title^='In đậm']").click();
+    await page.locator(".re-bar select[aria-label='Định dạng']").selectOption("h2");
+    await page.keyboard.press("End");
+    await page.keyboard.press("Enter");
+    await page.locator(".re-bar button[title='Chèn bảng']").click();
+    await page.locator(".re-pop input").first().fill("2");
+    await page.locator(".re-pop button", { hasText: "Chèn bảng" }).click();
+    assert.equal(await area.locator("table tr").count(), 2);
+    await page.locator(".re-bar button", { hasText: "Mã HTML" }).click();
+    const code = await page.locator(".re-source").inputValue();
+    assert.match(code, /<h2>.*Hướng dẫn vệ sinh máy lạnh.*<\/h2>/);
+    assert.match(code, /<(b|strong)>|font-weight/);
+    await page.locator(".re-source").fill(code + '<p><a href="lien-he.html">Liên hệ</a></p>');
+    await page.locator(".re-bar button", { hasText: "Mã HTML" }).click();
+    assert.equal(await area.locator("a[href='lien-he.html']").count(), 1);
+    assert.match(await page.locator(".re-foot").innerText(), /HTML: [\d.]+\/100\.000/);
+    await saved();
+    const stored = await read("posts", post.slug || post.id);
+    assert.match(stored.content, /<table/);
+    assert.match(stored.content, /lien-he\.html/);
+  }
   await open("dashboard");
   await page.reload();
   await page.locator("#view h1").waitFor();

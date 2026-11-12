@@ -1,6 +1,7 @@
 import {useId,useState,type ReactNode} from 'react';
 import {ad,imageFile,safeUrl} from '../services/runtime';
 import {Image,useNotice} from './common';
+import {RichEditor} from './editor';
 import type {FieldSpec,Row} from '../types';
 export function Field({label,children,help,error}:{label:string;children:ReactNode;help?:string;error?:string}){return <div className="ar-field"><label>{label}{children}</label>{help&&<small>{help}</small>}{error&&<small className="ar-error" role="alert">{error}</small>}</div>;}
 export function KeyValues({value,onChange,arrays=false}:{value:Row;onChange:(v:Row)=>void;arrays?:boolean}){
@@ -23,7 +24,8 @@ export function EditorField({field:f,value,row,onChange,error,editing=false,onPe
  if(f.type==='bool')return <div className={`ar-field ${f.col||''}`}><label className="ar-check"><input {...attrs} type="checkbox" checked={!!value} onChange={e=>onChange(e.target.checked)}/><span>{f.label}</span></label>{f.help&&<small>{f.help}</small>}</div>;
  if(f.type==='select')control=<select {...attrs} value={value??''} onChange={e=>onChange(e.target.value)}><option value="">Chọn…</option>{opts.map((o:any)=>{const [v,l]=Array.isArray(o)?o:[o,o];return <option value={v} key={v}>{l}</option>;})}</select>;
  else if(['lines','tags'].includes(f.type||''))control=<ListInput attrs={attrs} rows={f.rows||3} value={value} onChange={onChange} separator={f.type==='tags'?',':'\n'}/>;
- else if(['textarea','html'].includes(f.type||''))control=<textarea {...attrs} rows={f.rows||3} value={Array.isArray(value)?value.join(f.type==='tags'?', ':'\n'):value??''} onChange={e=>onChange(['lines','tags'].includes(f.type!)?e.target.value.split(f.type==='tags'?',':'\n').map(v=>v.trim()).filter(Boolean):e.target.value)}/>;
+ else if(f.type==='html')control=<RichEditor id={id} label={f.label||f.key} rows={f.rows||12} value={value} onChange={onChange}/>;
+ else if(f.type==='textarea')control=<textarea {...attrs} rows={f.rows||3} value={Array.isArray(value)?value.join('\n'):value??''} onChange={e=>onChange(e.target.value)}/>;
  else if(f.type==='kv')control=<KeyValues value={value} onChange={onChange} arrays={f.key==='options'}/>;
  else if(f.type==='json')control=<JsonInput value={value} onChange={onChange} label={f.label||f.key}/>;
  else if(['image','gallery'].includes(f.type||''))control=<Gallery value={value} onChange={onChange} folder={f.folder} multiple={f.type==='gallery'} limit={f.max} onPending={onPending}/>;

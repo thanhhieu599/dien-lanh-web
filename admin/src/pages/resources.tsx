@@ -1,3 +1,4 @@
+import { RICH_MAX } from "../components/editor";
 import { useState, type FormEvent, type ReactNode } from "react";
 import {
   Link,
@@ -253,6 +254,11 @@ function Editor({
         !["html", "textarea"].includes(f.type || "")
       )
         value = value.trim();
+      // Trình soạn thảo: chỉ còn thẻ rỗng (<p><br></p>) coi như chưa nhập
+      if (f.type === "html" && typeof value === "string" && !value.replace(/<(?!img|table|iframe|hr)[^>]*>|&nbsp;|\s/gi, ""))
+        value = "";
+      if (f.type === "html" && typeof value === "string" && value.length > RICH_MAX)
+        problems[f.key] = `Nội dung quá dài (tối đa ${RICH_MAX.toLocaleString("vi-VN")} ký tự HTML).`;
       if (f.required && (value == null || value === ""))
         problems[f.key] = "Vui lòng nhập thông tin này.";
       const err = f.validate?.(value, { ...row, ...data });

@@ -305,7 +305,7 @@ window.AD = window.AD || {};
         {
           key: "description",
           label: "Nội dung mô tả",
-          type: "textarea",
+          type: "html",
           rows: 12,
           col: "full",
           def: "",
@@ -910,7 +910,7 @@ window.AD = window.AD || {};
         },
         {
           key: "content",
-          label: "Nội dung (HTML: <h2>, <p>, <ul>, <table>…)",
+          label: "Nội dung bài viết",
           type: "html",
           col: "full",
           rows: 16,
@@ -1063,8 +1063,8 @@ window.AD = window.AD || {};
         },
         {
           key: "content",
-          label:
-            "Nội dung (HTML: <h2>Yêu cầu</h2>, <h2>Giải pháp</h2>, <h2>Kết quả</h2>…)",
+          label: "Nội dung dự án",
+          help: "Gợi ý bố cục: Yêu cầu – Giải pháp – Kết quả (dùng Định dạng > Tiêu đề lớn).",
           type: "html",
           col: "full",
           rows: 12,
@@ -1148,8 +1148,8 @@ window.AD = window.AD || {};
         },
         {
           key: "answer",
-          label:
-            "Trả lời (2-5 câu, trả lời thẳng vào câu hỏi ở câu đầu; cho phép <b>, <a>, <ul>)",
+          label: "Câu trả lời",
+          help: "2-5 câu, trả lời thẳng vào câu hỏi ngay ở câu đầu.",
           type: "html",
           required: true,
           col: "full",
@@ -1377,7 +1377,7 @@ window.AD = window.AD || {};
         },
         {
           key: "body",
-          label: "Nội dung (HTML)",
+          label: "Nội dung chính sách",
           type: "html",
           required: true,
           col: "full",

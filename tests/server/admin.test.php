@@ -87,6 +87,47 @@ try {
     checkAdmin(patchAdmin('orders', $bank['id'], ['payment_status'=>'paid'])['payment_status'] === 'paid', 'Staff confirms the bank transfer');
     checkAdmin(endpoint('crm_customer_summary', query:['id'=>'eq.' . $customerId])[0]['total_spent'] == $spentBefore + 6500000, 'CRM adds the confirmed bank transfer');
     checkAdmin(orderQuote([['product'=>['price'=>500000, 'cat'=>'vat-tu'], 'qty'=>1]], ['shippingFee'=>50000, 'freeShipThreshold'=>2000000], 'delivery', null)['shipping'] === 0, 'Old shipping settings no longer add a fee');
+    // Kho hàng: nhà cung cấp, nhập hàng (giá vốn bình quân, công nợ), kiểm hàng, xuất kho, lịch sử kho
+    $sup = endpoint('suppliers', 'POST', ['name'=>"[QA] NCC $prefix", 'phone'=>'0283812345', 'tax_code'=>'0301234567', 'active'=>true])[0];
+    $created[] = ['suppliers', $sup['id']];
+    checkAdmin(str_starts_with($sup['code'], 'NCC') && ($sup['debt'] ?? 0) == 0, 'Supplier gets a code and no debt');
+    $prod = fixture('products', ['id'=>$prefix . '-p', 'sku'=>$prefix . '-p', 'slug'=>$prefix . '-p', 'name'=>'[QA] Máy lạnh', 'cat'=>allRecords('categories')[0]['id'], 'brand'=>allRecords('brands')[0]['id'], 'price'=>9000000, 'stock'=>10, 'cost_price'=>6000000, 'active'=>false]);
+    $moves = fn() => array_values(array_filter(allRecords('stock_moves'), fn($m) => $m['product_id'] === $prod['id']));
+    $po = rpcEndpoint('inventory', ['p_op'=>'purchase_save', 'supplier_id'=>$sup['id'], 'items'=>[['product_id'=>$prod['id'], 'qty'=>10, 'price'=>7000000, 'tax_rate'=>8]], 'costs'=>[['name'=>'Vận chuyển', 'amount'=>500000]], 'receive'=>true, 'payment'=>['amount'=>30000000, 'method'=>'bank']]);
+    $created[] = ['purchase_orders', $po['id']];
+    checkAdmin(preg_match('/^PON\d{5}$/', $po['code']) === 1 && $po['total'] == 70000000 + 500000 + 5600000, 'Purchase total = goods + costs + VAT');
+    $p = record('products', $prod['id']);
+    checkAdmin($p['stock'] === 20, 'Receiving adds stock');
+    checkAdmin($p['cost_price'] == round((10 * 6000000 + 10 * 7050000) / 20), 'Weighted average cost includes allocated costs');
+    checkAdmin(record('suppliers', $sup['id'])['debt'] == $po['total'] - 30000000 && $po['status'] === 'ordered', 'Supplier debt = received total - paid');
+    try { rpcEndpoint('inventory', ['p_op'=>'purchase_pay', 'p_id'=>$po['id'], 'amount'=>$po['total']]); throw new RuntimeException('Overpay must fail'); }
+    catch (HttpError $e) { checkAdmin(str_contains($e->getMessage(), 'không vượt'), 'Cannot pay more than remaining'); }
+    $po = rpcEndpoint('inventory', ['p_op'=>'purchase_pay', 'p_id'=>$po['id'], 'amount'=>$po['total'] - 30000000, 'method'=>'cash']);
+    checkAdmin($po['status'] === 'done' && record('suppliers', $sup['id'])['debt'] == 0, 'Fully paid received order is done, debt cleared');
+    try { rpcEndpoint('inventory', ['p_op'=>'purchase_receive', 'p_id'=>$po['id']]); throw new RuntimeException('Double receive must fail'); }
+    catch (HttpError $e) { checkAdmin(record('products', $prod['id'])['stock'] === 20, 'Order cannot be received twice'); }
+    $adj = rpcEndpoint('inventory', ['p_op'=>'adjustment_save', 'items'=>[['product_id'=>$prod['id'], 'actual'=>17, 'reason'=>'Thất thoát']], 'balance'=>true]);
+    $created[] = ['stock_adjustments', $adj['id']];
+    checkAdmin($adj['status'] === 'balanced' && $adj['items'][0]['diff'] === -3 && record('products', $prod['id'])['stock'] === 17, 'Stocktake balances stock to counted quantity');
+    try { rpcEndpoint('inventory', ['p_op'=>'export_save', 'reason'=>'gift', 'items'=>[['product_id'=>$prod['id'], 'qty'=>99]], 'confirm'=>true]); throw new RuntimeException('Over-export must fail'); }
+    catch (HttpError $e) { checkAdmin(record('products', $prod['id'])['stock'] === 17 && !array_filter(allRecords('stock_exports'), fn($x) => ($x['items'][0]['product_id'] ?? '') === $prod['id']), 'Export above stock rolls back completely'); }
+    $exp = rpcEndpoint('inventory', ['p_op'=>'export_save', 'reason'=>'gift', 'items'=>[['product_id'=>$prod['id'], 'qty'=>2]], 'confirm'=>true]);
+    $created[] = ['stock_exports', $exp['id']];
+    checkAdmin($exp['status'] === 'done' && record('products', $prod['id'])['stock'] === 15 && $exp['value'] > 0, 'Export reduces stock and records cost value');
+    patchAdmin('products', $prod['id'], ['stock'=>16]);
+    $types = array_column($moves(), 'type');
+    sort($types);
+    checkAdmin($types === ['adjust', 'export', 'manual', 'purchase'], 'Every stock change is in the stock history');
+    try { patchAdmin('purchase_orders', $po['id'], ['total'=>1]); throw new RuntimeException('Direct edit must fail'); }
+    catch (HttpError $e) { checkAdmin($e->getCode() === 403, 'Purchase orders cannot be edited directly'); }
+    try { endpoint('suppliers', 'DELETE', query:['id'=>'eq.' . $sup['id']]); throw new RuntimeException('Supplier delete must fail'); }
+    catch (HttpError $e) { checkAdmin(str_contains($e->getMessage(), 'đơn nhập'), 'Supplier with purchases cannot be deleted'); }
+    foreach ($moves() as $m) $created[] = ['stock_moves', $m['id']];
+    // Hóa đơn bán hàng: cấp số 1 lần
+    $invOrder = fixture('orders', ['id'=>$prefix . '-inv', 'code'=>$prefix . 'INV', 'phone'=>'0900000093', 'status'=>'done', 'payment'=>'bank', 'payment_status'=>'paid', 'total'=>1100000]);
+    $first = rpcEndpoint('issue_invoice', ['p_id'=>$invOrder['id']]);
+    $again = rpcEndpoint('issue_invoice', ['p_id'=>$invOrder['id']]);
+    checkAdmin(preg_match('/^\d{7}$/', $first['invoice_no']) === 1 && $again['invoice_no'] === $first['invoice_no'], 'Invoice number is issued once');
     $lead = fixture('leads', ['id'=>$prefix . '-lead', 'status'=>'new', 'assigned_to'=>null, 'notes'=>[]]);
     $otherLead = fixture('leads', ['id'=>$prefix . '-other-lead', 'status'=>'new', 'assigned_to'=>null]);
     $assigned = patchAdmin('leads', $lead['id'], ['assigned_to'=>$admin['id'], 'staff_note'=>'Call back']);

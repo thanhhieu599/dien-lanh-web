@@ -51,6 +51,12 @@ const Content = lazy(() =>
 const Maintenance = lazy(() =>
   import("./pages/maintenance").then((m) => ({ default: m.MaintenancePage })),
 );
+const Inventory = lazy(() =>
+  import("./pages/inventory").then((m) => ({ default: m.InventoryPage })),
+);
+const Invoice = lazy(() =>
+  import("./pages/invoice").then((m) => ({ default: m.InvoicePage })),
+);
 const Operations = lazy(() =>
   import("./pages/operations").then((m) => ({ default: m.OperationsPage })),
 );
@@ -187,6 +193,9 @@ function CurrentPage() {
   if (["content", "vision", "trust"].includes(resource))
     return <Content resource={resource} />;
   if (resource === "maintenance") return <Maintenance />;
+  if (["inventory", "purchases", "stocktakes", "stock-exports", "stock-history"].includes(resource))
+    return <Inventory resource={resource} />;
+  if (resource === "invoice") return <Invoice />;
   if (["reports", "notifications", "misa"].includes(resource))
     return <Operations resource={resource} />;
   return (

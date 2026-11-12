@@ -37,7 +37,7 @@ function pk(string $table): string {
     return ['coupons' => 'code', 'posts' => 'slug', 'projects' => 'slug', 'policies' => 'key', 'settings' => 'key'][$table] ?? 'id';
 }
 function tables(): array {
-    return explode(',', 'settings,categories,brands,products,stores,posts,banners,services,policies,coupons,profiles,orders,order_items,order_status_history,leads,reviews,payments,notifications,projects,faqs,crm_customers,cart_reminders,maintenance_contracts,maintenance_visits');
+    return explode(',', 'settings,categories,brands,products,stores,posts,banners,services,policies,coupons,profiles,orders,order_items,order_status_history,leads,reviews,payments,notifications,projects,faqs,crm_customers,cart_reminders,maintenance_contracts,maintenance_visits,suppliers,purchase_orders,stock_adjustments,stock_exports,stock_moves');
 }
 function record(string $table, mixed $id, bool $lock = false): ?array {
     $row = sql('SELECT data FROM records WHERE resource=? AND record_id=?' . ($lock ? ' FOR UPDATE' : ''), [$table, (string)$id])->fetchColumn();

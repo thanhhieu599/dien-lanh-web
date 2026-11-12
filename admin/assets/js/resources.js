@@ -252,12 +252,29 @@ window.AD = window.AD || {};
             v != null && v < o.price ? "Giá gốc phải ≥ giá bán" : null,
         },
         {
+          key: "wholesale_price",
+          label: "Giá bán buôn (₫)",
+          type: "money",
+          step: 1,
+          col: "quarter",
+          help: "Giá cho khách doanh nghiệp / đại lý",
+        },
+        {
+          key: "cost_price",
+          label: "Giá vốn (₫)",
+          type: "money",
+          step: 1,
+          col: "quarter",
+          help: "Tự tính lại (bình quân) mỗi lần nhập hàng",
+        },
+        {
           key: "stock",
-          label: "Tồn kho",
+          label: "Tồn kho (có thể bán)",
           type: "number",
           step: 1,
           col: "quarter",
           required: true,
+          help: "Mọi thay đổi được ghi vào Lịch sử kho. Nên dùng Nhập hàng / Kiểm hàng.",
           validate: (v) =>
             v < 0 || !Number.isInteger(v) ? "Số nguyên ≥ 0" : null,
         },
@@ -269,6 +286,18 @@ window.AD = window.AD || {};
           col: "quarter",
           def: 0,
         },
+        { key: "unit", label: "Đơn vị tính", col: "quarter", def: "Cái", placeholder: "Cái, Bộ, Mét, Kg…" },
+        { key: "barcode", label: "Mã vạch / Barcode", col: "quarter" },
+        {
+          key: "min_stock",
+          label: "Tồn tối thiểu",
+          type: "number",
+          step: 1,
+          col: "quarter",
+          help: "Dưới mức này báo Sắp hết hàng",
+          validate: (v) => (v != null && (v < 0 || !Number.isInteger(v)) ? "Số nguyên ≥ 0" : null),
+        },
+        { key: "location", label: "Vị trí lưu kho", col: "quarter", placeholder: "VD: Kệ A2" },
         {
           key: "rating",
           label: "Điểm đánh giá (1-5)",
@@ -1264,6 +1293,39 @@ window.AD = window.AD || {};
 
     // ------------------------------------------------------------------ Bảo trì
     // Khách đăng ký bảo trì định kỳ. Hạn bảo trì tiếp theo được tính tự động từ lần bảo trì gần nhất + chu kỳ.
+    // Nhà cung cấp: công nợ & tổng nhập do máy chủ tự tính từ đơn nhập hàng
+    suppliers: {
+      title: "Nhà cung cấp",
+      icon: "building",
+      table: "suppliers",
+      order: "name.asc",
+      pageSize: 20,
+      search: ["name", "code", "phone", "email", "tax_code", "contact"],
+      filters: [{ key: "active", label: "Trạng thái", options: [["true", "Đang giao dịch"], ["false", "Ngừng giao dịch"]] }],
+      listColumns: [
+        { label: "Mã", key: "code" },
+        { label: "Điện thoại", key: "phone" },
+        { label: "Đơn đã nhập", key: "purchase_count" },
+        { label: "Tổng nhập", key: "total_purchased", money: true },
+        { label: "Công nợ", key: "debt", money: true },
+      ],
+      csv: ["code", "name", "phone", "email", "tax_code", "address", "contact", "purchase_count", "total_purchased", "debt", "active"],
+      defaults: () => ({ active: true }),
+      fields: [
+        { key: "name", label: "Tên nhà cung cấp", required: true, col: "half" },
+        { key: "code", label: "Mã nhà cung cấp", col: "half", help: "Để trống: tự tạo NCC0001, NCC0002…" },
+        { key: "phone", label: "Số điện thoại", col: "third", validate: (v) => (v && !/^[0-9+ .()-]{8,20}$/.test(String(v)) ? "Số điện thoại không hợp lệ" : null) },
+        { key: "email", label: "Email", col: "third" },
+        { key: "tax_code", label: "Mã số thuế", col: "third", validate: (v) => (v && !/^\d{10}(-\d{3})?$/.test(String(v)) ? "Mã số thuế gồm 10 số (hoặc 10 số-3 số)" : null) },
+        { key: "contact", label: "Người liên hệ", col: "third" },
+        { key: "address", label: "Địa chỉ", col: "full" },
+        { key: "bank", label: "Tài khoản ngân hàng", col: "half", placeholder: "Số TK – Ngân hàng – Chủ TK" },
+        { key: "payment_terms", label: "Điều khoản thanh toán", col: "half", placeholder: "VD: Công nợ 30 ngày" },
+        { key: "active", label: "Đang giao dịch", type: "bool", col: "third" },
+        { key: "note", label: "Ghi chú", type: "textarea", rows: 2, col: "full" },
+      ],
+    },
+
     maintenance_contracts: {
       title: "Khách đăng ký bảo trì",
       icon: "wrench",

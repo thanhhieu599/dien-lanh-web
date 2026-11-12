@@ -15,7 +15,7 @@ function allowed(string $table, string $method, ?array $user, ?array $row = null
         if ($table === 'profiles') return $method === 'GET' && in_array($row['role'] ?? '', ['admin', 'staff', 'sales'], true);
     }
     if ($role === 'accountant') {
-        return $method === 'GET' && in_array($table, ['orders', 'order_items', 'order_status_history', 'payments', 'products', 'categories', 'brands', 'settings', 'profiles', 'crm_customers', 'crm_customer_summary', 'crm_customer_products', 'maintenance_contracts', 'maintenance_visits'], true)
+        return $method === 'GET' && in_array($table, ['orders', 'order_items', 'order_status_history', 'payments', 'products', 'categories', 'brands', 'settings', 'profiles', 'crm_customers', 'crm_customer_summary', 'crm_customer_products', 'maintenance_contracts', 'maintenance_visits', 'suppliers', 'purchase_orders', 'stock_adjustments', 'stock_exports', 'stock_moves'], true)
             || $table === 'orders' && $method === 'PATCH';
     }
     if ($method !== 'GET') return false;
@@ -129,6 +129,14 @@ function validateRow(string $table, array $row): void {
         if (!in_array($row['payment'] ?? 'cod', ['cod', 'bank'], true)) fail('Phương thức thanh toán chỉ có COD hoặc chuyển khoản');
         if (!in_array($row['status'] ?? 'done', ['done', 'scheduled', 'cancelled'], true)) fail('Trạng thái không hợp lệ');
     }
+    if ($table === 'suppliers') {
+        if (trim((string)($row['name'] ?? '')) === '') fail('Vui lòng nhập tên nhà cung cấp');
+        if (!empty($row['phone']) && !preg_match('/^[0-9+ .()-]{8,20}$/', (string)$row['phone'])) fail('Số điện thoại nhà cung cấp không hợp lệ');
+        if (!empty($row['tax_code']) && !preg_match('/^\d{10}(-\d{3})?$/', (string)$row['tax_code'])) fail('Mã số thuế gồm 10 số (hoặc 10 số-3 số)');
+    }
+    if ($table === 'products') {
+        foreach (['cost_price', 'wholesale_price', 'min_stock'] as $field) if (isset($row[$field]) && $row[$field] !== null && $row[$field] !== '' && (!is_numeric($row[$field]) || $row[$field] < 0)) fail("{$field} không hợp lệ");
+    }
     if ($table === 'coupons') {
         if (!in_array($row['type'] ?? '', ['percent', 'fixed', 'ship'], true) || ($row['value'] ?? -1) < 0 || ($row['type'] === 'percent' && $row['value'] > 100)) fail('Mã giảm giá không hợp lệ');
     }
@@ -177,9 +185,17 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
     }
     if (!$user) fail('Vui lòng đăng nhập', 401);
     if ($method === 'POST') {
-        if (!allowed($table, $method, $user, $body) || !in_array($table, ['products','categories','brands','coupons','posts','banners','stores','services','policies','settings','projects','faqs','crm_customers','maintenance_contracts','maintenance_visits'], true)) fail('Không có quyền tạo dữ liệu', 403);
+        if (!allowed($table, $method, $user, $body) || !in_array($table, ['products','categories','brands','coupons','posts','banners','stores','services','policies','settings','projects','faqs','crm_customers','maintenance_contracts','maintenance_visits','suppliers'], true)) fail('Không có quyền tạo dữ liệu', 403);
         validateRow($table, $body);
-        return [put($table, $body, true)];
+        if ($table === 'suppliers') { unset($body['debt'], $body['total_purchased'], $body['purchase_count']); $body['code'] = trim((string)($body['code'] ?? '')) ?: 'NCC' . str_pad((string)(count(allRecords('suppliers')) + 1), 4, '0', STR_PAD_LEFT); }
+        if ($table !== 'products') return [put($table, $body, true)];
+        // Sản phẩm mới có tồn ban đầu: ghi vào lịch sử kho
+        return transaction(function() use ($body, $user) {
+            $stock = (int)($body['stock'] ?? 0); $body['stock'] = 0;
+            $row = put('products', $body, true);
+            if ($stock > 0) stockMove($row, $stock, 'initial', '', 'Khởi tạo kho', $user);
+            return [$row];
+        });
     }
     $filter = $_GET[pk($table)] ?? '';
     if (!str_starts_with($filter, 'eq.')) fail('Phải chỉ định một bản ghi');
@@ -194,7 +210,8 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
         if (!$row) fail('Không tìm thấy bản ghi', 404);
         if (!allowed($table, $method, $user, $row)) fail('Không có quyền', 403);
         if ($method === 'DELETE') {
-            if (in_array($table, ['orders','order_items','order_status_history','profiles','payments','notifications'], true)) fail('Không được xóa dữ liệu giao dịch', 403);
+            if (in_array($table, ['orders','order_items','order_status_history','profiles','payments','notifications', ...INVENTORY_TABLES], true)) fail('Không được xóa dữ liệu giao dịch', 403);
+            if ($table === 'suppliers') foreach (allRecords('purchase_orders') as $po) if ((string)($po['supplier_id'] ?? '') === (string)$id) fail('Nhà cung cấp đã có đơn nhập, hãy chuyển sang ngừng giao dịch');
             if (in_array($table, ['categories','brands'], true)) {
                 foreach (allRecords('products') as $p) if (($p[$table === 'brands' ? 'brand' : 'cat'] ?? '') === $id) fail('Dữ liệu đang được sử dụng, hãy chuyển sang ẩn');
             }
@@ -202,7 +219,7 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
         }
         if ($method !== 'PATCH') fail('Phương thức không hỗ trợ', 405);
         if ($table === 'orders') return [updateOrder($row, $body, $user)];
-        if (in_array($table, ['order_items','order_status_history','payments'], true)) fail('Không được sửa trực tiếp dữ liệu giao dịch', 403);
+        if (in_array($table, ['order_items','order_status_history','payments', ...INVENTORY_TABLES], true)) fail('Không được sửa trực tiếp dữ liệu giao dịch', 403);
         $patch = $body;
         unset($patch[pk($table)], $patch['created_at']);
         if ($table === 'crm_customers') {
@@ -215,8 +232,13 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
             if (isset($patch['email'])) sql('UPDATE users SET email=? WHERE id=?', [$patch['email'] ?: null, $id]);
         }
         if ($table === 'leads' && $user['role'] === 'sales') $patch = array_intersect_key($patch, array_flip(['status','notes','staff_note']));
+        if ($table === 'suppliers') unset($patch['debt'], $patch['total_purchased'], $patch['purchase_count']);
+        // Sửa tồn kho tay ở trang sản phẩm: vẫn ghi lịch sử kho
+        $stockChange = $table === 'products' && isset($patch['stock']) && is_numeric($patch['stock']) ? (int)$patch['stock'] - (int)($row['stock'] ?? 0) : 0;
+        if ($stockChange) unset($patch['stock']);
         $row = array_merge($row, $patch);
         validateRow($table, $row);
+        if ($stockChange) { stockMove($row, $stockChange, 'manual', '', 'Sửa tồn kho ở trang sản phẩm', $user, null, false); validateRow($table, $row); }
         return [put($table, $row)];
     });
 }

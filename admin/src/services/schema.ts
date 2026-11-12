@@ -161,6 +161,20 @@ export const settingsFields:FieldSpec[] = [
       ],
     },
     {
+      key: "invoiceSeries",
+      label: "Ký hiệu hóa đơn",
+      col: "third",
+      placeholder: "VD: 1C26TKL",
+      help: "In trên Hóa đơn bán hàng; số hóa đơn tự tăng 0000001, 0000002…",
+    },
+    {
+      key: "invoiceNote",
+      label: "Ghi chú cuối hóa đơn",
+      type: "textarea",
+      rows: 2,
+      col: "full",
+    },
+    {
       key: "misaDebitAcc",
       label: "TK công nợ (chưa thu tiền)",
       col: "third",

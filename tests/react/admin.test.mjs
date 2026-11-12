@@ -39,6 +39,15 @@ try {
   }
   const routes = [
     "dashboard",
+    "inventory",
+    "purchases",
+    "purchases/new",
+    "stocktakes",
+    "stocktakes/new",
+    "stock-exports",
+    "stock-exports/new",
+    "suppliers",
+    "stock-history",
     "orders",
     "leads",
     "customers",
@@ -560,6 +569,10 @@ try {
       "content",
       "misa",
       "customers",
+      "inventory",
+      "purchases/new",
+      "stocktakes/new",
+      "invoice/DTREACTQA",
     ]) {
       await open(route);
       assert.ok(
@@ -584,6 +597,94 @@ try {
     () => document.activeElement?.getAttribute("aria-label") === "Mở menu",
   );
   await page.setViewportSize({ width: 1440, height: 900 });
+  // Kho hàng: nhập hàng (giá vốn bình quân, công nợ NCC), kiểm hàng, xuất kho, lịch sử kho, hóa đơn bán hàng
+  {
+    const pid = 1001;
+    const before = await read("products", pid);
+    await open("purchases/new");
+    await page.locator("[name=supplier]").selectOption({ index: 1 });
+    await page.locator(".inv-picker input").fill(before.sku);
+    await page.keyboard.press("Enter");
+    await page.locator(`input[aria-label^="Số lượng"]`).fill("5");
+    await page.locator(`input[aria-label^="Đơn giá"]`).fill("1000000");
+    await page.locator(`select[aria-label^="Thuế"]`).selectOption("8");
+    await page.locator("input[aria-label='Số tiền thanh toán ngay']").fill("2000000");
+    await page.locator("#po-receive").click();
+    await page.locator(".inv-steps").waitFor();
+    const po = (await page.evaluate(() => AD.db.list("purchase_orders", { order: "id.desc", limit: 1 }))).rows[0];
+    assert.match(po.code, /^PON\d{5}$/);
+    assert.equal(po.total, 5400000, "5 × 1.000.000 + 8% thuế");
+    assert.equal(po.received, true);
+    assert.equal(po.paid, 2000000);
+    assert.equal(po.status, "ordered", "Còn nợ NCC: Đang giao dịch");
+    const afterPo = await read("products", pid);
+    assert.equal(afterPo.stock, before.stock + 5, "Nhập kho cộng tồn");
+    const expectedCost = Math.round(((before.stock * (Number(before.cost_price) || 0)) + 5 * 1000000) / (before.stock + 5));
+    assert.equal(afterPo.cost_price, expectedCost, "Giá vốn bình quân");
+    let supplier = await read("suppliers", po.supplier_id);
+    assert.equal(supplier.debt, 3400000, "Công nợ NCC = tổng - đã trả");
+    await page.locator("input[aria-label='Số tiền thanh toán']").fill("3400000");
+    await page.locator("#po-pay").click();
+    await page.waitForFunction(async (id) => (await AD.db.get("purchase_orders", id)).status === "done", po.id);
+    supplier = await read("suppliers", po.supplier_id);
+    assert.equal(supplier.debt, 0, "Trả đủ: hết công nợ");
+    // Kiểm hàng: thực tế ít hơn 2 -> cân bằng kho
+    await open("stocktakes/new");
+    await page.locator(".inv-picker input").fill(before.sku);
+    await page.keyboard.press("Enter");
+    await page.locator(`input[aria-label^="Tồn thực tế"]`).fill(String(afterPo.stock - 2));
+    await page.locator(`input[aria-label^="Lý do"]`).fill("Thất thoát");
+    assert.match(await page.locator(".inv-lines").innerText(), /-2/);
+    await page.locator("#adj-balance").click();
+    await page.waitForFunction(async ([id, n]) => (await AD.db.get("products", id)).stock === n, [pid, afterPo.stock - 2]);
+    const adj = (await page.evaluate(() => AD.db.list("stock_adjustments", { order: "id.desc", limit: 1 }))).rows[0];
+    assert.equal(adj.status, "balanced");
+    assert.match(adj.code, /^IAN\d{5}$/);
+    // Xuất kho quà tặng 1 cái
+    await open("stock-exports/new");
+    await page.locator("[name=reason]").selectOption("gift");
+    await page.locator(".inv-picker input").fill(before.sku);
+    await page.keyboard.press("Enter");
+    await page.locator("#exp-confirm").click();
+    await page.waitForFunction(async ([id, n]) => (await AD.db.get("products", id)).stock === n, [pid, afterPo.stock - 3]);
+    // Xuất quá tồn bị chặn, không ghi gì
+    await open("stock-exports/new");
+    await page.locator("[name=reason]").selectOption("damaged");
+    await page.locator(".inv-picker input").fill(before.sku);
+    await page.keyboard.press("Enter");
+    await page.locator(`input[aria-label^="Số lượng xuất"]`).fill(String(afterPo.stock + 100));
+    await page.locator("#exp-confirm").click();
+    await page.locator(".ar-toast").filter({ hasText: "Không đủ tồn kho" }).waitFor();
+    assert.equal((await read("products", pid)).stock, afterPo.stock - 3);
+    // Lịch sử kho: 3 dòng nhập / kiểm / xuất của sản phẩm
+    await open(`stock-history?product=${pid}`);
+    const history = await page.locator("#view .ar-table tbody").innerText();
+    assert.match(history, /Nhập hàng/); assert.match(history, /Kiểm hàng/); assert.match(history, /Xuất kho/);
+    // Quản lý kho: dòng sản phẩm hiện tồn & giá vốn
+    await open("inventory");
+    await page.locator(".ar-toolbar input[type=search]").fill(before.sku);
+    assert.match(await page.locator("#view .ar-table").innerText(), new RegExp(before.sku));
+    // Sửa tồn tay ở trang sản phẩm cũng ghi lịch sử
+    const manualMoves = (await page.evaluate((id) => AD.db.list("stock_moves", { filters: [["product_id", "eq", id], ["type", "eq", "manual"]] }), pid)).count;
+    await page.evaluate((id) => AD.db.update("products", id, { stock: 50 }), pid);
+    assert.equal((await page.evaluate((id) => AD.db.list("stock_moves", { filters: [["product_id", "eq", id], ["type", "eq", "manual"]] }), pid)).count, manualMoves + 1);
+    // Hóa đơn bán hàng của đơn DTREACTQA: cấp số, số tiền bằng chữ, tách VAT
+    await open("orders/DTREACTQA");
+    await page.locator("#view a", { hasText: "Xuất hóa đơn" }).click();
+    await page.locator(".inv-sheet").waitFor();
+    await page.locator("#inv-issue").click();
+    await page.locator(".inv-no", { hasText: /^\d{7}$/ }).waitFor();
+    const sheet = await page.locator(".inv-sheet").innerText();
+    assert.match(sheet, /HÓA ĐƠN BÁN HÀNG/);
+    assert.match(sheet, /Tổng cộng tiền thanh toán/);
+    assert.match(sheet, /đồng chẵn/);
+    const inv = await read("orders", "DTREACTQA");
+    assert.match(inv.invoice_no, /^\d{7}$/);
+    await page.reload();
+    await page.locator(".inv-sheet").waitFor();
+    assert.equal(await page.locator("#inv-issue").count(), 0, "Cấp số 1 lần");
+    assert.equal((await read("orders", "DTREACTQA")).invoice_no, inv.invoice_no);
+  }
   // Trình soạn thảo nội dung bài viết: định dạng, bảng, liên kết, mã HTML, lưu và đọc lại
   {
     const post = (await page.evaluate(() => AD.db.list("posts", { limit: 1 }))).rows[0];

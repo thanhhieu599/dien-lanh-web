@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/inventory.php';
 
 function phoneKey(string $phone): string {
     return preg_replace('/^\+?84/', '0', preg_replace('/[^0-9+]/', '', $phone));
@@ -126,7 +127,7 @@ function updateOrder(array $order, array $patch, array $user): array {
             usort($items, fn($a, $b) => $a['product_id'] <=> $b['product_id']);
             foreach ($items as $item) {
                 $p = record('products', $item['product_id'], true);
-                if ($p) { $p['stock'] += $item['qty']; $p['sold'] = max(0, ($p['sold'] ?? 0) - $item['qty']); put('products', $p); }
+                if ($p) { $p['sold'] = max(0, ($p['sold'] ?? 0) - $item['qty']); stockMove($p, (int)$item['qty'], 'cancel', $order['code'], 'Hủy đơn hàng', $user['id'] ?? null ? $user : null); }
             }
             if ($order['coupon']) {
                 $coupon = record('coupons', $order['coupon'], true);
@@ -194,7 +195,7 @@ function placeOrder(array $args): array {
         ], true);
         foreach ($lines as $line) {
             $p = record('products', $line['product']['id'], true);
-            $p['stock'] -= $line['qty']; $p['sold'] = ($p['sold'] ?? 0) + $line['qty']; put('products', $p);
+            $p['sold'] = ($p['sold'] ?? 0) + $line['qty']; stockMove($p, -$line['qty'], 'sale', $order['code'], 'Bán hàng website', actor());
             put('order_items', ['order_id' => $order['id'], 'product_id' => $p['id'], 'sku' => $p['sku'], 'name' => $p['name'], 'price' => $p['price'], 'qty' => $line['qty'], 'install' => $line['install'], 'options' => (object)$line['options']], true);
         }
         put('order_status_history', ['order_id' => $order['id'], 'status' => 'pending', 'note' => 'Đặt hàng'], true);
@@ -203,6 +204,8 @@ function placeOrder(array $args): array {
 }
 function rpcEndpoint(string $name, array $args): mixed {
     if ($name === 'place_order') return placeOrder($args);
+    if ($name === 'inventory') return inventoryEndpoint($args);
+    if ($name === 'issue_invoice') return issueInvoice($args);
     if ($name === 'validate_coupon_cart') {
         rateLimit('coupon');
         return couponResult(record('coupons', strtoupper(trim($args['p_code'] ?? ''))), cartLines($args['p_items'] ?? [], false), phoneKey($args['p_phone'] ?? ''));

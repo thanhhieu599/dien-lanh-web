@@ -25,6 +25,11 @@ AD.PK = {
   notifications: "id",
   maintenance_contracts: "id",
   maintenance_visits: "id",
+  suppliers: "id",
+  purchase_orders: "id",
+  stock_adjustments: "id",
+  stock_exports: "id",
+  stock_moves: "id",
 };
 // Bảng có cột riêng tư không cấp quyền đọc (số điện thoại người đánh giá): chỉ đọc các cột công khai
 AD.COLS = {
@@ -458,6 +463,175 @@ AD.demo = () => {
     }));
     return { maintenance_contracts: contracts, maintenance_visits: visits };
   }
+
+  function demoInventory() {
+    const at = new Date().toISOString();
+    return {
+      suppliers: [
+        { id: 1, code: "NCC0001", name: "[MẪU] Công ty TNHH Phân phối Điện lạnh Sài Gòn", phone: "02838123456", email: "sales@dienlanhsg.vn", address: "Q.10, TP.HCM", tax_code: "0301234567", contact: "Chị Hoa", note: "", active: true, debt: 0, total_purchased: 0, purchase_count: 0, created_at: at },
+        { id: 2, code: "NCC0002", name: "[MẪU] Công ty CP Vật tư Lạnh Miền Nam", phone: "02839876543", email: "", address: "Bình Tân, TP.HCM", tax_code: "0309876543", contact: "Anh Bình", note: "Ống đồng, gas, giá đỡ", active: true, debt: 0, total_purchased: 0, purchase_count: 0, created_at: at },
+      ],
+      purchase_orders: [], stock_adjustments: [], stock_exports: [], stock_moves: [], counters: {},
+    };
+  }
+  // Lõi kho cho bản demo: PHẢI khớp server/inventory.php
+  const EXPORT_REASONS = ["damaged", "sample", "gift", "internal", "return_supplier", "other"];
+  const invFail = (m) => { throw new Error(m); };
+  const nowIso = () => new Date().toISOString();
+  const userName = () => me().name || "Admin";
+  function nextCode(prefix, pad = 5) {
+    db.counters = db.counters || {};
+    db.counters[prefix] = (db.counters[prefix] || 0) + 1;
+    return prefix + String(db.counters[prefix]).padStart(pad, "0");
+  }
+  const nextId = (t) => Math.max(0, ...(db[t] || []).map((x) => Number(x.id) || 0)) + 1;
+  function stockMove(p, delta, type, ref = "", note = "", cost = null) {
+    if (!delta) return;
+    const before = Number(p.stock) || 0, after = before + delta;
+    if (after < 0) invFail(`Không đủ tồn kho: ${p.name} (còn ${before})`);
+    p.stock = after;
+    db.stock_moves.push({ id: nextId("stock_moves"), product_id: p.id, sku: p.sku || "", name: p.name, type, ref, change: delta, before, after, cost: cost ?? (Number(p.cost_price) || 0), note, user_name: userName(), created_at: nowIso() });
+    touch("products");
+  }
+  const intOf = (v, min, max, label) => { const n = Number(v); if (v === "" || v == null || !Number.isInteger(n) || n < min || n > max) invFail(`${label} không hợp lệ`); return n; };
+  const moneyOf = (v, label) => { if (v === "" || v == null) return 0; const n = Number(v); if (!Number.isFinite(n) || n < 0 || n > 1e12) invFail(`${label} không hợp lệ`); return Math.round(n); };
+  const product = (id) => db.products.find((x) => String(x.id) === String(id));
+  function invLines(items, kind) {
+    if (!items?.length || items.length > 500) invFail("Chứng từ phải có từ 1 đến 500 dòng sản phẩm");
+    const seen = new Set();
+    return items.map((it) => {
+      const p = product(it.product_id) || invFail("Sản phẩm không tồn tại");
+      if (seen.has(String(p.id))) invFail("Sản phẩm bị trùng dòng: " + p.name);
+      seen.add(String(p.id));
+      const l = { product_id: p.id, sku: p.sku || "", name: p.name, unit: p.unit || "Cái", note: String(it.note || "").trim() };
+      if (kind === "purchase") {
+        l.qty = intOf(it.qty, 1, 1e6, "Số lượng nhập"); l.price = moneyOf(it.price, "Đơn giá"); l.discount = moneyOf(it.discount, "Chiết khấu dòng"); l.tax_rate = intOf(it.tax_rate ?? 0, 0, 100, "Thuế suất");
+        if (l.discount > l.qty * l.price) invFail("Chiết khấu vượt thành tiền: " + p.name);
+      } else if (kind === "export") l.qty = intOf(it.qty, 1, 1e6, "Số lượng xuất");
+      else { l.actual = intOf(it.actual, 0, 1e8, "Tồn thực tế"); l.system = Number(p.stock) || 0; l.diff = l.actual - l.system; l.reason = String(it.reason || "").trim(); }
+      return l;
+    });
+  }
+  function purchaseTotals(lines, discount, costs) {
+    let goods = 0, tax = 0, qty = 0;
+    lines.forEach((l) => { const net = l.qty * l.price - l.discount; goods += net; tax += Math.round((net * l.tax_rate) / 100); qty += l.qty; });
+    if (discount > goods) invFail("Chiết khấu đơn vượt tổng tiền hàng");
+    const c = costs.reduce((s, x) => s + moneyOf(x.amount, "Chi phí nhập"), 0);
+    return { qty, goods, discount, costs_total: c, tax, total: Math.max(0, goods - discount + c + tax) };
+  }
+  function supplierRecalc(id) {
+    const s = db.suppliers.find((x) => String(x.id) === String(id)); if (!s) return;
+    const mine = db.purchase_orders.filter((po) => String(po.supplier_id) === String(id) && po.status !== "cancelled" && po.received);
+    s.debt = Math.max(0, mine.reduce((t, po) => t + po.total - (po.paid || 0), 0));
+    s.total_purchased = mine.reduce((t, po) => t + po.total, 0); s.purchase_count = mine.length;
+  }
+  const purchaseStatus = (po) => po.status === "cancelled" ? "cancelled" : po.received && (po.paid || 0) >= po.total ? "done" : "ordered";
+  function purchaseReceive(po) {
+    if (po.received) invFail("Đơn đã nhập kho");
+    if (po.status === "cancelled") invFail("Đơn đã hủy");
+    const goods = Math.max(1, po.goods), extra = po.costs_total - po.discount;
+    po.items.forEach((l) => {
+      const p = product(l.product_id) || invFail("Sản phẩm không còn tồn tại: " + l.name);
+      const net = l.qty * l.price - l.discount, unitCost = Math.max(0, (net + (extra * net) / goods) / l.qty);
+      const oldQty = Math.max(0, Number(p.stock) || 0), oldCost = Number(p.cost_price) || 0;
+      p.cost_price = Math.round((oldQty * oldCost + l.qty * unitCost) / (oldQty + l.qty));
+      p.import_price = l.price;
+      stockMove(p, l.qty, "purchase", po.code, "Nhập hàng từ NCC", unitCost);
+    });
+    Object.assign(po, { received: true, received_at: nowIso(), received_by: userName() });
+    po.status = purchaseStatus(po); supplierRecalc(po.supplier_id);
+    return po;
+  }
+  function purchasePay(po, a) {
+    if (po.status === "cancelled") invFail("Đơn đã hủy");
+    const amount = moneyOf(a.amount, "Số tiền thanh toán"), left = po.total - (po.paid || 0);
+    if (amount <= 0 || amount > left) invFail(`Số tiền thanh toán phải lớn hơn 0 và không vượt ${left.toLocaleString("vi-VN")}₫`);
+    po.payments = [...(po.payments || []), { amount, method: a.method === "cash" ? "cash" : "bank", note: String(a.note || "").trim(), at: nowIso(), by: userName() }];
+    po.paid = (po.paid || 0) + amount; po.status = purchaseStatus(po); supplierRecalc(po.supplier_id);
+    return po;
+  }
+  function inventoryOp(op, a = {}) {
+    const role = me().role;
+    if (!["admin", "staff"].includes(role) && !(role === "accountant" && op === "purchase_pay")) deny();
+    // Làm trên bản sao: lỗi giữa chừng thì không ghi gì (giống transaction của máy chủ)
+    const snapshot = JSON.stringify({ products: db.products, suppliers: db.suppliers, purchase_orders: db.purchase_orders, stock_adjustments: db.stock_adjustments, stock_exports: db.stock_exports, stock_moves: db.stock_moves, counters: db.counters, touched: db.touched });
+    try {
+      const result = runOp(op, a);
+      persist();
+      return JSON.parse(JSON.stringify(result));
+    } catch (err) {
+      Object.assign(db, JSON.parse(snapshot));
+      throw err;
+    }
+  }
+  function runOp(op, a) {
+    const find = (t, id) => db[t].find((x) => String(x.id) === String(id));
+    let id = a.p_id;
+    if (op === "purchase_save") {
+      let po = id ? find("purchase_orders", id) || invFail("Không tìm thấy đơn nhập") : null;
+      if (po && (po.received || po.status === "cancelled")) invFail("Đơn đã nhập kho hoặc đã hủy, không sửa được");
+      const sup = find("suppliers", a.supplier_id) || invFail("Vui lòng chọn nhà cung cấp");
+      const lines = invLines(a.items, "purchase");
+      const costs = (a.costs || []).map((c) => ({ name: String(c.name || "Chi phí").trim(), amount: moneyOf(c.amount, "Chi phí nhập") })).filter((c) => c.amount > 0);
+      const totals = purchaseTotals(lines, moneyOf(a.discount, "Chiết khấu đơn"), costs);
+      if (!po) { po = { id: nextId("purchase_orders"), code: nextCode("PON"), status: "ordered", received: false, paid: 0, payments: [], created_by: userName(), created_at: nowIso() }; db.purchase_orders.push(po); }
+      Object.assign(po, totals, { supplier_id: sup.id, supplier_name: sup.name, items: lines, costs, expected_date: /^\d{4}-\d{2}-\d{2}$/.test(a.expected_date || "") ? a.expected_date : null, note: String(a.note || "").trim(), tags: (a.tags || []).map((t) => String(t).trim()).filter(Boolean), updated_at: nowIso() });
+      if ((po.paid || 0) > po.total) invFail("Tổng đơn nhỏ hơn số tiền đã thanh toán");
+      if (a.receive) purchaseReceive(po);
+      if (a.payment?.amount) purchasePay(po, a.payment);
+      return po;
+    }
+    if (op === "purchase_receive") return purchaseReceive(find("purchase_orders", id) || invFail("Không tìm thấy đơn nhập"));
+    if (op === "purchase_pay") return purchasePay(find("purchase_orders", id) || invFail("Không tìm thấy đơn nhập"), a);
+    if (op === "purchase_cancel") {
+      const po = find("purchase_orders", id) || invFail("Không tìm thấy đơn nhập");
+      if (po.received) invFail('Đơn đã nhập kho: hãy lập phiếu xuất kho "Trả nhà cung cấp"');
+      if ((po.paid || 0) > 0) invFail("Đơn đã thanh toán một phần, không hủy được");
+      return Object.assign(po, { status: "cancelled", cancelled_at: nowIso() });
+    }
+    if (op === "adjustment_save" || op === "adjustment_balance") {
+      let doc = id ? find("stock_adjustments", id) || invFail("Không tìm thấy phiếu kiểm") : null;
+      if (doc?.status === "balanced") invFail("Phiếu đã cân bằng");
+      if (op === "adjustment_save") {
+        if (!doc) { doc = { id: nextId("stock_adjustments"), code: nextCode("IAN"), status: "draft", created_by: userName(), created_at: nowIso() }; db.stock_adjustments.push(doc); }
+        Object.assign(doc, { items: invLines(a.items, "adjust"), note: String(a.note || "").trim(), checker: String(a.checker || userName()).trim(), updated_at: nowIso() });
+        if (!a.balance) return doc;
+      }
+      doc.items = doc.items.map((l) => {
+        const p = product(l.product_id) || invFail("Sản phẩm không còn tồn tại: " + l.name);
+        const next = { ...l, system: Number(p.stock) || 0 }; next.diff = next.actual - next.system;
+        stockMove(p, next.diff, "adjust", doc.code, next.reason || "Kiểm hàng");
+        return next;
+      });
+      return Object.assign(doc, { status: "balanced", balanced_at: nowIso(), balanced_by: userName() });
+    }
+    if (op === "export_save" || op === "export_confirm") {
+      let doc = id ? find("stock_exports", id) || invFail("Không tìm thấy phiếu xuất") : null;
+      if (doc?.status === "done") invFail("Phiếu đã xuất kho");
+      if (op === "export_save") {
+        if (!EXPORT_REASONS.includes(a.reason)) invFail("Vui lòng chọn lý do xuất");
+        if (!doc) { doc = { id: nextId("stock_exports"), code: nextCode("PXK"), status: "draft", created_by: userName(), created_at: nowIso() }; db.stock_exports.push(doc); }
+        Object.assign(doc, { reason: a.reason, items: invLines(a.items, "export"), note: String(a.note || "").trim(), receiver: String(a.receiver || "").trim(), updated_at: nowIso() });
+        if (!a.confirm) return doc;
+      }
+      let value = 0;
+      doc.items = doc.items.map((l) => {
+        const p = product(l.product_id) || invFail("Sản phẩm không còn tồn tại: " + l.name);
+        const cost = Number(p.cost_price) || 0; value += l.qty * cost;
+        stockMove(p, -l.qty, "export", doc.code, l.note || "Xuất kho");
+        return { ...l, cost };
+      });
+      return Object.assign(doc, { value, status: "done", done_at: nowIso(), done_by: userName() });
+    }
+    if (op === "delete_draft") {
+      const t = { adjustment: "stock_adjustments", export: "stock_exports" }[a.p_kind] || invFail("Loại phiếu không hợp lệ");
+      const doc = find(t, id) || invFail("Không tìm thấy phiếu");
+      if (doc.status !== "draft") invFail("Chỉ xóa được phiếu nháp");
+      db[t] = db[t].filter((x) => x !== doc);
+      return { deleted: true };
+    }
+    invFail("Thao tác kho không hợp lệ");
+  }
   let db = read(KEY, null);
   if (!db) db = seed();
   db.touched = db.touched || {};
@@ -465,6 +639,8 @@ AD.demo = () => {
   db.crm_order_links = db.crm_order_links || {};
   // Bảo trì: bản demo có sẵn vài khách mẫu để xem thống kê; dữ liệu thật nằm trên MySQL
   if (!db.maintenance_contracts) Object.assign(db, demoMaintenance());
+  // Kho hàng (bản demo): nhà cung cấp mẫu, chứng từ và lịch sử kho lưu trên trình duyệt
+  if (!db.suppliers) Object.assign(db, demoInventory());
   const fresh = seed();
   CONTENT.forEach((t) => {
     if (!db.touched[t] || !db[t]) db[t] = fresh[t];
@@ -505,6 +681,8 @@ AD.demo = () => {
         invoice: o.invoice,
         note: o.note,
         staff_note: ov.staff_note || null,
+        invoice_no: ov.invoice_no || null,
+        invoiced_at: ov.invoiced_at || null,
         subtotal: o.subtotal,
         install_fee: o.install || 0,
         shipping_fee: o.shippingFee || 0,
@@ -911,6 +1089,18 @@ AD.demo = () => {
 
   return {
     mode: "demo",
+    async inventory(op, args = {}) {
+      return inventoryOp(op, args);
+    },
+    async issueInvoice(id) {
+      if (!["admin", "staff", "accountant"].includes(me().role)) deny();
+      syncFromShop();
+      const o = db.orders.find((x) => String(x.id) === String(id)) || invFail("Không tìm thấy đơn hàng");
+      if (o.status === "cancelled") invFail("Đơn đã hủy, không xuất hóa đơn");
+      const ov = (db.overlay.orders[o.code] = db.overlay.orders[o.code] || {});
+      if (!ov.invoice_no) { ov.invoice_no = nextCode("HD", 7).slice(2); ov.invoiced_at = nowIso(); ov.invoiced_by = userName(); persist(); }
+      return this.get("orders", id);
+    },
     staff: STAFF,
     async login() {
       return me();
@@ -1016,8 +1206,16 @@ AD.demo = () => {
       }
 
       row.created_at = row.created_at || new Date().toISOString();
+      if (table === "suppliers") {
+        row = { active: true, ...row, debt: 0, total_purchased: 0, purchase_count: 0 };
+        if (!String(row.code || "").trim()) row.code = "NCC" + String(db.suppliers.length + 1).padStart(4, "0");
+      }
+      // Sản phẩm mới có tồn ban đầu: ghi lịch sử kho
+      const initial = table === "products" ? Number(row.stock) || 0 : 0;
+      if (initial > 0) row.stock = 0;
 
       db[table].push(row);
+      if (initial > 0) stockMove(row, initial, "initial", "", "Khởi tạo kho");
       persist();
       touch(table);
 
@@ -1025,6 +1223,8 @@ AD.demo = () => {
     },
     async update(table, id, patch) {
       guard(table, id, patch);
+      if (["purchase_orders", "stock_adjustments", "stock_exports", "stock_moves"].includes(table))
+        throw new Error("Không được sửa trực tiếp dữ liệu giao dịch");
 
       if (table === "crm_customers" && patch.phone !== undefined) {
         patch = {
@@ -1063,6 +1263,16 @@ AD.demo = () => {
         throw new Error("Bản ghi không tồn tại");
       }
 
+      if (table === "suppliers") {
+        patch = { ...patch };
+        delete patch.debt; delete patch.total_purchased; delete patch.purchase_count;
+      }
+      // Sửa tồn kho tay ở trang sản phẩm: vẫn ghi lịch sử kho
+      if (table === "products" && patch.stock != null && Number(patch.stock) !== Number(row.stock)) {
+        const { stock, ...rest } = patch;
+        stockMove(row, Number(stock) - (Number(row.stock) || 0), "manual", "", "Sửa tồn kho ở trang sản phẩm");
+        patch = rest;
+      }
       Object.assign(row, patch, {
         updated_at: new Date().toISOString(),
       });
@@ -1080,6 +1290,10 @@ AD.demo = () => {
       }
       if (["orders", "leads", "profiles"].includes(table))
         throw new Error("Chế độ demo không xóa dữ liệu khách hàng");
+      if (["purchase_orders", "stock_adjustments", "stock_exports", "stock_moves"].includes(table))
+        throw new Error("Không được xóa dữ liệu giao dịch");
+      if (table === "suppliers" && db.purchase_orders.some((po) => String(po.supplier_id) === String(id)))
+        throw new Error("Nhà cung cấp đã có đơn nhập, hãy chuyển sang ngừng giao dịch");
       db[table] = db[table].filter(
         (x) => String(x[AD.PK[table]]) !== String(id),
       );
@@ -1096,7 +1310,7 @@ AD.demo = () => {
 
       db.crm_customers = customers;
       db.crm_order_links = links;
-      Object.assign(db, demoMaintenance());
+      Object.assign(db, demoMaintenance(), demoInventory());
 
       persist();
     },

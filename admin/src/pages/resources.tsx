@@ -1,3 +1,4 @@
+import { ProductStockHistory } from "../components/stock";
 import { RICH_MAX } from "../components/editor";
 import { useState, type FormEvent, type ReactNode } from "react";
 import {
@@ -706,7 +707,7 @@ export const RESOURCE_TABS: Record<string, ResourceTab[]> = {
   ],
   products: [
     tab("basic", "Thông tin chung", "Tên, mã, phân loại và trạng thái bán trên website.", ["name", "sku", "slug", "active", "cat", "sub", "sub2", "brand", "warranty", "technology", "origin", "product_tags"]),
-    tab("pricing", "Giá & tồn kho", "Giá bán, giá gốc, tồn kho, khuyến mãi và vận chuyển.", ["price", "old_price", "stock", "sold", "flash_sale", "free_install", "gift", "requires_shipping", "weight", "weight_unit"]),
+    tab("pricing", "Giá & tồn kho", "Giá bán, giá vốn, tồn kho, đơn vị, mã vạch, khuyến mãi và vận chuyển. Lịch sử kho ở cuối mục.", ["price", "old_price", "wholesale_price", "cost_price", "stock", "sold", "min_stock", "unit", "barcode", "location", "flash_sale", "free_install", "gift", "requires_shipping", "weight", "weight_unit"], "stockHistory"),
     tab("content", "Mô tả", "Nội dung giới thiệu sản phẩm hiện ở trang chi tiết.", ["description"]),
     tab("images", "Hình ảnh", "Ảnh sản phẩm; ảnh đầu tiên là ảnh đại diện.", ["images"]),
     tab("attributes", "Thuộc tính & thông số", "Tùy chọn khách chọn khi mua, giá trị bộ lọc của danh mục và bảng thông số kỹ thuật.", ["options", "attrs", "specs"]),
@@ -788,6 +789,7 @@ function ResourceTabs({
         {current.extra === "productMembership" && <ProductMembership row={row} kind={resource as "categories" | "brands"} onChange={patch} bare />}
         {current.extra === "couponScope" && <CouponScope row={row} onChange={patch} error={errors.scope} />}
         {current.extra === "couponGroups" && <CouponGroups row={row} onChange={patch} />}
+        {current.extra === "stockHistory" && <ProductStockHistory productId={row.id} />}
       </section>
     </div>
   );

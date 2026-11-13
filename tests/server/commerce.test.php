@@ -130,6 +130,47 @@ try {
     try { $patch($cod['id'], ['payment_status' => 'paid']); ok(false, 'D7'); } catch (HttpError $e) { ok($e->getCode() === 401, 'D7 Khách / người lạ không sửa được đơn và trạng thái thanh toán'); }
     $_GET = []; ok(dataEndpoint('orders', 'GET', []) === [] && dataEndpoint('crm_customers', 'GET', []) === [], 'D8 Người lạ không đọc được đơn hàng / khách hàng');
 
+    echo "--- F. Nhân viên tạo đơn trong quản trị\n";
+    $create = function(array $args) use (&$made) {
+        try { $o = rpcEndpoint('admin_create_order', $args + ['p_customer' => ['name' => 'Khách tạo tay', 'phone' => '0944000001'], 'p_shipping' => ['method' => 'pickup'], 'p_payment' => 'cod']); $made[] = ['orders', $o['id']]; return $o; }
+        catch (HttpError $e) { return ['error' => $e->getMessage(), 'status' => $e->getCode()]; }
+    };
+    $line = fn($extra = []) => array_merge(['product_id' => $acc['id'], 'qty' => 1, 'price' => 450000], $extra);
+    $_SESSION = []; guest();
+    ok(($create(['p_items' => [$line()]])['status'] ?? 0) === 401, 'F1 Người lạ không tạo được đơn trong quản trị');
+    $cust = keep('profiles', ['id' => "$p-cus", 'name' => 'QA Khách', 'phone' => '0900999777', 'role' => 'customer']);
+    asStaff($cust);
+    ok(($create(['p_items' => [$line()]])['status'] ?? 0) === 403, 'F2 Khách hàng không tạo được đơn trong quản trị');
+    asStaff($admin);
+    $s = stock($acc['id']);
+    // 2 x 450.000 (giá sửa tay) + dòng tự nhập 1 x 200.000 + lắp 100.000 + ship 50.000 - CK 100.000 = 1.150.000; VAT 8% cộng thêm = 92.000
+    $o = $create(['p_items' => [$line(['qty' => 2, 'name' => 'Phụ kiện (giá dự án)']), ['product_id' => null, 'name' => 'Ống đồng ngoài hệ thống', 'unit' => 'Mét', 'qty' => 1, 'price' => 200000]],
+        'p_install_fee' => 100000, 'p_shipping_fee' => 50000, 'p_discount' => 100000, 'p_vat_rate' => 8, 'p_vat_included' => false,
+        'p_payment' => 'bank', 'p_payment_status' => 'paid', 'p_status' => 'confirmed', 'p_staff_note' => 'Khách dự án', 'p_invoice' => ['company' => 'Cty QA', 'taxCode' => '0312345678']]);
+    ok(!isset($o['error']) && $o['subtotal'] === 1100000 && $o['vat_amount'] === 92000 && $o['total'] === 1242000, 'F3 Giá sửa tay + dòng tự nhập + phí + chiết khấu + VAT 8% cộng thêm: tổng đúng ' . json_encode($o['error'] ?? $o['total'] ?? null));
+    ok(stock($acc['id']) === $s - 2, 'F4 Sản phẩm trong hệ thống bị trừ kho đúng số lượng; dòng tự nhập không trừ kho');
+    $its = array_values(array_filter(allRecords('order_items'), fn($i) => $i['order_id'] === $o['id']));
+    ok(count($its) === 2 && in_array(null, array_column($its, 'product_id'), true) && in_array('Phụ kiện (giá dự án)', array_column($its, 'name'), true), 'F5 Lưu đủ 2 dòng: tên sửa tay, dòng tự nhập không gắn sản phẩm');
+    ok($o['status'] === 'confirmed' && $o['payment_status'] === 'paid' && !empty($o['paid_at']) && $o['source'] === 'admin' && $o['invoice']['taxCode'] === '0312345678', 'F6 Trạng thái, đã thanh toán (có thời điểm thu), nguồn quản trị, thông tin hóa đơn được lưu');
+    ok((record('crm_customers', 'phone:0944000001')['name'] ?? '') !== '', 'F7 Khách mới tự vào danh sách khách hàng (CRM)');
+    $moves = array_filter(allRecords('stock_moves'), fn($m) => $m['ref'] === $o['code']);
+    ok(count($moves) === 1 && array_values($moves)[0]['change'] === -2, 'F8 Lịch sử kho ghi đúng chứng từ bán hàng của đơn');
+    $inc = $create(['p_items' => [$line(['qty' => 1, 'price' => 1080000])], 'p_vat_rate' => 8, 'p_vat_included' => true]);
+    ok($inc['total'] === 1080000 && $inc['vat_amount'] === 80000, 'F9 Giá đã gồm VAT 8%: tổng giữ nguyên, tách thuế đúng');
+    $none = $create(['p_items' => [$line(['qty' => 1, 'price' => 300000])], 'p_vat_rate' => -1, 'p_vat_included' => false]);
+    ok($none['total'] === 300000 && $none['vat_amount'] === 0, 'F10 Không chịu thuế: không cộng VAT');
+    ok(isset($create(['p_items' => [$line(['qty' => 999])]])['error']), 'F11 Vượt tồn kho: chặn');
+    ok(isset($create(['p_items' => [$line()], 'p_discount' => 99999999])['error']), 'F12 Chiết khấu vượt tổng tiền: chặn');
+    ok(isset($create(['p_items' => [$line(['price' => -1])]])['error']) && isset($create(['p_items' => [$line(['qty' => 0])]])['error']), 'F13 Đơn giá âm / số lượng 0: chặn');
+    ok(isset($create(['p_items' => [$line()], 'p_vat_rate' => 7])['error']), 'F14 Thuế suất lạ (7%): chặn');
+    ok(isset($create(['p_items' => [['product_id' => null, 'qty' => 1, 'price' => 1000]]])['error']), 'F15 Dòng tự nhập thiếu tên: chặn');
+    ok(isset($create(['p_items' => [$line()], 'p_customer' => ['name' => 'X', 'phone' => '123']])['error']), 'F16 Số điện thoại khách sai: chặn');
+    $s2 = stock($acc['id']);
+    ok(isset($create(['p_items' => [$line(['qty' => 1]), ['product_id' => 'khong-co', 'qty' => 1, 'price' => 1]]])['error']) && stock($acc['id']) === $s2, 'F17 Một dòng lỗi: cả đơn không tạo, kho không bị trừ');
+    $row = $patch($o['id'], ['status' => 'cancelled']);
+    ok($row['status'] === 'cancelled' && stock($acc['id']) === $s2 + 2, 'F18 Hủy đơn tạo tay: hoàn kho đúng (bỏ qua dòng tự nhập)');
+    $_SESSION = [];
+
     echo "--- E. Đối soát toàn bộ database\n";
     $items = [];
     foreach (allRecords('order_items') as $i) $items[$i['order_id']][] = $i;
@@ -137,7 +178,7 @@ try {
     foreach (allRecords('orders') as $o) {
         $sub = array_sum(array_map(fn($i) => $i['price'] * $i['qty'], $items[$o['id']] ?? []));
         if (!isset($items[$o['id']])) continue; // đơn tạo tay trong test cũ, không có dòng hàng
-        if ($sub != $o['subtotal'] || $o['total'] != $o['subtotal'] + $o['install_fee'] + $o['shipping_fee'] - $o['discount'] || $o['discount'] > $o['subtotal'] + $o['install_fee'] || $o['total'] < 0) $bad[] = $o['code'];
+        if ($sub != $o['subtotal'] || $o['total'] != $o['subtotal'] + $o['install_fee'] + $o['shipping_fee'] - $o['discount'] + (($o['vat_included'] ?? true) === false ? ($o['vat_amount'] ?? 0) : 0) || $o['discount'] > $o['subtotal'] + $o['install_fee'] + $o['shipping_fee'] || $o['total'] < 0) $bad[] = $o['code'];
     }
     ok(!$bad, 'E1 Mọi đơn: tạm tính = Σ dòng hàng; tổng = tạm tính + lắp đặt + ship - giảm giá; không âm (' . count($items) . ' đơn)' . ($bad ? ' LỖI: ' . implode(',', $bad) : ''));
     ok(!array_filter(allRecords('products'), fn($x) => ($x['stock'] ?? 0) < 0), 'E2 Không sản phẩm nào tồn kho âm');

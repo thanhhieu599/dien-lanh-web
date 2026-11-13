@@ -738,6 +738,58 @@ try {
     assert.equal(await page.locator("#inv-issue").count(), 0, "Cấp số 1 lần");
     assert.equal((await read("orders", "DTREACTQA")).invoice_no, inv.invoice_no);
   }
+  // Tạo đơn hàng tại quản trị: khách có sẵn, sản phẩm trong hệ thống (sửa giá) + dòng tự nhập, phí, chiết khấu, VAT cộng thêm
+  {
+    const prod = (await page.evaluate(() => AD.db.list("products", { filters: [["stock", "gte", 5]], limit: 1 }))).rows[0];
+    const stockBefore = Number(prod.stock);
+    await open("orders");
+    await page.locator("#order-new").click();
+    await page.locator("#view h1", { hasText: "Tạo đơn hàng" }).waitFor();
+    // Chưa có sản phẩm: báo lỗi, không tạo
+    await page.locator("[name=c_name]").fill("Khách tạo tay QA");
+    await page.locator("[name=c_phone]").fill("0977000111");
+    await page.locator("#order-create").click();
+    await page.locator("#view [role=alert]", { hasText: "chưa có sản phẩm" }).waitFor();
+    // Chọn khách có sẵn rồi sửa lại tên
+    const known = (await page.evaluate(() => AD.db.list("crm_customers", { limit: 1 }))).rows[0];
+    if (known?.phone) {
+      await page.getByLabel("Chọn khách hàng có sẵn").fill(String(known.phone).slice(0, 6));
+      await page.locator(".inv-hits button").first().click();
+      assert.ok((await page.locator("[name=c_phone]").inputValue()).length >= 10, "Chọn khách có sẵn điền số điện thoại");
+    }
+    await page.locator("[name=c_name]").fill("Khách tạo tay QA");
+    await page.locator("[name=c_phone]").fill("0977000111");
+    await page.getByLabel("Thêm sản phẩm có sẵn").fill(prod.sku);
+    await page.locator(".inv-hits button").first().click();
+    await page.getByLabel("Số lượng dòng 1").fill("2");
+    await page.getByLabel("Đơn giá dòng 1").fill("1000000");
+    await page.locator("#order-add-custom").click();
+    await page.getByLabel("Tên dòng 2").fill("Công lắp đặt ống đồng");
+    await page.getByLabel("Đơn vị dòng 2").fill("Mét");
+    await page.getByLabel("Số lượng dòng 2").fill("3");
+    await page.getByLabel("Đơn giá dòng 2").fill("100000");
+    await page.getByLabel("Phí giao hàng").fill("50000");
+    await page.getByLabel("Chiết khấu", { exact: true }).fill("250000");
+    await page.getByLabel("Thuế suất GTGT").selectOption("10");
+    await page.getByLabel("Cách tính thuế").selectOption("out");
+    // (2.000.000 + 300.000 + 50.000 - 250.000) = 2.100.000 + VAT 10% 210.000 = 2.310.000
+    assert.match(await page.locator("#order-total").innerText(), /2\.310\.000/);
+    await page.locator("[name=payment]").selectOption("bank");
+    await page.locator("[name=payment_status]").selectOption("paid");
+    await page.locator("#order-create").click();
+    await page.waitForURL(/#\/orders\/DT/);
+    await page.locator("#view h1", { hasText: /^Đơn DT/ }).waitFor();
+    const view = await page.locator("#view").innerText();
+    assert.match(view, /Tạo tại quản trị/); assert.match(view, /Công lắp đặt ống đồng/); assert.match(view, /Thuế GTGT 10%/); assert.match(view, /2\.310\.000/);
+    const made = (await page.evaluate(() => AD.db.list("orders", { filters: [["source", "eq", "admin"]], order: "created_at.desc", limit: 1, select: "*,order_items(*)" }))).rows[0];
+    assert.equal(made.total, 2310000); assert.equal(made.vat_amount, 210000); assert.equal(made.payment_status, "paid"); assert.equal(made.order_items.length, 2);
+    assert.equal(Number((await page.evaluate((id) => AD.db.get("products", id), prod.id)).stock), stockBefore - 2, "Trừ kho 2 cái, dòng tự nhập không trừ");
+    // Hóa đơn: VAT 10% cộng thêm, tiền trước thuế 2.100.000
+    await page.locator("#view a", { hasText: "Xuất hóa đơn" }).click();
+    await page.locator(".inv-sheet").waitFor();
+    const invText = await page.locator(".inv-sheet").innerText();
+    assert.match(invText, /2\.100\.000/); assert.match(invText, /210\.000/); assert.match(invText, /Công lắp đặt ống đồng/);
+  }
   // Trình soạn thảo nội dung bài viết: định dạng, bảng, liên kết, mã HTML, lưu và đọc lại
   {
     const post = (await page.evaluate(() => AD.db.list("posts", { limit: 1 }))).rows[0];

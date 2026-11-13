@@ -157,6 +157,23 @@ function flatText(mixed $v, int $max = 500): array {
     foreach (array_slice($v, 0, 40, true) as $k => $x) if (is_string($k) && (is_scalar($x) || $x === null)) $out[$k] = is_bool($x) || $x === null ? $x : cleanText($x, $max);
     return $out;
 }
+// Khách hàng CRM theo số điện thoại: tạo mới hoặc bổ sung email / địa chỉ giao hàng (giữ tối đa 5)
+function crmUpsert(array $customer, array $shipping): array {
+    $customerId = 'phone:' . $customer['phone'];
+    $crm = record('crm_customers', $customerId, true);
+    if (!$crm) $crm = put('crm_customers', ['id'=>$customerId, 'phone'=>$customer['phone'], 'name'=>$customer['name'], 'email'=>$customer['email'] ?? '', 'addresses'=> $shipping['method'] === 'delivery' ? [$shipping] : [], 'tags'=>[], 'marketing_opt_in'=>false], true);
+    else {
+        // Khách cũ: bổ sung email còn trống và địa chỉ giao hàng mới (giữ tối đa 5)
+        $changed = false;
+        if (empty($crm['email']) && !empty($customer['email'])) { $crm['email'] = $customer['email']; $changed = true; }
+        if ($shipping['method'] === 'delivery') {
+            $key = fn($a) => mb_strtolower(trim(($a['address'] ?? '') . '|' . ($a['district'] ?? '') . '|' . ($a['province'] ?? '')));
+            if (!in_array($key($shipping), array_map($key, $crm['addresses'] ?? []), true)) { $crm['addresses'] = array_slice(array_merge([$shipping], $crm['addresses'] ?? []), 0, 5); $changed = true; }
+        }
+        if ($changed) $crm = put('crm_customers', $crm);
+    }
+    return $crm;
+}
 function placeOrder(array $args): array {
     rateLimit('order', 20);
     // Chống tạo đơn trùng khi khách bấm 2 lần / trình duyệt gửi lại: cùng mã yêu cầu -> trả lại đúng đơn đã tạo
@@ -189,19 +206,7 @@ function placeOrder(array $args): array {
             $coupon['used_count'] = ($coupon['used_count'] ?? 0) + 1; put('coupons', $coupon);
         }
         $quote = orderQuote($lines, $config, $shipping['method'], $result);
-        $customerId = 'phone:' . $customer['phone'];
-        $crm = record('crm_customers', $customerId, true);
-        if (!$crm) $crm = put('crm_customers', ['id'=>$customerId, 'phone'=>$customer['phone'], 'name'=>$customer['name'], 'email'=>$customer['email'] ?? '', 'addresses'=> $shipping['method'] === 'delivery' ? [$shipping] : [], 'tags'=>[], 'marketing_opt_in'=>false], true);
-        else {
-            // Khách cũ: bổ sung email còn trống và địa chỉ giao hàng mới (giữ tối đa 5)
-            $changed = false;
-            if (empty($crm['email']) && !empty($customer['email'])) { $crm['email'] = $customer['email']; $changed = true; }
-            if ($shipping['method'] === 'delivery') {
-                $key = fn($a) => mb_strtolower(trim(($a['address'] ?? '') . '|' . ($a['district'] ?? '') . '|' . ($a['province'] ?? '')));
-                if (!in_array($key($shipping), array_map($key, $crm['addresses'] ?? []), true)) { $crm['addresses'] = array_slice(array_merge([$shipping], $crm['addresses'] ?? []), 0, 5); $changed = true; }
-            }
-            if ($changed) $crm = put('crm_customers', $crm);
-        }
+        $crm = crmUpsert($customer, $shipping);
         $order = put('orders', [
             'customer_id' => $crm['id'],
             'code' => 'DT' . strtoupper(bin2hex(random_bytes(6))), 'user_id' => actor()['id'] ?? null,
@@ -220,7 +225,84 @@ function placeOrder(array $args): array {
         return orderPublic($order);
     });
 }
+// Nhân viên tạo đơn trong quản trị: chọn sản phẩm có sẵn (trừ kho) hoặc tự nhập dòng hàng,
+// khách có sẵn hoặc khách mới; tự chỉnh đơn giá, phí lắp đặt, phí giao, chiết khấu, thuế GTGT.
+const VAT_RATES = [-1, 0, 5, 8, 10]; // -1: không chịu thuế
+function adminOrderMoney(mixed $v, string $label): int {
+    if ($v === null || $v === '') return 0;
+    if (!is_numeric($v) || $v < 0 || $v > 1e12) fail("$label không hợp lệ");
+    return (int)round((float)$v);
+}
+// Tổng đơn tạo tay: PHẢI khớp adminOrderTotals (admin/src/services/orders.ts)
+function adminOrderTotals(array $lines, int $install, int $shipping, int $discount, int $rate, bool $included): array {
+    $goods = 0; foreach ($lines as $l) $goods += $l['price'] * $l['qty'];
+    $base = $goods + $install + $shipping - $discount;
+    if ($base < 0) fail('Chiết khấu vượt tổng tiền hàng');
+    if ($rate <= 0) $vat = 0;
+    elseif ($included) $vat = $base - (int)round($base / (1 + $rate / 100));
+    else $vat = (int)round($base * $rate / 100);
+    return ['subtotal' => $goods, 'vat' => $vat, 'total' => $included || $rate <= 0 ? $base : $base + $vat];
+}
+function adminCreateOrder(array $args): array {
+    $user = staff(); if (!in_array($user['role'], ['admin','staff'], true)) fail('Không có quyền tạo đơn hàng', 403);
+    $customer = flatText($args['p_customer'] ?? [], 300);
+    $customer['phone'] = phoneKey($customer['phone'] ?? '');
+    if (!preg_match('/^0[0-9]{9,10}$/', $customer['phone'])) fail('Số điện thoại khách hàng không hợp lệ');
+    if (($customer['name'] ?? '') === '') fail('Vui lòng nhập tên khách hàng');
+    $shipping = flatText($args['p_shipping'] ?? [], 300);
+    if (!in_array($shipping['method'] ?? '', ['delivery','pickup'], true)) $shipping['method'] = 'pickup';
+    if ($shipping['method'] === 'delivery' && ($shipping['address'] ?? '') === '') fail('Vui lòng nhập địa chỉ giao hàng');
+    $payment = in_array($args['p_payment'] ?? '', ['cod','bank'], true) ? $args['p_payment'] : fail('Phương thức thanh toán chỉ có COD hoặc chuyển khoản');
+    $paymentStatus = in_array($args['p_payment_status'] ?? 'unpaid', ['unpaid','partial','paid'], true) ? ($args['p_payment_status'] ?? 'unpaid') : fail('Trạng thái thanh toán không hợp lệ');
+    $status = in_array($args['p_status'] ?? 'pending', ['pending','confirmed'], true) ? ($args['p_status'] ?? 'pending') : fail('Trạng thái đơn không hợp lệ');
+    $rate = $args['p_vat_rate'] ?? 10;
+    if (!is_int($rate) || !in_array($rate, VAT_RATES, true)) fail('Thuế suất GTGT không hợp lệ');
+    $included = ($args['p_vat_included'] ?? true) !== false;
+    $items = $args['p_items'] ?? null;
+    if (!is_array($items) || !$items || count($items) > 100) fail('Đơn hàng phải có từ 1 đến 100 dòng sản phẩm');
+    return transaction(function() use ($args, $user, $customer, $shipping, $payment, $paymentStatus, $status, $rate, $included, $items) {
+        $lines = [];
+        foreach ($items as $i => $it) {
+            if (!is_array($it)) fail('Dòng sản phẩm không hợp lệ');
+            $n = $i + 1;
+            $qty = $it['qty'] ?? null;
+            if (!is_int($qty) || $qty < 1 || $qty > 100000) fail("Dòng $n: số lượng không hợp lệ");
+            $price = adminOrderMoney($it['price'] ?? null, "Dòng $n: đơn giá");
+            $pid = $it['product_id'] ?? null;
+            $p = $pid !== null && $pid !== '' ? record('products', is_scalar($pid) ? (string)$pid : '', true) : null;
+            if ($pid !== null && $pid !== '' && !$p) fail("Dòng $n: sản phẩm không tồn tại");
+            $name = cleanText($it['name'] ?? '', 300) ?: ($p['name'] ?? '');
+            if ($name === '') fail("Dòng $n: vui lòng nhập tên sản phẩm");
+            $lines[] = ['product' => $p, 'name' => $name, 'sku' => cleanText($it['sku'] ?? '', 80) ?: ($p['sku'] ?? ''), 'unit' => cleanText($it['unit'] ?? '', 30) ?: ($p['unit'] ?? 'Cái'), 'qty' => $qty, 'price' => $price];
+        }
+        $install = adminOrderMoney($args['p_install_fee'] ?? 0, 'Phí lắp đặt');
+        $ship = adminOrderMoney($args['p_shipping_fee'] ?? 0, 'Phí giao hàng');
+        $discount = adminOrderMoney($args['p_discount'] ?? 0, 'Chiết khấu');
+        $t = adminOrderTotals($lines, $install, $ship, $discount, $rate, $included);
+        $crm = crmUpsert($customer, $shipping);
+        $code = 'DT' . strtoupper(bin2hex(random_bytes(6)));
+        $order = put('orders', [
+            'customer_id' => $crm['id'], 'code' => $code, 'user_id' => null, 'source' => 'admin',
+            'created_by' => $user['id'], 'created_by_name' => userName($user),
+            'status' => $status, 'phone' => $customer['phone'], 'customer' => $customer, 'shipping' => $shipping,
+            'payment' => $payment, 'payment_status' => $paymentStatus, 'paid_at' => $paymentStatus === 'paid' ? now() : null,
+            'invoice' => is_array($args['p_invoice'] ?? null) ? flatText($args['p_invoice']) : null,
+            'note' => cleanText($args['p_note'] ?? '', 2000), 'staff_note' => cleanText($args['p_staff_note'] ?? '', 2000),
+            'subtotal' => $t['subtotal'], 'install_fee' => $install, 'shipping_fee' => $ship, 'discount' => $discount, 'coupon' => null,
+            'vat_rate' => $rate, 'vat_included' => $included, 'vat_amount' => $t['vat'], 'total' => $t['total'],
+        ], true);
+        usort($lines, fn($a, $b) => (string)($a['product']['id'] ?? '') <=> (string)($b['product']['id'] ?? ''));
+        foreach ($lines as $l) {
+            $p = $l['product'];
+            if ($p) { $p = record('products', $p['id'], true); $p['sold'] = ($p['sold'] ?? 0) + $l['qty']; stockMove($p, -$l['qty'], 'sale', $code, 'Bán hàng (tạo đơn tại quản trị)', $user); }
+            put('order_items', ['order_id' => $order['id'], 'product_id' => $p['id'] ?? null, 'sku' => $l['sku'], 'name' => $l['name'], 'unit' => $l['unit'], 'price' => $l['price'], 'qty' => $l['qty'], 'install' => false, 'options' => (object)[]], true);
+        }
+        put('order_status_history', ['order_id' => $order['id'], 'status' => $status, 'note' => 'Tạo đơn tại quản trị – ' . userName($user), 'changed_by' => $user['id']], true);
+        return $order;
+    });
+}
 function rpcEndpoint(string $name, array $args): mixed {
+    if ($name === 'admin_create_order') return adminCreateOrder($args);
     if ($name === 'place_order') return placeOrder($args);
     if ($name === 'inventory') return inventoryEndpoint($args);
     if ($name === 'issue_invoice') return issueInvoice($args);

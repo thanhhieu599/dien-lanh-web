@@ -55,7 +55,8 @@ async function loadVoucher(kind: string, id: string): Promise<Voucher> {
   if (kind === 'ban') {
     const o = await ad.db.get('orders', id, '*,order_items(*)');
     if (!o) throw new Error('Không tìm thấy đơn hàng.');
-    const lines = (o.order_items || o.items || []).map((i: Row) => { const p = productOf(i.product_id ?? i.id); const price = Number(p?.cost_price) || 0; return {name: i.name, sku: i.sku || p?.sku || '', unit: p?.unit || 'Cái', docQty: Number(i.qty), qty: Number(i.qty), price, amount: price * Number(i.qty)}; });
+    // Dòng tự nhập (không có trong kho) không đưa vào phiếu xuất kho
+    const lines = (o.order_items || o.items || []).filter((i: Row) => (i.product_id ?? i.id) != null).map((i: Row) => { const p = productOf(i.product_id ?? i.id); const price = Number(p?.cost_price) || 0; return {name: i.name, sku: i.sku || p?.sku || '', unit: i.unit || p?.unit || 'Cái', docQty: Number(i.qty), qty: Number(i.qty), price, amount: price * Number(i.qty)}; });
     return {type: 'out', department: 'Bán hàng', no: `PXK-${o.code}`, date: o.created_at, debit: '632', credit: '156', ready: o.status !== 'cancelled', notReady: 'Đơn đã hủy: không lập phiếu xuất kho.',
       person: o.customer?.name || '', personAddress: o.shipping?.method === 'pickup' ? `Nhận tại cửa hàng ${o.shipping.store || ''}` : [o.shipping?.address, o.shipping?.district, o.shipping?.province].filter(Boolean).join(', '), reason: `Xuất bán hàng theo đơn ${o.code}`, basis: o.invoice_no ? `Hóa đơn bán hàng số ${o.invoice_no}` : '', lines, total: lines.reduce((s: number, l: VoucherLine) => s + l.amount, 0), back: `/orders/${encodeURIComponent(o.id)}`};
   }

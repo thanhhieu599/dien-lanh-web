@@ -58,7 +58,7 @@ for (const t of ['products', 'orders', 'settings', 'coupons', 'suppliers', 'purc
   ok([a, b].every((r) => [400, 403, 404].includes(r.status)), `S2 Khách hàng không sửa được ${t}`);
 }
 ok((await customer(`data/profiles?id=eq.${me}`, { method: 'PATCH', body: { role: 'admin' } })).data?.[0]?.role === 'customer', 'S2 Khách không tự nâng quyền thành quản trị');
-for (const [fn, args] of [['inventory', { p_op: 'purchase_save' }], ['issue_invoice', { p_id: 'x' }], ['save_brand', { p_brand: { name: 'x' } }], ['maintenance_skip', { p_id: 'x' }]]) {
+for (const [fn, args] of [['admin_create_order', { p_items: [{ product_id: 1001, qty: 1, price: 1 }] }], ['inventory', { p_op: 'purchase_save' }], ['issue_invoice', { p_id: 'x' }], ['save_brand', { p_brand: { name: 'x' } }], ['maintenance_skip', { p_id: 'x' }]]) {
   ok([401, 403].includes((await guest(`rpc/${fn}`, { method: 'POST', body: args })).status) && [401, 403].includes((await customer(`rpc/${fn}`, { method: 'POST', body: args })).status), `S2 Chức năng quản trị ${fn} bị chặn với người lạ và khách`);
 }
 ok((await guest('rpc/my_orders', { method: 'POST' })).status === 401, 'S2 Xem "đơn của tôi" phải đăng nhập');

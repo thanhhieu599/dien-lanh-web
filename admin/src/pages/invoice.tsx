@@ -12,10 +12,17 @@ const dayParts = (iso?: string) => { const d = iso ? new Date(iso) : new Date();
 
 // Tách dòng hóa đơn: giá chưa thuế từng dòng; chênh lệch làm tròn dồn vào dòng cuối để tổng khớp đơn hàng
 export function invoiceLines(order: Row, vatRate: number) {
-  const items: Row[] = (order.order_items || order.items || []).map((i: Row) => ({name: i.name + (i.options && Object.keys(i.options).length ? ` (${Object.values(i.options).join(', ')})` : ''), sku: i.sku || '', unit: dt.api?.productById?.(i.product_id ?? i.id)?.unit || 'Cái', qty: Number(i.qty) || 0, gross: (Number(i.price) || 0) * (Number(i.qty) || 0)}));
+  const items: Row[] = (order.order_items || order.items || []).map((i: Row) => ({name: i.name + (i.options && Object.keys(i.options).length ? ` (${Object.values(i.options).join(', ')})` : ''), sku: i.sku || '', unit: i.unit || dt.api?.productById?.(i.product_id ?? i.id)?.unit || 'Cái', qty: Number(i.qty) || 0, gross: (Number(i.price) || 0) * (Number(i.qty) || 0)}));
   if (Number(order.install_fee || order.install)) items.push({name: 'Phí lắp đặt', sku: '', unit: 'Lần', qty: 1, gross: Number(order.install_fee || order.install)});
   if (Number(order.discount)) items.push({name: `Chiết khấu thương mại${order.coupon ? ` (mã ${order.coupon})` : ''}`, sku: '', unit: '', qty: 0, gross: -Number(order.discount)});
+  // Đơn tạo tại quản trị có phí giao hàng riêng
+  if (Number(order.shipping_fee)) items.splice(items.length - (Number(order.discount) ? 1 : 0), 0, {name: 'Phí giao hàng', sku: '', unit: 'Lần', qty: 1, gross: Number(order.shipping_fee)});
   const total = Number(order.total) || items.reduce((s, l) => s + l.gross, 0);
+  // Giá chưa gồm VAT (đơn tạo tại quản trị): giá dòng đã là giá chưa thuế, thuế cộng thêm
+  if (order.vat_included === false && vatRate > 0) {
+    const pre = total - Number(order.vat_amount || 0);
+    return {lines: items.map((l): Row => ({...l, amount: l.gross, price: l.qty ? l.gross / l.qty : 0})), pre, vat: total - pre, total};
+  }
   const pre = Math.round(total / (1 + vatRate / 100));
   let used = 0;
   const lines = items.map((l, i): Row => {
@@ -36,7 +43,8 @@ export function InvoicePage() {
   }, [id, useLocation().search]);
   return <DataState state={state}>{state.data && (() => {
     const {order: o, cfg} = state.data;
-    const rawRate = Number(cfg.vatRate ?? 10);
+    // Đơn tạo tại quản trị có thuế suất riêng; đơn website dùng thuế suất trong Cài đặt cửa hàng
+    const rawRate = Number(o.vat_rate ?? cfg.vatRate ?? 10);
     const rate = Math.max(0, rawRate);
     const {lines, pre, vat, total} = invoiceLines(o, rate);
     const inv = o.invoice || {};
@@ -78,7 +86,7 @@ export function InvoicePage() {
         <div className="inv-signs"><div><b>Người mua hàng</b><small>(Ký, ghi rõ họ tên)</small></div><div><b>Người bán hàng</b><small>(Ký, đóng dấu, ghi rõ họ tên)</small></div></div>
         <p className="inv-foot">{cfg.invoiceNote || 'Hóa đơn bán hàng do cửa hàng lập từ đơn hàng. Hóa đơn GTGT điện tử (nếu có) được phát hành riêng qua nhà cung cấp hóa đơn điện tử.'}</p>
       </article>
-      <p className="inv-muted">Tổng thanh toán: {money(total)} · {rawRate < 0 ? 'Hàng không chịu thuế GTGT.' : `Giá bán đã gồm VAT ${rate}%.`}</p>
+      <p className="inv-muted">Tổng thanh toán: {money(total)} · {rawRate < 0 ? 'Hàng không chịu thuế GTGT.' : o.vat_included === false ? `Đã cộng thuế GTGT ${rate}%.` : `Giá bán đã gồm VAT ${rate}%.`}</p>
     </>;
   })()}</DataState>;
 }

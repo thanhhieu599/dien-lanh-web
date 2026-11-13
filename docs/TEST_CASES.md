@@ -113,6 +113,19 @@ Lỗi đã phát hiện và sửa khi viết bộ test này:
 - Lộ phiên bản PHP/Apache, thiếu header chống nhúng trang → đã thêm header, ẩn phiên bản.
 - Nếu đưa nguyên mã nguồn lên hosting, `.git`, `package.json` tải được → thêm `.htaccess` gốc chặn tệp ẩn và tệp phát triển.
 
+## 6. Tạo đơn hàng tại quản trị (`tests/server/commerce.test.php` mục F, `tests/react/admin.test.mjs`)
+
+| Mã | Tình huống | Kết quả mong đợi |
+|---|---|---|
+| F1–F2 | Người lạ / khách hàng gọi chức năng tạo đơn quản trị | 401 / 403 |
+| F3 | Sửa giá tay + dòng tự nhập + phí lắp, phí giao, chiết khấu, VAT 8% cộng thêm | Tổng đúng đến từng đồng |
+| F4–F5, F8 | Sản phẩm trong hệ thống / dòng tự nhập | Trừ kho đúng số lượng, ghi lịch sử kho theo mã đơn; dòng tự nhập không trừ kho |
+| F6–F7 | Trạng thái, đã thanh toán, thông tin hóa đơn; khách mới | Lưu đủ, có thời điểm thu tiền; khách tự vào CRM |
+| F9–F10 | Giá đã gồm VAT / không chịu thuế | Tổng giữ nguyên, tách thuế đúng; không cộng thuế |
+| F11–F17 | Vượt tồn, chiết khấu vượt tổng, giá âm, SL 0, thuế suất lạ, thiếu tên, SĐT sai, 1 dòng lỗi | Chặn, cả đơn không tạo, kho không đổi |
+| F18 | Hủy đơn tạo tay | Hoàn kho đúng (bỏ qua dòng tự nhập) |
+| Giao diện | Chọn khách có sẵn, chọn sản phẩm, sửa giá, thêm dòng tự nhập, VAT 10% cộng thêm, tạo đơn | Chuyển tới đơn mới, đúng tổng 2.310.000; hóa đơn tách 2.100.000 + 210.000 |
+
 ## Máy chủ thật – cách chạy trên máy
 
 ```bash

@@ -680,7 +680,7 @@ AD.demo = () => {
         payment_status: ov.payment_status || o.paymentStatus || "unpaid",
         invoice: o.invoice,
         note: o.note,
-        staff_note: ov.staff_note || null,
+        staff_note: ov.staff_note ?? o.staffNote ?? null,
         invoice_no: ov.invoice_no || null,
         invoiced_at: ov.invoiced_at || null,
         subtotal: o.subtotal,
@@ -692,10 +692,17 @@ AD.demo = () => {
         user_id: o.userId || null,
         maintenance_optin: ov.maintenance_optin ?? !!o.maintenance,
         attribution: o.attribution || null,
+        // Đơn tạo tại quản trị: thuế GTGT riêng, người tạo
+        source: o.source || "website",
+        created_by_name: o.createdByName || null,
+        vat_rate: o.vatRate ?? null,
+        vat_included: o.vatIncluded ?? null,
+        vat_amount: o.vatAmount ?? null,
         order_items: (o.items || []).map((it, i) => ({
           id: i + 1,
-          product_id: it.id,
-          sku: DT.api.productById(it.id)?.sku,
+          product_id: it.id ?? null,
+          unit: it.unit || null,
+          sku: it.sku || (it.id != null ? DT.api.productById(it.id)?.sku : ""),
           name: it.name,
           price: it.price,
           qty: it.qty,
@@ -1091,6 +1098,66 @@ AD.demo = () => {
     mode: "demo",
     async inventory(op, args = {}) {
       return inventoryOp(op, args);
+    },
+    // Tạo đơn tại quản trị: PHẢI khớp adminCreateOrder (server/shop.php)
+    async createOrder(a = {}) {
+      if (!writer()) deny();
+      const money = (v, label) => moneyOf(v, label);
+      const c = a.p_customer || {};
+      const phone = String(c.phone || "").replace(/[^0-9+]/g, "").replace(/^\+?84/, "0");
+      if (!/^0[0-9]{9,10}$/.test(phone)) invFail("Số điện thoại khách hàng không hợp lệ");
+      if (!String(c.name || "").trim()) invFail("Vui lòng nhập tên khách hàng");
+      const shipping = { ...(a.p_shipping || {}) };
+      if (!["delivery", "pickup"].includes(shipping.method)) shipping.method = "pickup";
+      if (shipping.method === "delivery" && !String(shipping.address || "").trim()) invFail("Vui lòng nhập địa chỉ giao hàng");
+      if (!["cod", "bank"].includes(a.p_payment)) invFail("Phương thức thanh toán chỉ có COD hoặc chuyển khoản");
+      const paymentStatus = a.p_payment_status || "unpaid", status = a.p_status || "pending";
+      if (!["unpaid", "partial", "paid"].includes(paymentStatus)) invFail("Trạng thái thanh toán không hợp lệ");
+      if (!["pending", "confirmed"].includes(status)) invFail("Trạng thái đơn không hợp lệ");
+      const rate = a.p_vat_rate ?? 10;
+      if (![-1, 0, 5, 8, 10].includes(rate)) invFail("Thuế suất GTGT không hợp lệ");
+      const included = a.p_vat_included !== false;
+      const items = a.p_items;
+      if (!Array.isArray(items) || !items.length || items.length > 100) invFail("Đơn hàng phải có từ 1 đến 100 dòng sản phẩm");
+      const snapshot = JSON.stringify({ products: db.products, stock_moves: db.stock_moves, touched: db.touched });
+      try {
+        const lines = items.map((it, i) => {
+          const n = i + 1;
+          if (!Number.isInteger(it.qty) || it.qty < 1 || it.qty > 100000) invFail(`Dòng ${n}: số lượng không hợp lệ`);
+          const price = money(it.price, `Dòng ${n}: đơn giá`);
+          const has = it.product_id !== null && it.product_id !== undefined && it.product_id !== "";
+          const p = has ? product(it.product_id) || invFail(`Dòng ${n}: sản phẩm không tồn tại`) : null;
+          const name = String(it.name || "").trim() || p?.name || "";
+          if (!name) invFail(`Dòng ${n}: vui lòng nhập tên sản phẩm`);
+          return { p, name, sku: String(it.sku || "").trim() || p?.sku || "", unit: String(it.unit || "").trim() || p?.unit || "Cái", qty: it.qty, price };
+        });
+        const install = money(a.p_install_fee, "Phí lắp đặt"), ship = money(a.p_shipping_fee, "Phí giao hàng"), discount = money(a.p_discount, "Chiết khấu");
+        const goods = lines.reduce((t, l) => t + l.price * l.qty, 0);
+        const base = goods + install + ship - discount;
+        if (base < 0) invFail("Chiết khấu vượt tổng tiền hàng");
+        const vat = rate <= 0 ? 0 : included ? base - Math.round(base / (1 + rate / 100)) : Math.round((base * rate) / 100);
+        const total = included || rate <= 0 ? base : base + vat;
+        const code = "DT" + Math.random().toString(16).slice(2, 14).toUpperCase().padEnd(12, "0");
+        lines.forEach((l) => { if (l.p) { l.p.sold = (Number(l.p.sold) || 0) + l.qty; stockMove(l.p, -l.qty, "sale", code, "Bán hàng (tạo đơn tại quản trị)"); } });
+        const createdAt = nowIso();
+        const order = {
+          code, createdAt, status, source: "admin", createdByName: userName(),
+          customer: { name: String(c.name).trim(), phone, email: String(c.email || "").trim() }, shipping,
+          payment: a.p_payment, paymentStatus, invoice: a.p_invoice || null, note: String(a.p_note || "").trim(), staffNote: String(a.p_staff_note || "").trim(),
+          items: lines.map((l) => ({ id: l.p ? l.p.id : null, name: l.name, sku: l.sku, unit: l.unit, price: l.price, qty: l.qty, install: false, options: {} })),
+          subtotal: goods, install, shippingFee: ship, discount, coupon: null, vatRate: rate, vatIncluded: included, vatAmount: vat, total,
+        };
+        const shop = read(SHOP, { orders: [], users: [] });
+        shop.orders = [order, ...(shop.orders || [])];
+        if (!write(SHOP, shop)) invFail("Không lưu được đơn hàng trên trình duyệt");
+        db.overlay.orders[code] = { ...(db.overlay.orders[code] || {}), history: [{ status, note: `Tạo đơn tại quản trị – ${userName()}`, created_at: createdAt }], ...(paymentStatus === "paid" ? { paid_at: createdAt } : {}) };
+        persist();
+        syncFromShop();
+        return { ...db.orders.find((o) => o.code === code) };
+      } catch (err) {
+        Object.assign(db, JSON.parse(snapshot));
+        throw err;
+      }
     },
     async issueInvoice(id) {
       if (!["admin", "staff", "accountant"].includes(me().role)) deny();

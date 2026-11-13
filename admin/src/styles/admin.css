@@ -285,3 +285,10 @@
 }
 .vc-note{margin-top:10px;font-size:13px}.vc-note b{font-style:normal}
 .doc-sheet .vc-name{margin-top:72px}
+/* Tạo đơn hàng: cột tên rộng, cột số gọn */
+.order-lines td:nth-child(2) input{min-width:280px}
+.order-lines td:nth-child(3) input{width:110px}
+.order-lines td:nth-child(4) input{width:80px}
+.order-lines td:nth-child(5) input{width:80px}
+.order-lines td:nth-child(6) input{width:130px}
+.order-lines td small{display:block}

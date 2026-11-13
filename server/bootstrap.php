@@ -75,6 +75,8 @@ function staff(): array {
     return $user;
 }
 function rateLimit(string $action, int $max = 30): void {
+    // Môi trường thử nghiệm (docker-compose) nới giới hạn để chạy nhiều bài test liền nhau; hosting thật giữ nguyên
+    $max *= max(1, (int)(getenv('RATE_LIMIT_MULTIPLIER') ?: 1));
     $bucket = hash('sha256', $action . ($_SERVER['REMOTE_ADDR'] ?? 'cli') . intdiv(time(), 300));
     sql('INSERT INTO rate_limits(bucket,attempts,expires_at) VALUES(?,1,?) ON DUPLICATE KEY UPDATE attempts=attempts+1', [$bucket, time() + 300]);
     if ((int)sql('SELECT attempts FROM rate_limits WHERE bucket=?', [$bucket])->fetchColumn() > $max) fail('Bạn thao tác quá nhanh. Vui lòng thử lại sau 5 phút.', 429);

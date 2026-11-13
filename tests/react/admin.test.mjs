@@ -375,6 +375,12 @@ try {
   assert.equal(order.status, "done");
   assert.equal(order.payment_status, "paid");
   assert.equal(order.staff_note, "Đã giao và đối soát");
+  // Báo cáo: tách Đã thu / Chưa thu và mục Đối soát tiền
+  await open("reports");
+  assert.match(await page.locator("#view").innerText(), /Đối soát tiền/);
+  assert.notEqual(await page.locator("#rev-collected").innerText(), "0 ₫", "Đơn đã thu tiền được tính vào Đã thu");
+  await open("dashboard");
+  assert.match(await page.locator("#view .ar-kpis").innerText(), /Đã thu tiền 30 ngày[\s\S]*Chưa thu tiền/);
   await open("leads/LEADREACTQA");
   await page.locator("[name=status]").selectOption("contacted");
   await page.locator("[name=assigned_to]").selectOption("demo-sales-1");
@@ -595,7 +601,8 @@ try {
   }
   await page.setViewportSize({ width: 390, height: 844 });
   await open("products");
-  assert.equal(await page.locator(".ar-side").getAttribute("inert"), "");
+  // Menu bên bị khóa (inert) trên điện thoại: chờ giao diện cập nhật sau khi đổi cỡ màn hình
+  await page.waitForFunction(() => document.querySelector(".ar-side")?.getAttribute("inert") === "");
   await page.getByRole("button", { name: "Mở menu", exact: true }).click();
   await page
     .locator(".ar-side")

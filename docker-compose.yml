@@ -5,6 +5,7 @@ services:
       - "127.0.0.1:8080:80"
     environment:
       APP_ENV: development
+      RATE_LIMIT_MULTIPLIER: "10"
       DB_HOST: mysql
       DB_NAME: dien_lanh
       DB_USER: dien_lanh

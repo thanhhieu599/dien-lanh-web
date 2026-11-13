@@ -296,6 +296,7 @@ DT.store = (() => {
         p_invoice: info.invoice || null,
         p_note: info.note || null,
         p_coupon: t.coupon?.code || null,
+        p_request_id: info.requestId || null,
       },
       totals: t,
       info,

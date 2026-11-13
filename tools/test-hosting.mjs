@@ -11,5 +11,7 @@ try {
   // Adapter PHP/MySQL, rồi đồng bộ website ↔ admin (đặt hàng, kho, CRM, chứng từ)
   let status=await run('tests/server/hosting-browser.test.mjs');
   if(!status)status=await run('tests/server/sync.test.mjs');
+  // Nhiều khách đặt cùng lúc: món cuối, mã 1 lượt, bấm đặt hàng 2 lần
+  if(!status)status=await run('tests/server/race.test.mjs');
   process.exitCode=status;
 } finally {await server.close();}

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { dt, formValues, money, safeUrl, toast } from "../services/runtime";
 import { useShop } from "../hooks/useShop";
@@ -201,16 +201,24 @@ export function CheckoutPage() {
   const address =
     state.user?.addresses?.find((a: Row) => a.default) ||
     state.user?.addresses?.[0];
+  // Mỗi lần mở trang thanh toán 1 mã yêu cầu: bấm 2 lần / gửi lại cũng chỉ tạo 1 đơn
+  const requestId = useRef(
+    globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  );
+  const sending = useRef(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (sending.current) return;
     const data = formValues(event.currentTarget);
     if (!dt.u.validPhone(data.phone)) {
       toast("Số điện thoại không hợp lệ", true);
       return;
     }
     setBusy(true);
+    sending.current = true;
     try {
       const order = await dt.store.placeOrder({
+        requestId: requestId.current,
         customer: {
           gender: data.gender,
           name: data.name.trim(),
@@ -245,12 +253,16 @@ export function CheckoutPage() {
         attribution: dt.analytics?.attribution?.() || null,
       });
       if (!order) throw new Error("Giỏ hàng không còn sản phẩm");
+      // Máy chủ là chuẩn: nếu giá vừa đổi, báo khách tổng tiền thực tế của đơn
+      if (Number(order.total) !== Number(totals.total))
+        toast(`Giá vừa được cập nhật. Tổng tiền đơn hàng: ${money(order.total)}`);
       dt.analytics?.purchase?.(order);
       navigate(`/dat-hang-thanh-cong.html?code=${order.code}`);
     } catch (e) {
       toast(e instanceof Error ? e.message : String(e), true);
     } finally {
       setBusy(false);
+      sending.current = false;
     }
   }
   if (!totals.lines.length)

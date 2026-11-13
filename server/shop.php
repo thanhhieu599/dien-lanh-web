@@ -148,7 +148,14 @@ function updateOrder(array $order, array $patch, array $user): array {
 }
 function placeOrder(array $args): array {
     rateLimit('order', 20);
-    return transaction(function() use ($args) {
+    // Chống tạo đơn trùng khi khách bấm 2 lần / trình duyệt gửi lại: cùng mã yêu cầu -> trả lại đúng đơn đã tạo
+    $requestId = is_string($args['p_request_id'] ?? null) && preg_match('/^[A-Za-z0-9-]{8,64}$/', $args['p_request_id']) ? $args['p_request_id'] : null;
+    return transaction(function() use ($args, $requestId) {
+        if ($requestId) {
+            sql("SELECT GET_LOCK(?, 10)", ['order:' . $requestId]);
+            $dup = sql("SELECT record_id FROM records WHERE resource='orders' AND JSON_UNQUOTE(JSON_EXTRACT(data,'$.request_id'))=?", [$requestId])->fetchColumn();
+            if ($dup !== false) return orderPublic(record('orders', $dup));
+        }
         $customer = $args['p_customer'] ?? [];
         $customer['phone'] = phoneKey($customer['phone'] ?? '');
         if (!preg_match('/^0[0-9]{9,10}$/', $customer['phone']) || empty($customer['name'])) fail('Tên và số điện thoại không hợp lệ');
@@ -191,7 +198,7 @@ function placeOrder(array $args): array {
             'payment' => $args['p_payment'], 'payment_status' => 'unpaid', 'invoice' => $args['p_invoice'] ?? null,
               'note' => $args['p_note'] ?? '', 'staff_note' => '', 'subtotal' => $quote['subtotal'], 'install_fee' => $quote['install'],
             'shipping_fee' => $quote['shipping'], 'discount' => $quote['discount'], 'coupon' => $code,
-            'total' => $quote['total'],
+            'total' => $quote['total'], 'request_id' => $requestId,
         ], true);
         foreach ($lines as $line) {
             $p = record('products', $line['product']['id'], true);

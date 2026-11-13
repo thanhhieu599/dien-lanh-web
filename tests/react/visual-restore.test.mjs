@@ -35,10 +35,10 @@ try {
       document.querySelector(".hero"),
     ).gridTemplateColumns.split(" ").length,
   }));
-  assert.ok(baseline.font.includes("Be Vietnam Pro"));
+  assert.ok(baseline.font.includes("Roboto"), "Chữ Roboto như website bán lẻ lớn");
   assert.equal(baseline.size, "14px");
   assert.equal(baseline.container, "1240px");
-  assert.equal(baseline.radius, "0px");
+  assert.equal(baseline.radius, "12px", "Khối nội dung bo góc");
   assert.equal(baseline.heroColumns, 3);
   assert.equal(
     await page.locator(".cat-toggle").count(),

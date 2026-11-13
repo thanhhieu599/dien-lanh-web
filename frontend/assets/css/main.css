@@ -103,15 +103,15 @@
   --muted: #6b7380;
   --border: #e3e6ea;
   --border-strong: #cfd4da;
-  --bg: #f3f4f6;
+  --bg: #f2f2f2; /* nền ngoài xám nhạt, khối nội dung trắng */
   --card: #fff;
-  --radius: 0;
-  --radius-sm: 0;
+  --radius: 12px; /* khối nội dung bo góc */
+  --radius-sm: 8px;
   --shadow: 0 0 0 1px rgba(20, 30, 45, 0.05), 0 1px 2px rgba(20, 30, 45, 0.05);
   --shadow-lg: 0 10px 24px rgba(20, 30, 45, 0.12);
   --container: 1240px;
   --font:
-    "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, Arial,
+    Roboto, "Helvetica Neue", Arial, system-ui, -apple-system, "Segoe UI",
     sans-serif;
 }
 *,

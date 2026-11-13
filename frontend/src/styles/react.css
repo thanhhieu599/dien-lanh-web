@@ -32,7 +32,7 @@
   --color-backdrop: rgb(19 32 50 / 60%);
   --color-shadow: rgb(19 32 50 / 16%);
   --font-family-primary:
-    "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, Arial,
+    Roboto, "Helvetica Neue", Arial, system-ui, -apple-system, "Segoe UI",
     sans-serif;
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.8125rem;
@@ -57,8 +57,8 @@
   --space-10: 40px;
   --space-12: 48px;
   --space-16: 64px;
-  --radius-control: 0;
-  --radius-card: 0;
+  --radius-control: 8px;
+  --radius-card: 12px;
   --radius-pill: 999px;
   --shadow-raised: 0 12px 32px var(--color-shadow);
   --motion-fast: 200ms;
@@ -2993,3 +2993,9 @@ button:disabled {
 .filters .filter-more:hover {
   text-decoration: underline;
 }
+
+/* Giao diện bán lẻ kiểu Nguyễn Kim: nền ngoài xám nhạt, khối nội dung trắng bo góc, chữ Roboto rõ nét */
+body{-webkit-font-smoothing:antialiased;color:#212121}
+.pcard{border-radius:10px;overflow:hidden}
+.listing-main{background:#fff;border-radius:var(--radius);padding:16px;min-width:0}
+@media (max-width:720px){.listing-main{padding:10px}}

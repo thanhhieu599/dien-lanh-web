@@ -726,7 +726,10 @@ try {
     await page.locator("#view a", { hasText: "Phiếu nhập kho" }).click();
     await page.locator(".vc-sheet").waitFor();
     let sheet = await page.locator(".vc-sheet").innerText();
-    assert.match(sheet, /PHIẾU NHẬP KHO/); assert.match(sheet, /Mẫu số: 01 - VT/); assert.match(sheet, /99\/2025\/TT-BTC/); assert.match(sheet, /Thủ kho/);
+    assert.match(sheet, /PHIẾU NHẬP KHO/); assert.match(sheet, /Thủ kho/);
+    // Đã bỏ khối Mẫu số / Thông tư, Nợ / Có và tên in sẵn dưới chữ ký; có logo công ty
+    assert.doesNotMatch(sheet, /Mẫu số|Thông tư|Nợ:|Có:/); assert.equal(await page.locator(".vc-sheet .doc-logo").count(), 1);
+    assert.equal((await page.locator(".vc-sheet .vc-name").allInnerTexts()).join("").trim(), "");
     assert.match(sheet, new RegExp(`PNK${po.code.slice(3)}`));
     assert.equal(await page.locator(".vc-total").innerText(), "5.000.000");
     assert.match(sheet, /Năm triệu đồng chẵn/);
@@ -739,14 +742,14 @@ try {
     await page.locator("#view a", { hasText: "In phiếu xuất kho" }).click();
     await page.locator(".vc-sheet").waitFor();
     sheet = await page.locator(".vc-sheet").innerText();
-    assert.match(sheet, /PHIẾU XUẤT KHO/); assert.match(sheet, /Mẫu số: 02 - VT/); assert.match(sheet, /Nợ: 641/); assert.match(sheet, /Có: 156/); assert.match(sheet, /Quà tặng doanh nghiệp/); assert.match(sheet, /Giám đốc/);
+    assert.match(sheet, /PHIẾU XUẤT KHO/); assert.doesNotMatch(sheet, /Mẫu số|Nợ:|Có:/); assert.match(sheet, /Quà tặng doanh nghiệp/); assert.match(sheet, /Giám đốc/);
     assert.equal(await page.locator(".vc-sheet tbody tr").count(), 1);
     // Phiếu xuất kho bán hàng theo đơn
     await open("orders/DTREACTQA");
     await page.locator("#view a", { hasText: "Phiếu xuất kho" }).click();
     await page.locator(".vc-sheet").waitFor();
     sheet = await page.locator(".vc-sheet").innerText();
-    assert.match(sheet, /Xuất bán hàng theo đơn DTREACTQA/); assert.match(sheet, /Nợ: 632/);
+    assert.match(sheet, /Xuất bán hàng theo đơn DTREACTQA/); assert.doesNotMatch(sheet, /Nợ:/);
     assert.match(sheet, /PXK-DTREACTQA/);
     // Đơn nhập chưa nhập kho: không in được phiếu nhập
     const draftPo = await page.evaluate(([sid, pid]) => AD.db.inventory("purchase_save", { supplier_id: sid, items: [{ product_id: pid, qty: 1, price: 1000 }] }), [po.supplier_id, pid]);
@@ -770,7 +773,7 @@ try {
     await page.locator("#inv-issue").click();
     await page.locator(".inv-no", { hasText: /^\d{7}$/ }).waitFor();
     const invSheet = await page.locator(".inv-sheet").innerText();
-    assert.match(invSheet, /HÓA ĐƠN BÁN HÀNG/);
+    assert.match(invSheet, /HÓA ĐƠN BÁN HÀNG/); assert.equal(await page.locator(".inv-sheet .doc-logo").count(), 1, "Hóa đơn có logo");
     assert.match(invSheet, /Tổng cộng tiền thanh toán/);
     assert.match(invSheet, /đồng chẵn/);
     assert.equal(await page.locator(".inv-no").evaluate((el) => getComputedStyle(el).color), "rgb(0, 0, 0)", "Hóa đơn trắng đen");

@@ -1,4 +1,4 @@
-// Phiếu nhập kho (Mẫu 01-VT) và Phiếu xuất kho (Mẫu 02-VT) theo Thông tư 99/2025/TT-BTC (thay TT 200 từ 01/01/2026), in A4 trắng – đen.
+// Phiếu nhập kho và Phiếu xuất kho (bố cục theo mẫu 01-VT / 02-VT), có logo công ty; in A4 trắng – đen.
 //  /voucher/nhap/<id đơn nhập>   : phiếu nhập kho của đơn nhập hàng đã nhập kho
 //  /voucher/xuat/<id phiếu xuất> : phiếu xuất kho (hàng hỏng, mẫu, quà tặng, nội bộ, trả NCC)
 //  /voucher/ban/<id đơn hàng>    : phiếu xuất kho bán hàng theo đơn của khách
@@ -6,6 +6,7 @@ import {Link, useLocation} from 'react-router-dom';
 import {ad, dt} from '../services/runtime';
 import {EXPORT_REASONS, moneyWords} from '../services/inventory';
 import {DataState, Head, useData} from '../components/common';
+import {DocLogo} from '../components/doc-logo';
 import type {Row} from '../types';
 
 const vnd = (n: number) => Math.round(n).toLocaleString('vi-VN');
@@ -76,19 +77,18 @@ export function VoucherPage() {
     const title = isIn ? 'PHIẾU NHẬP KHO' : 'PHIẾU XUẤT KHO';
     const signs = isIn ? [['Người lập phiếu', '(Ký, họ tên)'], ['Người giao hàng', '(Ký, họ tên)'], ['Thủ kho', '(Ký, họ tên)'], ['Kế toán trưởng', '(Hoặc bộ phận có nhu cầu nhập) (Ký, họ tên)']]
       : [['Người lập phiếu', '(Ký, họ tên)'], ['Người nhận hàng', '(Ký, họ tên)'], ['Thủ kho', '(Ký, họ tên)'], ['Kế toán trưởng', '(Hoặc bộ phận có nhu cầu nhập) (Ký, họ tên)'], ['Giám đốc', '(Ký, họ tên)']];
-    const names = isIn ? [ad.me?.name, '', cfg.storekeeper, cfg.chiefAccountant] : [ad.me?.name, '', cfg.storekeeper, cfg.chiefAccountant, cfg.director];
     return <>
-      <Head title={`${isIn ? 'Phiếu nhập kho' : 'Phiếu xuất kho'} ${v.no}`} subtitle={`Mẫu số ${isIn ? '01' : '02'} - VT (Thông tư 99/2025/TT-BTC)`}>
+      <Head title={`${isIn ? 'Phiếu nhập kho' : 'Phiếu xuất kho'} ${v.no}`} subtitle={isIn ? 'Phiếu nhập kho hàng hóa' : 'Phiếu xuất kho hàng hóa'}>
         <Link className="btn btn-light" to={v.back}>Quay lại</Link>
         <button type="button" id="vc-print" className="btn btn-primary" disabled={!v.ready} onClick={() => window.print()}>In phiếu</button>
       </Head>
       {!v.ready && <p className="ar-notice" role="alert">{v.notReady}</p>}
       <article className="doc-sheet vc-sheet" aria-label={title}>
         <div className="vc-top">
+          <DocLogo cfg={cfg}/>
           <div className="vc-unit"><p>Đơn vị: <b>{cfg.company || cfg.name}</b></p><p>Bộ phận: {isIn ? 'Kho hàng' : v.department}</p><p>Địa chỉ: {cfg.address}</p>{cfg.taxCode && <p>Mã số thuế: {cfg.taxCode}</p>}</div>
-          <div className="vc-form"><b>Mẫu số: {isIn ? '01' : '02'} - VT</b><i>(Kèm theo Thông tư số 99/2025/TT-BTC ngày 27 tháng 10 năm 2025 của Bộ trưởng Bộ Tài chính)</i></div>
         </div>
-        <div className="vc-title"><div/><div><h2>{title}</h2><i>{parts(v.date)}</i><p>Số: <b className="vc-no">{v.no}</b></p></div><div className="vc-acc"><p>Nợ: {v.debit}</p><p>Có: {v.credit}</p></div></div>
+        <div className="vc-title"><div/><div><h2>{title}</h2><i>{parts(v.date)}</i><p>Số: <b className="vc-no">{v.no}</b></p></div><div/></div>
         <div className="vc-info">
           <p>- Họ và tên người {isIn ? 'giao' : 'nhận'} hàng: <span>{v.person || ' '.repeat(40)}</span></p>
           {!isIn && <p>- Địa chỉ (bộ phận): <span>{v.personAddress || ' '.repeat(40)}</span></p>}
@@ -105,7 +105,7 @@ export function VoucherPage() {
         </table>
         <div className="vc-after"><p>- Tổng số tiền (viết bằng chữ): <i className="vc-words">{moneyWords(v.total)}</i></p><p>- Số chứng từ gốc kèm theo: {v.basis ? '01' : ' '.repeat(20)}</p></div>
         <p className="vc-date">{parts(v.date)}</p>
-        <div className="vc-signs" style={{'--n': signs.length} as Row}>{signs.map(([t, h], i) => <div key={t}><b>{t}</b><i>{h}</i><p className="vc-name">{names[i] || ''}</p></div>)}</div>
+        <div className="vc-signs" style={{'--n': signs.length} as Row}>{signs.map(([t, h], i) => <div key={t}><b>{t}</b><i>{h}</i><p className="vc-name"/></div>)}</div>
         <p className="vc-note"><b>Ghi chú:</b> Tùy theo đặc điểm hoạt động sản xuất kinh doanh và yêu cầu quản lý của đơn vị mình, doanh nghiệp được xây dựng, thiết kế biểu mẫu chứng từ kế toán.</p>
       </article>
     </>;

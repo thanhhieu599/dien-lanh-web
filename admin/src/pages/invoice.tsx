@@ -5,6 +5,7 @@ import {Link, useLocation, useNavigate} from 'react-router-dom';
 import {ad, dt, money} from '../services/runtime';
 import {issueInvoice, moneyWords} from '../services/inventory';
 import {Action, DataState, Head, useData, useNotice} from '../components/common';
+import {DocLogo} from '../components/doc-logo';
 import type {Row} from '../types';
 
 const vnd = (n: number) => Math.round(n).toLocaleString('vi-VN');
@@ -59,6 +60,7 @@ export function InvoicePage() {
       {o.status === 'cancelled' && <p className="ar-notice" role="alert">Đơn đã hủy: không xuất hóa đơn.</p>}
       <article className="inv-sheet doc-sheet" aria-label="Hóa đơn bán hàng">
         <header className="inv-sheet-head">
+          <DocLogo cfg={cfg}/>
           <div><b className="inv-seller">{cfg.company || cfg.name}</b>
             <p>Mã số thuế: <b>{cfg.taxCode || '—'}</b></p><p>Địa chỉ: {cfg.address}</p><p>Điện thoại: {cfg.hotline}{cfg.email ? ` · Email: ${cfg.email}` : ''}</p>
             {cfg.bankAccount && <p>Số tài khoản: {cfg.bankAccount} – {cfg.bankName}</p>}</div>

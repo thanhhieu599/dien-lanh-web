@@ -100,6 +100,10 @@ try {
     jsonResponse(['message'=>$e->getMessage(), 'error'=>$e->getMessage()], $e->getCode() ?: 400);
 } catch (JsonException $e) {
     jsonResponse(['message'=>'JSON không hợp lệ'], 400);
+} catch (TypeError|ValueError $e) {
+    // Dữ liệu gửi lên sai kiểu (mảng thay vì chuỗi...): từ chối gọn, không coi là lỗi máy chủ.
+    error_log('Bad input: ' . $e->getMessage());
+    jsonResponse(['message'=>'Dữ liệu gửi lên không hợp lệ', 'error'=>'Dữ liệu gửi lên không hợp lệ'], 400);
 } catch (PDOException $e) {
     error_log((string)$e);
     jsonResponse(['message'=>$e->getCode() === '23000' ? 'Mã, SKU, đường dẫn hoặc tài khoản đã tồn tại' : 'Không kết nối được dữ liệu. Vui lòng kiểm tra cấu hình máy chủ.'], $e->getCode() === '23000' ? 409 : 503);

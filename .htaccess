@@ -1,0 +1,20 @@
+# Bảo mật cho thư mục gốc website (Apache). Áp dụng cả khi đưa nguyên mã nguồn lên hosting.
+Options -Indexes
+ServerSignature Off
+
+<IfModule mod_headers.c>
+  # setifempty: API (PHP) đã tự đặt header chặt hơn thì giữ của PHP. Chống đoán sai loại tệp, chống nhúng trang vào web lừa đảo (clickjacking), hạn chế lộ đường dẫn.
+  Header setifempty X-Content-Type-Options "nosniff"
+  Header setifempty X-Frame-Options "SAMEORIGIN"
+  Header setifempty Referrer-Policy "strict-origin-when-cross-origin"
+  Header setifempty Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+  Header always unset X-Powered-By
+  Header unset X-Powered-By
+</IfModule>
+
+# Không cho tải tệp ẩn (.git, .env, .htaccess...) và thư mục / tệp chỉ dùng khi phát triển.
+RedirectMatch 404 /\.(?!well-known/)
+RedirectMatch 404 /(tests|tools|docs|supabase|node_modules)(/|$)
+<FilesMatch "\.(md|log|sql|lock|ya?ml|sh|bak|old|orig|swp|ini|env|dist|tsx?|mjs|map)$|^(package(-lock)?\.json|tsconfig\.json|composer\.(json|lock)|vite\.config\..*)$">
+  Require all denied
+</FilesMatch>

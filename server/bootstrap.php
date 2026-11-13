@@ -29,6 +29,11 @@ function jsonResponse(mixed $value, int $status = 200): never {
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: DENY');
+    header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none'");
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header_remove('X-Powered-By');
     echo json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
     exit;
 }

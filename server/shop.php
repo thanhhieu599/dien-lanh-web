@@ -146,6 +146,17 @@ function updateOrder(array $order, array $patch, array $user): array {
     }
     return put('orders', array_merge($order, $patch));
 }
+// Dữ liệu khách gửi lên chỉ được là chữ/số: bỏ mảng/object lồng nhau, cắt độ dài.
+// Tránh dữ liệu "lạ" làm hỏng trang quản trị khi hiển thị (tên khách là object...).
+function cleanText(mixed $v, int $max = 500): string {
+    return is_scalar($v) ? mb_substr(trim((string)$v), 0, $max) : '';
+}
+function flatText(mixed $v, int $max = 500): array {
+    if (!is_array($v)) return [];
+    $out = [];
+    foreach (array_slice($v, 0, 40, true) as $k => $x) if (is_string($k) && (is_scalar($x) || $x === null)) $out[$k] = is_bool($x) || $x === null ? $x : cleanText($x, $max);
+    return $out;
+}
 function placeOrder(array $args): array {
     rateLimit('order', 20);
     // Chống tạo đơn trùng khi khách bấm 2 lần / trình duyệt gửi lại: cùng mã yêu cầu -> trả lại đúng đơn đã tạo
@@ -156,10 +167,10 @@ function placeOrder(array $args): array {
             $dup = sql("SELECT record_id FROM records WHERE resource='orders' AND JSON_UNQUOTE(JSON_EXTRACT(data,'$.request_id'))=?", [$requestId])->fetchColumn();
             if ($dup !== false) return orderPublic(record('orders', $dup));
         }
-        $customer = $args['p_customer'] ?? [];
+        $customer = flatText($args['p_customer'] ?? []);
         $customer['phone'] = phoneKey($customer['phone'] ?? '');
         if (!preg_match('/^0[0-9]{9,10}$/', $customer['phone']) || empty($customer['name'])) fail('Tên và số điện thoại không hợp lệ');
-        $shipping = $args['p_shipping'] ?? [];
+        $shipping = flatText($args['p_shipping'] ?? []);
         if (!in_array($shipping['method'] ?? '', ['delivery','pickup'], true)) fail('Phương thức giao hàng không hợp lệ');
         if ($shipping['method'] === 'delivery' && empty($shipping['address'])) fail('Vui lòng nhập địa chỉ giao hàng');
         if ($shipping['method'] === 'pickup') {
@@ -169,7 +180,7 @@ function placeOrder(array $args): array {
         if (!in_array($args['p_payment'] ?? '', ['cod','bank'], true)) fail('Cổng thanh toán online chưa được cấu hình. Vui lòng chọn COD hoặc chuyển khoản.');
         $lines = cartLines($args['p_items'] ?? [], true);
         $config = record('settings', 'store')['value'] ?? [];
-                $code = !empty($args['p_coupon']) ? strtoupper(trim($args['p_coupon'])) : null;
+                $code = cleanText($args['p_coupon'] ?? '', 40) !== '' ? strtoupper(cleanText($args['p_coupon'], 40)) : null;
         $result = null;
         if ($code) {
             $coupon = record('coupons', $code, true);
@@ -195,8 +206,8 @@ function placeOrder(array $args): array {
             'customer_id' => $crm['id'],
             'code' => 'DT' . strtoupper(bin2hex(random_bytes(6))), 'user_id' => actor()['id'] ?? null,
             'status' => 'pending', 'phone' => $customer['phone'], 'customer' => $customer, 'shipping' => $shipping,
-            'payment' => $args['p_payment'], 'payment_status' => 'unpaid', 'invoice' => $args['p_invoice'] ?? null,
-              'note' => $args['p_note'] ?? '', 'staff_note' => '', 'subtotal' => $quote['subtotal'], 'install_fee' => $quote['install'],
+            'payment' => $args['p_payment'], 'payment_status' => 'unpaid', 'invoice' => is_array($args['p_invoice'] ?? null) ? flatText($args['p_invoice']) : null,
+              'note' => cleanText($args['p_note'] ?? '', 2000), 'staff_note' => '', 'subtotal' => $quote['subtotal'], 'install_fee' => $quote['install'],
             'shipping_fee' => $quote['shipping'], 'discount' => $quote['discount'], 'coupon' => $code,
             'total' => $quote['total'], 'request_id' => $requestId,
         ], true);
@@ -227,7 +238,7 @@ function rpcEndpoint(string $name, array $args): mixed {
             }
             if ($name === 'order_extras') {
                 $o['maintenance_optin'] = ($args['p_maintenance'] ?? false) === true;
-                $o['attribution'] = $args['p_attribution'] ?? null; put('orders', $o);
+                $o['attribution'] = is_array($args['p_attribution'] ?? null) ? flatText($args['p_attribution'], 300) : null; put('orders', $o);
                 return ['maintenance' => $o['maintenance_optin']];
             }
             return orderPublic($o);
@@ -240,8 +251,8 @@ function rpcEndpoint(string $name, array $args): mixed {
     if ($name === 'submit_lead') {
         rateLimit('lead', 15);
         if (!in_array($args['p_type'] ?? '', ['contact','service','b2b','b2b-quote','newsletter','rfq','survey','consult'], true)) fail('Loại yêu cầu không hợp lệ');
-        $data = $args['p_data'] ?? [];
-        return put('leads', ['code' => 'LH' . strtoupper(bin2hex(random_bytes(5))), 'type' => $args['p_type'], 'status' => 'new', 'data' => $data, 'name' => $data['name'] ?? '', 'phone' => phoneKey($data['phone'] ?? ''), 'company' => $data['company'] ?? '', 'source_url' => $args['p_source_url'] ?? '', 'assigned_to' => null, 'notes' => []], true);
+        $data = is_array($args['p_data'] ?? null) ? $args['p_data'] : [];
+        return put('leads', ['code' => 'LH' . strtoupper(bin2hex(random_bytes(5))), 'type' => $args['p_type'], 'status' => 'new', 'data' => $data, 'name' => cleanText($data['name'] ?? '', 200), 'phone' => phoneKey(cleanText($data['phone'] ?? '', 30)), 'company' => cleanText($data['company'] ?? '', 200), 'source_url' => cleanText($args['p_source_url'] ?? '', 500), 'assigned_to' => null, 'notes' => []], true);
     }
     if ($name === 'save_cart_reminder') {
         rateLimit('cart', 10);

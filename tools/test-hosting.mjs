@@ -13,5 +13,8 @@ try {
   if(!status)status=await run('tests/server/sync.test.mjs');
   // Nhiều khách đặt cùng lúc: món cuối, mã 1 lượt, bấm đặt hàng 2 lần
   if(!status)status=await run('tests/server/race.test.mjs');
+  // Bảo mật: chèn mã độc (XSS) trên trình duyệt, rồi tấn công thử API (chạy cuối vì có gửi dồn dập để thử chống spam)
+  if(!status)status=await run('tests/server/xss-browser.test.mjs');
+  if(!status)status=await run('tests/server/security.test.mjs');
   process.exitCode=status;
 } finally {await server.close();}

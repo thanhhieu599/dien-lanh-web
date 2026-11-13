@@ -91,6 +91,28 @@ Ký hiệu nơi chạy: **[Web]** `tests/react/*.mjs` · **[Admin]** `tests/reac
 | S10 | Đổi hotline trong Cài đặt | Website hiện ngay |
 | S11 | Các trang Kho trên MySQL | Mở được, không lỗi |
 
+## 5. Bảo mật – chống tấn công, không sập (`tests/server/security.test.mjs`, `tests/server/xss-browser.test.mjs`)
+
+Chỉ chạy trên máy chủ thử nghiệm (docker), không tấn công thử lên hosting thật.
+
+| Mã | Kiểu tấn công | Cách thử | Kết quả mong đợi |
+|---|---|---|---|
+| S1 | Đọc trộm dữ liệu | Người lạ đọc 18 bảng nội bộ (khách hàng, đơn, thanh toán, CRM, kho, NCC…), cài đặt nội bộ, SĐT người đánh giá | Bị chặn / trả rỗng |
+| S2 | Sửa dữ liệu trái phép | Người lạ và khách đã đăng nhập thêm/sửa/xóa sản phẩm, giá, đơn, cài đặt, kho; tự nâng quyền admin; gọi chức năng kho, xuất hóa đơn | Bị chặn 401/403, vai trò giữ nguyên |
+| S3 | Giả mạo yêu cầu (CSRF) | Gửi thiếu header bảo vệ, gửi từ trang web lạ | 403 |
+| S4 | Tấn công đăng nhập | Dò tài khoản qua thông báo lỗi, cố định phiên, dùng lại phiên sau đăng xuất, mật khẩu yếu, đăng ký trùng | Thông báo giống nhau, đổi mã phiên, phiên cũ mất hiệu lực, cookie HttpOnly + SameSite |
+| S5 | Dữ liệu rác / chèn SQL | ~1.500 yêu cầu sai kiểu dữ liệu vào mọi chức năng công khai; chèn SQL vào bộ lọc, sắp xếp; JSON hỏng, lồng 80 tầng; gửi 2 MB; tên khách dạng object | Từ chối 400/413, không lỗi 500, không lộ mã nguồn / câu SQL, "OR 1=1" không trả thêm dữ liệu |
+| S6 | Tải tệp nhạy cảm | Tải mã nguồn PHP, cấu hình, schema, `.git`, `.env`, `package.json`; đường dẫn ảnh `../`; tải tệp `.php` lên | 403/404, không tải lên được |
+| S7 | Clickjacking, đoán loại tệp | Kiểm tra header trang web và API | Có nosniff, X-Frame-Options, Referrer-Policy; không lộ phiên bản PHP/Apache |
+| S8 | Spam / quá tải | 40 yêu cầu đồng thời; gửi form liên hệ liên tục | Vẫn trả lời bình thường; spam bị chặn 429; máy chủ vẫn sống |
+| X1 | Chèn mã độc (XSS) | Tên, địa chỉ, ghi chú, hóa đơn VAT, nguồn khách, form liên hệ, link `javascript:` chứa `<script>`, `<img onerror>`, `<svg onload>`; tham số lạ trên ô tìm kiếm / sản phẩm / danh mục | Mở 5 trang web + 10 trang admin (đơn, hóa đơn, phiếu xuất, liên hệ, khách hàng…): mã không chạy, trang không lỗi, hiện dạng chữ |
+
+Lỗi đã phát hiện và sửa khi viết bộ test này:
+- Gửi dữ liệu sai kiểu (mảng thay vì chữ) làm máy chủ báo lỗi 500 → nay từ chối 400.
+- Tên khách / địa chỉ / tên liên hệ dạng object được lưu và có thể làm trắng trang quản trị → máy chủ chỉ nhận chữ, cắt độ dài.
+- Lộ phiên bản PHP/Apache, thiếu header chống nhúng trang → đã thêm header, ẩn phiên bản.
+- Nếu đưa nguyên mã nguồn lên hosting, `.git`, `package.json` tải được → thêm `.htaccess` gốc chặn tệp ẩn và tệp phát triển.
+
 ## Máy chủ thật – cách chạy trên máy
 
 ```bash

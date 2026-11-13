@@ -12,3 +12,4 @@ server/uploads/
 
 # Ảnh chụp giao diện (sinh bởi tools/capture-screens.mjs)
 design/screens/
+*.log

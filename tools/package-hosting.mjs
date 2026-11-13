@@ -10,7 +10,7 @@ await buildReact();
 if (path.dirname(out) !== path.resolve(root) || path.basename(out) !== 'dist') throw new Error('Invalid output directory');
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
-for (const file of ['index.html','404.html','.nojekyll','frontend','admin','server']) {
+for (const file of ['index.html','404.html','.nojekyll','.htaccess','frontend','admin','server']) {
   copySiteFiles(path.join(root, file), path.join(out, file),
     (source) => !['config.local.php','seed.json','seed.sql','uploads','src'].includes(path.basename(source)));
 }

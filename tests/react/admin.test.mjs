@@ -462,7 +462,18 @@ try {
   await page.locator(".ar-notices").filter({ hasText: "khách bảo trì từ đơn hàng" }).waitFor();
   assert.ok((await page.evaluate(() => AD.db.list("maintenance_contracts", { filters: [["source", "eq", "order"]] }))).rows.some((c) => c.order_code === "DTREACTQA"));
   await open("vision");
-  assert.equal(await page.locator(".ar-gallery").count(), 10);
+  // Trang Tầm nhìn: mỗi vị trí ảnh là 1 thẻ (xem trước + Tải ảnh / Dán link / Bỏ ảnh)
+  assert.equal(await page.locator(".ar-slot").count(), 10);
+  assert.equal(await page.locator(".ar-gallery").count(), 0);
+  const firstSlot = page.locator(".ar-slot").first();
+  await firstSlot.getByRole("button", { name: "Dán link" }).click();
+  await firstSlot.locator("input[type=url]").fill("https://example.com/tru-so.jpg");
+  await firstSlot.getByRole("button", { name: "Dùng" }).click();
+  assert.equal(await firstSlot.locator("img").getAttribute("src"), "https://example.com/tru-so.jpg");
+  await saved("#view .ar-form-foot button", "Đã lưu nội dung website.");
+  assert.ok(await page.evaluate(() => JSON.stringify(localStorage).includes("https://example.com/tru-so.jpg")), "Ảnh Tầm nhìn được lưu");
+  await firstSlot.getByRole("button", { name: /^Bỏ ảnh/ }).click();
+  assert.equal(await firstSlot.locator("img").count(), 0);
   await saved("#view .ar-form-foot button", "Đã lưu nội dung website.");
   await open("trust");
   // Mỗi mục hiện riêng, chọn ở cột trái; không còn khung lồng khung

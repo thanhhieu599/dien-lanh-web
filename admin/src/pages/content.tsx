@@ -1,7 +1,7 @@
 import {useId,useState,type FormEvent} from 'react';
 import {ad,dt,saveSetting} from '../services/runtime';
 import {DataState,Head,useData,useNotice} from '../components/common';
-import {Gallery} from '../components/fields';
+import {Gallery, ImageSlot} from '../components/fields';
 import type {Row} from '../types';
 const labels:Record<string,string>={benefits:'Cam kết bán hàng',title:'Tiêu đề',sub:'Mô tả phụ',desc:'Mô tả',cta:'Nút hành động',href:'Liên kết',story:'Giới thiệu thương hiệu',stats:'Số liệu',value:'Giá trị',label:'Nhãn',btn:'Nhãn nút',btnHref:'Liên kết nút',flash:'Flash Sale',endsAt:'Thời điểm kết thúc',mini:'Banner nhỏ',newsletter:'Đăng ký nhận tin',b2b:'Doanh nghiệp',points:'Lợi ích',priceRanges:'Khoảng lọc giá',bundles:'Gợi ý mua kèm',icon:'Biểu tượng',name:'Tên',image:'Ảnh',url:'Liên kết',logos:'Đối tác',certs:'Chứng nhận',reviews:'Đánh giá thực tế',google:'Google Business',rating:'Điểm đánh giá',count:'Số đánh giá',updated:'Ngày cập nhật',placeId:'Place ID',text:'Nội dung',source:'Nguồn',date:'Ngày',images:'Hình ảnh',link:'Liên kết'};
 // Nhãn tiếng Việt cho từng khóa dữ liệu; khóa chưa có nhãn hiển thị nguyên tên
@@ -21,7 +21,8 @@ function blank(sample:any,list:string):any{
 // Một ô nhập: ảnh, chọn biểu tượng, số, bật/tắt, chữ ngắn hoặc chữ dài
 function Leaf({name,path,value,onChange,onPending}:{name:string;path:Path;value:any;onChange:(v:any)=>void;onPending:(n:number)=>void}){
  const id=useId();const key=String(path.at(-1));const text=label(name);
- if(/image$|^logo$/.test(key)||path[0]==='images'){const mini=path[1]==='mini';const slot=path[0]==='images'?(dt.visionSlots||[]).find((s:Row)=>s.key===key):null;
+ if(path[0]==='images'){const slot=(dt.visionSlots||[]).find((s:Row)=>s.key===key);return <ImageSlot label={slot?.label||text} hint={slot?.hint} size={slot?.size} value={value} onChange={onChange} folder="vision" onPending={onPending}/>;}
+ if(/image$|^logo$/.test(key)){const mini=path[1]==='mini';const slot=path[0]==='images'?(dt.visionSlots||[]).find((s:Row)=>s.key===key):null;
   return <div className={`ar-field ce-image${path[0]==='images'?'':' full'}`}><label>{mini?'Ảnh nền thẻ':slot?slot.label:text}</label><Gallery value={value} onChange={onChange} folder={path[0]==='images'?'vision':path[0]==='home'?'home':'trust'} onPending={onPending}/><small>{mini?'Ảnh ngang khoảng 600 × 300 px, chủ thể đặt bên phải; chữ của thẻ hiện đè lên phía trái ảnh. Để trống = thẻ nền trắng như cũ.':slot?`${slot.hint} · ${slot.size}`:'JPG, PNG hoặc WebP, tối đa 10 MB.'}</small></div>;}
  if(key==='icon')return <div className="ar-field"><label htmlFor={id}>{text}</label><select id={id} value={value??''} onChange={e=>onChange(e.target.value)}>{[...new Set([value,...(dt.siteIcons||[])])].filter(Boolean).map((v:string)=><option key={v}>{v}</option>)}</select></div>;
  if(typeof value==='boolean')return <div className="ar-field"><label className="ar-check"><input type="checkbox" checked={value} onChange={e=>onChange(e.target.checked)}/><span>{text}</span></label></div>;

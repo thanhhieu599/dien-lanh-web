@@ -54,3 +54,24 @@ export function ProductMembership({row,onChange,kind,bare=false}:{row:Row;onChan
  return bare?body:<section className="ar-panel"><h2>Sản phẩm trong {kind==='brands'?'thương hiệu':'danh mục'}</h2>{body}</section>;
 }
 
+// Ô ảnh dạng thẻ (trang Tầm nhìn…): xem trước đúng tỉ lệ, tải ảnh / dán link / bỏ ảnh gọn trong 1 hàng nút
+export function ImageSlot({label,hint,size,value,onChange,folder='media',onPending}:{label:string;hint?:string;size?:string;value:any;onChange:(v:string)=>void;folder?:string;onPending?:(delta:number)=>void}){
+ const [busy,setBusy]=useState(false);const [link,setLink]=useState<string|null>(null);const notice=useNotice();const id=useId();
+ const src=typeof value==='string'?value:'';
+ async function upload(file?:File){if(!file)return;setBusy(true);onPending?.(1);try{onChange(await imageFile(file,folder));}catch(err){notice(err instanceof Error?err.message:String(err),true);}finally{setBusy(false);onPending?.(-1);}}
+ function addLink(){const u=(link||'').trim();if(!/^https?:\/\//.test(u)||!safeUrl(u)){notice('Nhập đường dẫn ảnh http hoặc https hợp lệ.',true);return;}onChange(u);setLink(null);}
+ return <div className="ar-slot">
+  <div className="ar-slot-preview">{src?<Image src={src} alt={label}/>:<span>{busy?'Đang tải ảnh…':'Chưa có ảnh'}</span>}</div>
+  <div className="ar-slot-body">
+   <strong>{label}</strong>
+   {(hint||size)&&<small>{[hint,size].filter(Boolean).join(' · ')}</small>}
+   {link!==null?<div className="ar-slot-link"><input type="url" aria-label={`Đường dẫn ảnh ${label}`} placeholder="https://…" value={link} autoFocus onChange={e=>setLink(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();addLink();}if(e.key==='Escape')setLink(null);}}/><button type="button" className="btn btn-primary btn-sm" onClick={addLink}>Dùng</button><button type="button" className="btn btn-light btn-sm" onClick={()=>setLink(null)}>Hủy</button></div>
+   :<div className="ar-slot-actions">
+    <label className="btn btn-light btn-sm" htmlFor={id} aria-disabled={busy}>{src?'Đổi ảnh':'Tải ảnh'}</label>
+    <input id={id} className="ar-slot-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" aria-label={`Tải ảnh ${label}`} disabled={busy} onChange={e=>{const f=e.target.files?.[0];e.target.value='';upload(f);}}/>
+    <button type="button" className="btn btn-light btn-sm" disabled={busy} onClick={()=>setLink('')}>Dán link</button>
+    {src&&<button type="button" className="btn btn-light btn-sm ar-slot-remove" disabled={busy} aria-label={`Bỏ ảnh ${label}`} onClick={()=>onChange('')}>Bỏ ảnh</button>}
+   </div>}
+  </div>
+ </div>;
+}

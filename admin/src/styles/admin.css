@@ -292,3 +292,5 @@
 .order-lines td:nth-child(5) input{width:80px}
 .order-lines td:nth-child(6) input{width:130px}
 .order-lines td small{display:block}
+.cat-filters .cat-filter-usage{grid-column:1/-1;margin:-4px 0 6px;font-size:var(--ar-font-12);color:var(--ar-muted)}
+.cat-filters .cat-filter-warn{color:var(--ar-danger)}

@@ -111,6 +111,9 @@ try {
  await hp.fill('1,5');await page.waitForURL(url=>new URL(url).searchParams.get('capacity')==='1.5 HP');
  await page.waitForFunction(()=>{const cards=[...document.querySelectorAll('.listing-main .pcard')];return cards.length>0&&cards.every(card=>DT.products.find(p=>String(p.id)===card.dataset.id).attrs.capacity==='1.5 HP');});
  await hp.fill('');await page.waitForFunction(()=>!new URL(location.href).searchParams.has('capacity'));
+ // Bộ lọc danh mục: chỉ hiện giá trị đã gán cho ít nhất 1 sản phẩm (không bấm ra trang trống)
+ const emptyOptions=await page.evaluate(()=>{const cat=DT.api.category('may-lanh');const bad=[];for(const fs of document.querySelectorAll('#filters fieldset')){const f=cat.filters.find(x=>x.label===fs.querySelector('legend')?.textContent.trim());if(!f)continue;for(const l of fs.querySelectorAll('label.fopt')){const v=l.textContent.trim();if(!DT.products.some(p=>p.cat==='may-lanh'&&p.attrs[f.key]===v))bad.push(f.label+': '+v);}}return bad;});
+ assert.deepEqual(emptyOptions,[],'Giá trị bộ lọc không có sản phẩm phải ẩn');
  // Trang thương hiệu: logo + tên ở giữa, bộ lọc bên trái, chỉ sản phẩm của thương hiệu
  await open(`thuong-hieu.html?id=${sample.brand}`);
  const brandName=await page.evaluate(id=>DT.brands.find(b=>b.id===id).name,sample.brand);

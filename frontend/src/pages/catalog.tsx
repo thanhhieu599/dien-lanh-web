@@ -78,6 +78,10 @@ export function ListingPage({
     limit: mode === "sale" ? Math.max(1, dt.products.length) : LISTING_PER_PAGE,
   };
   const { items, total } = dt.api.list(filters);
+  // Số sản phẩm theo từng giá trị bộ lọc trong phạm vi đang xem (bỏ qua các bộ lọc thuộc tính)
+  const attrCounts: Record<string, Record<string, number>> = {};
+  for (const p of dt.api.list({ ...filters, attrs: {}, page: 1, limit: dt.products.length || 1 }).items as Product[])
+    for (const [k, v] of Object.entries(p.attrs || {})) if (v) ((attrCounts[k] ||= {})[String(v)] = (attrCounts[k]?.[String(v)] || 0) + 1);
   // Xuất xứ có trong phạm vi đang xem (bỏ qua chính bộ lọc xuất xứ để vẫn chọn thêm được)
   const originChoices: string[] = [
     ...new Set(
@@ -201,23 +205,29 @@ export function ListingPage({
                 ))}
               </select>
             </label>
-            {cat?.filters.map((f: any) => f.key === "capacity" ? (
-              <CapacityFilter key={f.key} label={f.label} options={f.options} value={params.get(f.key) || ""} onSet={(v) => change(f.key, v)} />
-            ) : (
-              <fieldset key={f.key}>
-                <legend>{f.label}</legend>
-                {f.options.map((option: string) => (
-                  <label className="fopt" key={option}>
-                    <input
-                      type="checkbox"
-                      checked={(attrs[f.key] || []).includes(option)}
-                      onChange={() => multiple(f.key, option)}
-                    />
-                    {option}
-                  </label>
-                ))}
-              </fieldset>
-            ))}
+            {cat?.filters.map((f: any) => {
+              // Chỉ hiện giá trị có sản phẩm thật (đã gán trong trang sửa sản phẩm) để khách không bấm ra trang trống
+              const used = attrCounts[f.key] || {};
+              const options = (f.options as string[]).filter((o) => used[o] || (attrs[f.key] || []).includes(o));
+              if (!options.length) return null;
+              return isCapacity(f) ? (
+                <CapacityFilter key={f.key} label={f.label} options={options} value={params.get(f.key) || ""} onSet={(v) => change(f.key, v)} />
+              ) : (
+                <fieldset key={f.key}>
+                  <legend>{f.label}</legend>
+                  {options.map((option: string) => (
+                    <label className="fopt" key={option}>
+                      <input
+                        type="checkbox"
+                        checked={(attrs[f.key] || []).includes(option)}
+                        onChange={() => multiple(f.key, option)}
+                      />
+                      {option}
+                    </label>
+                  ))}
+                </fieldset>
+              );
+            })}
             <ProFilters
               params={params}
               origins={originChoices}
@@ -953,6 +963,8 @@ function BrandFilter({ selected, onToggle }: { selected: string[]; onToggle: (id
   );
 }
 
+// Bộ lọc Công suất (theo mã capacity hoặc tên "Công suất" do admin tự tạo)
+const isCapacity = (f: any) => f.key === "capacity" || String(f.label || "").trim().toLowerCase() === "công suất";
 // Công suất: khách tự gõ số (vd 1.5 hoặc 1,5) để lọc, thay cho danh sách ô chọn
 const num = (v: string) => parseFloat(String(v).replace(",", "."));
 function CapacityFilter({ label, options, value, onSet }: { label: string; options: string[]; value: string; onSet: (v: string) => void }) {

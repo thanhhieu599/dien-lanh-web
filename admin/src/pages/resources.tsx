@@ -698,7 +698,7 @@ export const RESOURCE_TABS: Record<string, ResourceTab[]> = {
     tab("general", "Thông tin chung", "Tên, mã đường dẫn, biểu tượng và thứ tự hiển thị của danh mục.", ["name", "short", "id", "icon", "art", "sort", "active"]),
     tab("images", "Hình ảnh", "Ảnh danh mục (hiện lớn ở đầu trang danh mục) và ảnh quảng cáo ở cột đầu dải sản phẩm trên trang chủ.", ["image", "promo_image", "promo_title", "promo_href"]),
     tab("menu", "Nhóm & mục menu", "Nhóm là tiêu đề cột trong menu Sản phẩm (vd \"Máy lạnh treo tường\"), mục là các dòng bên dưới. Mã được tạo tự động khi lưu.", [], "subs"),
-    tab("filters", "Bộ lọc sản phẩm", "Các bộ lọc khách dùng ở trang danh mục (vd Công suất: 1 HP, 1.5 HP…). Giá trị của từng sản phẩm chọn trong trang sửa sản phẩm.", [], "filters"),
+    tab("filters", "Bộ lọc sản phẩm", "Bộ lọc là các ô khách bấm ở cột trái trang danh mục để thu hẹp sản phẩm theo thông số (vd Công suất: 1 HP, 1.5 HP; Công nghệ: Inverter). Cách dùng: (1) đặt tên bộ lọc và các giá trị ở đây, (2) vào Sản phẩm → sửa từng sản phẩm → Thuộc tính bộ lọc để chọn giá trị cho sản phẩm đó. Giá trị chưa gán cho sản phẩm nào sẽ tự ẩn trên website. Không dùng bộ lọc để đặt tên sản phẩm hay danh mục.", [], "filters"),
     tab("products", "Sản phẩm", "Sản phẩm thuộc danh mục và thứ tự hiển thị trên website.", [], "productMembership"),
   ],
   brands: [
@@ -785,7 +785,7 @@ function ResourceTabs({
         <p className="ce-hint">{current.hint}</p>
         {keysOf(current, index).length > 0 && <div className={`ar-grid ce-grid tab-${current.id}`}>{pick(keysOf(current, index)).map(field)}</div>}
         {current.extra === "subs" && <SubsEditor value={row.subs || []} error={errors.subs} onChange={(v) => patch({ subs: v })} />}
-        {current.extra === "filters" && <FiltersEditor value={row.filters || []} error={errors.filters} onChange={(v) => patch({ filters: v })} />}
+        {current.extra === "filters" && <FiltersEditor catId={String(row.id || "")} value={row.filters || []} error={errors.filters} onChange={(v) => patch({ filters: v })} />}
         {current.extra === "productMembership" && <ProductMembership row={row} kind={resource as "categories" | "brands"} onChange={patch} bare />}
         {current.extra === "couponScope" && <CouponScope row={row} onChange={patch} error={errors.scope} />}
         {current.extra === "couponGroups" && <CouponGroups row={row} onChange={patch} />}
@@ -812,8 +812,15 @@ function normalizeFilters(value: unknown): { list: CatFilter[]; error?: string }
     });
   return { list, error };
 }
-function FiltersEditor({ value, onChange, error }: { value: Row[]; onChange: (v: Row[]) => void; error?: string }) {
+function FiltersEditor({ catId, value, onChange, error }: { catId: string; value: Row[]; onChange: (v: Row[]) => void; error?: string }) {
   const list = Array.isArray(value) ? value : [];
+  // Sản phẩm của danh mục đang gán giá trị nào cho từng bộ lọc (để biết bộ lọc nào thực sự dùng được trên website)
+  const products: Row[] = (ad.cache.products || []).filter((p: Row) => String(p.cat) === catId);
+  const usage = (f: Row) => {
+    const counts: Record<string, number> = {};
+    if (f.key) for (const p of products) { const v = p.attrs?.[f.key]; if (v) counts[v] = (counts[v] || 0) + 1; }
+    return counts;
+  };
   const set = (i: number, data: Row) => onChange(list.map((f, j) => (j === i ? { ...f, ...data } : f)));
   const move = (i: number, d: number) => {
     const next = [...list];
@@ -840,10 +847,24 @@ function FiltersEditor({ value, onChange, error }: { value: Row[]; onChange: (v:
             <button type="button" className="btn btn-light btn-icon" aria-label={`Đưa bộ lọc ${i + 1} xuống`} disabled={i === list.length - 1} onClick={() => move(i, 1)}>↓</button>
             <button type="button" className="btn btn-light ce-del" aria-label={`Xóa bộ lọc ${i + 1}`} onClick={() => onChange(list.filter((_, j) => j !== i))}>Xóa</button>
           </div>
+          <FilterUsage filter={f} counts={usage(f)} />
         </div>
       ))}
       <button type="button" className="btn btn-light ce-add" onClick={() => onChange([...list, { key: "", label: "", options: [] }])}>+ Thêm bộ lọc</button>
     </div>
+  );
+}
+// Dưới mỗi bộ lọc: giá trị nào đã gán cho bao nhiêu sản phẩm; cảnh báo giá trị sản phẩm đang dùng nhưng đã bị đổi tên / xóa
+function FilterUsage({ filter, counts }: { filter: Row; counts: Record<string, number> }) {
+  const options: string[] = (filter.options || []).map((o: unknown) => String(o).trim()).filter(Boolean);
+  if (!options.length) return null;
+  const used = options.reduce((t, o) => t + (counts[o] || 0), 0);
+  const orphan = Object.entries(counts).filter(([v]) => !options.includes(v));
+  return (
+    <p className="cat-filter-usage">
+      {filter.key ? (used ? <>Website đang lọc được: {options.map((o) => `${o} (${counts[o] || 0})`).join(" · ")}</> : <>Chưa sản phẩm nào được gán giá trị — bộ lọc sẽ ẩn trên website. Vào <b>Sản phẩm → sửa sản phẩm → Thuộc tính bộ lọc</b> để chọn giá trị.</>) : <>Bộ lọc mới: lưu danh mục rồi gán giá trị cho từng sản phẩm.</>}
+      {orphan.length > 0 && <span className="cat-filter-warn"> Có sản phẩm đang dùng giá trị không còn trong danh sách: {orphan.map(([v, n]) => `${v} (${n})`).join(", ")} — các sản phẩm này sẽ không hiện khi lọc, hãy thêm lại giá trị hoặc sửa sản phẩm.</span>}
+    </p>
   );
 }
 // Ô giá trị: giữ nguyên chữ đang gõ (kể cả dấu phẩy cuối), chỉ tách thành danh sách khi lưu vào dữ liệu

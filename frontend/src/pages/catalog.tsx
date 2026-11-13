@@ -201,7 +201,9 @@ export function ListingPage({
                 ))}
               </select>
             </label>
-            {cat?.filters.map((f: any) => (
+            {cat?.filters.map((f: any) => f.key === "capacity" ? (
+              <CapacityFilter key={f.key} label={f.label} options={f.options} value={params.get(f.key) || ""} onSet={(v) => change(f.key, v)} />
+            ) : (
               <fieldset key={f.key}>
                 <legend>{f.label}</legend>
                 {f.options.map((option: string) => (
@@ -220,7 +222,6 @@ export function ListingPage({
               params={params}
               origins={originChoices}
               onToggle={multiple}
-              onSet={change}
             />
             <button
               className="btn btn-light"
@@ -952,43 +953,42 @@ function BrandFilter({ selected, onToggle }: { selected: string[]; onToggle: (id
   );
 }
 
-// Bộ lọc chuyên môn: tình trạng hàng, ưu đãi & dịch vụ, xuất xứ, đánh giá
-const DEALS: [string, string][] = [
-  ["sale", "Đang giảm giá"],
-  ["flash", "Flash sale"],
-  ["install", "Miễn phí lắp đặt"],
-  ["gift", "Có quà tặng kèm"],
-];
+// Công suất: khách tự gõ số (vd 1.5 hoặc 1,5) để lọc, thay cho danh sách ô chọn
+const num = (v: string) => parseFloat(String(v).replace(",", "."));
+function CapacityFilter({ label, options, value, onSet }: { label: string; options: string[]; value: string; onSet: (v: string) => void }) {
+  const unit = (options[0] || "").replace(/^[\d.,\s]+/, "") || "HP";
+  const [text, setText] = useState(value ? String(num(value)) : "");
+  useEffect(() => { if (!value) setText(""); }, [value]);
+  function apply(raw: string) {
+    setText(raw);
+    const n = num(raw);
+    if (!raw.trim() || !Number.isFinite(n)) return onSet("");
+    onSet(options.find((o) => num(o) === n) || `${n} ${unit}`);
+  }
+  return (
+    <fieldset className="filter-group capacity-filter">
+      <legend>{label}</legend>
+      <label className="capacity-input">
+        <input type="text" inputMode="decimal" placeholder="Nhập số, vd 1.5" aria-label={`${label} (${unit})`} value={text} onChange={(e) => apply(e.target.value)} />
+        <span>{unit}</span>
+      </label>
+    </fieldset>
+  );
+}
+
+// Bộ lọc chuyên môn: xuất xứ
 function ProFilters({
   params,
   origins,
   onToggle,
-  onSet,
 }: {
   params: URLSearchParams;
   origins: string[];
   onToggle: (key: string, value: string) => void;
-  onSet: (key: string, value: string) => void;
 }) {
   const list = (key: string) => (params.get(key) || "").split(",").filter(Boolean);
   return (
     <>
-      <fieldset className="filter-group">
-        <legend>Tình trạng</legend>
-        <label className="fopt">
-          <input type="checkbox" checked={params.get("stock") === "1"} onChange={(e) => onSet("stock", e.target.checked ? "1" : "")} />
-          Chỉ hiện hàng còn sẵn
-        </label>
-      </fieldset>
-      <fieldset className="filter-group">
-        <legend>Ưu đãi & dịch vụ</legend>
-        {DEALS.map(([v, label]) => (
-          <label className="fopt" key={v}>
-            <input type="checkbox" checked={list("deal").includes(v)} onChange={() => onToggle("deal", v)} />
-            {label}
-          </label>
-        ))}
-      </fieldset>
       {origins.length > 1 && (
         <fieldset className="filter-group">
           <legend>Xuất xứ</legend>
@@ -1002,18 +1002,6 @@ function ProFilters({
           </div>
         </fieldset>
       )}
-      <fieldset className="filter-group">
-        <legend>Đánh giá</legend>
-        {[["4.5", "Từ 4.5 sao trở lên"], ["4", "Từ 4 sao trở lên"]].map(([v, label]) => (
-          <label className="fopt" key={v}>
-            <input type="radio" name="rating" checked={params.get("rating") === v} onChange={() => onSet("rating", v)} />
-            {label}
-          </label>
-        ))}
-        {params.get("rating") && (
-          <button type="button" className="filter-more" onClick={() => onSet("rating", "")}>Bỏ lọc đánh giá</button>
-        )}
-      </fieldset>
     </>
   );
 }

@@ -2984,3 +2984,29 @@ body{-webkit-font-smoothing:antialiased;color:#212121}
 .pcard{border-radius:10px;overflow:hidden}
 .listing-main{background:#fff;border-radius:var(--radius);padding:16px;min-width:0}
 @media (max-width:720px){.listing-main{padding:10px}}
+
+/* Lọc công suất: ô nhập số + đơn vị */
+.filters .capacity-input {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--line, #e2e2e2);
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+.filters .capacity-input input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 9px 10px;
+  font: inherit;
+  outline: none;
+}
+.filters .capacity-input:focus-within {
+  border-color: var(--primary);
+}
+.filters .capacity-input span {
+  padding: 0 10px;
+  color: var(--muted, #666);
+  font-weight: 500;
+}

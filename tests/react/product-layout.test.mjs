@@ -99,13 +99,18 @@ try {
  await open('tim-kiem.html');
  assert.equal(await page.locator('.cat-hero').count(),0);
  assert.equal((await page.locator('#cat-title').textContent()).trim(),'Tất cả sản phẩm');
- await page.getByLabel('Chỉ hiện hàng còn sẵn').click();await page.waitForURL('**stock=1*');
- await page.getByLabel('Đang giảm giá').click();await page.waitForURL('**deal=sale*');
- await page.waitForFunction(()=>{const cards=[...document.querySelectorAll('.listing-main .pcard')];return cards.length>0&&cards.every(card=>{const p=DT.products.find(p=>String(p.id)===card.dataset.id);return p.stock>0&&p.oldPrice>p.price;});});
+ for(const gone of ['Tình trạng','Ưu đãi & dịch vụ','Đánh giá'])assert.equal(await page.locator('#filters legend',{hasText:gone}).count(),0,`Đã bỏ nhóm lọc ${gone}`);
  const origin=await page.locator('#filters fieldset',{hasText:'Xuất xứ'}).locator('label').first().innerText();
  await page.locator('#filters fieldset',{hasText:'Xuất xứ'}).getByLabel(origin.trim()).click();await page.waitForURL('**origin=*');
  await page.waitForFunction(o=>{const cards=[...document.querySelectorAll('.listing-main .pcard')];return cards.length>0&&cards.every(card=>DT.api.originOf(DT.products.find(p=>String(p.id)===card.dataset.id))===o);},origin.trim());
- await page.getByRole('button',{name:'Xóa bộ lọc'}).click();await page.waitForFunction(()=>!location.search.includes('stock'));
+ await page.getByRole('button',{name:'Xóa bộ lọc'}).click();await page.waitForFunction(()=>!location.search.includes('origin'));
+ // Công suất: khách tự gõ số rồi lọc (1,5 hoặc 1.5 đều được)
+ await open('danh-muc.html?cat=may-lanh');
+ const hp=page.getByLabel('Công suất (HP)');
+ assert.equal(await page.locator('#filters fieldset',{hasText:'Công suất'}).locator('input[type=checkbox]').count(),0,'Công suất là ô nhập số, không còn ô chọn');
+ await hp.fill('1,5');await page.waitForURL(url=>new URL(url).searchParams.get('capacity')==='1.5 HP');
+ await page.waitForFunction(()=>{const cards=[...document.querySelectorAll('.listing-main .pcard')];return cards.length>0&&cards.every(card=>DT.products.find(p=>String(p.id)===card.dataset.id).attrs.capacity==='1.5 HP');});
+ await hp.fill('');await page.waitForFunction(()=>!new URL(location.href).searchParams.has('capacity'));
  // Trang thương hiệu: logo + tên ở giữa, bộ lọc bên trái, chỉ sản phẩm của thương hiệu
  await open(`thuong-hieu.html?id=${sample.brand}`);
  const brandName=await page.evaluate(id=>DT.brands.find(b=>b.id===id).name,sample.brand);

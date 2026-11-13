@@ -3126,3 +3126,44 @@ body{-webkit-font-smoothing:antialiased;color:#212121}
     justify-content: center;
   }
 }
+
+/* Thanh menu chính: nền xanh thương hiệu, chữ trắng; mục đang chọn gạch chân trắng; Khuyến mãi nổi bật màu đỏ */
+.mainnav {
+  background: var(--primary);
+  border-top: 0;
+  border-bottom: 0;
+  box-shadow: 0 2px 6px rgb(15 43 79 / 18%);
+}
+.mainnav > .container > ul > li > a {
+  color: #fff;
+  border-bottom: 3px solid transparent;
+}
+.mainnav > .container > ul > li > a:hover,
+.mainnav > .container > ul > li:focus-within > a {
+  color: #fff;
+  background: rgb(255 255 255 / 12%);
+}
+.mainnav > .container > ul > li > a.active {
+  color: #fff;
+  border-bottom-color: #fff;
+  font-weight: 700;
+}
+.mainnav > .container > ul > li > a.hot {
+  align-self: center;
+  margin: 8px 0;
+  padding: 7px 14px;
+  border-radius: 6px;
+  border-bottom: 0;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+.mainnav > .container > ul > li > a.hot:hover,
+.mainnav > .container > ul > li > a.hot.active {
+  background: var(--accent-dark);
+  color: #fff;
+}
+.mainnav > .container > ul > li > a:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -2px;
+}

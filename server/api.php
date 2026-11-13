@@ -89,6 +89,7 @@ try {
             if (password_needs_rehash($account['password_hash'], PASSWORD_DEFAULT)) sql('UPDATE users SET password_hash=? WHERE id=?', [password_hash($password, PASSWORD_DEFAULT), $account['id']]);
             $user = record('profiles', $account['id']);
             if (!$user) fail('Không tìm thấy hồ sơ tài khoản', 401);
+            if (!empty($user['locked'])) fail('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.', 403);
         }
         session_regenerate_id(true); $_SESSION['user_id'] = $user['id']; $_SESSION['expires_at'] = time() + 28800;
         jsonResponse(['access_token'=>'cookie', 'expires_in'=>28800, 'user'=>['id'=>$user['id']]]);

@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/inventory.php';
+require_once __DIR__ . '/users.php';
 
 function phoneKey(string $phone): string {
     return preg_replace('/^\+?84/', '0', preg_replace('/[^0-9+]/', '', $phone));
@@ -303,6 +304,7 @@ function adminCreateOrder(array $args): array {
 }
 function rpcEndpoint(string $name, array $args): mixed {
     if ($name === 'admin_create_order') return adminCreateOrder($args);
+    if ($name === 'admin_users') return adminUsers($args);
     if ($name === 'place_order') return placeOrder($args);
     if ($name === 'inventory') return inventoryEndpoint($args);
     if ($name === 'issue_invoice') return issueInvoice($args);

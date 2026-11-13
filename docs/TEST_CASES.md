@@ -139,6 +139,16 @@ Lỗi đã phát hiện và sửa khi viết bộ test này:
 | Đánh giá sản phẩm | Đánh giá (chờ duyệt) |
 | Đặt hàng | Đơn hàng |
 
+## 8. Tài khoản & phân quyền (`tests/server/users.test.php`)
+
+| Mã | Tình huống | Kết quả mong đợi |
+|---|---|---|
+| U1–U3 | Người lạ / nhân viên vận hành / quản trị viên mở danh sách tài khoản | 401 / 403 / xem được |
+| U4–U8 | Tạo tài khoản nhân viên; mật khẩu mã hóa; trùng SĐT; mật khẩu yếu; vai trò lạ | Tạo đúng, ghi người tạo; chặn các trường hợp sai |
+| U9–U12 | Đổi vai trò, tự hạ quyền, tự khóa, đặt lại mật khẩu | Đổi được cho người khác; không tự hạ quyền / tự khóa |
+| U13–U15 | Khóa / mở khóa | Khóa: mất quyền ngay kể cả phiên đang mở, không đăng nhập được; mở khóa dùng lại được |
+| U16–U19 | Cấp quyền cho tài khoản khách có sẵn; luôn còn ≥ 1 quản trị viên; không tự mở khóa qua sửa hồ sơ | Đúng |
+
 ## Máy chủ thật – cách chạy trên máy
 
 ```bash

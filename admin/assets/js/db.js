@@ -1160,6 +1160,52 @@ AD.demo = () => {
         throw err;
       }
     },
+    // Tài khoản & phân quyền (bản demo, lưu trên trình duyệt): PHẢI khớp adminUsers (server/users.php)
+    async adminUsers(a = {}) {
+      if (me().role !== "admin") invFail("Chỉ quản trị viên được quản lý tài khoản");
+      const ROLES = ["admin", "staff", "sales", "accountant"];
+      db.staff_accounts = db.staff_accounts || STAFF.map((s) => ({ ...s, email: "", locked: false, created_at: null }));
+      const list = db.staff_accounts;
+      const pub = (x) => ({ id: x.id, name: x.name, phone: x.phone, email: x.email || "", role: x.role, locked: !!x.locked, created_at: x.created_at || null, created_by_name: x.created_by_name || null });
+      const save = (x) => { persist(); return pub(x); };
+      const admins = (except) => list.filter((x) => x.role === "admin" && !x.locked && x.id !== except).length;
+      const phoneOf = (v) => String(v || "").replace(/[^0-9+]/g, "").replace(/^\+?84/, "0");
+      if (a.p_op === "list") return list.filter((x) => ROLES.includes(x.role)).map(pub);
+      if (a.p_op === "create") {
+        const phone = phoneOf(a.p_phone), name = String(a.p_name || "").trim();
+        if (!ROLES.includes(a.p_role)) invFail("Vai trò không hợp lệ");
+        if (!/^0[0-9]{9,10}$/.test(phone)) invFail("Số điện thoại không hợp lệ");
+        if (!name) invFail("Vui lòng nhập họ tên nhân viên");
+        if (typeof a.p_password !== "string" || a.p_password.length < 8 || a.p_password.length > 72) invFail("Mật khẩu phải dài 8–72 ký tự");
+        if (list.some((x) => x.phone === phone)) invFail('Số điện thoại hoặc email đã có tài khoản. Dùng "Cấp quyền cho tài khoản có sẵn" để đổi vai trò.');
+        const row = { id: "demo-" + Date.now().toString(36), name, phone, email: String(a.p_email || "").trim(), role: a.p_role, locked: false, created_at: nowIso(), created_by_name: userName() };
+        list.push(row); return save(row);
+      }
+      let row = a.p_op === "grant" ? list.find((x) => x.phone === phoneOf(a.p_phone)) : list.find((x) => x.id === a.p_id);
+      if (!row && a.p_op === "grant") {
+        const user = (read(SHOP, { users: [] }).users || []).find((u) => phoneOf(u.phone) === phoneOf(a.p_phone));
+        if (!user) invFail("Không tìm thấy tài khoản với số điện thoại này");
+        row = { id: "demo-" + phoneOf(a.p_phone), name: user.name || phoneOf(a.p_phone), phone: phoneOf(a.p_phone), email: user.email || "", role: "customer", locked: false, created_at: nowIso() };
+        list.push(row);
+      }
+      if (!row) invFail("Không tìm thấy tài khoản");
+      const self = row.id === me().id;
+      const op = a.p_op === "grant" ? "set_role" : a.p_op;
+      if (op === "set_role") {
+        if (![...ROLES, "customer"].includes(a.p_role)) invFail("Vai trò không hợp lệ");
+        if (self && a.p_role !== "admin") invFail("Không thể tự hạ quyền của chính mình");
+        if (row.role === "admin" && a.p_role !== "admin" && admins(row.id) < 1) invFail("Phải còn ít nhất 1 quản trị viên");
+        row.role = a.p_role;
+      } else if (op === "set_password") {
+        if (typeof a.p_password !== "string" || a.p_password.length < 8 || a.p_password.length > 72) invFail("Mật khẩu phải dài 8–72 ký tự");
+        row.password_changed_at = nowIso();
+      } else if (op === "lock" || op === "unlock") {
+        if (self) invFail("Không thể tự khóa tài khoản của chính mình");
+        if (op === "lock" && row.role === "admin" && admins(row.id) < 1) invFail("Phải còn ít nhất 1 quản trị viên");
+        row.locked = op === "lock";
+      } else invFail("Thao tác không hợp lệ");
+      return save(row);
+    },
     async issueInvoice(id) {
       if (!["admin", "staff", "accountant"].includes(me().role)) deny();
       syncFromShop();

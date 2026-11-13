@@ -52,6 +52,7 @@ jobs:
           TEST_ADMIN_PHONE: "0912345698"
       - run: docker compose exec -T web php tests/server/admin.test.php
       - run: docker compose exec -T web php tests/server/commerce.test.php
+      - run: docker compose exec -T web php tests/server/users.test.php
       - run: docker compose exec -T web php server/cli.php admin 0912345698
       - run: npm run test:hosting
         env:

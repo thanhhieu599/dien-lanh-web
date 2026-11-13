@@ -42,6 +42,9 @@ const Sales = lazy(() =>
 const Customers = lazy(() =>
   import("./pages/customers").then((m) => ({ default: m.CustomersPage })),
 );
+const Accounts = lazy(() =>
+  import("./pages/accounts").then((m) => ({ default: m.AccountsPage })),
+);
 const Settings = lazy(() =>
   import("./pages/settings").then((m) => ({ default: m.SettingsPage })),
 );
@@ -193,6 +196,7 @@ function CurrentPage() {
     return <Sales resource={resource} />;
   if (resource === "customers") return <Customers />;
   if (resource === "settings") return <Settings />;
+  if (resource === "accounts") return <Accounts />;
   if (["content", "vision", "trust"].includes(resource))
     return <Content resource={resource} />;
   if (resource === "maintenance") return <Maintenance />;

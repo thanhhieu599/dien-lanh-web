@@ -853,6 +853,44 @@ try {
     await open("dashboard");
     for (const id of ["may-lanh", cat.id]) await page.evaluate(([id, on]) => AD.db.update("categories", id, { show_home: on }), [id, id === "may-lanh"]);
   }
+  // Cấu hình → Tài khoản & phân quyền: tạo nhân viên, đổi vai trò, đặt lại mật khẩu, khóa / mở khóa
+  {
+    await open("accounts");
+    await page.locator("#view h1", { hasText: "Tài khoản & phân quyền" }).waitFor();
+    const form = page.locator("#acc-create");
+    await form.locator("[name=name]").fill("Nhân viên kho QA");
+    await form.locator("[name=phone]").fill("0977111222");
+    await form.locator("[name=role]").selectOption("staff");
+    await form.locator("[name=password]").fill("KhoHang!2026");
+    await form.locator("[name=confirm]").fill("KhoHang!2027");
+    await form.getByRole("button", { name: "Tạo tài khoản" }).click();
+    await page.locator(".ar-toast").filter({ hasText: "không khớp" }).waitFor();
+    await form.locator("[name=confirm]").fill("KhoHang!2026");
+    await form.getByRole("button", { name: "Tạo tài khoản" }).click();
+    await page.locator(".ar-toast").filter({ hasText: "Đã tạo tài khoản" }).waitFor();
+    const row = page.locator("#view tr", { hasText: "Nhân viên kho QA" });
+    await row.waitFor();
+    await row.getByLabel("Vai trò của Nhân viên kho QA").selectOption("accountant");
+    await page.locator(".ar-toast").filter({ hasText: "Đã đổi vai trò" }).waitFor();
+    await row.getByRole("button", { name: "Đặt lại mật khẩu" }).click();
+    await row.getByLabel("Mật khẩu mới cho Nhân viên kho QA").fill("MatKhauMoi!26");
+    await row.getByRole("button", { name: "Lưu" }).click();
+    await page.locator(".ar-toast").filter({ hasText: "Đã đặt lại mật khẩu" }).waitFor();
+    await row.getByRole("button", { name: "Khóa" }).click();
+    await row.getByText("Đã khóa").waitFor();
+    const acc = (await page.evaluate(() => AD.db.adminUsers({ p_op: "list" }))).find((x) => x.phone === "0977111222");
+    assert.equal(acc.role, "accountant"); assert.equal(acc.locked, true);
+    // Bản thân: không tự đổi vai trò / tự khóa
+    const mine = page.locator("#view tr", { hasText: "Bạn" });
+    assert.equal(await mine.locator("select").isDisabled(), true);
+    assert.equal(await mine.getByRole("button", { name: "Khóa" }).count(), 0);
+    // Nhân viên vận hành không thấy mục này
+    await page.locator("#demo-role").selectOption("staff");
+    await page.waitForFunction(() => AD.me?.role === "staff");
+    assert.equal(await page.locator("[data-nav=accounts]").count(), 0, "Chỉ quản trị viên thấy Tài khoản & phân quyền");
+    await page.locator("#demo-role").selectOption("admin");
+    await page.waitForFunction(() => AD.me?.role === "admin");
+  }
   // Trình soạn thảo nội dung bài viết: định dạng, bảng, liên kết, mã HTML, lưu và đọc lại
   {
     const post = (await page.evaluate(() => AD.db.list("posts", { limit: 1 }))).rows[0];

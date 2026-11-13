@@ -71,7 +71,9 @@ function transaction(callable $fn): mixed {
     catch (Throwable $e) { if (db()->inTransaction()) db()->rollBack(); throw $e; }
 }
 function actor(): ?array {
-    return isset($_SESSION['user_id']) ? record('profiles', $_SESSION['user_id']) : null;
+    // Tài khoản bị khóa: mất quyền ngay ở lần gọi kế tiếp, kể cả phiên đang đăng nhập
+    $p = isset($_SESSION['user_id']) ? record('profiles', $_SESSION['user_id']) : null;
+    return $p && empty($p['locked']) ? $p : null;
 }
 function staff(): array {
     $user = actor();

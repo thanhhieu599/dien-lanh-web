@@ -355,3 +355,11 @@
 .ar-side .ar-view-site:hover{color:#fff;background:rgb(255 255 255/6%)}
 .ar-side .ar-view-site .ar-icon{color:#a9c0de}
 .ar-side .ar-mobile-only{background:transparent;color:#fff;border-color:rgb(255 255 255/35%)}
+/* Tài khoản & phân quyền */
+.acc-roles{display:grid;gap:var(--ar-space-3);margin:0}
+.acc-roles div{display:grid;gap:2px;padding-bottom:var(--ar-space-3);border-bottom:1px solid var(--ar-border)}
+.acc-roles div:last-child{border-bottom:0;padding-bottom:0}
+.acc-roles dt{font-weight:700;font-size:var(--ar-font-14)}
+.acc-roles dd{margin:0;color:var(--ar-muted);font-size:var(--ar-font-13)}
+.acc-reset{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.acc-reset input{width:200px;min-height:36px}

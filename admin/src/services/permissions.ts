@@ -10,8 +10,8 @@ export const navigation=[
  {title:'Kho hàng',items:[['inventory','list','Quản lý kho'],['purchases','truck','Nhập hàng'],['stocktakes','check','Kiểm hàng'],['stock-exports','up','Xuất kho'],['suppliers','building','Nhà cung cấp'],['stock-history','clock','Lịch sử kho']]},
  {title:'Marketing',items:[['coupons','percent','Mã giảm giá'],['banners','zap','Banner'],['posts','file','Bài viết'],['vision','eye','Trang Tầm nhìn'],['projects','building','Dự án tiêu biểu'],['faqs','chat','Hỏi đáp (FAQ)'],['trust','shield','Uy tín & đánh giá'],['content','file','Nội dung website']]},
  {title:'Phân tích',items:[['reports','grid','Báo cáo'],['notifications','mail','Nhật ký thông báo'],['misa','file','Xuất Excel MISA']]},
- {title:'Cấu hình',items:[['settings','tool','Cài đặt cửa hàng'],['stores','pin','Cửa hàng'],['services','wrench','Dịch vụ'],['policies','shield','Chính sách']]},
+ {title:'Cấu hình',items:[['settings','tool','Cài đặt cửa hàng'],['accounts','shield','Tài khoản & phân quyền'],['stores','pin','Cửa hàng'],['services','wrench','Dịch vụ'],['policies','shield','Chính sách']]},
 ];
-export const adminOnly=['settings','vision','trust','content','policies'];
+export const adminOnly=['accounts','settings','vision','trust','content','policies'];
 export function allowed(user:User|null,key:string){if(!user || !roles[user.role])return false;if(user.role==='admin')return true;if(user.role==='staff')return !adminOnly.includes(key);return (user.role==='sales'?['leads']:['orders','invoice','voucher','reports','misa','inventory','purchases','suppliers','stock-history']).includes(key);}
 export const operational=(user:User|null)=>!!user && ['admin','staff'].includes(user.role);

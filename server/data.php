@@ -229,6 +229,7 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
             $fields = $user['role'] === 'admin' ? ['name','email','addresses','role'] : ['name','email','addresses'];
             $patch = array_intersect_key($patch, array_flip($fields));
             if (isset($patch['role']) && (!in_array($patch['role'], ['customer','admin','staff','sales','accountant'], true) || $id === $user['id'])) fail('Không thể đổi vai trò này');
+            if (isset($patch['role']) && ($row['role'] ?? '') === 'admin' && $patch['role'] !== 'admin' && activeAdmins((string)$id) < 1) fail('Phải còn ít nhất 1 quản trị viên');
             if (isset($patch['email'])) sql('UPDATE users SET email=? WHERE id=?', [$patch['email'] ?: null, $id]);
         }
         if ($table === 'leads' && $user['role'] === 'sales') $patch = array_intersect_key($patch, array_flip(['status','notes','staff_note']));

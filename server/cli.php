@@ -18,12 +18,25 @@ if ($command === 'migrate') {
             if (!in_array($table, $allowed, true)) continue;
             foreach ($rows as $row) if (!record($table, $row[pk($table)])) { put($table, $row, true); $inserted++; }
         }
-        // Cài đặt cũ còn tài khoản ngân hàng mẫu -> thay bằng tài khoản thật trong seed (không đụng tài khoản admin đã tự nhập)
+        // Cài đặt cửa hàng còn thông tin MẪU (bản cũ) -> thay bằng thông tin thật trong seed.
+        // Chỉ thay ô đang đúng bằng giá trị mẫu; ô admin đã tự sửa giữ nguyên.
         $store = record('settings', 'store', true);
         $real = array_values(array_filter($seed['settings'] ?? [], fn($r) => ($r['key'] ?? '') === 'store'))[0]['value'] ?? null;
-        if ($store && $real && in_array($store['value']['bankAccount'] ?? '', ['', '0071000000000'], true) && ($real['bankAccount'] ?? '') !== '0071000000000') {
-            foreach (['bankName','bankBin','bankAccount','bankOwner'] as $k) $store['value'][$k] = $real[$k] ?? '';
-            put('settings', $store); echo "Đã cập nhật tài khoản nhận chuyển khoản: {$real['bankName']} {$real['bankAccount']}.\n";
+        $samples = [
+            'name' => ['Tên thương hiệu'], 'company' => ['TÊN CÔNG TY'], 'taxCode' => ['0300000000'], 'hotline' => ['1900 6868'],
+            'hotlineB2B' => ['0909 000 000'], 'email' => ['email@tencongty.vn'], 'zalo' => ['https://zalo.me/0909000000'],
+            'address' => ['TP. Hồ Chí Minh, Việt Nam'], 'bankName' => ['Vietcombank - CN TP.HCM'], 'bankBin' => ['970436'],
+            'bankAccount' => ['0071000000000'], 'bankOwner' => ['TEN CONG TY'],
+        ];
+        if ($store && $real) {
+            $fixed = [];
+            foreach ($samples as $k => $old) {
+                $cur = $store['value'][$k] ?? '';
+                if (($cur === '' || in_array($cur, $old, true)) && ($real[$k] ?? '') !== '' && !in_array($real[$k], $old, true)) { $store['value'][$k] = $real[$k]; $fixed[] = $k; }
+            }
+            // Tài khoản ngân hàng đổi cả bộ để không lệch (tên ngân hàng / mã BIN / số TK)
+            if (array_intersect($fixed, ['bankAccount'])) foreach (['bankName','bankBin','bankAccount','bankOwner'] as $k) $store['value'][$k] = $real[$k] ?? '';
+            if ($fixed) { put('settings', $store); echo 'Đã cập nhật thông tin cửa hàng còn để mẫu: ' . implode(', ', $fixed) . ".\n"; }
         }
     });
     echo "Đã thêm {$inserted} bản ghi mẫu; giữ nguyên bản ghi đã có.\n";

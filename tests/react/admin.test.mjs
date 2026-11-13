@@ -545,12 +545,15 @@ try {
   await page.getByRole("button", { name: "Thử lại" }).click();
   await page.locator(".ar-table").waitFor();
 
+  // Quản trị viên: menu không còn mục "Khách hàng tiềm năng"
+  assert.equal(await page.locator("[data-nav=leads]").count(), 0, "Đã bỏ mục Khách hàng tiềm năng khỏi menu");
   // Both UI routes and data writes must respect the current role.
   await page.locator("#demo-role").selectOption("sales");
   await page.waitForFunction(() => AD.me?.role === "sales");
   await open("leads");
   assert.match(await page.locator("#view").textContent(), /Khách tư vấn React/);
   assert.equal(await page.locator("[data-nav=products]").count(), 0);
+  assert.equal(await page.locator("[data-nav=leads]").count(), 1, "Nhân viên kinh doanh vẫn có Khách hàng của tôi");
   await open("settings");
   assert.match(await page.locator("#view h1").textContent(), /Không có quyền/);
   assert.match(

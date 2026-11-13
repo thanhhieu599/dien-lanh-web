@@ -28,6 +28,10 @@ DT.config = {
 
 // Ảnh trang Tầm nhìn & Sứ mệnh: quản lý trong Quản trị > Trang Tầm nhìn & Sứ mệnh.
 // Có database: link ảnh lưu ở settings 'vision'. Chế độ demo: lưu trên trình duyệt (localStorage).
+// Danh mục hiện dải sản phẩm ở trang chủ khi admin chưa bật/tắt riêng (Danh mục → "Hiện ở trang chủ")
+DT.homeCategoryDefaults = ['may-lanh', 'tu-lanh', 'may-giat', 'tu-dong-tu-mat', 'vat-tu-dien-lanh'];
+DT.showOnHome = (c) => (typeof c.show_home === 'boolean' ? c.show_home : DT.homeCategoryDefaults.includes(c.id));
+
 DT.visionSlots = [
   { key: 'hero', label: 'Ảnh lớn đầu trang', hint: 'Trụ sở / toàn cảnh công ty', size: '1200 × 1500 px (dọc)' },
   { key: 'tam-nhin', label: 'Tầm nhìn - ảnh lớn', hint: 'Công trình / dự án tiêu biểu', size: '1200 × 1500 px (dọc)' },

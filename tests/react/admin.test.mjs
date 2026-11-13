@@ -834,6 +834,25 @@ try {
     const invText = await page.locator(".inv-sheet").innerText();
     assert.match(invText, /2\.100\.000/); assert.match(invText, /210\.000/); assert.match(invText, /Công lắp đặt ống đồng/);
   }
+  // Danh mục: bật/tắt "Hiện dải sản phẩm ở trang chủ" → trang chủ website thêm / bớt dải tương ứng
+  {
+    const homeStrips = async () => { await page.goto(base + "frontend/index.html"); await page.waitForFunction(() => document.querySelectorAll("section h2").length > 3); return page.evaluate(() => [...document.querySelectorAll("section h2")].map((h) => h.textContent.trim())); };
+    const cat = await page.evaluate(() => DT.categories.find((c) => !DT.showOnHome(c) && DT.products.some((p) => p.cat === c.id)));
+    assert.ok(cat, "Có danh mục chưa hiện ở trang chủ");
+    assert.ok(!(await homeStrips()).includes(cat.name));
+    await open(`categories/${cat.id}`);
+    assert.equal(await page.locator("[name=show_home]").isChecked(), false);
+    await page.locator("[name=show_home]").check();
+    await saved();
+    { const list = await homeStrips(); assert.ok(list.includes(cat.name), "Bật: dải danh mục hiện ở trang chủ " + cat.name + " / " + list.join("|")); }
+    await open("categories/may-lanh");
+    assert.equal(await page.locator("[name=show_home]").isChecked(), true, "Máy lạnh mặc định đang hiện ở trang chủ");
+    await page.locator("[name=show_home]").uncheck();
+    await saved();
+    assert.ok(!(await homeStrips()).includes("Máy lạnh - Điều hòa"), "Tắt: dải Máy lạnh biến khỏi trang chủ");
+    await open("dashboard");
+    for (const id of ["may-lanh", cat.id]) await page.evaluate(([id, on]) => AD.db.update("categories", id, { show_home: on }), [id, id === "may-lanh"]);
+  }
   // Trình soạn thảo nội dung bài viết: định dạng, bảng, liên kết, mã HTML, lưu và đọc lại
   {
     const post = (await page.evaluate(() => AD.db.list("posts", { limit: 1 }))).rows[0];

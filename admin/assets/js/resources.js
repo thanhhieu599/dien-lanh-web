@@ -545,7 +545,8 @@ window.AD = window.AD || {};
           col: "third",
           def: 0,
         },
-        { key: "active", label: "Hiển thị", type: "bool", col: "full" },
+        { key: "active", label: "Hiển thị danh mục trên website (tắt = ẩn danh mục và sản phẩm của danh mục)", type: "bool", col: "full" },
+        { key: "show_home", label: "Hiện dải sản phẩm của danh mục ở trang chủ", type: "bool", col: "full" },
         {
           key: "image",
           label: "Ảnh đại diện danh mục",

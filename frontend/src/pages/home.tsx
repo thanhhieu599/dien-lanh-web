@@ -21,22 +21,12 @@ import { MegaMenu, uniqueCategories } from "../components/navigation";
 import { TrustSection } from "../components/trust";
 import type { Row, Product } from "../types";
 
-// Như bản gốc: trang chủ chỉ hiện các nhóm hàng chính; nhóm khác xem ở menu Sản phẩm
-const HOME_BLOCKS = [
-  "may-lanh",
-  "tu-lanh",
-  "may-giat",
-  "tu-dong-tu-mat",
-  "vat-tu-dien-lanh",
-];
+// Dải sản phẩm trang chủ: danh mục bật "Hiện ở trang chủ" trong admin (mặc định các nhóm hàng chính),
+// theo thứ tự của danh mục; chỉ hiện danh mục có sản phẩm
 function homeBlocks(categories: ReturnType<typeof uniqueCategories>) {
-  const withProducts = categories.filter((c) =>
-    dt.products.some((p) => p.cat === c.id),
-  );
-  const main = HOME_BLOCKS.map((id) =>
-    withProducts.find((c) => c.id === id),
-  ).filter(Boolean) as typeof categories;
-  return main.length ? main : withProducts.slice(0, 5);
+  return categories
+    .filter((c) => dt.showOnHome(c) && dt.products.some((p) => p.cat === c.id))
+    .sort((a, b) => (Number((a as Row).sort) || 0) - (Number((b as Row).sort) || 0));
 }
 
 export function HomePage() {

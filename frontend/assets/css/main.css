@@ -59,10 +59,10 @@
   outline-offset: 3px;
 }
 .pd-option-group.invalid legend {
-  color: #c92020;
+  color: #c8102e;
 }
 .pd-option-group.invalid .pd-option {
-  border-color: #c92020;
+  border-color: #c8102e;
 }
 .item-options {
   display: block;
@@ -88,10 +88,10 @@
   --primary-tint: #f6f8fb;
   --primary-line: #d3dfee; /* viền của khối nền nhạt */
   --primary-light: #a9c0de; /* chữ/biểu tượng trên nền tối */
-  --dark: #1c2b3f; /* nền tối: chân trang, tiêu đề trang */
-  --accent: #c62828; /* chỉ dùng cho giá, nhãn giảm giá, nút mua/gọi */
-  --accent-dark: #a11f1f;
-  --accent-soft: #fcefef;
+  --dark: #0f2b4f; /* nền tối: chân trang, tiêu đề trang */
+  --accent: #c8102e; /* chỉ dùng cho giá, nhãn giảm giá, nút mua/gọi */
+  --accent-dark: #a00d25;
+  --accent-soft: #fdecee;
   --green: #2e7d32; /* trạng thái thành công */
   --green-soft: #edf6ee;
   --green-line: #cfe6d1;
@@ -100,10 +100,10 @@
   --orange: var(--accent);
   --text: #222b36;
   --ink-2: #4a5462;
-  --muted: #6b7380;
+  --muted: #5c6573;
   --border: #e3e6ea;
   --border-strong: #cfd4da;
-  --bg: #f2f2f2; /* nền ngoài xám nhạt, khối nội dung trắng */
+  --bg: #f3f5f8; /* nền ngoài xám nhạt, khối nội dung trắng */
   --card: #fff;
   --radius: 12px; /* khối nội dung bo góc */
   --radius-sm: 8px;

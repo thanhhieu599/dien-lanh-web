@@ -6,16 +6,16 @@
   --color-brand-soft: #edf2f8;
   --color-brand-tint: #f6f8fb;
   --color-brand-border: #b1c9e5;
-  --color-accent: #b42332;
-  --color-accent-hover: #921b28;
-  --color-accent-soft: #fff1f2;
+  --color-accent: #c8102e;
+  --color-accent-hover: #a00d25;
+  --color-accent-soft: #fdecee;
   --color-text-primary: #26313f;
   --color-text-secondary: #526173;
   --color-text-inverse: #ffffff;
-  --color-surface-page: #f7f8fa;
+  --color-surface-page: #f3f5f8;
   --color-surface-base: #ffffff;
   --color-surface-muted: #eef1f5;
-  --color-surface-strong: #1b293b;
+  --color-surface-strong: #0f2b4f;
   --color-border: #dfe4ea;
   --color-border-control: #7b8795;
   --color-focus: #134682;
@@ -24,7 +24,7 @@
   --color-success: #23632b;
   --color-success-soft: #edf6ee;
   --color-error: #a51d2d;
-  --color-error-soft: #fff1f2;
+  --color-error-soft: #fdecee;
   --color-warning: #725200;
   --color-warning-soft: #fff8df;
   --color-warning-border: #d8b545;
@@ -2709,7 +2709,7 @@ button:disabled {
   font-size: 14px;
   font-weight: 600;
   color: #fff;
-  background: var(--accent, #d32f2f);
+  background: var(--accent, #c8102e);
   padding: 8px 20px;
   border-radius: var(--radius-sm, 4px);
 }

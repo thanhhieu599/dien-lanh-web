@@ -609,7 +609,8 @@ AD.demo = () => {
       let doc = id ? find("stock_exports", id) || invFail("Không tìm thấy phiếu xuất") : null;
       if (doc?.status === "done") invFail("Phiếu đã xuất kho");
       if (op === "export_save") {
-        if (!EXPORT_REASONS.includes(a.reason)) invFail("Vui lòng chọn lý do xuất");
+        a = { ...a, reason: typeof a.reason === "string" ? a.reason.trim().slice(0, 200) : "" };
+        if (!a.reason) invFail("Vui lòng chọn hoặc nhập lý do xuất");
         if (!doc) { doc = { id: nextId("stock_exports"), code: nextCode("PXK"), status: "draft", created_by: userName(), created_at: nowIso() }; db.stock_exports.push(doc); }
         Object.assign(doc, { reason: a.reason, items: invLines(a.items, "export"), note: String(a.note || "").trim(), receiver: String(a.receiver || "").trim(), updated_at: nowIso() });
         if (!a.confirm) return doc;

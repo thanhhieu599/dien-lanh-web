@@ -50,7 +50,7 @@ async function loadVoucher(kind: string, id: string): Promise<Voucher> {
     const done = doc.status === 'done';
     const lines = (doc.items || []).map((l: Row) => { const price = Number(done ? l.cost : productOf(l.product_id)?.cost_price) || 0; return {name: l.name, sku: l.sku, unit: l.unit || 'Cái', docQty: l.qty, qty: done ? l.qty : null, price, amount: price * l.qty}; });
     return {type: 'out', no: doc.code, date: doc.done_at || doc.created_at, debit: EXPORT_DEBIT[doc.reason] || '632', credit: '156', ready: done, notReady: 'Phiếu chưa xuất kho (nháp): bấm "Xuất kho" rồi in phiếu.',
-      person: doc.receiver || '', personAddress: '', department: doc.reason === 'internal' ? 'Nội bộ' : 'Kho hàng', reason: [EXPORT_REASONS.find(([k]) => k === doc.reason)?.[1], doc.note].filter(Boolean).join(' – '), basis: '', lines, total: lines.reduce((s: number, l: VoucherLine) => s + l.amount, 0), back: `/stock-exports/${doc.id}`};
+      person: doc.receiver || '', personAddress: '', department: doc.reason === 'internal' ? 'Nội bộ' : 'Kho hàng', reason: [EXPORT_REASONS.find(([k]) => k === doc.reason)?.[1] ?? doc.reason, doc.note].filter(Boolean).join(' – '), basis: '', lines, total: lines.reduce((s: number, l: VoucherLine) => s + l.amount, 0), back: `/stock-exports/${doc.id}`};
   }
   if (kind === 'ban') {
     const o = await ad.db.get('orders', id, '*,order_items(*)');

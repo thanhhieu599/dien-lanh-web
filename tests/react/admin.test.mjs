@@ -174,6 +174,18 @@ try {
   const copyId = decodeURIComponent(new URL(page.url()).hash.split("/")[2]);
   assert.notEqual(copyId, "1001");
   assert.equal((await read("products", copyId)).sku, `${original.sku}-COPY`);
+  // Thuộc tính bộ lọc: gõ giá trị mới (ngoài danh sách) → lưu vào sản phẩm và tự thêm vào bộ lọc của danh mục
+  {
+    const copy = await read("products", copyId);
+    const filter = (await read("categories", copy.cat)).filters?.[0];
+    if (filter) {
+      await tabTo("Thuộc tính");
+      await page.locator(`[name="attr-${filter.key}"]`).fill("Giá trị mới QA");
+      await saved();
+      assert.equal((await read("products", copyId)).attrs[filter.key], "Giá trị mới QA");
+      await waitUntil(async ([cat, key]) => ((await AD.db.get("categories", cat)).filters.find((f) => f.key === key)?.options || []).includes("Giá trị mới QA"), [copy.cat, filter.key]);
+    }
+  }
   await page
     .locator(".ar-head")
     .getByRole("button", { name: "Xóa", exact: true })
@@ -250,7 +262,7 @@ try {
   // Hỏi đáp: câu hỏi tạo trong admin hiện trên trang Hỏi đáp điện lạnh của website
   await open("faqs/new");
   await page.locator("[name=question]").fill("Câu hỏi kiểm thử React QA?");
-  await page.locator("[name=category]").selectOption("Lắp đặt");
+  await page.locator("[name=category]").fill("Lắp đặt");
   await page.locator("[data-field=answer] .re-area").fill("Trả lời kiểm thử.");
   await saved();
   const faqId = decodeURIComponent(new URL(page.url()).hash.split("/")[2]);
@@ -619,7 +631,8 @@ try {
     const pid = 1001;
     const before = await read("products", pid);
     await open("purchases/new");
-    await page.locator("[name=supplier]").selectOption({ index: 1 });
+    await page.locator("[name=supplier]").click();
+    await page.locator(".ar-combo-list li").first().click();
     await page.locator(".inv-picker input").fill(before.sku);
     await page.keyboard.press("Enter");
     await page.locator(`input[aria-label^="Số lượng"]`).fill("5");
@@ -645,6 +658,19 @@ try {
     await waitUntil(async (id) => (await AD.db.get("purchase_orders", id)).status === "done", po.id);
     supplier = await read("suppliers", po.supplier_id);
     assert.equal(supplier.debt, 0, "Trả đủ: hết công nợ");
+    // Gõ tên nhà cung cấp mới: tự tạo nhà cung cấp khi lưu đơn nhập
+    {
+      await open("purchases/new");
+      await page.locator("[name=supplier]").fill("Công ty TNHH Vật tư QA Mới");
+      await page.locator(".inv-picker input").fill(before.sku);
+      await page.keyboard.press("Enter");
+      await page.getByRole("button", { name: "Tạo & chưa nhập" }).click();
+      await page.locator(".inv-steps").waitFor();
+      const draft = (await page.evaluate(() => AD.db.list("purchase_orders", { order: "id.desc", limit: 1 }))).rows[0];
+      const sup = await page.evaluate((id) => AD.db.get("suppliers", id), draft.supplier_id);
+      assert.equal(sup.name, "Công ty TNHH Vật tư QA Mới");
+      await page.evaluate((id) => AD.db.inventory("purchase_cancel", { p_id: id }), draft.id);
+    }
     // Kiểm hàng: thực tế ít hơn 2 -> cân bằng kho
     await open("stocktakes/new");
     await page.locator(".inv-picker input").fill(before.sku);
@@ -659,14 +685,18 @@ try {
     assert.match(adj.code, /^IAN\d{5}$/);
     // Xuất kho quà tặng 1 cái
     await open("stock-exports/new");
-    await page.locator("[name=reason]").selectOption("gift");
+    // Lý do xuất: bấm chọn từ danh sách có sẵn
+    await page.locator("[name=reason]").click();
+    await page.locator(".ar-combo-list li", { hasText: "Quà tặng doanh nghiệp" }).click();
+    assert.equal(await page.locator("[name=reason]").inputValue(), "Quà tặng doanh nghiệp");
     await page.locator(".inv-picker input").fill(before.sku);
     await page.keyboard.press("Enter");
     await page.locator("#exp-confirm").click();
     await waitUntil(async ([id, n]) => (await AD.db.get("products", id)).stock === n, [pid, afterPo.stock - 3]);
     // Xuất quá tồn bị chặn, không ghi gì
     await open("stock-exports/new");
-    await page.locator("[name=reason]").selectOption("damaged");
+    // Lý do xuất: tự gõ lý do ngoài danh sách
+    await page.locator("[name=reason]").fill("Bảo hành đổi máy cho khách");
     await page.locator(".inv-picker input").fill(before.sku);
     await page.keyboard.press("Enter");
     await page.locator(`input[aria-label^="Số lượng xuất"]`).fill(String(afterPo.stock + 100));

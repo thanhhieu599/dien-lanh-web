@@ -10,6 +10,8 @@ export interface FieldSpec extends Row {
   key: string;
   label?: string;
   type?: string;
+  /** Ô chọn cho phép gõ giá trị mới ngoài danh sách */
+  free?: boolean;
   required?: boolean;
   col?: string;
   options?: any;

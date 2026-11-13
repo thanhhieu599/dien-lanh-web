@@ -8,6 +8,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { ad, dt, downloadCSV, loadCache, money } from "../services/runtime";
+import { Combo } from "../components/combo";
 import {
   Action,
   Badge,
@@ -342,6 +343,20 @@ function Editor({
         }
       }
       setRow((prev) => ({ ...prev, ...saved }));
+      // Sản phẩm có giá trị bộ lọc gõ mới → thêm vào danh sách giá trị của bộ lọc trong danh mục (để website lọc được)
+      if (key === "products" && data.cat && data.attrs) {
+        const cat = (ad.cache.categories || []).find((c: Row) => c.id === data.cat);
+        if (cat?.filters?.length) {
+          let changed = false;
+          const filters = cat.filters.map((f: Row) => {
+            const v = String(data.attrs[f.key] || "").trim();
+            if (!v || (f.options || []).includes(v)) return f;
+            changed = true;
+            return { ...f, options: [...(f.options || []), v] };
+          });
+          if (changed) await ad.db.update("categories", cat.id, { filters });
+        }
+      }
       await loadCache();
       notice("Đã lưu thay đổi.");
       navigate(`/${key}/${encodeURIComponent(saved[pk] ?? id)}`, {
@@ -365,20 +380,18 @@ function Editor({
             {(cat?.filters || []).map((a: Row) => (
               <label key={a.key}>
                 {a.label}
-                <select
-                  data-attr={a.key}
+                <Combo
+                  name={`attr-${a.key}`}
+                  label={a.label}
                   value={row.attrs?.[a.key] || ""}
-                  onChange={(e) =>
+                  options={a.options}
+                  newHint="Thêm giá trị mới vào bộ lọc"
+                  onChange={(v) =>
                     patch({
-                      attrs: { ...(row.attrs || {}), [a.key]: e.target.value },
+                      attrs: { ...(row.attrs || {}), [a.key]: v },
                     })
                   }
-                >
-                  <option value="">Chọn…</option>
-                  {a.options.map((v: string) => (
-                    <option key={v}>{v}</option>
-                  ))}
-                </select>
+                />
               </label>
             ))}
           </div>

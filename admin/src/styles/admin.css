@@ -294,3 +294,12 @@
 .order-lines td small{display:block}
 .cat-filters .cat-filter-usage{grid-column:1/-1;margin:-4px 0 6px;font-size:var(--ar-font-12);color:var(--ar-muted)}
 .cat-filters .cat-filter-warn{color:var(--ar-danger)}
+/* Ô vừa chọn vừa gõ */
+.ar-combo{position:relative;display:block;width:100%}
+.ar-combo>input{padding-right:40px}
+.ar-combo-toggle{position:absolute;right:1px;top:1px;bottom:1px;width:38px;border:0;border-radius:0 8px 8px 0;background:transparent;color:var(--ar-muted);cursor:pointer;font-size:14px}
+.ar-combo-list{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 4px);max-height:260px;overflow:auto;margin:0;padding:4px;list-style:none;background:var(--ar-surface);border:1px solid var(--ar-border);border-radius:8px;box-shadow:0 8px 24px rgb(19 32 50/12%)}
+.ar-combo-list li{padding:8px 10px;border-radius:6px;cursor:pointer}
+.ar-combo-list li.active,.ar-combo-list li:hover{background:var(--ar-brand-soft)}
+.ar-combo-list li[aria-selected=true]{font-weight:500;color:var(--ar-brand)}
+.ar-combo-new{color:var(--ar-brand);border-top:1px solid var(--ar-border);margin-top:4px}

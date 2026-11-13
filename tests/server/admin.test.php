@@ -114,6 +114,11 @@ try {
     $exp = rpcEndpoint('inventory', ['p_op'=>'export_save', 'reason'=>'gift', 'items'=>[['product_id'=>$prod['id'], 'qty'=>2]], 'confirm'=>true]);
     $created[] = ['stock_exports', $exp['id']];
     checkAdmin($exp['status'] === 'done' && record('products', $prod['id'])['stock'] === 15 && $exp['value'] > 0, 'Export reduces stock and records cost value');
+    $custom = rpcEndpoint('inventory', ['p_op'=>'export_save', 'reason'=>'  Bảo hành đổi máy cho khách ', 'items'=>[['product_id'=>$prod['id'], 'qty'=>1]]]);
+    $created[] = ['stock_exports', $custom['id']];
+    checkAdmin($custom['reason'] === 'Bảo hành đổi máy cho khách' && $custom['status'] === 'draft', 'Export accepts a typed reason outside the preset list');
+    try { rpcEndpoint('inventory', ['p_op'=>'export_save', 'reason'=>'   ', 'items'=>[['product_id'=>$prod['id'], 'qty'=>1]]]); throw new RuntimeException('Blank reason must fail'); }
+    catch (HttpError $e) { checkAdmin(true, 'Export requires a reason'); }
     patchAdmin('products', $prod['id'], ['stock'=>16]);
     $types = array_column($moves(), 'type');
     sort($types);

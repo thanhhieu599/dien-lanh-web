@@ -195,7 +195,10 @@ function inventoryEndpoint(array $a): array {
                 $doc = $id ? record('stock_exports', $id, true) : null;
                 if ($id && !$doc) fail('Không tìm thấy phiếu xuất', 404);
                 if ($doc && $doc['status'] === 'done') fail('Phiếu đã xuất kho, không sửa được');
-                if (!in_array($a['reason'] ?? '', EXPORT_REASONS, true)) fail('Vui lòng chọn lý do xuất');
+                // Lý do xuất: mã có sẵn (EXPORT_REASONS) hoặc lý do nhân viên tự gõ
+                $reason = is_string($a['reason'] ?? null) ? mb_substr(trim($a['reason']), 0, 200) : '';
+                if ($reason === '') fail('Vui lòng chọn hoặc nhập lý do xuất');
+                $a['reason'] = $reason;
                 $doc = array_merge($doc ?? ['code' => nextCode('PXK'), 'status' => 'draft', 'created_by' => userName($user)], [
                     'reason' => $a['reason'], 'items' => invLines($a['items'] ?? [], 'export'), 'note' => trim((string)($a['note'] ?? '')),
                     'receiver' => trim((string)($a['receiver'] ?? '')),

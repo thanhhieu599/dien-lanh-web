@@ -286,7 +286,7 @@ window.AD = window.AD || {};
           col: "quarter",
           def: 0,
         },
-        { key: "unit", label: "Đơn vị tính", col: "quarter", def: "Cái", placeholder: "Cái, Bộ, Mét, Kg…" },
+        { key: "unit", label: "Đơn vị tính", col: "quarter", def: "Cái", type: "select", free: true, options: ["Cái", "Bộ", "Chiếc", "Máy", "Mét", "Cuộn", "Kg", "Lít", "Hộp", "Thùng", "Cặp"] },
         { key: "barcode", label: "Mã vạch / Barcode", col: "quarter" },
         {
           key: "min_stock",
@@ -361,6 +361,7 @@ window.AD = window.AD || {};
           key: "weight_unit",
           label: "Đơn vị",
           type: "select",
+          free: true,
           options: [
             ["g", "g"],
             ["kg", "kg"],
@@ -899,6 +900,7 @@ window.AD = window.AD || {};
           label: "Chuyên mục",
           col: "third",
           type: "select",
+          free: true,
           options: [
             "Tư vấn chọn mua",
             "Mẹo sử dụng",
@@ -1023,6 +1025,7 @@ window.AD = window.AD || {};
           label: "Lĩnh vực",
           col: "third",
           type: "select",
+          free: true,
           options: [
             "Nhà máy FDI",
             "Nhà xưởng",
@@ -1157,6 +1160,7 @@ window.AD = window.AD || {};
           label: "Nhóm",
           col: "third",
           type: "select",
+          free: true,
           required: true,
           options: [
             "Chọn mua máy lạnh",
@@ -1269,7 +1273,7 @@ window.AD = window.AD || {};
           col: "third",
           def: 0,
         },
-        { key: "unit", label: "Đơn vị", col: "third", placeholder: "máy" },
+        { key: "unit", label: "Đơn vị", col: "third", type: "select", free: true, options: ["máy", "lần", "bộ", "mét", "m²", "giờ", "điểm"] },
         {
           key: "sort",
           label: "Thứ tự",
@@ -1357,7 +1361,7 @@ window.AD = window.AD || {};
         { key: "fee_per_visit", label: "Phí mỗi lần (₫)", type: "money", step: 1, col: "third", def: 0 },
         { key: "contract_value", label: "Giá trị hợp đồng/năm (₫)", type: "money", step: 1, col: "third", help: "Để trống nếu tính theo từng lần" },
         { key: "status", label: "Trạng thái", type: "select", required: true, col: "third", options: [["active", "Đang bảo trì"], ["paused", "Tạm dừng"], ["ended", "Đã kết thúc"]] },
-        { key: "source", label: "Nguồn khách", type: "select", col: "third", options: [["order", "Đơn hàng website"], ["website", "Form website"], ["phone", "Gọi điện / Zalo"], ["referral", "Giới thiệu"], ["contract", "Hợp đồng doanh nghiệp"], ["manual", "Nhập tay"]] },
+        { key: "source", label: "Nguồn khách", type: "select", free: true, col: "third", options: [["order", "Đơn hàng website"], ["website", "Form website"], ["phone", "Gọi điện / Zalo"], ["referral", "Giới thiệu"], ["contract", "Hợp đồng doanh nghiệp"], ["manual", "Nhập tay"]] },
         { key: "order_code", label: "Mã đơn hàng liên quan", col: "third" },
         { key: "note", label: "Ghi chú", type: "textarea", rows: 2, col: "full" },
       ],

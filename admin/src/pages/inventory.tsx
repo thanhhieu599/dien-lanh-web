@@ -5,6 +5,7 @@ import {ad, date, downloadCSV, loadCache, money, today} from '../services/runtim
 import {EXPORT_REASONS, LEVEL_LABEL, MOVE_TYPES, PURCHASE_STATUS, incomingMap, invOp, purchaseTotals, reservedMap, stockLevel} from '../services/inventory';
 import {Action, DataState, Head, Panel, Table, useData, useNotice} from '../components/common';
 import {MovesTable, ProductPicker} from '../components/stock';
+import {Combo} from '../components/combo';
 import type {Row} from '../types';
 
 const PAGE = 30;
@@ -117,7 +118,9 @@ function PurchaseDoc({id}: {id: string}) {
 function PurchaseForm({doc}: {doc: Row | null}) {
   const navigate = useNavigate(); const notice = useNotice();
   const suppliersState = useData(async () => (await ad.db.list('suppliers', {order: 'name.asc', limit: 5000})).rows.filter((s) => s.active !== false || String(s.id) === String(doc?.supplier_id)), []);
+  // Nhà cung cấp: chọn có sẵn hoặc gõ tên mới (tự tạo nhà cung cấp khi lưu đơn)
   const [supplierId, setSupplierId] = useState(String(doc?.supplier_id ?? ''));
+  const [newSupplier, setNewSupplier] = useState('');
   const [items, setItems] = useState<Row[]>(() => (doc?.items || []).map((l: Row) => ({...l})));
   const [discount, setDiscount] = useState(num(doc?.discount));
   const [costs, setCosts] = useState<Row[]>(doc?.costs || []);
@@ -130,10 +133,15 @@ function PurchaseForm({doc}: {doc: Row | null}) {
   const setLine = (i: number, patch: Row) => setItems(items.map((l, k) => (k === i ? {...l, ...patch} : l)));
   async function save(receive: boolean) {
     setError('');
-    if (!supplierId) { setError('Vui lòng chọn nhà cung cấp.'); return; }
+    if (!supplierId && !newSupplier) { setError('Vui lòng chọn hoặc nhập tên nhà cung cấp.'); return; }
     if (!items.length) { setError('Đơn nhập chưa có sản phẩm.'); return; }
     if (pay.amount > totals.total) { setError('Số tiền thanh toán vượt tổng đơn.'); return; }
-    const po = await invOp('purchase_save', {p_id: doc?.id, supplier_id: supplierId, items: items.map((l) => ({product_id: l.product_id, qty: num(l.qty), price: num(l.price), discount: num(l.discount), tax_rate: num(l.tax_rate)})), discount, costs, expected_date: expected, note, receive, payment: pay.amount > 0 ? pay : null});
+    let sid = supplierId;
+    if (!sid) {
+      const created = await ad.db.insert('suppliers', {name: newSupplier, active: true, note: 'Tạo nhanh khi nhập hàng'});
+      sid = String(created.id); setSupplierId(sid); setNewSupplier(''); suppliersState.reload();
+    }
+    const po = await invOp('purchase_save', {p_id: doc?.id, supplier_id: sid, items: items.map((l) => ({product_id: l.product_id, qty: num(l.qty), price: num(l.price), discount: num(l.discount), tax_rate: num(l.tax_rate)})), discount, costs, expected_date: expected, note, receive, payment: pay.amount > 0 ? pay : null});
     await loadCache();
     notice(receive ? `Đã tạo đơn ${po.code} và nhập kho.` : `Đã lưu đơn ${po.code}.`);
     navigate(`/purchases/${po.id}`);
@@ -146,9 +154,9 @@ function PurchaseForm({doc}: {doc: Row | null}) {
   {error && <p className="ar-error ad-error" role="alert">{error}</p>}
   <div className="inv-cols">
     <Panel title="Nhà cung cấp"><DataState state={suppliersState}>{suppliersState.data && <>
-      <label className="inv-field"><span>Chọn nhà cung cấp</span><select name="supplier" value={supplierId} onChange={(e) => setSupplierId(e.target.value)}><option value="">— Chọn —</option>{suppliersState.data.map((s) => <option key={s.id} value={s.id}>{s.name}{s.phone ? ` · ${s.phone}` : ''}</option>)}</select></label>
+      <label className="inv-field"><span>Nhà cung cấp</span><Combo name="supplier" label="Nhà cung cấp" value={supplierId || newSupplier} placeholder="Chọn nhà cung cấp hoặc gõ tên mới…" newHint="Tạo nhà cung cấp mới" options={suppliersState.data.map((s): [string, string] => [String(s.id), `${s.name}${s.phone ? ` · ${s.phone}` : ''}`])} onChange={(v) => { const hit = suppliersState.data!.some((s) => String(s.id) === v); setSupplierId(hit ? v : ''); setNewSupplier(hit ? '' : v); }}/></label>
       {supplier ? <div className="inv-supplier"><b>{supplier.name}</b><span>{[supplier.phone, supplier.tax_code && `MST ${supplier.tax_code}`].filter(Boolean).join(' · ')}</span><span>{supplier.address}</span><span>Công nợ hiện tại: <b className="inv-minus">{money(supplier.debt)}</b></span></div>
-        : <p className="inv-muted">Chưa có nhà cung cấp? <Link to="/suppliers/new">Thêm nhà cung cấp</Link></p>}
+        : newSupplier ? <p className="inv-muted">Nhà cung cấp mới <b>{newSupplier}</b> sẽ được tạo khi lưu đơn. Bổ sung số điện thoại, mã số thuế sau trong mục Nhà cung cấp.</p> : <p className="inv-muted">Chọn từ danh sách hoặc gõ tên nhà cung cấp mới.</p>}
     </>}</DataState></Panel>
     <Panel title="Thông tin đơn nhập">
       <label className="inv-field"><span>Ngày hẹn giao</span><input type="date" value={expected || ''} onChange={(e) => setExpected(e.target.value)}/></label>
@@ -322,7 +330,7 @@ function ExportDoc({id}: {id: string}) {
     {doc?.status === 'draft' && canWrite() && <Action confirm="Xóa phiếu nháp này?" run={async () => { await invOp('delete_draft', {p_id: doc.id, p_kind: 'export'}); navigate('/stock-exports'); }}>Xóa phiếu</Action>}
   </Head>
   <Panel title="Thông tin phiếu"><div className="ar-grid">
-    <label><span>Lý do xuất *</span><select name="reason" value={f.reason} disabled={readonly} onChange={(e) => set({reason: e.target.value})}><option value="">— Chọn —</option>{EXPORT_REASONS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
+    <label><span>Lý do xuất *</span><Combo name="reason" label="Lý do xuất" value={f.reason} disabled={readonly} options={EXPORT_REASONS} placeholder="Chọn lý do hoặc gõ lý do khác…" onChange={(v) => set({reason: v})}/></label>
     <label><span>Người nhận / bộ phận</span><input value={f.receiver} readOnly={readonly} onChange={(e) => set({receiver: e.target.value})}/></label>
     <label className="full"><span>Ghi chú</span><input value={f.note} readOnly={readonly} onChange={(e) => set({note: e.target.value})}/></label>
   </div></Panel>

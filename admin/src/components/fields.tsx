@@ -1,4 +1,5 @@
 import {useId,useState,type ReactNode} from 'react';
+import {Combo} from './combo';
 import {ad,imageFile,safeUrl} from '../services/runtime';
 import {Image,useNotice} from './common';
 import {RichEditor} from './editor';
@@ -22,7 +23,8 @@ export function EditorField({field:f,value,row,onChange,error,editing=false,onPe
  let control:ReactNode;
  const attrs={id,name:f.key,disabled,required:!!f.required,'aria-invalid':!!error,'aria-describedby':error?`${id}-error`:f.help?`${id}-help`:undefined};
  if(f.type==='bool')return <div className={`ar-field ${f.col||''}`}><label className="ar-check"><input {...attrs} type="checkbox" checked={!!value} onChange={e=>onChange(e.target.checked)}/><span>{f.label}</span></label>{f.help&&<small>{f.help}</small>}</div>;
- if(f.type==='select')control=<select {...attrs} value={value??''} onChange={e=>onChange(e.target.value)}><option value="">Chọn…</option>{opts.map((o:any)=>{const [v,l]=Array.isArray(o)?o:[o,o];return <option value={v} key={v}>{l}</option>;})}</select>;
+ if(f.type==='select'&&f.free)control=<Combo id={id} name={f.key} value={value==null?'':String(value)} options={opts} disabled={disabled} required={!!f.required} onChange={onChange}/>;
+ else if(f.type==='select')control=<select {...attrs} value={value??''} onChange={e=>onChange(e.target.value)}><option value="">Chọn…</option>{opts.map((o:any)=>{const [v,l]=Array.isArray(o)?o:[o,o];return <option value={v} key={v}>{l}</option>;})}</select>;
  else if(['lines','tags'].includes(f.type||''))control=<ListInput attrs={attrs} rows={f.rows||3} value={value} onChange={onChange} separator={f.type==='tags'?',':'\n'}/>;
  else if(f.type==='html')control=<RichEditor id={id} label={f.label||f.key} rows={f.rows||12} value={value} onChange={onChange}/>;
  else if(f.type==='textarea')control=<textarea {...attrs} rows={f.rows||3} value={Array.isArray(value)?value.join('\n'):value??''} onChange={e=>onChange(e.target.value)}/>;

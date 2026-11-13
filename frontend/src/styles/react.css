@@ -292,17 +292,6 @@
 .slider .slide > a > .react-placeholder {
   height: 100%;
 }
-.slider-pause {
-  position: absolute;
-  bottom: 8px;
-  right: 12px;
-  z-index: 3;
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 0;
-  font-size: 11px;
-  color: var(--primary-dark);
-}
 .slider-dots {
   max-width: calc(100% - 120px);
   flex-wrap: wrap;
@@ -1333,10 +1322,6 @@ button:disabled {
   }
   .hero .slider {
     min-height: 250px;
-  }
-  .slider-pause {
-    bottom: 8px;
-    right: 8px;
   }
   .slider-dots {
     left: 20px;

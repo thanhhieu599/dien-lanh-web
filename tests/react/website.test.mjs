@@ -38,8 +38,7 @@ try {
   await page.keyboard.press('Tab');assert.equal(await page.locator('.skip-link').evaluate(el=>el===document.activeElement),true,'First Tab reaches skip link');
   await page.keyboard.press('Enter');assert.equal(await page.locator('#main').evaluate(el=>el===document.activeElement),true,'Skip link focuses main');
   await open('index.html');
-  const pause=page.getByRole('button',{name:'Tạm dừng chuyển banner',exact:true});await pause.click();
-  assert.equal(await page.getByRole('button',{name:'Tiếp tục chuyển banner',exact:true}).getAttribute('aria-pressed'),'true');
+  assert.equal(await page.locator('.slider-pause').count(),0,'Không còn nút Tạm dừng trên banner');
   assert.ok(await page.locator('.slide[inert]').count()>0,'Inactive banners are inert');
   const search=page.getByRole('searchbox',{name:'Tìm kiếm sản phẩm'});await search.fill('máy lạnh');
   await page.waitForSelector('#search-suggestions a');
@@ -48,9 +47,6 @@ try {
   await page.keyboard.press('Escape');assert.equal(await page.locator('#search-suggestions').count(),0);
   await search.focus();
   assert.equal(await search.evaluate(el=>getComputedStyle(el).outlineStyle),'solid','Search has a visible keyboard focus ring');
-  await page.emulateMedia({reducedMotion:'reduce'});await open('index.html');
-  assert.equal(await page.getByRole('button',{name:'Tiếp tục chuyển banner',exact:true}).getAttribute('aria-pressed'),'true');
-  await page.emulateMedia({reducedMotion:'no-preference'});
   const routes=fs.readdirSync('frontend').filter(f=>f.endsWith('.html') && !['bai-viet.html','du-an-chi-tiet.html','san-pham.html','danh-muc.html','dat-hang-thanh-cong.html'].includes(f));
   for(const route of [...routes,`san-pham.html?id=${product.id}`,'danh-muc.html?cat=may-lanh',`bai-viet.html?slug=${post}`,...(project?[`du-an-chi-tiet.html?slug=${project}`]:[])]){
     await open(route);assert.equal(await page.locator('#root').count(),1);assert.ok((await page.locator('#main h1').first().textContent()).trim(),route);assert.equal(await page.locator('#main').getByText('Không hiển thị được trang',{exact:true}).count(),0,route);

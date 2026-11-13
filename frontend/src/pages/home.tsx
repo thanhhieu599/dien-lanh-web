@@ -44,7 +44,8 @@ export function HomePage() {
     content = dt.siteContent(),
     categories = uniqueCategories();
   const [slide, setSlide] = useState(0),
-    [paused, setPaused] = useState(
+    // Người dùng bật "giảm chuyển động" trong hệ điều hành: banner không tự chuyển
+    [paused] = useState(
       () => matchMedia("(prefers-reduced-motion: reduce)").matches,
     );
   const [hovered, setHovered] = useState(false),
@@ -166,16 +167,6 @@ export function HomePage() {
                   />
                 ))}
               </div>
-              <button
-                className="slider-pause"
-                aria-pressed={paused}
-                aria-label={
-                  paused ? "Tiếp tục chuyển banner" : "Tạm dừng chuyển banner"
-                }
-                onClick={() => setPaused(!paused)}
-              >
-                {paused ? "Tiếp tục" : "Tạm dừng"}
-              </button>
             </>
           )}
         </div>

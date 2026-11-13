@@ -60,7 +60,7 @@ function CurrentPage() {
     case 'gio-hang.html':return <Cart/>;
     case 'thanh-toan.html':return <Checkout/>;
     case 'dat-hang-thanh-cong.html':return <Success code={query.get('code') || ''}/>;
-    case 'tra-cuu-don-hang.html':return <Tracking code={query.get('code') || ''}/>;
+    case 'tra-cuu-don-hang.html':return <Tracking code={query.get('code') || ''} phone={query.get('phone') || ''}/>;
     case 'tai-khoan.html':return <Account/>;
     case 'yeu-thich.html':return <Collection/>;
     case 'so-sanh.html':return <Collection compare/>;

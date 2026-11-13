@@ -116,13 +116,29 @@ function cartLines(array $items, bool $lock): array {
     }
     return $lines;
 }
+// Quy trình đơn: chỉ đi tiến (được bỏ qua bước giữa, vd Chờ xác nhận → Đang giao), không lùi;
+// hủy chỉ khi chưa giao. PHẢI khớp orderNextStatuses (admin/src/pages/sales.tsx)
+const ORDER_FLOW = ['pending', 'confirmed', 'shipping', 'installing', 'done'];
+const ORDER_LABELS = ['pending' => 'Chờ xác nhận', 'confirmed' => 'Đã xác nhận', 'shipping' => 'Đang giao', 'installing' => 'Đang lắp đặt', 'done' => 'Hoàn thành', 'cancelled' => 'Đã hủy'];
+function orderNextStatuses(string $from): array {
+    $i = array_search($from, ORDER_FLOW, true);
+    if ($i === false) return [];
+    $next = array_slice(ORDER_FLOW, $i + 1);
+    if (in_array($from, ['pending', 'confirmed'], true)) $next[] = 'cancelled';
+    return $next;
+}
+function orderMoveError(string $from, string $to): string {
+    $a = ORDER_LABELS[$from] ?? $from; $b = ORDER_LABELS[$to] ?? $to;
+    if (in_array($from, ['done', 'cancelled'], true)) return "Đơn đã $a, không đổi trạng thái được nữa";
+    if ($to === 'cancelled') return "Đơn đang \"$a\" không hủy được. Vui lòng xử lý đổi trả / hoàn tiền";
+    return "Không thể chuyển từ \"$a\" về \"$b\" (trạng thái chỉ đi tiến)";
+}
 function updateOrder(array $order, array $patch, array $user): array {
     $fields = $user['role'] === 'accountant' ? ['payment_status','staff_note'] : ['status','payment_status','staff_note','maintenance_optin'];
     $patch = array_intersect_key($patch, array_flip($fields));
     if (isset($patch['payment_status']) && !in_array($patch['payment_status'], ['unpaid','partial','paid','refunded'], true)) fail('Trạng thái thanh toán không hợp lệ');
     if (isset($patch['status']) && $patch['status'] !== $order['status']) {
-        $transitions = ['pending' => ['confirmed','cancelled'], 'confirmed' => ['shipping','cancelled'], 'shipping' => ['installing','done'], 'installing' => ['done'], 'done' => [], 'cancelled' => []];
-        if (!in_array($patch['status'], $transitions[$order['status']] ?? [], true)) fail('Không thể chuyển trạng thái này');
+        if (!in_array($patch['status'], orderNextStatuses($order['status']), true)) fail(orderMoveError($order['status'], $patch['status']));
         if ($patch['status'] === 'cancelled') {
             $items = array_filter(allRecords('order_items'), fn($i) => $i['order_id'] === $order['id']);
             usort($items, fn($a, $b) => $a['product_id'] <=> $b['product_id']);

@@ -113,8 +113,12 @@ try {
     $bank = buy([['id' => $ac['id'], 'qty' => 1]], ['phone' => '0933000005', 'payment' => 'bank', 'coupon' => "{$C}P10"]);
     asStaff($admin);
     $patch = fn($id, $body) => (function() use ($id, $body) { $_GET = ['id' => 'eq.' . $id]; return dataEndpoint('orders', 'PATCH', $body)[0]; })();
-    try { $patch($cod['id'], ['status' => 'done']); ok(false, 'D1'); } catch (HttpError $e) { ok(true, 'D1 Không nhảy cóc Chờ xác nhận → Hoàn thành'); }
-    foreach (['confirmed', 'shipping', 'installing', 'done'] as $st) $row = $patch($cod['id'], ['status' => $st]);
+    // Quy trình: đi tiến, được bỏ qua bước giữa (Chờ xác nhận → Đang giao), không lùi, đang giao không hủy
+    $row = $patch($cod['id'], ['status' => 'shipping']);
+    ok($row['status'] === 'shipping', 'D1 Chuyển thẳng Chờ xác nhận → Đang giao (bỏ qua bước giữa)');
+    try { $patch($cod['id'], ['status' => 'confirmed']); ok(false, 'D1b'); } catch (HttpError $e) { ok(str_contains($e->getMessage(), 'chỉ đi tiến'), 'D1b Không lùi Đang giao → Đã xác nhận, báo lỗi rõ ràng'); }
+    try { $patch($cod['id'], ['status' => 'cancelled']); ok(false, 'D1c'); } catch (HttpError $e) { ok(record('orders', $cod['id'])['status'] === 'shipping', 'D1c Đơn đang giao không hủy được (tránh hoàn kho sai)'); }
+    $row = $patch($cod['id'], ['status' => 'done']);
     ok($row['status'] === 'done' && $row['payment_status'] === 'paid' && !empty($row['paid_at']), 'D2 Đơn COD hoàn thành: tự ghi đã thu tiền + thời điểm thu');
     $_SESSION = []; guest();
     try { rpcEndpoint('cancel_order', ['p_code' => $cod['code'], 'p_phone' => '0933000004']); ok(false, 'D2b'); } catch (HttpError $e) { ok(record('orders', $cod['id'])['status'] === 'done', 'D2b Khách không tự hủy được đơn đã thanh toán / đã giao'); }

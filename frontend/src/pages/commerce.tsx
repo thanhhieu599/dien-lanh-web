@@ -13,6 +13,69 @@ import { Field } from "../components/forms";
 import { ProductGrid } from "../components/products";
 import type { Row, Product } from "../types";
 
+// Đơn hàng khách đã đặt trên thiết bị này (và đơn của tài khoản khi đăng nhập): trạng thái lấy mới nhất từ cửa hàng
+const PAY_LABEL: Row = { unpaid: "Chưa thanh toán", partial: "Thanh toán một phần", paid: "Đã thanh toán", refunded: "Đã hoàn tiền" };
+export function RecentOrders({ title = "Đơn hàng bạn đã đặt" }: { title?: string }) {
+  useShop();
+  const local: Row[] = dt.store.get().orders || [];
+  const mine: Row[] = dt.store.myOrders ? dt.store.myOrders() : [];
+  const orders = [...local, ...mine.filter((m) => !local.some((o) => o.code === m.code))]
+    .filter((o) => o?.code)
+    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
+    .slice(0, 10);
+  const [live, setLive] = useState<Record<string, Row>>({});
+  const codes = orders.map((o) => o.code).join(",");
+  useEffect(() => {
+    let active = true;
+    Promise.all(
+      orders.map((o) =>
+        Promise.resolve(dt.store.trackOrder(o.code, o.customer?.phone))
+          .then((x: Row | null) => (x ? ([o.code, x] as [string, Row]) : null))
+          .catch(() => null),
+      ),
+    ).then((rows) => {
+      if (active) setLive(Object.fromEntries(rows.filter(Boolean) as [string, Row][]));
+    });
+    return () => {
+      active = false;
+    };
+  }, [codes]);
+  if (!orders.length) return null;
+  return (
+    <section className="section-box recent-orders" aria-labelledby="recent-orders-title">
+      <h2 id="recent-orders-title">{title}</h2>
+      <div className="react-table-scroll">
+        <table className="recent-orders-table">
+          <thead>
+            <tr><th>Mã đơn</th><th>Ngày đặt</th><th>Tổng tiền</th><th>Trạng thái</th><th /></tr>
+          </thead>
+          <tbody>
+            {orders.map((base) => {
+              const o = { ...base, ...(live[base.code] || {}) };
+              const st = dt.orderStatus?.[o.status];
+              return (
+                <tr key={o.code}>
+                  <td><b>{o.code}</b></td>
+                  <td>{o.createdAt ? dt.u.date(o.createdAt) : ""}</td>
+                  <td className="price">{money(o.total)}</td>
+                  <td>
+                    <span className={`status ${st?.cls || ""}`}>{st?.label || o.status}</span>
+                    <small>{PAY_LABEL[o.paymentStatus] || ""}</small>
+                  </td>
+                  <td>
+                    <ShopLink className="btn btn-outline btn-sm" href={`tra-cuu-don-hang.html?code=${encodeURIComponent(o.code)}&phone=${encodeURIComponent(o.customer?.phone || "")}`}>
+                      Xem chi tiết
+                    </ShopLink>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
 export function CartPage() {
   useShop();
   useMeta("Giỏ hàng");
@@ -32,7 +95,12 @@ export function CartPage() {
     }
   }
   if (!totals.lines.length)
-    return <Empty heading={1} title="Giỏ hàng của bạn đang trống" />;
+    return (
+      <>
+        <Empty heading={1} title="Giỏ hàng của bạn đang trống" />
+        <div className="container"><RecentOrders /></div>
+      </>
+    );
   return (
     <>
       <Breadcrumb items={[{ label: "Giỏ hàng" }]} />
@@ -180,6 +248,7 @@ function Totals({ totals }: { totals: Row }) {
       <div className="sum-total">
         <span>Tổng thanh toán</span>
         <b>{money(totals.total)}</b>
+        <RecentOrders />
       </div>
     </>
   );
@@ -598,16 +667,22 @@ export function OrderDetails({
     </section>
   );
 }
-export function TrackingPage({ code = "" }: { code?: string }) {
+export function TrackingPage({ code = "", phone = "" }: { code?: string; phone?: string }) {
   const [order, setOrder] = useState<Row | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   useMeta("Tra cứu đơn hàng");
+  // Mở từ "Xem chi tiết" (có sẵn mã đơn + SĐT): tự tra cứu
+  useEffect(() => {
+    if (code && phone) lookup({ code, phone });
+  }, [code, phone]);
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    await lookup(formValues(e.currentTarget));
+  }
+  async function lookup(data: Row) {
     setBusy(true);
     setError("");
-    const data = formValues(e.currentTarget);
     try {
       const o = await dt.store.trackOrder(data.code, data.phone);
       if (!o) throw new Error("Không tìm thấy đơn hàng");
@@ -629,6 +704,7 @@ export function TrackingPage({ code = "" }: { code?: string }) {
           name="phone"
           type="tel"
           required
+          defaultValue={phone}
         />
         <button className="btn btn-primary" aria-busy={busy} disabled={busy}>
           Tra cứu đơn hàng
@@ -636,6 +712,7 @@ export function TrackingPage({ code = "" }: { code?: string }) {
         {error && <p role="alert">{error}</p>}
       </form>
       {order && <OrderDetails key={order.code} order={order} />}
+      <RecentOrders title="Đơn hàng đã đặt trên thiết bị này" />
     </div>
   );
 }
@@ -648,9 +725,17 @@ export function SuccessPage({ code }: { code: string }) {
       <h1>Đặt hàng thành công!</h1>
       <p>Cảm ơn bạn đã mua hàng tại {dt.config.name}.</p>
       <OrderDetails order={order} />
-      <ShopLink className="btn btn-primary" href="index.html">
-        Tiếp tục mua sắm
-      </ShopLink>
+      <p className="react-notice success-saved">
+        Đơn hàng đã được lưu. Bạn xem lại trạng thái đơn bất cứ lúc nào tại <b>Giỏ hàng</b> hoặc <b>Tra cứu đơn hàng</b>.
+      </p>
+      <div className="success-actions">
+        <ShopLink className="btn btn-primary" href="index.html">
+          Tiếp tục mua sắm
+        </ShopLink>
+        <ShopLink className="btn btn-outline" href={`tra-cuu-don-hang.html?code=${encodeURIComponent(order.code)}&phone=${encodeURIComponent(order.customer?.phone || "")}`}>
+          Theo dõi đơn hàng
+        </ShopLink>
+      </div>
     </div>
   ) : (
     <TrackingPage code={code} />

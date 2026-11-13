@@ -127,6 +127,24 @@ try {
   ok(reviews.includes(`Đánh giá ${tag}`), 'Admin → Đánh giá: thấy đánh giá chờ duyệt');
   const orders = await view(`orders?q=${orderCode}`);
   ok(orders.includes(orderCode), 'Admin → Đơn hàng: thấy đơn vừa đặt');
+
+  // 5) Khách xem lại đơn đã đặt (Giỏ hàng / Tra cứu); admin đổi trạng thái → khách thấy trạng thái mới
+  const recent = async () => { await go('gio-hang.html'); const box = shop.locator('.recent-orders'); await box.waitFor(); await shop.waitForTimeout(800); return box.locator('tr', { hasText: orderCode }).innerText(); };
+  ok(/Chờ xác nhận/.test(await recent()), 'Giỏ hàng (đã trống) vẫn hiện "Đơn hàng bạn đã đặt" kèm trạng thái');
+  const oid = await admin.evaluate(async (c) => (await AD.db.list('orders', { filters: [['code', 'eq', c]] })).rows[0].id, orderCode);
+  await view(`orders/${encodeURIComponent(oid)}`);
+  const statusSel = admin.locator('#view form [name=status]');
+  const opts = await statusSel.locator('option').evaluateAll((els) => els.map((e) => e.value));
+  ok(opts.includes('shipping') && opts.includes('cancelled') && !opts.includes('xyz'), 'Admin chỉ thấy trạng thái hợp lệ để chọn');
+  await statusSel.selectOption('shipping');
+  await admin.locator('#view form').getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await admin.locator('.ar-toast').filter({ hasText: 'Đã cập nhật đơn hàng.' }).waitFor();
+  ok((await admin.evaluate(async (id) => (await AD.db.get('orders', id)).status, oid)) === 'shipping', 'Admin chuyển thẳng Chờ xác nhận → Đang giao thành công');
+  ok(!(await admin.locator('#view form [name=status] option').evaluateAll((els) => els.map((e) => e.value))).includes('pending'), 'Sau khi giao: không còn chọn lùi về Chờ xác nhận');
+  ok(/Đang giao/.test(await recent()), 'Khách tải lại Giỏ hàng: thấy trạng thái mới "Đang giao hàng"');
+  await shop.locator('.recent-orders tr', { hasText: orderCode }).getByRole('link', { name: 'Xem chi tiết' }).click();
+  await shop.locator('.react-order, .order-details, h2', { hasText: orderCode }).first().waitFor({ timeout: 15000 });
+  ok(true, 'Bấm "Xem chi tiết": tự mở chi tiết đơn ở trang Tra cứu');
 } finally {
   await browser.close();
 }

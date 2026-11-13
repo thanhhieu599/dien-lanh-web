@@ -949,6 +949,10 @@ AD.demo = () => {
       const o = (shop.orders || []).find((x) => x.code === id);
       const ov = (db.overlay.orders[id] = db.overlay.orders[id] || {});
       if (o && patch.status && patch.status !== o.status) {
+        // Quy trình đơn: chỉ đi tiến, hủy khi chưa giao (PHẢI khớp orderNextStatuses ở server/shop.php)
+        const FLOW = ["pending", "confirmed", "shipping", "installing", "done"], i = FLOW.indexOf(o.status);
+        const next = i < 0 ? [] : [...FLOW.slice(i + 1), ...(["pending", "confirmed"].includes(o.status) ? ["cancelled"] : [])];
+        if (!next.includes(patch.status)) throw new Error("Không thể chuyển trạng thái này (trạng thái chỉ đi tiến, hủy khi chưa giao)");
         o.status = patch.status;
         // COD: giao xong = đã thu tiền (giống máy chủ PHP updateOrder)
         let note = "";

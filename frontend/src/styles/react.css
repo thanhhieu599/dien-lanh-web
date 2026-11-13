@@ -3167,3 +3167,79 @@ body{-webkit-font-smoothing:antialiased;color:#212121}
   outline: 2px solid #fff;
   outline-offset: -2px;
 }
+
+/* Đơn hàng đã đặt (giỏ hàng, tra cứu đơn) */
+.recent-orders {
+  margin: 20px 0 32px;
+}
+.recent-orders h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+.recent-orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.recent-orders-table th,
+.recent-orders-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.recent-orders-table th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 13px;
+}
+.recent-orders-table td small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+.recent-orders-table td:last-child {
+  text-align: right;
+}
+.success-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.success-saved {
+  margin: 16px 0;
+}
+.recent-orders {
+  min-width: 0;
+  max-width: 100%;
+}
+.recent-orders .react-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+@media (max-width: 640px) {
+  .recent-orders-table thead {
+    display: none;
+  }
+  .recent-orders-table,
+  .recent-orders-table tbody,
+  .recent-orders-table tr,
+  .recent-orders-table td {
+    display: block;
+    width: 100%;
+  }
+  .recent-orders-table tr {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .recent-orders-table td {
+    padding: 2px 0;
+    border: 0;
+    white-space: normal;
+    text-align: left !important;
+  }
+  .recent-orders-table td:last-child {
+    margin-top: 6px;
+  }
+}

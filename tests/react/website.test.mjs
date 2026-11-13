@@ -65,6 +65,12 @@ try {
   assert.equal(await page.locator('#cart-count').textContent(),'1');
   await page.locator('.h-cart').click();await page.waitForURL('**/gio-hang.html');await page.locator('.cart-item input[type=number]').fill('2');
   await page.getByRole('link',{name:'Tiến hành thanh toán'}).click();await page.waitForURL('**/thanh-toan.html');
+  // Chuyển khoản: hiện QR công ty (ACB) + đầy đủ tài khoản ngay ở bước thanh toán
+  await page.locator('input[value=bank]').check();
+  const bank=page.locator('.checkout-bank');await bank.waitFor();
+  for(const text of ['75575668','ACB','CONG TY TNHH KY NGHE LANH KHANH LE'])assert.ok((await bank.textContent()).includes(text),`Thiếu ${text}`);
+  assert.match(await bank.locator('img.checkout-qr').getAttribute('src'),/970416-75575668/);
+  await page.locator('input[value=cod]').check();
   await page.locator('[name=name]').fill('React Customer');await page.locator('[name=phone]').fill('0912345678');await page.locator('[name=province]').fill('TP.HCM');await page.locator('[name=district]').fill('Quận 1');await page.locator('[name=address]').fill('123 Test');await page.locator('[name=agree]').check();await page.getByRole('button',{name:'ĐẶT HÀNG',exact:true}).click();await page.waitForURL('**/dat-hang-thanh-cong.html?code=*');
   const order=await page.evaluate(()=>DT.store.get().orders[0]);assert.equal(order.items[0].qty,2);
   assert.ok((await page.locator('.react-order').textContent()).includes(order.code));

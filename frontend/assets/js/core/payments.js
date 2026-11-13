@@ -10,7 +10,9 @@ DT.payments = (() => {
   function qrUrl(amount, content) {
     const c = DT.config;
     if (!c.bankBin || !c.bankAccount) return '';
-    const q = new URLSearchParams({ amount: String(Math.round(amount)), addInfo: content, accountName: c.bankOwner || '' });
+    const q = new URLSearchParams({ accountName: c.bankOwner || '' });
+    if (Number(amount) > 0) q.set('amount', String(Math.round(amount)));
+    if (content) q.set('addInfo', content);
     return `https://img.vietqr.io/image/${encodeURIComponent(c.bankBin)}-${encodeURIComponent(c.bankAccount)}-compact2.png?${q}`;
   }
 

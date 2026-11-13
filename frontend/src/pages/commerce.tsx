@@ -399,12 +399,25 @@ export function CheckoutPage() {
                   ))}
               </div>
               {payment === "bank" && (
-                <div className="bank-info react-bank-info">
-                  <p>{dt.config.bankName}</p>
-                  <b>{dt.config.bankAccount}</b>
-                  <p>{dt.config.bankOwner}</p>
-                  <p>
-                    Mã QR và nội dung chuyển khoản sẽ hiển thị sau khi đặt hàng.
+                <div className="bank-info react-bank-info checkout-bank">
+                  {dt.payments.qrUrl(totals.total, "") && (
+                    <img
+                      className="checkout-qr"
+                      src={dt.payments.qrUrl(totals.total, "")}
+                      alt={`Mã QR chuyển khoản ${dt.config.bankName}`}
+                      width={180}
+                      height={180}
+                      loading="lazy"
+                    />
+                  )}
+                  <dl className="checkout-bank-acc">
+                    <div><dt>Ngân hàng</dt><dd>{dt.config.bankName}</dd></div>
+                    <div><dt>Số tài khoản</dt><dd><b>{dt.config.bankAccount}</b></dd></div>
+                    <div><dt>Chủ tài khoản</dt><dd>{dt.config.bankOwner || dt.config.company}</dd></div>
+                    <div><dt>Số tiền</dt><dd><b>{money(totals.total)}</b></dd></div>
+                  </dl>
+                  <p className="checkout-bank-note">
+                    Vui lòng bấm <b>Đặt hàng</b> trước, sau đó chuyển khoản với nội dung là <b>mã đơn hàng</b> (mã QR có sẵn số tiền và nội dung sẽ hiện ngay sau khi đặt) để cửa hàng xác nhận nhanh.
                   </p>
                 </div>
               )}
@@ -559,10 +572,12 @@ export function OrderDetails({
                 alt={`Mã QR thanh toán đơn ${order.code}`}
               />
             )}
-            <p>
-              {dt.config.bankName} · {dt.config.bankAccount} ·{" "}
-              {dt.config.bankOwner}
-            </p>
+            <dl className="checkout-bank-acc">
+              <div><dt>Ngân hàng</dt><dd>{dt.config.bankName}</dd></div>
+              <div><dt>Số tài khoản</dt><dd><b>{dt.config.bankAccount}</b></dd></div>
+              <div><dt>Chủ tài khoản</dt><dd>{dt.config.bankOwner || dt.config.company}</dd></div>
+              <div><dt>Số tiền</dt><dd><b>{money(order.total)}</b></dd></div>
+            </dl>
             <p>
               Nội dung: <b>{order.code}</b>
             </p>

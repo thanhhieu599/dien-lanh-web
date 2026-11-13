@@ -60,6 +60,12 @@ export function ContactPage() {
               <li>
                 <b>Giờ làm việc:</b>&nbsp;{dt.config.workingHours}
               </li>
+              {dt.config.bankAccount && (
+                <li>
+                  <b>Tài khoản:</b>&nbsp;{dt.config.bankAccount} – {dt.config.bankName}
+                  {dt.config.bankOwner ? ` (${dt.config.bankOwner})` : ""}
+                </li>
+              )}
             </ul>
             <ShopLink
               className="btn btn-outline btn-block"

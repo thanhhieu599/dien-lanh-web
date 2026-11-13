@@ -18,6 +18,13 @@ if ($command === 'migrate') {
             if (!in_array($table, $allowed, true)) continue;
             foreach ($rows as $row) if (!record($table, $row[pk($table)])) { put($table, $row, true); $inserted++; }
         }
+        // Cài đặt cũ còn tài khoản ngân hàng mẫu -> thay bằng tài khoản thật trong seed (không đụng tài khoản admin đã tự nhập)
+        $store = record('settings', 'store', true);
+        $real = array_values(array_filter($seed['settings'] ?? [], fn($r) => ($r['key'] ?? '') === 'store'))[0]['value'] ?? null;
+        if ($store && $real && in_array($store['value']['bankAccount'] ?? '', ['', '0071000000000'], true) && ($real['bankAccount'] ?? '') !== '0071000000000') {
+            foreach (['bankName','bankBin','bankAccount','bankOwner'] as $k) $store['value'][$k] = $real[$k] ?? '';
+            put('settings', $store); echo "Đã cập nhật tài khoản nhận chuyển khoản: {$real['bankName']} {$real['bankAccount']}.\n";
+        }
     });
     echo "Đã thêm {$inserted} bản ghi mẫu; giữ nguyên bản ghi đã có.\n";
 } elseif ($command === 'create-admin') {

@@ -3010,3 +3010,46 @@ body{-webkit-font-smoothing:antialiased;color:#212121}
   color: var(--muted, #666);
   font-weight: 500;
 }
+
+/* Chuyển khoản ở trang thanh toán: QR công ty + thông tin tài khoản */
+.checkout-bank {
+  display: grid !important;
+  grid-template-columns: 180px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.checkout-qr {
+  width: 180px;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+.checkout-bank-acc {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+.checkout-bank-acc div {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 8px;
+}
+.checkout-bank-acc dt {
+  color: var(--muted, #666);
+}
+.checkout-bank-acc dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.checkout-bank-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 13px;
+}
+@media (max-width: 560px) {
+  .checkout-bank {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+}

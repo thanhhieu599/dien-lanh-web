@@ -20,10 +20,10 @@ DT.config = {
   installFee: 300000,
   // Tài khoản nhận chuyển khoản (sửa trong Quản trị > Cài đặt cửa hàng). bankBin: mã ngân hàng theo chuẩn VietQR
   // (Vietcombank 970436, Techcombank 970407, MB 970422, ACB 970416, BIDV 970418, VietinBank 970415, VPBank 970432)
-  bankName: 'Vietcombank - CN TP.HCM',
-  bankBin: '970436',
-  bankAccount: '0071000000000',
-  bankOwner: 'TEN CONG TY',
+  bankName: 'ACB - Ngân hàng TMCP Á Châu, Chi nhánh Hồ Chí Minh',
+  bankBin: '970416',
+  bankAccount: '75575668',
+  bankOwner: 'CONG TY TNHH KY NGHE LANH KHANH LE',
 };
 
 // Ảnh trang Tầm nhìn & Sứ mệnh: quản lý trong Quản trị > Trang Tầm nhìn & Sứ mệnh.

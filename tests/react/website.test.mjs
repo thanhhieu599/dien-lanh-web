@@ -89,6 +89,12 @@ try {
   for(const route of ['index.html',`san-pham.html?id=${product.id}`,'danh-muc.html?cat=may-lanh','thanh-toan.html','hoi-dap.html']){await open(route);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),`Mobile overflow: ${route}`);}
   await open('index.html');await page.getByRole('button',{name:'Mở menu',exact:true}).click();await page.locator('.drawer.open').waitFor();await page.getByRole('button',{name:'Đóng menu'}).click();
   // Exercise the breakpoints where the legacy CSS previously hid filters or squeezed the grid.
+  // Dự án tiêu biểu: hiện toàn bộ, 12 dự án mỗi trang; nhiều hơn thì có số trang 1, 2… (không còn "Xem thêm")
+  await open('du-an.html');
+  { const total=await page.evaluate(()=>DT.projects.length);
+    assert.equal(await page.locator('.pj-grid > *').count(),Math.min(12,total));
+    assert.equal(await page.locator('.pj-grid ~ .collection-more, .pj-grid + button').count(),0,'Không còn nút Xem thêm');
+    if(total>12){await page.getByRole('button',{name:'Trang 2',exact:true}).click();assert.equal(await page.locator('.pj-grid > *').count(),Math.min(12,total-12));} }
   // Đã bỏ trang "Về công ty": không còn liên kết; link cũ chuyển sang Tầm nhìn & Sứ mệnh
   await open('index.html');
   assert.equal(await page.locator('a[href*="gioi-thieu"]').count(),0,'Không còn liên kết Về công ty');

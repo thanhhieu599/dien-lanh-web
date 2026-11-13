@@ -455,12 +455,15 @@ export function ProjectsPage({ slug }: { slug?: string }) {
                 </button>
               ))}
             </div>
-            <PagedList
+            {/* Hiện toàn bộ dự án, 12 dự án mỗi trang, chọn trang 1, 2… bên dưới */}
+            <NumberedList
+              key={industry}
               items={dt.projects.filter(
                 (p) => !industry || p.industry === industry,
               )}
               className="pj-grid"
               label="Dự án"
+              perPage={12}
               renderItem={(p) => <ProjectCard project={p} key={p.slug} />}
             />
           </>

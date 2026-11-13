@@ -556,8 +556,8 @@ try {
   await page.getByRole("button", { name: "Thử lại" }).click();
   await page.locator(".ar-table").waitFor();
 
-  // Quản trị viên: menu không còn mục "Khách hàng tiềm năng"
-  assert.equal(await page.locator("[data-nav=leads]").count(), 0, "Đã bỏ mục Khách hàng tiềm năng khỏi menu");
+  // Quản trị viên: yêu cầu từ website (liên hệ, báo giá, đặt lịch…) xem ở mục "Yêu cầu khách hàng"
+  assert.equal((await page.locator("[data-nav=leads]").innerText()).trim().startsWith("Yêu cầu khách hàng"), true);
   // Both UI routes and data writes must respect the current role.
   await page.locator("#demo-role").selectOption("sales");
   await page.waitForFunction(() => AD.me?.role === "sales");

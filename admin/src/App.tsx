@@ -247,7 +247,7 @@ function Shell({
     const refresh = async () => {
       const entries = await Promise.all(
         ["orders", "leads", "reviews"]
-          .filter((k) => allowed(user, k) && (k !== "leads" || user.role === "sales"))
+          .filter((k) => allowed(user, k))
           .map(async (k) => [
             k,
             (
@@ -343,7 +343,7 @@ function Shell({
             return items.length ? (
               <section key={group.title}>
                 <h2>{group.title}</h2>
-                {items.filter(([key]) => key !== "leads" || user.role === "sales").map(([key, icon, title]) => (
+                {items.map(([key, icon, title]) => (
                   <Link
                     to={`/${key}`}
                     data-nav={key}

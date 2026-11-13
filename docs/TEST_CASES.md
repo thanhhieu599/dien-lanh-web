@@ -126,6 +126,19 @@ Lỗi đã phát hiện và sửa khi viết bộ test này:
 | F18 | Hủy đơn tạo tay | Hoàn kho đúng (bỏ qua dòng tự nhập) |
 | Giao diện | Chọn khách có sẵn, chọn sản phẩm, sửa giá, thêm dòng tự nhập, VAT 10% cộng thêm, tạo đơn | Chuyển tới đơn mới, đúng tổng 2.310.000; hóa đơn tách 2.100.000 + 210.000 |
 
+## 7. Form nhập liệu website → lưu & xem được trong admin (`tests/server/forms.test.mjs`, MySQL thật)
+
+| Nơi nhập trên website | Xem trong admin |
+|---|---|
+| Đăng ký tài khoản, đăng nhập, sửa thông tin, sổ địa chỉ | Khách hàng (hồ sơ, địa chỉ) |
+| Liên hệ (trang Liên hệ) | Yêu cầu khách hàng – loại "Liên hệ" |
+| Báo giá dự án (trang Doanh nghiệp) | Yêu cầu khách hàng – "Báo giá dự án" (doanh nghiệp, MST, số lượng, nhu cầu) |
+| Đặt lịch dịch vụ, khảo sát công suất | Yêu cầu khách hàng – "Đặt lịch dịch vụ" |
+| Đăng ký nhận tin (chân trang) | Yêu cầu khách hàng – "Đăng ký nhận tin" |
+| Khung chat "Yêu cầu gọi lại" | Yêu cầu khách hàng – "Liên hệ" |
+| Đánh giá sản phẩm | Đánh giá (chờ duyệt) |
+| Đặt hàng | Đơn hàng |
+
 ## Máy chủ thật – cách chạy trên máy
 
 ```bash

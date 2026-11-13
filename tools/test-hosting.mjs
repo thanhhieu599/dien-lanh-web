@@ -14,6 +14,8 @@ try {
   // Nhiều khách đặt cùng lúc: món cuối, mã 1 lượt, bấm đặt hàng 2 lần
   if(!status)status=await run('tests/server/race.test.mjs');
   // Bảo mật: chèn mã độc (XSS) trên trình duyệt, rồi tấn công thử API (chạy cuối vì có gửi dồn dập để thử chống spam)
+  // Mọi form nhập liệu website (đăng ký, liên hệ, báo giá, đặt lịch, đánh giá, đặt hàng…) lưu và xem được trong admin
+  if(!status)status=await run('tests/server/forms.test.mjs');
   if(!status)status=await run('tests/server/xss-browser.test.mjs');
   if(!status)status=await run('tests/server/security.test.mjs');
   process.exitCode=status;

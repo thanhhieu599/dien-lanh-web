@@ -335,3 +335,23 @@
 .ar-side nav a[aria-current=page]{box-shadow:inset 3px 0 0 var(--ar-brand)}
 .ar-kpis>a:hover{border-color:var(--ar-brand)}
 .btn-danger,.ar-actions .ce-del{color:var(--ar-accent)}
+/* Thanh bên quản trị: nền xanh navy, chữ trắng; mục đang chọn nền xanh thương hiệu; số việc mới màu đỏ */
+.ar-side{background:var(--ar-navy);border-right:0;color:#fff;box-shadow:2px 0 12px rgb(15 43 79/12%)}
+.ar-side>.ar-brand{border-bottom:1px solid rgb(255 255 255/10%)}
+.ar-side .ar-brand strong{color:#fff}
+.ar-side .ar-brand span:not(.ar-icon){color:#a9c0de}
+.ar-side .ar-brand>.ar-icon{background:#fff;color:var(--ar-brand)}
+.ar-side nav{scrollbar-color:rgb(255 255 255/25%) transparent;scrollbar-width:thin}
+.ar-side nav h2{color:#8fa9cc;font-weight:700}
+.ar-side nav a{color:#dbe5f2}
+.ar-side nav a .ar-icon{color:#a9c0de}
+.ar-side nav a:hover{background:rgb(255 255 255/8%);color:#fff}
+.ar-side nav a:hover .ar-icon{color:#fff}
+.ar-side nav a[aria-current=page]{background:var(--ar-brand);color:#fff;font-weight:700;box-shadow:inset 3px 0 0 #fff}
+.ar-side nav a[aria-current=page] .ar-icon{color:#fff}
+.ar-side nav a:focus-visible{outline:2px solid #fff;outline-offset:-2px}
+.ar-side nav em{background:var(--ar-accent);color:#fff;font-weight:700;line-height:20px}
+.ar-side .ar-view-site{border-top:1px solid rgb(255 255 255/10%);color:#dbe5f2}
+.ar-side .ar-view-site:hover{color:#fff;background:rgb(255 255 255/6%)}
+.ar-side .ar-view-site .ar-icon{color:#a9c0de}
+.ar-side .ar-mobile-only{background:transparent;color:#fff;border-color:rgb(255 255 255/35%)}

@@ -52,15 +52,9 @@ export function ProductCard({
   const [quick, setQuick] = useState(false);
   const pct = dt.u.discount(p);
 
-  const badges: Record<string, [string, string]> = {
-    hot: ["Bán chạy", "hot"],
-    bestseller: ["Best seller", "hot"],
-    new: ["Mới", "new"],
-    premium: ["Cao cấp", "premium"],
-    project: ["Dự án", "b2b"],
-    b2b: ["Giá sỉ", "b2b"],
-  };
-  const badge = p.badges.map((b) => badges[b]).find(Boolean);
+  // Chỉ hiện nhãn "Bán chạy" khi sản phẩm bán nhiều (mặc định từ 300 lượt, sửa ở cấu hình bestsellerMin)
+  const badge: [string, string] | null =
+    Number(p.sold) >= Number(dt.config?.bestsellerMin ?? 300) ? ["Bán chạy", "hot"] : null;
   return (
     <article className="pcard" data-id={p.id}>
       <div className="pcard-media">

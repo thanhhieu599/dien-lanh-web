@@ -49,6 +49,12 @@ try {
     await page.click('.b2b-hero-actions a[href="#bao-gia"]');
     await page.waitForFunction(()=>{const r=document.querySelector('#bao-gia').getBoundingClientRect();return r.top<innerHeight&&r.bottom>0;});
     if (width===1440) {
+      // Nhãn trên thẻ sản phẩm: chỉ 'Bán chạy' khi bán từ 300 lượt; không còn 'Mới', 'Dự án', 'Best seller'
+      await open('danh-muc.html?cat=may-lanh');
+      const cards=await page.locator('.pgrid .pcard').evaluateAll(els=>els.map(el=>({sold:DT.api.productById(el.dataset.id)?.sold||0,badge:el.querySelector('.pcard-badge')?.textContent||''})));
+      assert.ok(cards.length>0);
+      for(const c of cards)assert.equal(c.badge,c.sold>=300?'Bán chạy':'',`Nhãn sai cho sản phẩm đã bán ${c.sold}`);
+      assert.ok(cards.some(c=>c.badge)&&cards.some(c=>!c.badge));
       // Thanh toán: chỉ có COD và chuyển khoản ngân hàng
       await page.evaluate(()=>DT.store.addToCart(DT.products[0].id,1));
       await open('thanh-toan.html');

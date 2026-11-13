@@ -3053,3 +3053,76 @@ body{-webkit-font-smoothing:antialiased;color:#212121}
     justify-items: start;
   }
 }
+
+/* Trang Doanh nghiệp: 1 khung trắng, mục cách nhau bằng đường kẻ, không ô viền lồng nhau */
+.section-box.b2b-panel {
+  padding: 0;
+}
+.b2b-block {
+  padding: 24px 28px;
+}
+.b2b-block + .b2b-block {
+  border-top: 1px solid var(--border);
+}
+.b2b-block h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  line-height: 1.35;
+}
+.b2b-panel .b2b-benefits {
+  gap: 14px 24px;
+}
+.b2b-panel .b2b-benefits li {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-weight: 500;
+}
+.b2b-panel .b2b-benefit-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #e8f0fb;
+  color: var(--primary);
+}
+.b2b-panel .b2b-benefit-icon .ic {
+  width: 18px;
+  height: 18px;
+}
+.b2b-panel .b2b-step-number {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 10px;
+  border-radius: 50%;
+  font-size: 14px;
+}
+.b2b-panel .b2b-timeline li:not(:last-child)::after {
+  top: 15px;
+  left: 40px;
+}
+.b2b-panel .b2b-sectors {
+  margin: 0;
+}
+.b2b-panel-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  padding: 18px 28px;
+  border-top: 1px solid var(--border);
+  background: #f7f9fc;
+  border-radius: 0 0 12px 12px;
+}
+@media (max-width: 640px) {
+  .b2b-block {
+    padding: 20px 16px;
+  }
+  .b2b-panel-foot {
+    padding: 16px;
+  }
+  .b2b-panel-foot .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

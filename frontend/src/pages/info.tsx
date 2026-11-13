@@ -120,50 +120,49 @@ export function QuotePage({ productId }: { productId?: string }) {
       <div className="container">
         <div className="quote-layout b2b-layout">
           <div className="b2b-main">
-            <section className="section-box b2b-card" aria-labelledby="b2b-why">
-              <h2 id="b2b-why">Vì sao doanh nghiệp chọn chúng tôi</h2>
-              <ul className="b2b-benefits">
-                {(content.points as string[]).slice(0, 6).map((p, i) => (
-                  <li key={i}>
-                    <span className="b2b-benefit-icon"><Icon name={pointIcons[i % pointIcons.length]} /></span>
-                    <span>{p}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-            <section className="section-box b2b-card" aria-labelledby="b2b-steps">
-              <div className="b2b-card-head">
+            {/* Một khung duy nhất, các mục cách nhau bằng đường kẻ mảnh (không lồng khung) */}
+            <div className="section-box b2b-panel">
+              <section className="b2b-block" aria-labelledby="b2b-why">
+                <h2 id="b2b-why">Vì sao doanh nghiệp chọn chúng tôi</h2>
+                <ul className="b2b-benefits">
+                  {(content.points as string[]).slice(0, 6).map((p, i) => (
+                    <li key={i}>
+                      <span className="b2b-benefit-icon"><Icon name={pointIcons[i % pointIcons.length]} /></span>
+                      <span>{p}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+              <section className="b2b-block" aria-labelledby="b2b-steps">
                 <h2 id="b2b-steps">Quy trình triển khai</h2>
-                <span>{steps.length} bước đồng hành cùng bạn</span>
+                <ol className="b2b-timeline">
+                  {steps.map(([title, sub], index) => (
+                    <li key={title}>
+                      <span className="b2b-step-number" aria-hidden="true">{index + 1}</span>
+                      <h3>{title}</h3>
+                      <p>{sub}</p>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+              <section className="b2b-block" aria-labelledby="b2b-sectors">
+                <h2 id="b2b-sectors">Lĩnh vực phục vụ</h2>
+                <ul className="b2b-sectors">
+                  {["Nhà máy FDI", "Nhà xưởng sản xuất", "Văn phòng – tòa nhà", "Nhà hàng – bếp công nghiệp", "Chuỗi bán lẻ – showroom", "Trường học – bệnh viện"].map((name) => (
+                    <li key={name}><Icon name="check" />{name}</li>
+                  ))}
+                </ul>
+              </section>
+              <div className="b2b-panel-foot">
+                <a className="b2b-phone" href={`tel:${dt.u.tel(hotline)}`}>
+                  <span className="b2b-phone-icon"><Icon name="headset" /></span>
+                  <span><small>Hotline doanh nghiệp</small><strong>{hotline}</strong></span>
+                </a>
+                <ShopLink className="btn btn-outline" href="du-an.html">
+                  Xem dự án tiêu biểu <Icon name="right" />
+                </ShopLink>
               </div>
-              <ol className="b2b-timeline">
-                {steps.map(([title, sub], index) => (
-                  <li key={title}>
-                    <span className="b2b-step-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
-                    <h3>{title}</h3>
-                    <p>{sub}</p>
-                  </li>
-                ))}
-              </ol>
-            </section>
-            <section className="section-box b2b-card" aria-labelledby="b2b-sectors">
-              <h2 id="b2b-sectors">Lĩnh vực phục vụ</h2>
-              <ul className="b2b-sectors">
-                {["Nhà máy FDI", "Nhà xưởng sản xuất", "Văn phòng – tòa nhà", "Nhà hàng – bếp công nghiệp", "Chuỗi bán lẻ – showroom", "Trường học – bệnh viện"].map((name) => (
-                  <li key={name}><Icon name="check" />{name}</li>
-                ))}
-              </ul>
-            </section>
-            <section className="section-box b2b-contact">
-              <a className="b2b-phone" href={`tel:${dt.u.tel(hotline)}`}>
-                <span className="b2b-phone-icon"><Icon name="headset" /></span>
-                <span><small>Hotline doanh nghiệp</small><strong>{hotline}</strong></span>
-              </a>
-              <p>Cần xem năng lực thi công trước khi gửi yêu cầu?</p>
-              <ShopLink className="btn btn-outline" href="du-an.html">
-                Xem dự án tiêu biểu <Icon name="right" />
-              </ShopLink>
-            </section>
+            </div>
           </div>
           <aside className="b2b-aside" id="bao-gia">
             <LeadForm type="b2b-quote" title="Nhận báo giá dự án" productId={productId} />

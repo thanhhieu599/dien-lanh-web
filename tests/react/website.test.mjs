@@ -89,9 +89,13 @@ try {
   for(const route of ['index.html',`san-pham.html?id=${product.id}`,'danh-muc.html?cat=may-lanh','thanh-toan.html','hoi-dap.html']){await open(route);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),`Mobile overflow: ${route}`);}
   await open('index.html');await page.getByRole('button',{name:'Mở menu',exact:true}).click();await page.locator('.drawer.open').waitFor();await page.getByRole('button',{name:'Đóng menu'}).click();
   // Exercise the breakpoints where the legacy CSS previously hid filters or squeezed the grid.
+  // Đã bỏ trang "Về công ty": không còn liên kết; link cũ chuyển sang Tầm nhìn & Sứ mệnh
+  await open('index.html');
+  assert.equal(await page.locator('a[href*="gioi-thieu"]').count(),0,'Không còn liên kết Về công ty');
+  await open('gioi-thieu.html');await page.waitForURL('**/tam-nhin-su-menh.html');
   for(const width of [320,768,900,1024,1440]){
     await page.setViewportSize({width,height:900});
-    for(const route of ['danh-muc.html?cat=may-lanh','tin-tuc.html','du-an.html','gioi-thieu.html','he-thong-cua-hang.html','gio-hang.html']){
+    for(const route of ['danh-muc.html?cat=may-lanh','tin-tuc.html','du-an.html','tam-nhin-su-menh.html','he-thong-cua-hang.html','gio-hang.html']){
       await open(route);
       const issues=await page.evaluate(()=>{
         const issues=[];

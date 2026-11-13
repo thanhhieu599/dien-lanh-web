@@ -1,5 +1,5 @@
 import { Component, Suspense, lazy, useEffect, type ReactNode } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { ShopLayout } from './layouts/ShopLayout';
 import { Empty } from './components/common';
 import { dt } from './services/runtime';
@@ -69,7 +69,8 @@ function CurrentPage() {
     case 'dich-vu.html':return <Services/>;
     case 'he-thong-cua-hang.html':return <Stores/>;
     case 'chinh-sach.html':return <Policy type={query.get('type') || ''}/>;
-    case 'gioi-thieu.html':return <About/>;
+    // Trang 'Về công ty' đã bỏ: link cũ chuyển sang Tầm nhìn & Sứ mệnh
+    case 'gioi-thieu.html':return <Navigate to={`/tam-nhin-su-menh.html${search}`} replace/>;
     case 'tam-nhin-su-menh.html':return <About vision/>;
     case 'thuong-hieu.html':return <Brands id={query.get('id') || undefined}/>;
     case 'tin-tuc.html':return <Blog/>;

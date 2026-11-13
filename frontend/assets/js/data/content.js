@@ -264,7 +264,7 @@ DT.siteContentDefaults = {
   story: {
     kicker: 'Về {ten}', title: 'Kiến tạo không gian *mát lành, bền vững* cho mọi công trình Việt',
     stats: [{ value: '10+', label: 'Năm kinh nghiệm' }, { value: '50.000+', label: 'Khách hàng' }, { value: '500+', label: 'Dự án doanh nghiệp' }],
-    btn: 'Xem Tầm nhìn & Sứ mệnh', btnHref: 'tam-nhin-su-menh.html', link: 'Giới thiệu công ty', linkHref: 'gioi-thieu.html',
+    btn: 'Xem Tầm nhìn & Sứ mệnh', btnHref: 'tam-nhin-su-menh.html',
   },
   b2b: {
     title: 'Giải pháp điều hòa & điện lạnh cho doanh nghiệp',

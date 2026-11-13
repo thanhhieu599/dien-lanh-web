@@ -143,7 +143,6 @@ export function ShopLayout({ children }: { children: ReactNode }) {
       items: [
         { title: "Báo giá dự án", href: "bao-gia-du-an.html" },
         { title: "Dự án tiêu biểu", href: "du-an.html" },
-        { title: "Về công ty", href: "gioi-thieu.html" },
         { title: "Tầm nhìn & Sứ mệnh", href: "tam-nhin-su-menh.html" },
         { title: "Hệ thống cửa hàng", href: "he-thong-cua-hang.html" },
         { title: "Chính sách", href: "chinh-sach.html" },
@@ -590,7 +589,6 @@ export function ShopLayout({ children }: { children: ReactNode }) {
               <h4>Về {config.name}</h4>
               <PagedList
                 items={[
-                  { title: "Giới thiệu công ty", href: "gioi-thieu.html" },
                   {
                     title: "Tầm nhìn & Sứ mệnh",
                     href: "tam-nhin-su-menh.html",

@@ -215,6 +215,7 @@ export function ShopLayout({ children }: { children: ReactNode }) {
       <div id="site-header">
         <div className="topbar">
           <div className="container">
+            <div className="topbar-left"></div>
             <nav className="topbar-right">
               <ShopLink href="tra-cuu-don-hang.html">
                 <Icon name="truck" /> Tra cứu đơn hàng

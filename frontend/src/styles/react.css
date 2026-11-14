@@ -3304,3 +3304,13 @@ body{-webkit-font-smoothing:antialiased;color:#212121}
 .contact-row dd a:hover { text-decoration: underline; }
 .contact-strong { font-weight: 700; }
 .contact-muted { color: var(--muted, #6b7280); font-size: 13px; }
+.contact-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.contact-map { margin: 0; padding: 24px; }
+@media (max-width: 640px) { .contact-map { padding: 16px; } }
+.contact-map-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.contact-map-head h3 { margin: 0; }
+.contact-map-head .btn { display: inline-flex; align-items: center; gap: 6px; }
+.contact-map-head .ic { width: 16px; height: 16px; }
+.contact-map-frame { position: relative; height: 340px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border, #e3e6ea); background: var(--primary-tint, #f6f8fb); }
+.contact-map-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+@media (max-width: 640px) { .contact-map-frame { height: 260px; } }

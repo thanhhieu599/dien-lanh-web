@@ -23,7 +23,33 @@ export function ContactPage() {
       </section>
       <div className="container">
         <div className="two-col">
-          <LeadForm title="Gửi tin nhắn cho chúng tôi" />
+          <div className="contact-main">
+            <LeadForm title="Gửi tin nhắn cho chúng tôi" />
+            {dt.config.address && (
+              <section className="section-box contact-map">
+                <div className="contact-map-head">
+                  <h3>Bản đồ đường đi</h3>
+                  <a
+                    className="btn btn-outline btn-sm"
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dt.config.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Icon name="pin" />
+                    Chỉ đường
+                  </a>
+                </div>
+                <div className="contact-map-frame">
+                  <iframe
+                    loading="lazy"
+                    title={`Bản đồ ${dt.config.company || "cửa hàng"}`}
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://maps.google.com/maps?q=${encodeURIComponent(dt.config.address)}&output=embed`}
+                  />
+                </div>
+              </section>
+            )}
+          </div>
           <aside className="section-box">
             <h3>Thông tin liên hệ</h3>
             <p className="contact-company">{dt.config.company}</p>

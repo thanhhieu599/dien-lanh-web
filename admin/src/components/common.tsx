@@ -25,3 +25,10 @@ export const statuses:Record<string,string>={pending:'Chờ xác nhận',confirm
 const tone=(v:any)=>['done','paid','approved','won','Đang hiển thị'].includes(v)?'positive':['failed','rejected','cancelled','lost','spam','refunded'].includes(v)?'negative':['pending','new','unpaid','partial'].includes(v)?'warn':['shipping','installing','quoted'].includes(v)?'info':'';
 export function Badge({value}:{value:any}){return <span className={`ar-badge ${tone(value)}`}>{statuses[value]||String(value??'—')}</span>;}
 export function DetailLink({resource,row,label}:{resource:string;row:Row;label?:string}){return <Link to={`/${resource}/${encodeURIComponent(row[ad.PK[resource]||'id'])}`}>{label || row.name||row.title||row.code||row.id}</Link>;}
+// Ô nhập tiền: gõ số trực tiếp, tự thêm dấu chấm hàng nghìn, bỏ số 0 đứng đầu, bấm vào là chọn hết để gõ đè
+export function MoneyInput({value,onChange,...rest}:{value:number|'';onChange:(v:number)=>void}&Omit<React.InputHTMLAttributes<HTMLInputElement>,'value'|'onChange'|'type'>){
+  const text=value===''||!Number(value)?'':Number(value).toLocaleString('vi-VN');
+  return <input {...rest} type="text" inputMode="numeric" autoComplete="off" placeholder={rest.placeholder??'0'} value={text}
+    onFocus={e=>{e.currentTarget.select();rest.onFocus?.(e);}}
+    onChange={e=>onChange(Number(e.target.value.replace(/\D/g,'').slice(0,13))||0)}/>;
+}

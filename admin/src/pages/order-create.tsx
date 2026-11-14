@@ -5,7 +5,7 @@ import {Link, useNavigate} from 'react-router-dom';
 import {ad, money} from '../services/runtime';
 import {loadCache} from '../services/runtime';
 import {adminOrderTotals, createOrder, VAT_RATES, type OrderLine} from '../services/orders';
-import {Action, Head, Panel, useNotice} from '../components/common';
+import {Action, Head, MoneyInput, Panel, useNotice} from '../components/common';
 import {ProductPicker} from '../components/stock';
 import type {Row} from '../types';
 
@@ -135,15 +135,15 @@ export function OrderCreate() {
         <td><input aria-label={`SKU dòng ${i + 1}`} value={l.sku} onChange={(e) => setLine(i, {sku: e.target.value})}/></td>
         <td><input aria-label={`Đơn vị dòng ${i + 1}`} value={l.unit} onChange={(e) => setLine(i, {unit: e.target.value})}/></td>
         <td><input aria-label={`Số lượng dòng ${i + 1}`} type="number" min={1} step={1} value={l.qty} onChange={(e) => setLine(i, {qty: e.target.value === '' ? ('' as unknown as number) : Number(e.target.value)})}/></td>
-        <td><input aria-label={`Đơn giá dòng ${i + 1}`} type="number" min={0} step={1000} value={l.price} onChange={(e) => setLine(i, {price: e.target.value === '' ? ('' as unknown as number) : Number(e.target.value)})}/></td>
+        <td><MoneyInput aria-label={`Đơn giá dòng ${i + 1}`} value={l.price} onChange={(v) => setLine(i, {price: v})}/></td>
         <td>{money(num(l.qty) * num(l.price))}</td>
         <td><button type="button" className="btn btn-light" aria-label={`Bỏ dòng ${i + 1}`} onClick={() => setLines(lines.filter((_, k) => k !== i))}>×</button></td>
       </tr>)}</tbody></table></div> : <p className="inv-muted">Chưa có sản phẩm. Tìm sản phẩm ở ô phía trên hoặc thêm dòng tự nhập.</p>}
     <div className="inv-totals">
       <div><span>Tổng tiền hàng</span><b>{money(t.goods)}</b></div>
-      <div><span>Phí lắp đặt</span><input aria-label="Phí lắp đặt" type="number" min={0} step={1000} value={install} onChange={(e) => setInstall(Number(e.target.value))}/></div>
-      <div><span>Phí giao hàng</span><input aria-label="Phí giao hàng" type="number" min={0} step={1000} value={shipping} onChange={(e) => setShipping(Number(e.target.value))}/></div>
-      <div><span>Chiết khấu</span><input aria-label="Chiết khấu" type="number" min={0} step={1000} value={discount} onChange={(e) => setDiscount(Number(e.target.value))}/></div>
+      <div><span>Phí lắp đặt</span><MoneyInput aria-label="Phí lắp đặt" value={install} onChange={setInstall}/></div>
+      <div><span>Phí giao hàng</span><MoneyInput aria-label="Phí giao hàng" value={shipping} onChange={setShipping}/></div>
+      <div><span>Chiết khấu</span><MoneyInput aria-label="Chiết khấu" value={discount} onChange={setDiscount}/></div>
       <div><span>Thuế GTGT</span><select aria-label="Thuế suất GTGT" value={vatRate} onChange={(e) => setVatRate(Number(e.target.value))}>{VAT_RATES.map(([v, label]) => <option key={v} value={v}>{label}</option>)}</select></div>
       {vatRate > 0 && <div><span>Cách tính thuế</span><select aria-label="Cách tính thuế" value={vatIncluded ? 'in' : 'out'} onChange={(e) => setVatIncluded(e.target.value === 'in')}><option value="in">Giá đã gồm VAT</option><option value="out">Chưa gồm VAT (cộng thêm)</option></select></div>}
       <div><span>Tiền thuế GTGT{vatIncluded && vatRate > 0 ? ' (đã gồm trong giá)' : ''}</span><b>{money(t.vat)}</b></div>

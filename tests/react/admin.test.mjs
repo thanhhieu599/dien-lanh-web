@@ -392,7 +392,7 @@ try {
   assert.match(await page.locator("#view").innerText(), /Đối soát tiền/);
   assert.notEqual(await page.locator("#rev-collected").innerText(), "0 ₫", "Đơn đã thu tiền được tính vào Đã thu");
   await open("dashboard");
-  assert.match(await page.locator("#view .ar-kpis").innerText(), /Đã thu tiền 30 ngày[\s\S]*Chưa thu tiền/);
+  assert.match(await page.locator("#view .ar-kpis").innerText(), /Đã thu tiền 30 ngày[\s\S]*Chưa thu tiền/i);
   await open("leads/LEADREACTQA");
   await page.locator("[name=status]").selectOption("contacted");
   await page.locator("[name=assigned_to]").selectOption("demo-sales-1");

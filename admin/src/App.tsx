@@ -408,6 +408,7 @@ function Shell({
               />
             </form>
           )}
+          <span className="ar-avatar" aria-hidden="true">{String(user.name || "A").trim().charAt(0).toUpperCase()}</span>
           <div className="ar-user">
             <strong>{user.name}</strong>
             <small>{roles[user.role].label}</small>

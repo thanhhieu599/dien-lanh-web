@@ -169,6 +169,22 @@ try {
   const merged = await admin.evaluate(async (p) => (await AD.db.list('crm_customer_summary', { filters: [['phone', 'eq', p]] })).rows, buyer);
   ok(merged.length === 1 && merged[0].profile_id && merged[0].registered_at && merged[0].order_count >= 1, 'Khách mua trước rồi đăng ký: admin cập nhật vào đúng hồ sơ khách cũ (1 dòng, giữ đơn đã mua)');
   ok(/Đăng ký tài khoản/.test(await view(`customers/${encodeURIComponent(merged[0].id)}`)), 'Chi tiết khách hàng hiện ngày đăng ký tài khoản');
+
+  // 8) Cùng trình duyệt: đang mở admin, đăng nhập tài khoản khách bên website → admin vẫn tải ảnh được (phiên tách riêng)
+  await view('vision');
+  const web = await adminCtx.newPage();
+  await web.goto(`${base}frontend/tai-khoan.html#login`); await web.waitForLoadState('networkidle');
+  if (await web.locator('#login-form').count() === 0) { await web.evaluate(() => DT.store.logout()); await web.goto(`${base}frontend/tai-khoan.html#login`); await web.waitForLoadState('networkidle'); }
+  await web.locator('#login-form [name=phone]').fill(member); await web.locator('#login-form [name=password]').fill('MatKhau!2026');
+  await web.locator('#login-form button').click(); await web.locator('.account').waitFor({ timeout: 15000 });
+  await admin.bringToFront();
+  const png = await admin.evaluate(async () => { const c = document.createElement('canvas'); c.width = 40; c.height = 30; const g = c.getContext('2d'); g.fillStyle = '#1A5BA6'; g.fillRect(0, 0, 40, 30); return Array.from(new Uint8Array(await (await new Promise((r) => c.toBlob(r, 'image/png'))).arrayBuffer())); }).then((a) => Buffer.from(a));
+  const up = admin.waitForResponse((r) => r.url().includes('media') && r.request().method() === 'POST');
+  await admin.locator('.ar-slot input[type=file]').first().setInputFiles({ name: 'tam-nhin.png', mimeType: 'image/png', buffer: png });
+  ok((await up).status() === 201, 'Đang đăng nhập tài khoản khách bên website (cùng trình duyệt): admin vẫn tải ảnh trang Tầm nhìn được');
+  ok((await admin.evaluate(async () => (await AD.db.me())?.role)) === 'admin', 'Phiên admin giữ nguyên vai trò quản trị');
+  await web.evaluate(() => DT.store.logout());
+  ok((await admin.evaluate(async () => (await AD.db.me())?.role)) === 'admin', 'Khách đăng xuất bên website: admin vẫn đăng nhập và làm việc bình thường');
 } finally {
   await browser.close();
 }

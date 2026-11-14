@@ -15,7 +15,7 @@ function client() {
     if (csrf) h['X-DT-Request'] = '1';
     if (cookie) h.Cookie = cookie;
     const res = await fetch(url, { method, headers: h, body: raw ?? (body === undefined ? undefined : JSON.stringify(body)), redirect: 'manual' });
-    const set = res.headers.getSetCookie().filter((c) => c.startsWith('dt_session=')).pop();
+    const set = res.headers.getSetCookie().filter((c) => /^dt_(session|admin)=/.test(c)).pop();
     if (set) cookie = set.split(';')[0];
     const text = await res.text();
     let data = null; try { data = JSON.parse(text); } catch { /* không phải JSON */ }

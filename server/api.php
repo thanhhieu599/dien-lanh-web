@@ -7,7 +7,9 @@ require __DIR__ . '/shop.php';
 try {
     ini_set('session.use_strict_mode', '1');
     ini_set('session.gc_maxlifetime', '28800');
-    session_name('dt_session');
+    // Phiên quản trị và phiên khách trên website tách riêng: đăng nhập/đăng xuất tài khoản khách bên web
+    // (cùng trình duyệt) không làm mất quyền của trang quản trị đang mở, và ngược lại
+    session_name(($_SERVER['HTTP_X_DT_ADMIN'] ?? '') === '1' ? 'dt_admin' : 'dt_session');
     session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'secure' => config()['secure_cookies'], 'httponly' => true, 'samesite' => 'Lax']);
     session_start();
     if (isset($_SESSION['expires_at']) && $_SESSION['expires_at'] < time()) $_SESSION = [];

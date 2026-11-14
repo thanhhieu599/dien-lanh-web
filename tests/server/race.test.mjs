@@ -15,7 +15,7 @@ function client() {
     const headers = { 'Content-Type': 'application/json', 'X-DT-Request': '1', 'X-DT-Admin': '1' };
     if (cookie) headers.Cookie = cookie;
     const res = await fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
-    const set = res.headers.getSetCookie().filter((c) => c.startsWith('dt_session=')).pop();
+    const set = res.headers.getSetCookie().filter((c) => /^dt_(session|admin)=/.test(c)).pop();
     if (set) cookie = set.split(';')[0];
     return { status: res.status, data: await res.json().catch(() => null) };
   };

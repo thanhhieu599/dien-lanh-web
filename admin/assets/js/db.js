@@ -194,8 +194,10 @@ AD.mysql = (cfg) => {
       res = await fetch(DT.apiEndpoint(`/media/${path}`), {
         method: "POST",
         body: blob,
+        credentials: "same-origin",
         headers: {
           "X-DT-Request": "1",
+          "X-DT-Admin": "1",
           "Content-Type": blob.type,
           "x-upsert": "true",
         },
@@ -220,7 +222,8 @@ AD.mysql = (cfg) => {
     const t = await token();
     await fetch(DT.apiEndpoint(`/media/${decodeURIComponent(url.slice(prefix.length))}`), {
       method: "DELETE",
-      headers: { "X-DT-Request": "1" },
+      credentials: "same-origin",
+      headers: { "X-DT-Request": "1", "X-DT-Admin": "1" },
     }).catch(() => {});
   }
 

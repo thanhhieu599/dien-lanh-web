@@ -170,3 +170,4 @@ TEST_ADMIN_PHONE=0912345698 TEST_ADMIN_PASSWORD='MysqlTest!2026' npm run test:ho
 | F-T2 | Đơn hàng admin sửa trạng thái → lưu người sửa, chi tiết đơn hiện "Sửa lần cuối" | forms.test.mjs |
 | F-T3 | Khách mua trước (chưa có tài khoản) rồi đăng ký cùng SĐT → gộp vào hồ sơ cũ, giữ lịch sử đơn | forms.test.mjs |
 | F-T4 | Lỗi ghi thống kê đăng nhập không bao giờ chặn việc đăng nhập | hosting-browser / mysql-api |
+| F-T5 | Cùng trình duyệt: đang mở admin, đăng nhập/đăng xuất tài khoản khách bên website → admin vẫn tải ảnh Tầm nhìn, vẫn giữ quyền quản trị (cookie `dt_admin` tách khỏi `dt_session`) | forms.test.mjs |

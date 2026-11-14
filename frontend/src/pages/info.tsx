@@ -26,47 +26,36 @@ export function ContactPage() {
           <LeadForm title="Gửi tin nhắn cho chúng tôi" />
           <aside className="section-box">
             <h3>Thông tin liên hệ</h3>
-            <p><strong>{dt.config.company}</strong></p>
-            <ul className="check-list">
-              <li>
-                <b>MST:</b>&nbsp;{dt.config.taxCode}
-              </li>
-              <li>
-                <b>Địa chỉ:</b>&nbsp;{dt.config.address}
-              </li>
-              <li>
-                <b>Hotline:</b>&nbsp;
-                <a className="link" href={`tel:${dt.u.tel(dt.config.hotline)}`}>
-                  {dt.config.hotline}
-                </a>
-              </li>
-              {dt.config.hotlineB2B && (
-                <li>
-                  <b>Doanh nghiệp:</b>&nbsp;
-                  <a
-                    className="link"
-                    href={`tel:${dt.u.tel(dt.config.hotlineB2B)}`}
-                  >
-                    {dt.config.hotlineB2B}
-                  </a>
-                </li>
-              )}
-              <li>
-                <b>Email:</b>&nbsp;
-                <a className="link" href={`mailto:${dt.config.email}`}>
-                  {dt.config.email}
-                </a>
-              </li>
-              <li>
-                <b>Giờ làm việc:</b>&nbsp;{dt.config.workingHours}
-              </li>
-              {dt.config.bankAccount && (
-                <li>
-                  <b>Tài khoản:</b>&nbsp;{dt.config.bankAccount} – {dt.config.bankName}
-                  {dt.config.bankOwner ? ` (${dt.config.bankOwner})` : ""}
-                </li>
-              )}
-            </ul>
+            <p className="contact-company">{dt.config.company}</p>
+            <dl className="contact-info">
+              {(
+                [
+                  ["file", "Mã số thuế", dt.config.taxCode],
+                  ["pin", "Địa chỉ", dt.config.address],
+                  ["phone", "Hotline", dt.config.hotline && <a href={`tel:${dt.u.tel(dt.config.hotline)}`}>{dt.config.hotline}</a>],
+                  ["building", "Doanh nghiệp", dt.config.hotlineB2B && <a href={`tel:${dt.u.tel(dt.config.hotlineB2B)}`}>{dt.config.hotlineB2B}</a>],
+                  ["mail", "Email", dt.config.email && <a href={`mailto:${dt.config.email}`}>{dt.config.email}</a>],
+                  ["clock", "Giờ làm việc", dt.config.workingHours],
+                  ["card", "Tài khoản", dt.config.bankAccount && (
+                    <>
+                      <span className="contact-strong">{dt.config.bankAccount}</span>
+                      <span>{dt.config.bankName}</span>
+                      {dt.config.bankOwner && <span className="contact-muted">Chủ TK: {dt.config.bankOwner}</span>}
+                    </>
+                  )],
+                ] as const
+              )
+                .filter((r) => r[2])
+                .map(([icon, label, value]) => (
+                  <div className="contact-row" key={label}>
+                    <dt>
+                      <Icon name={icon} />
+                      {label}
+                    </dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))}
+            </dl>
             <ShopLink
               className="btn btn-outline btn-block"
               href="he-thong-cua-hang.html"

@@ -3290,3 +3290,17 @@ body{-webkit-font-smoothing:antialiased;color:#212121}
   font-weight: 600;
   color: var(--primary);
 }
+
+/* Trang Liên hệ – khối thông tin liên hệ */
+.contact-company { margin: 0 0 12px; font-weight: 700; color: var(--text, #1f2937); line-height: 1.45; }
+.contact-info { margin: 0 0 16px; }
+.contact-row { padding: 10px 0; border-top: 1px solid var(--border, #e5e7eb); }
+.contact-row:first-child { border-top: 0; padding-top: 0; }
+.contact-row dt { display: flex; align-items: flex-start; gap: 8px; margin: 0; font-size: 13px; font-weight: 600; color: var(--muted, #6b7280); line-height: 1.5; text-transform: none; }
+.contact-row dt .ic { flex: none; width: 16px; height: 16px; margin-top: 2px; color: var(--primary, #1a5ba6); }
+.contact-row dd { margin: 2px 0 0 24px; min-width: 0; font-size: 14px; color: var(--text, #1f2937); line-height: 1.5; overflow-wrap: anywhere; }
+.contact-row dd span { display: block; }
+.contact-row dd a { color: var(--primary, #1a5ba6); font-weight: 600; text-decoration: none; }
+.contact-row dd a:hover { text-decoration: underline; }
+.contact-strong { font-weight: 700; }
+.contact-muted { color: var(--muted, #6b7280); font-size: 13px; }

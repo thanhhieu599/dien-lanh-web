@@ -214,6 +214,7 @@ DT.store = (() => {
       } catch (e) {
         return { ok: false, msg: e.message };
       }
+      state.orders = []; // đổi tài khoản: không giữ đơn của người dùng trước trên máy này (đơn nằm trên máy chủ)
       save();
       return { ok: true };
     }
@@ -240,6 +241,7 @@ DT.store = (() => {
       } catch (e) {
         return { ok: false, msg: e.message };
       }
+      state.orders = []; // đổi tài khoản: không giữ đơn của người dùng trước trên máy này (đơn nằm trên máy chủ)
       save();
       return { ok: true };
     }
@@ -255,6 +257,8 @@ DT.store = (() => {
     // Xóa thông tin tài khoản trên máy trước, rồi mới báo máy chủ
     state.user = null;
     state.myOrders = [];
+    // Có máy chủ: đơn lưu trên máy chủ, xóa bản tạm trên trình duyệt. Demo: đơn chỉ có trên trình duyệt nên giữ lại
+    if (be()) state.orders = [];
     save();
     if (be()) await DT.backend.signOut();
   }
@@ -341,7 +345,8 @@ DT.store = (() => {
       info,
       user: state.user,
     });
-    state.orders.unshift(order);
+    // Ghi chủ đơn: đơn đặt khi đã đăng nhập chỉ hiện trong tài khoản đó, không hiện cho khách vãng lai
+    state.orders.unshift({ ...order, owner: state.user?.id || null });
     state.orders = state.orders.slice(0, 50);
     state.cart = [];
     state.coupon = null;
@@ -353,7 +358,7 @@ DT.store = (() => {
   function rememberOrder(o) {
     const i = state.orders.findIndex((x) => x.code === o.code);
     if (i >= 0) state.orders[i] = { ...state.orders[i], ...o };
-    else state.orders.unshift(o);
+    else state.orders.unshift({ ...o, owner: state.user?.id || null });
     save();
     return i >= 0 ? state.orders[i] : o;
   }

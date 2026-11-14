@@ -17,13 +17,20 @@ import type { Row, Product } from "../types";
 const PAY_LABEL: Row = { unpaid: "Chưa thanh toán", partial: "Thanh toán một phần", paid: "Đã thanh toán", refunded: "Đã hoàn tiền" };
 export function RecentOrders({ title = "Đơn hàng bạn đã đặt" }: { title?: string }) {
   useShop();
-  const local: Row[] = dt.store.get().orders || [];
-  const mine: Row[] = dt.store.myOrders ? dt.store.myOrders() : [];
+  // Đã đăng nhập: chỉ đơn của tài khoản (máy chủ + đơn vừa đặt bằng tài khoản này).
+  // Chưa đăng nhập: chỉ đơn khách vãng lai đặt trên trình duyệt này (danh sách được xóa khi đăng nhập / đăng xuất).
+  const user = dt.store.get().user;
+  const local: Row[] = (dt.store.get().orders || []).filter((o: Row) => (user ? o.owner && String(o.owner) === String(user.id) : !o.owner));
+  const mine: Row[] = user && dt.store.myOrders ? dt.store.myOrders() : [];
   const orders = [...local, ...mine.filter((m) => !local.some((o) => o.code === m.code))]
     .filter((o) => o?.code)
     .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
     .slice(0, 10);
   const [live, setLive] = useState<Record<string, Row>>({});
+  // Đã đăng nhập: tải danh sách đơn của tài khoản từ máy chủ (kể cả đơn đặt trên máy khác)
+  useEffect(() => {
+    if (user?.id && dt.store.syncMyOrders) dt.store.syncMyOrders().catch(() => {});
+  }, [user?.id]);
   const codes = orders.map((o) => o.code).join(",");
   useEffect(() => {
     let active = true;
@@ -222,6 +229,8 @@ export function CartPage() {
             </ShopLink>
           </aside>
         </div>
+        {/* Đơn đã đặt trên thiết bị này: khối riêng, rộng hết trang, dưới giỏ hàng */}
+        <RecentOrders />
       </div>
     </>
   );
@@ -248,7 +257,6 @@ function Totals({ totals }: { totals: Row }) {
       <div className="sum-total">
         <span>Tổng thanh toán</span>
         <b>{money(totals.total)}</b>
-        <RecentOrders />
       </div>
     </>
   );

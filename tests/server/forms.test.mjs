@@ -183,6 +183,10 @@ try {
   await admin.locator('.ar-slot input[type=file]').first().setInputFiles({ name: 'tam-nhin.png', mimeType: 'image/png', buffer: png });
   ok((await up).status() === 201, 'Đang đăng nhập tài khoản khách bên website (cùng trình duyệt): admin vẫn tải ảnh trang Tầm nhìn được');
   ok((await admin.evaluate(async () => (await AD.db.me())?.role)) === 'admin', 'Phiên admin giữ nguyên vai trò quản trị');
+  // Tài khoản chưa đặt đơn nào: không được thấy đơn của người khác từng đặt trên cùng trình duyệt
+  await web.evaluate(() => { const st = DT.store.get(); st.orders.unshift({ code: 'DTQAKHACHKHAC', total: 1000, owner: null, customer: { phone: '0900000001' } }); DT.store.save(); });
+  await web.goto(`${base}frontend/gio-hang.html`); await web.waitForLoadState('networkidle'); await web.waitForTimeout(800);
+  ok(!(await web.locator('body').innerText()).includes('DTQAKHACHKHAC'), 'Tài khoản chưa đặt đơn không thấy đơn của người khác trên cùng trình duyệt');
   await web.evaluate(() => DT.store.logout());
   ok((await admin.evaluate(async () => (await AD.db.me())?.role)) === 'admin', 'Khách đăng xuất bên website: admin vẫn đăng nhập và làm việc bình thường');
 } finally {

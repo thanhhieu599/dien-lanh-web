@@ -1,66 +1,170 @@
-import { useState } from 'react';
-import { dt, money, toast } from '../services/runtime';
-import { compute, ROOMS, SUN, DEFAULT_PRICE, BTU_PER_M3 } from '../services/calculator';
-import { Field } from '../components/forms';
-import { Icon, ShopLink, useMeta } from '../components/common';
-import { ProductSection } from '../components/products';
-import { LeadForm } from './content';
+import { useState } from "react";
+import { dt, money, toast } from "../services/runtime";
+import {
+  compute,
+  ROOMS,
+  SUN,
+  DEFAULT_PRICE,
+  BTU_PER_M3,
+} from "../services/calculator";
+import { Field } from "../components/forms";
+import { Icon, ShopLink, useMeta } from "../components/common";
+import { ProductSection } from "../components/products";
+import { LeadForm } from "./content";
 
-const clamp = (v: number, min: number, max: number) => (Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : min);
+const clamp = (v: number, min: number, max: number) =>
+  Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : min;
 // Link cũ dùng hệ số trần (1 / 1.15 / 1.3) – đổi sang mét
-const legacyHeight = (v: number) => (v > 0 && v < 2 ? ({ 1: 3, 1.15: 3.5, 1.3: 4 } as Record<number, number>)[v] || 3 : v);
-const legacySun = (v: string | null) => (v === '1' ? 'vua' : v === '1.2' || v === '1.35' ? 'nhieu' : v && SUN[v] ? v : 'vua');
+const legacyHeight = (v: number) =>
+  v > 0 && v < 2
+    ? ({ 1: 3, 1.15: 3.5, 1.3: 4 } as Record<number, number>)[v] || 3
+    : v;
+const legacySun = (v: string | null) =>
+  v === "1"
+    ? "vua"
+    : v === "1.2" || v === "1.35"
+      ? "nhieu"
+      : v && SUN[v]
+        ? v
+        : "vua";
 
 export function CalculatorPage() {
   const q = new URLSearchParams(location.search);
-  const [area, setArea] = useState(Number(q.get('dt')) || 18);
-  const [height, setHeight] = useState(legacyHeight(Number(q.get('tran'))) || 3);
-  const [sun, setSun] = useState(legacySun(q.get('nang')));
-  const [people, setPeople] = useState(Number(q.get('nguoi')) || 2);
-  const [room, setRoom] = useState(ROOMS[q.get('phong') || ''] ? (q.get('phong') as string) : 'ngu');
-  const [hours, setHours] = useState(Number(q.get('gio')) || 8);
-  const [price, setPrice] = useState(Number(q.get('giadien')) || DEFAULT_PRICE);
-  useMeta('Tính công suất máy lạnh theo diện tích');
+  const [area, setArea] = useState(Number(q.get("dt")) || 18);
+  const [height, setHeight] = useState(
+    legacyHeight(Number(q.get("tran"))) || 3,
+  );
+  const [sun, setSun] = useState(legacySun(q.get("nang")));
+  const [people, setPeople] = useState(Number(q.get("nguoi")) || 2);
+  const [room, setRoom] = useState(
+    ROOMS[q.get("phong") || ""] ? (q.get("phong") as string) : "ngu",
+  );
+  const [hours, setHours] = useState(Number(q.get("gio")) || 8);
+  const [price, setPrice] = useState(Number(q.get("giadien")) || DEFAULT_PRICE);
+  useMeta("Tính công suất máy lạnh theo diện tích");
   const valid = area >= 3 && area <= 500 && height >= 2 && height <= 8;
   const r = compute({ area, height, sun, people, room, hours, price });
-  const n = (v: number) => Math.round(v).toLocaleString('vi-VN');
+  const n = (v: number) => Math.round(v).toLocaleString("vi-VN");
   const matches = dt.products
-    .filter((p) => p.cat === 'may-lanh' && p.attrs?.capacity === r.hp)
-    .sort((a, b) => Number(b.attrs?.tech === 'Inverter') - Number(a.attrs?.tech === 'Inverter') || Number(b.sold || 0) - Number(a.sold || 0))
+    .filter((p) => p.cat === "may-lanh" && p.attrs?.capacity === r.hp)
+    .sort(
+      (a, b) =>
+        Number(b.attrs?.tech === "Inverter") -
+          Number(a.attrs?.tech === "Inverter") ||
+        Number(b.sold || 0) - Number(a.sold || 0),
+    )
     .slice(0, 5);
 
   async function share() {
-    const params = new URLSearchParams({ dt: String(area), tran: String(height), nang: sun, nguoi: String(people), phong: room, gio: String(hours), giadien: String(price) });
-    history.replaceState(null, '', `?${params}`);
-    try { await navigator.clipboard.writeText(location.href); toast('Đã sao chép liên kết'); } catch { toast('Bạn có thể sao chép liên kết trên thanh địa chỉ'); }
+    const params = new URLSearchParams({
+      dt: String(area),
+      tran: String(height),
+      nang: sun,
+      nguoi: String(people),
+      phong: room,
+      gio: String(hours),
+      giadien: String(price),
+    });
+    history.replaceState(null, "", `?${params}`);
+    try {
+      await navigator.clipboard.writeText(location.href);
+      toast("Đã sao chép liên kết");
+    } catch {
+      toast("Bạn có thể sao chép liên kết trên thanh địa chỉ");
+    }
   }
 
   return (
     <div className="container cps-page">
       <header className="cps-head">
         <h1>Tính công suất máy lạnh</h1>
-        <p>Nhập thông số phòng để biết tải lạnh (BTU/h), công suất máy phù hợp và tiền điện ước tính mỗi tháng.</p>
+        <p>
+          Nhập thông số phòng để biết tải lạnh (BTU/h), công suất máy phù hợp và
+          tiền điện ước tính mỗi tháng.
+        </p>
       </header>
       <div className="cps-layout">
-        <section className="section-box react-form cps-form" aria-label="Thông số phòng">
+        <section
+          className="section-box react-form cps-form"
+          aria-label="Thông số phòng"
+        >
           <h2 className="cps-title">Thông số phòng</h2>
           <div className="cps-fields">
-            <Field label="Diện tích phòng (m²)"><input type="number" inputMode="decimal" min={3} max={500} step="0.5" value={area || ''} onChange={(e) => setArea(Number(e.target.value))} /></Field>
-            <Field label="Chiều cao trần (m)"><input type="number" inputMode="decimal" min={2} max={8} step="0.1" value={height || ''} onChange={(e) => setHeight(Number(e.target.value))} /></Field>
+            <Field label="Diện tích phòng (m²)">
+              <input
+                type="number"
+                inputMode="decimal"
+                min={3}
+                max={500}
+                step="0.5"
+                value={area || ""}
+                onChange={(e) => setArea(Number(e.target.value))}
+              />
+            </Field>
+            <Field label="Chiều cao trần (m)">
+              <input
+                type="number"
+                inputMode="decimal"
+                min={2}
+                max={8}
+                step="0.1"
+                value={height || ""}
+                onChange={(e) => setHeight(Number(e.target.value))}
+              />
+            </Field>
             <Field label="Loại phòng">
               <select value={room} onChange={(e) => setRoom(e.target.value)}>
-                {Object.entries(ROOMS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                {Object.entries(ROOMS).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v.label}
+                  </option>
+                ))}
               </select>
             </Field>
             <Field label="Mức nắng của phòng">
               <select value={sun} onChange={(e) => setSun(e.target.value)}>
-                {Object.entries(SUN).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                {Object.entries(SUN).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v.label}
+                  </option>
+                ))}
               </select>
             </Field>
-            <Field label="Số người thường xuyên"><input type="number" min={1} max={100} value={people} onChange={(e) => setPeople(clamp(Number(e.target.value), 1, 100))} /></Field>
-            <Field label="Giờ dùng mỗi ngày"><input type="number" min={1} max={24} value={hours} onChange={(e) => setHours(clamp(Number(e.target.value), 1, 24))} /></Field>
-            <Field label="Giá điện (đ/kWh)"><input type="number" min={500} max={10000} step="1" value={price || ''} onChange={(e) => setPrice(Number(e.target.value))} /></Field>
-            <p className="cps-hint"><Icon name="alert" />Mặc định ≈ giá bậc 4 điện sinh hoạt EVN (chưa VAT). Nhập giá trên hóa đơn để tính sát hơn.</p>
+            <Field label="Số người thường xuyên">
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={people}
+                onChange={(e) =>
+                  setPeople(clamp(Number(e.target.value), 1, 100))
+                }
+              />
+            </Field>
+            <Field label="Giờ dùng mỗi ngày">
+              <input
+                type="number"
+                min={1}
+                max={24}
+                value={hours}
+                onChange={(e) => setHours(clamp(Number(e.target.value), 1, 24))}
+              />
+            </Field>
+            <Field label="Giá điện (đ/kWh)">
+              <input
+                type="number"
+                min={500}
+                max={10000}
+                step="1"
+                value={price || ""}
+                onChange={(e) => setPrice(Number(e.target.value))}
+              />
+            </Field>
+            <p className="cps-hint">
+              <Icon name="alert" />
+              Mặc định ≈ giá bậc 4 điện sinh hoạt EVN (chưa VAT). Nhập giá trên
+              hóa đơn để tính sát hơn.
+            </p>
           </div>
         </section>
 
@@ -68,50 +172,86 @@ export function CalculatorPage() {
           {valid ? (
             <>
               <span className="cps-label">Công suất đề xuất</span>
-              <div className="cps-hp">{r.units > 1 ? `${r.units} máy × ` : ''}{r.hp}</div>
-              <div className="cps-sub">Máy {n(r.capacity)} BTU/h · tải lạnh của phòng ≈ <b>{n(r.btu)} BTU/h</b></div>
+              <div className="cps-hp">
+                {r.units > 1 ? `${r.units} máy × ` : ""}
+                {r.hp}
+              </div>
+              <div className="cps-sub">
+                Máy {n(r.capacity)} BTU/h · tải lạnh của phòng ≈{" "}
+                <b>{n(r.btu)} BTU/h</b>
+              </div>
               <dl className="cps-lines">
                 {r.lines.map((l) => (
-                  <div key={l.label}><dt>{l.label}</dt><dd>{l.btu >= 0 ? '+' : '−'}{n(Math.abs(l.btu))}</dd></div>
+                  <div key={l.label}>
+                    <dt>{l.label}</dt>
+                    <dd>
+                      {l.btu >= 0 ? "+" : "−"}
+                      {n(Math.abs(l.btu))}
+                    </dd>
+                  </div>
                 ))}
-                <div className="cps-total"><dt>Tổng tải lạnh</dt><dd>{n(r.btu)} BTU/h</dd></div>
+                <div className="cps-total">
+                  <dt>Tổng tải lạnh</dt>
+                  <dd>{n(r.btu)} BTU/h</dd>
+                </div>
               </dl>
               <div className="cps-cost">
-                <div><span>Inverter</span><b>{money(r.costInv)}</b><small>{n(r.kwhInv)} kWh/tháng</small></div>
-                <div><span>Máy thường</span><b>{money(r.costStd)}</b><small>{n(r.kwhStd)} kWh/tháng</small></div>
+                <div>
+                  <span>Inverter</span>
+                  <b>{money(r.costInv)}</b>
+                  <small>{n(r.kwhInv)} kWh/tháng</small>
+                </div>
+                <div>
+                  <span>Máy thường</span>
+                  <b>{money(r.costStd)}</b>
+                  <small>{n(r.kwhStd)} kWh/tháng</small>
+                </div>
               </div>
-              <p className="cps-save">Chọn Inverter tiết kiệm khoảng <b>{money(r.saving)}</b>/tháng ({hours} giờ/ngày).</p>
-              {r.large && <p className="cps-warn"><Icon name="alert" />Tải lạnh lớn: nên dùng máy âm trần, tủ đứng hoặc hệ thống trung tâm – kỹ thuật viên cần khảo sát thực tế.</p>}
+              <p className="cps-save">
+                Chọn Inverter tiết kiệm khoảng <b>{money(r.saving)}</b>/tháng (
+                {hours} giờ/ngày).
+              </p>
+              {r.large && (
+                <p className="cps-warn">
+                  <Icon name="alert" />
+                  Tải lạnh lớn: nên dùng máy âm trần, tủ đứng hoặc hệ thống
+                  trung tâm – kỹ thuật viên cần khảo sát thực tế.
+                </p>
+              )}
               <div className="cps-actions">
-                {matches.length > 0 && <a className="btn btn-primary" href="#cps-products">Xem máy {r.hp}</a>}
-                <button className="btn btn-outline" onClick={share}>Chia sẻ kết quả</button>
+                {matches.length > 0 && (
+                  <a className="btn btn-primary" href="#cps-products">
+                    Xem máy {r.hp}
+                  </a>
+                )}
+                <button className="btn btn-outline" onClick={share}>
+                  Chia sẻ kết quả
+                </button>
               </div>
             </>
           ) : (
-            <p role="alert">Nhập diện tích từ 3 đến 500 m² và chiều cao trần từ 2 đến 8 m.</p>
+            <p role="alert">
+              Nhập diện tích từ 3 đến 500 m² và chiều cao trần từ 2 đến 8 m.
+            </p>
           )}
         </aside>
       </div>
-
-      <details className="section-box cps-basis">
-        <summary>Cơ sở tính toán &amp; nguồn tham khảo</summary>
-        <ul>
-          <li><b>Tải nền:</b> {BTU_PER_M3} BTU/h cho mỗi m³ thể tích phòng (tương đương ~600 BTU/h/m² với trần 3 m) – cách chọn công suất nhanh các hãng máy lạnh công bố cho khí hậu nóng ẩm Việt Nam.</li>
-          <li><b>Nắng, số người, bếp:</b> theo hướng dẫn chọn máy lạnh của ENERGY STAR (Cơ quan Bảo vệ Môi trường Hoa Kỳ – EPA): phòng râm mát −10%, nhiều nắng +10%, trên 2 người thường xuyên +600 BTU/h mỗi người, phòng bếp +4.000 BTU/h.</li>
-          <li><b>Thiết bị văn phòng:</b> mỗi máy tính ~100 W tỏa nhiệt ≈ 340 BTU/h (1 W = 3,412 BTU/h).</li>
-          <li><b>Chọn máy:</b> công suất tiêu chuẩn nhỏ nhất đáp ứng tải (1 HP ≈ 9.000 · 1,5 HP ≈ 12.000 · 2 HP ≈ 18.000 · 2,5 HP ≈ 24.000 BTU/h). Không nên chọn quá lớn: máy đóng ngắt liên tục, hút ẩm kém, tốn điện.</li>
-          <li><b>Tiền điện:</b> điện năng = tải lạnh trung bình (75% tải đỉnh) ÷ hiệu suất CSPF theo nhãn năng lượng TCVN 7830:2021 (Inverter ≈ 5,0; máy thường ≈ 3,1) × giá điện. Biểu giá tham khảo: Quyết định 1279/QĐ-BCT (bậc 4: 2.998 đ/kWh, chưa VAT).</li>
-          <li>Kết quả để tham khảo khi chọn máy. Nhà xưởng, phòng kính lớn, tầng mái tôn, phòng server… cần khảo sát thực tế để tính tải lạnh chính xác.</li>
-        </ul>
-      </details>
-
       {valid && matches.length > 0 && (
         <div id="cps-products">
-          <ProductSection title={`Máy lạnh ${r.hp} phù hợp`} products={matches} />
+          <ProductSection
+            title={`Máy lạnh ${r.hp} phù hợp`}
+            products={matches}
+          />
         </div>
       )}
       {valid && matches.length === 0 && (
-        <p className="cps-empty">Chưa có sẵn máy {r.hp} trên website. <ShopLink className="link" href={dt.api.catUrl("may-lanh")}>Xem tất cả máy lạnh</ShopLink> hoặc để lại thông tin để được tư vấn.</p>
+        <p className="cps-empty">
+          Chưa có sẵn máy {r.hp} trên website.{" "}
+          <ShopLink className="link" href={dt.api.catUrl("may-lanh")}>
+            Xem tất cả máy lạnh
+          </ShopLink>{" "}
+          hoặc để lại thông tin để được tư vấn.
+        </p>
       )}
       <LeadForm type="service" title="Đặt khảo sát công suất miễn phí" />
     </div>

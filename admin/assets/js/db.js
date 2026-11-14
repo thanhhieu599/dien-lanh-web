@@ -673,6 +673,7 @@ AD.demo = () => {
         code: o.code,
         created_at: o.createdAt,
         updated_at: ov.updated_at || o.createdAt,
+        updated_by_name: ov.updated_by_name || null,
         status: o.status,
         phone: o.customer?.phone,
         customer: o.customer,
@@ -733,6 +734,7 @@ AD.demo = () => {
         source_url: null,
         created_at: l.createdAt,
         updated_at: ov.updated_at || l.createdAt,
+        updated_by_name: ov.updated_by_name || null,
       };
     });
     db.profiles = [
@@ -886,9 +888,12 @@ AD.demo = () => {
         0,
       );
 
+      const profile = db.profiles.find((p) => String(p.id) === String(customer.profile_id));
       return {
         ...customer,
-        role: db.profiles.find((p) => String(p.id) === String(customer.profile_id))?.role || "customer",
+        role: profile?.role || "customer",
+        registered_at: customer.registered_at || profile?.created_at || null,
+        last_login_at: customer.last_login_at || profile?.last_login_at || null,
 
         order_count: orders.length,
         paid_count: paid.length,
@@ -980,6 +985,7 @@ AD.demo = () => {
         write(SHOP, shop);
       }
       ov.updated_at = now;
+      ov.updated_by_name = userName();
     }
     if (table === "leads") {
       const leads = read(LEADS, []);
@@ -993,6 +999,7 @@ AD.demo = () => {
       if ("assigned_to" in patch) ov.assigned_to = patch.assigned_to;
       if ("notes" in patch) ov.notes = patch.notes;
       ov.updated_at = now;
+      ov.updated_by_name = userName();
     }
     if (table === "reviews") {
       db.overlay.reviews = db.overlay.reviews || {};
@@ -1324,6 +1331,9 @@ AD.demo = () => {
       }
 
       row.created_at = row.created_at || new Date().toISOString();
+      row.updated_at = row.created_at;
+      row.created_by_name = row.created_by_name || userName();
+      row.updated_by_name = userName();
       if (table === "suppliers") {
         row = { active: true, ...row, debt: 0, total_purchased: 0, purchase_count: 0 };
         if (!String(row.code || "").trim()) row.code = "NCC" + String(db.suppliers.length + 1).padStart(4, "0");
@@ -1393,6 +1403,7 @@ AD.demo = () => {
       }
       Object.assign(row, patch, {
         updated_at: new Date().toISOString(),
+        updated_by_name: userName(),
       });
 
       persist();

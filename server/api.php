@@ -78,7 +78,10 @@ try {
             $user = transaction(function() use ($phone, $email, $password, $data) {
                 $id = bin2hex(random_bytes(16));
                 sql('INSERT INTO users(id,phone,email,password_hash) VALUES(?,?,?,?)', [$id, $phone, $email ?: null, password_hash($password, PASSWORD_DEFAULT)]);
-                if (!record('crm_customers', 'phone:' . $phone)) put('crm_customers', ['id'=>'phone:' . $phone, 'profile_id'=>$id, 'phone'=>$phone, 'email'=>$email, 'name'=>trim($data['name']), 'addresses'=>[], 'tags'=>[], 'marketing_opt_in'=>false], true);
+                // Khách từng mua hàng bằng số này (hồ sơ khách vãng lai): gắn tài khoản vào hồ sơ cũ, giữ lịch sử mua
+                $crm = record('crm_customers', 'phone:' . $phone, true);
+                if (!$crm) put('crm_customers', ['id'=>'phone:' . $phone, 'profile_id'=>$id, 'phone'=>$phone, 'email'=>$email, 'name'=>trim($data['name']), 'addresses'=>[], 'tags'=>[], 'marketing_opt_in'=>false, 'registered_at'=>now()], true);
+                else put('crm_customers', array_merge($crm, ['profile_id'=>$id, 'registered_at'=>now(), 'email'=>($crm['email'] ?? '') ?: $email, 'name'=>($crm['name'] ?? '') ?: trim($data['name'])]));
                 return put('profiles', ['id'=>$id, 'phone'=>$phone, 'email'=>$email, 'name'=>trim($data['name']), 'addresses'=>[], 'role'=>'customer'], true);
             });
         } else {
@@ -92,6 +95,11 @@ try {
             if (!empty($user['locked'])) fail('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.', 403);
         }
         session_regenerate_id(true); $_SESSION['user_id'] = $user['id']; $_SESSION['expires_at'] = time() + 28800;
+        // Lần đăng nhập / đăng ký gần nhất: ghi thẳng, không đổi "thời gian sửa" của hồ sơ
+        try {
+            $count = (int)(record('profiles', $user['id'])['login_count'] ?? 0) + 1;
+            sql("UPDATE records SET data=JSON_SET(data,'$.last_login_at',?,'$.login_count',CAST(? AS UNSIGNED)) WHERE resource='profiles' AND record_id=?", [now(), $count, $user['id']]);
+        } catch (Throwable $e) { error_log('login stats: ' . $e->getMessage()); }
         jsonResponse(['access_token'=>'cookie', 'expires_in'=>28800, 'user'=>['id'=>$user['id']]]);
     }
     if (str_starts_with($route, 'data/')) jsonResponse(dataEndpoint(substr($route, 5), $method, $body));

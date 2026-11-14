@@ -68,6 +68,14 @@ try {
     $_GET = ['id' => 'eq.' . $second['id']];
     try { dataEndpoint('profiles', 'PATCH', ['locked' => true]); } catch (HttpError $e) {}
     ok(empty(record('profiles', $second['id'])['locked']), 'U19 Không tự mở/khóa qua sửa hồ sơ trực tiếp');
+    echo "--- Mốc thời gian & người thao tác\n";
+    as_($staffUser);
+    $rec = put('crm_customers', ['id' => "$p-crm", 'phone' => phoneNo(9), 'name' => 'Khách thử mốc thời gian'], true); $made2 = "$p-crm";
+    ok($rec['created_at'] && $rec['updated_at'] && $rec['created_by_name'] === 'QA Vận hành', 'U20 Bản ghi mới lưu thời gian tạo + người tạo');
+    as_($admin); sleep(1);
+    $rec2 = put('crm_customers', array_merge(record('crm_customers', "$p-crm"), ['note' => 'sửa']));
+    ok($rec2['created_at'] === $rec['created_at'] && $rec2['updated_at'] > $rec['updated_at'] && $rec2['created_by_name'] === 'QA Vận hành' && $rec2['updated_by_name'] === 'QA Admin chính', 'U21 Khi sửa: giữ thời gian/người tạo, cập nhật thời gian/người sửa');
+    sql('DELETE FROM records WHERE resource=? AND record_id=?', ['crm_customers', $made2]);
     echo "Users MySQL: $checks checks passed.\n";
 } finally {
     $_SESSION = [];

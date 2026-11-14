@@ -7,7 +7,7 @@ import {
   useLocation,
   useSearchParams,
 } from "react-router-dom";
-import { ad, dt, downloadCSV, loadCache, money } from "../services/runtime";
+import { ad, date, dt, downloadCSV, loadCache, money, stamp } from "../services/runtime";
 import { Combo } from "../components/combo";
 import {
   Action,
@@ -147,6 +147,10 @@ export function ResourceList({ resource: key }: { resource: string }) {
                     ]
                   : []),
                 ...extra,
+                {
+                  label: "Cập nhật",
+                  render: (row: Row) => date(row.updated_at || row.created_at),
+                },
                 {
                   label: "Hiển thị",
                   render: (row) => (
@@ -436,7 +440,7 @@ function Editor({
         }
         subtitle={
           editing
-            ? "Chỉnh sửa dữ liệu dùng chung với website"
+            ? stamp(row) || "Chỉnh sửa dữ liệu dùng chung với website"
             : "Tạo bản ghi mới"
         }
       >

@@ -45,6 +45,8 @@ export async function loadCache(){
 }
 export const money=(value:any)=>new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(Number(value)||0);
 export const date=(value:any)=>value?new Date(value).toLocaleString('vi-VN',{dateStyle:'short',timeStyle:'short'}):'—';
+// Dòng mốc thời gian: tạo lúc / sửa lần cuối, kèm người thao tác nếu có
+export const stamp=(row:any)=>{if(!row)return '';const by=(n:any)=>n?` bởi ${n}`:'';const parts=[];if(row.created_at)parts.push(`Tạo ${date(row.created_at)}${by(row.created_by_name)}`);if(row.updated_at&&row.updated_at!==row.created_at)parts.push(`Sửa lần cuối ${date(row.updated_at)}${by(row.updated_by_name)}`);return parts.join(' · ');};
 export function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 export function localDay(value:string,add=0){const [y,m,d]=value.split('-').map(Number);return new Date(y,m-1,d+add).toISOString();}
 export function safeUrl(value:unknown){if(typeof value!=='string')return '';if(/^data:image\/(png|jpeg|webp|gif);base64,[a-z0-9+/=]+$/i.test(value))return value;return dt.u.safeUrl(value);}

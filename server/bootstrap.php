@@ -51,12 +51,28 @@ function record(string $table, mixed $id, bool $lock = false): ?array {
 function allRecords(string $table): array {
     return array_map(fn($row) => json_decode($row, true, 512, JSON_THROW_ON_ERROR), sql('SELECT data FROM records WHERE resource=?', [$table])->fetchAll(PDO::FETCH_COLUMN));
 }
+function currentUserName(): ?string {
+    static $cache = [];
+    $id = $_SESSION['user_id'] ?? null;
+    if (!$id) return null;
+    if (!array_key_exists($id, $cache)) {
+        $data = sql("SELECT data FROM records WHERE resource='profiles' AND record_id=?", [(string)$id])->fetchColumn();
+        $p = $data ? json_decode($data, true) : null;
+        $cache[$id] = $p ? (string)($p['name'] ?? $p['phone'] ?? '') : null;
+    }
+    return $cache[$id] ?: null;
+}
 function put(string $table, array $row, bool $insert = false): array {
     $key = pk($table);
     $row[$key] ??= (int)(microtime(true) * 1000) * 1000 + random_int(0, 999);
     if (!is_scalar($row[$key]) || strlen((string)$row[$key]) > 191 || (string)$row[$key] === '') fail('Mã bản ghi không hợp lệ');
     $row['created_at'] ??= now();
     $row['updated_at'] = now();
+    // Ai tạo / ai sửa lần cuối (nhân viên hoặc khách đang đăng nhập) để tra cứu về sau
+    if ($by = currentUserName()) {
+        $row['created_by_name'] ??= $by;
+        $row['updated_by_name'] = $by;
+    }
     $encoded = json_encode($row, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
     if (!$insert && record($table, $row[$key]) !== null) {
         sql('UPDATE records SET data=? WHERE resource=? AND record_id=?', [$encoded, $table, (string)$row[$key]]);

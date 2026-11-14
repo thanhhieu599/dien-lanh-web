@@ -92,7 +92,8 @@ try {
   await toast('Đã gửi đánh giá');
   await shop.evaluate((id) => DT.store.addToCart(id, 1), pid);
   await go('thanh-toan.html');
-  await shop.locator('[name=name]').fill(`Mua hàng ${tag}`); await shop.locator('[name=phone]').fill(phone(8));
+  const buyer = phone(8);
+  await shop.locator('[name=name]').fill(`Mua hàng ${tag}`); await shop.locator('[name=phone]').fill(buyer);
   await shop.locator('[name=province]').fill('TP.HCM'); await shop.locator('[name=district]').fill('Quận 1'); await shop.locator('[name=address]').fill(`1 Lê Lợi ${tag}`);
   await shop.locator('[name=agree]').check();
   await shop.getByRole('button', { name: 'ĐẶT HÀNG', exact: true }).click();
@@ -121,6 +122,10 @@ try {
   ok(detail.includes(`Cty ${tag}`) && detail.includes(`Nhà xưởng 2000m2 ${tag}`) && detail.includes('12'), 'Chi tiết báo giá dự án: đủ doanh nghiệp, số lượng, nhu cầu');
   const customers = await view(`customers?q=${member}`);
   ok(customers.includes(member), 'Admin → Khách hàng: thấy tài khoản vừa đăng ký');
+  const sum = await admin.evaluate(async (p) => (await AD.db.list('crm_customer_summary', { filters: [['phone', 'eq', p]] })).rows[0], member);
+  ok(sum?.registered_at && sum?.last_login_at && Number(sum.login_count) >= 2, `Khách hàng ghi ngày đăng ký, lần đăng nhập gần nhất, số lần đăng nhập (${sum?.login_count})`);
+  ok(/Đăng nhập \d/.test(customers), 'Danh sách khách hàng hiện cột Đăng ký / Đăng nhập');
+  ok(sum?.created_at && sum?.updated_at, 'Hồ sơ khách hàng có thời gian tạo và thời gian sửa');
   const profile = await admin.evaluate(async (p) => (await AD.db.list('profiles', { filters: [['phone', 'eq', p]] })).rows[0], member);
   ok(profile?.name === `Khách ${tag} Sửa` && JSON.stringify(profile.addresses || []).includes(tag), 'Thông tin đã sửa và sổ địa chỉ của khách được lưu');
   const reviews = await view('reviews?status=pending');
@@ -145,6 +150,25 @@ try {
   await shop.locator('.recent-orders tr', { hasText: orderCode }).getByRole('link', { name: 'Xem chi tiết' }).click();
   await shop.locator('.react-order, .order-details, h2', { hasText: orderCode }).first().waitFor({ timeout: 15000 });
   ok(true, 'Bấm "Xem chi tiết": tự mở chi tiết đơn ở trang Tra cứu');
+
+  // 6) Mốc thời gian: đơn được sửa ghi "Sửa lần cuối … bởi …"
+  const edited = await admin.evaluate(async (id) => await AD.db.get('orders', id), oid);
+  ok(edited.updated_at > edited.created_at && !!edited.updated_by_name, `Đơn hàng lưu thời gian tạo, thời gian sửa và người sửa (${edited.updated_by_name})`);
+  ok(/Sửa lần cuối/.test(await view(`orders/${encodeURIComponent(oid)}`)), 'Chi tiết đơn hiện "Sửa lần cuối"');
+
+  // 7) Khách đã mua (chưa có tài khoản) đăng ký sau bằng cùng số điện thoại → gộp vào hồ sơ cũ, giữ lịch sử đơn
+  const guestCtx = await browser.newContext({ viewport: { width: 1280, height: 900 } }); await blockExternal(guestCtx);
+  const guest = await guestCtx.newPage();
+  await guest.goto(`${base}frontend/tai-khoan.html#register`); await guest.waitForLoadState('networkidle');
+  await guest.locator('.auth-tabs button', { hasText: 'Đăng ký' }).click();
+  await guest.locator('#register-form [name=name]').fill(`Mua hàng ${tag}`);
+  await guest.locator('#register-form [name=phone]').fill(buyer);
+  await guest.locator('#register-form [name=password]').fill('MatKhau!2026');
+  await guest.locator('#register-form button').click();
+  await guest.locator('.account').waitFor({ timeout: 15000 });
+  const merged = await admin.evaluate(async (p) => (await AD.db.list('crm_customer_summary', { filters: [['phone', 'eq', p]] })).rows, buyer);
+  ok(merged.length === 1 && merged[0].profile_id && merged[0].registered_at && merged[0].order_count >= 1, 'Khách mua trước rồi đăng ký: admin cập nhật vào đúng hồ sơ khách cũ (1 dòng, giữ đơn đã mua)');
+  ok(/Đăng ký tài khoản/.test(await view(`customers/${encodeURIComponent(merged[0].id)}`)), 'Chi tiết khách hàng hiện ngày đăng ký tài khoản');
 } finally {
   await browser.close();
 }

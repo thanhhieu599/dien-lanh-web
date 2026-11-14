@@ -160,3 +160,13 @@ docker compose exec -T web php tests/server/commerce.test.php
 docker compose exec -T web php server/cli.php admin 0912345698
 TEST_ADMIN_PHONE=0912345698 TEST_ADMIN_PASSWORD='MysqlTest!2026' npm run test:hosting
 ```
+
+## 9. Mốc thời gian & đồng bộ khách hàng web → admin
+| Mã | Kiểm tra | Bộ test |
+|---|---|---|
+| U20 | Bản ghi mới lưu `created_at`, `updated_at`, `created_by_name` (người đang đăng nhập) | users.test.php |
+| U21 | Khi sửa: giữ thời gian/người tạo, cập nhật `updated_at`, `updated_by_name` | users.test.php |
+| F-T1 | Đăng ký + đăng nhập trên web → Admin Khách hàng có Ngày đăng ký, Đăng nhập gần nhất, Số lần đăng nhập | forms.test.mjs |
+| F-T2 | Đơn hàng admin sửa trạng thái → lưu người sửa, chi tiết đơn hiện "Sửa lần cuối" | forms.test.mjs |
+| F-T3 | Khách mua trước (chưa có tài khoản) rồi đăng ký cùng SĐT → gộp vào hồ sơ cũ, giữ lịch sử đơn | forms.test.mjs |
+| F-T4 | Lỗi ghi thống kê đăng nhập không bao giờ chặn việc đăng nhập | hosting-browser / mysql-api |

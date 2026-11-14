@@ -85,11 +85,12 @@ function crmSummary(): array {
         foreach ($customers as &$c) {
             if (($c['profile_id'] ?? null) === $profile['id'] ||
                 empty($c['profile_id']) && phoneKey($c['phone'] ?? '') === phoneKey($profile['phone'] ?? '')) {
-                $c = array_merge($profile, $c, ['profile_id' => $profile['id'], 'role' => $profile['role']]); $found = true; break;
+                $c = array_merge($profile, $c, ['profile_id' => $profile['id'], 'role' => $profile['role'],
+                    'registered_at' => $profile['created_at'] ?? null, 'last_login_at' => $profile['last_login_at'] ?? null, 'login_count' => $profile['login_count'] ?? 0]); $found = true; break;
             }
         }
         unset($c);
-        if (!$found) $customers[] = array_merge($profile, ['id' => 'profile:' . $profile['id'], 'profile_id' => $profile['id']]);
+        if (!$found) $customers[] = array_merge($profile, ['id' => 'profile:' . $profile['id'], 'profile_id' => $profile['id'], 'registered_at' => $profile['created_at'] ?? null]);
     }
     $orders = allRecords('orders');
     foreach ($customers as &$c) {

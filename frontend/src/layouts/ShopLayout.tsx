@@ -28,8 +28,6 @@ export function ShopLayout({ children }: { children: ReactNode }) {
   const [drawer, setDrawer] = useState(false);
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
-  const [chat, setChat] = useState(false);
-  const [sending, setSending] = useState(false);
   const [backToTop, setBackToTop] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const config = dt.config;
@@ -207,25 +205,6 @@ export function ShopLayout({ children }: { children: ReactNode }) {
       form.reset();
     } catch (error) {
       toast(String(error), true);
-    }
-  }
-  async function callback(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const data = formValues(form);
-    if (!dt.u.validPhone(data.phone)) {
-      toast("Số điện thoại không hợp lệ", true);
-      return;
-    }
-    setSending(true);
-    try {
-      await dt.saveLead("contact", data);
-      toast("Đã nhận yêu cầu. Chuyên viên sẽ liên hệ với bạn.");
-      form.reset();
-    } catch (e) {
-      toast(String(e), true);
-    } finally {
-      setSending(false);
     }
   }
   return (
@@ -728,13 +707,6 @@ export function ShopLayout({ children }: { children: ReactNode }) {
             </svg>
           </a>
         )}
-        <button
-          className="fl-zalo"
-          aria-label="Mở tư vấn"
-          onClick={() => setChat(!chat)}
-        >
-          <Icon name="chat" />
-        </button>
         <a
           className="fl-phone"
           href={`tel:${dt.u.tel(config.hotline)}`}
@@ -750,43 +722,6 @@ export function ShopLayout({ children }: { children: ReactNode }) {
           <Icon name="up" />
         </button>
       </div>
-      {chat && (
-        <aside className="react-chat">
-          <button
-            className="icon-btn"
-            onClick={() => setChat(false)}
-            aria-label="Đóng tư vấn"
-          >
-            ×
-          </button>
-          <h2>Chúng tôi có thể giúp gì?</h2>
-          {safeUrl(config.zalo) && (
-            <a className="btn btn-outline" href={safeUrl(config.zalo)}>
-              Chat Zalo
-            </a>
-          )}
-          <form onSubmit={callback}>
-            <label>
-              Họ tên
-              <input name="name" required />
-            </label>
-            <label>
-              Số điện thoại
-              <input name="phone" type="tel" required />
-            </label>
-            <label>
-              Nhu cầu
-              <textarea name="message" required />
-            </label>
-            <label className="check">
-              <input type="checkbox" required /> Đồng ý được liên hệ tư vấn
-            </label>
-            <button className="btn btn-primary" disabled={sending}>
-              Yêu cầu gọi lại
-            </button>
-          </form>
-        </aside>
-      )}
       {state.compare.length > 0 && (
         <div className="compare-bar show">
           <div className="container">

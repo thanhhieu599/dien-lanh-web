@@ -74,13 +74,8 @@ try {
   await shop.locator('.newsletter-form [name=email]').fill(`tin-${tag.toLowerCase()}@vidu.vn`);
   await shop.locator('.newsletter-form button').click();
   await toast('Đã đăng ký nhận tin');
-  await shop.getByRole('button', { name: 'Mở tư vấn' }).click();
-  const chat = shop.locator('.react-chat form');
-  await chat.locator('[name=name]').fill(`Chat ${tag}`); await chat.locator('[name=phone]').fill(phone(6)); await chat.locator('[name=message]').fill(`Gọi lại giúp ${tag}`);
-  await chat.locator('input[type=checkbox]').check();
-  await chat.getByRole('button', { name: 'Yêu cầu gọi lại' }).click();
-  await toast('Đã nhận yêu cầu');
-  ok(true, 'Đăng ký nhận tin (chân trang) và khung chat tư vấn gửi được');
+  ok(await shop.locator('.floating .fl-zalo-chat').getAttribute('href') === 'https://zalo.me/' + String((await shop.evaluate(() => DT.config.hotline)) || '').replace(/\D/g, '').replace(/^84/, '0'), 'Nút Zalo nổi mở chat Zalo theo hotline');
+  ok(true, 'Đăng ký nhận tin (chân trang) gửi được');
 
   // 3) Đánh giá sản phẩm + đặt hàng
   const pid = await shop.evaluate(() => DT.products.find((p) => p.stock > 2)?.id);
@@ -115,7 +110,7 @@ try {
     ok(leadsText.includes(code), `Admin → Yêu cầu khách hàng: thấy "${label}" (${code})`);
   ok(/Báo giá dự án/.test(leadsText) && /Liên hệ/.test(leadsText), 'Danh sách yêu cầu ghi rõ loại (Báo giá dự án, Liên hệ…)');
   const all = await admin.evaluate(async (t) => (await AD.db.list('leads', { order: 'created_at.desc', limit: 200 })).rows.filter((l) => JSON.stringify(l).toLowerCase().includes(t.toLowerCase())), tag);
-  ok(all.some((l) => l.type === 'newsletter') && all.some((l) => l.type === 'contact' && l.name === `Chat ${tag}`), 'Đăng ký nhận tin và khung chat tư vấn được lưu vào Yêu cầu khách hàng');
+  ok(all.some((l) => l.type === 'newsletter'), 'Đăng ký nhận tin được lưu vào Yêu cầu khách hàng');
   const quote = all.find((l) => l.code === codes.quote);
   await view(`leads/${encodeURIComponent(quote.id)}`);
   const detail = await admin.locator('#view').innerText();

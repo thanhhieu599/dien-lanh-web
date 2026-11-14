@@ -215,11 +215,6 @@ export function ShopLayout({ children }: { children: ReactNode }) {
       <div id="site-header">
         <div className="topbar">
           <div className="container">
-            <div className="topbar-left">
-              <ShopLink href="thuong-hieu.html">
-                <Icon name="tag" /> Thương hiệu
-              </ShopLink>
-            </div>
             <nav className="topbar-right">
               <ShopLink href="tra-cuu-don-hang.html">
                 <Icon name="truck" /> Tra cứu đơn hàng
@@ -370,7 +365,13 @@ export function ShopLayout({ children }: { children: ReactNode }) {
                       <div className="mm-sub">
                         {menu.items.map((item: any) => (
                           <div
-                            className={item.more ? "mm-more" : item.items?.length ? "mm-has-sub" : ""}
+                            className={
+                              item.more
+                                ? "mm-more"
+                                : item.items?.length
+                                  ? "mm-has-sub"
+                                  : ""
+                            }
                             key={item.title}
                           >
                             <ShopLink href={item.href}>
@@ -702,8 +703,21 @@ export function ShopLayout({ children }: { children: ReactNode }) {
             title={`Chat Zalo ${config.hotline}`}
           >
             <svg viewBox="0 0 48 48" aria-hidden="true">
-              <path d="M24 2.5C11.6 2.5 1.5 11.6 1.5 22.8c0 6.4 3.3 12.1 8.4 15.8L7.6 46l9.3-4.6c2.2.6 4.6.9 7.1.9 12.4 0 22.5-9.1 22.5-20.3S36.4 2.5 24 2.5z" fill="#0068ff" />
-              <text x="24" y="27.6" textAnchor="middle" fontFamily="Arial, Helvetica, sans-serif" fontWeight="700" fontSize="13.5" fill="#fff">Zalo</text>
+              <path
+                d="M24 2.5C11.6 2.5 1.5 11.6 1.5 22.8c0 6.4 3.3 12.1 8.4 15.8L7.6 46l9.3-4.6c2.2.6 4.6.9 7.1.9 12.4 0 22.5-9.1 22.5-20.3S36.4 2.5 24 2.5z"
+                fill="#0068ff"
+              />
+              <text
+                x="24"
+                y="27.6"
+                textAnchor="middle"
+                fontFamily="Arial, Helvetica, sans-serif"
+                fontWeight="700"
+                fontSize="13.5"
+                fill="#fff"
+              >
+                Zalo
+              </text>
             </svg>
           </a>
         )}

@@ -179,6 +179,25 @@ try {
             throw new RuntimeException("$role must not change settings");
         } catch (HttpError $e) { checkAdmin($e->getCode() === 403, "$role cannot change admin settings"); }
     }
+    // Không mất dữ liệu: sản phẩm đã bán không xóa được; khách hàng không trùng số điện thoại
+    put('profiles', array_merge($admin, ['role'=>'admin'])); $_SESSION = ['user_id'=>$admin['id']];
+    $cat = allRecords('categories')[0]['id']; $brand = allRecords('brands')[0]['id'];
+    $sold = endpoint('products', 'POST', ['sku'=>$prefix . '-sold', 'slug'=>$prefix . '-sold', 'name'=>'QA đã bán', 'cat'=>$cat, 'brand'=>$brand, 'price'=>1000, 'stock'=>0, 'active'=>true])[0];
+    $created[] = ['products', $sold['id']];
+    $item = fixture('order_items', ['id'=>$prefix . '-item', 'order_id'=>$prefix . '-order', 'product_id'=>$sold['id'], 'name'=>'QA đã bán', 'qty'=>1, 'price'=>1000]);
+    try { endpoint('products', 'DELETE', [], ['id'=>'eq.' . $sold['id']]); throw new RuntimeException('Sold product must not be deleted'); }
+    catch (HttpError $e) { checkAdmin(record('products', $sold['id']) !== null, 'Sản phẩm đã có đơn hàng không xóa được (chỉ ẩn)'); }
+    $fresh = endpoint('products', 'POST', ['sku'=>$prefix . '-new', 'slug'=>$prefix . '-new', 'name'=>'QA chưa bán', 'cat'=>$cat, 'brand'=>$brand, 'price'=>1000, 'stock'=>0, 'active'=>true])[0];
+    endpoint('products', 'DELETE', [], ['id'=>'eq.' . $fresh['id']]);
+    checkAdmin(record('products', $fresh['id']) === null, 'Sản phẩm chưa phát sinh giao dịch vẫn xóa được');
+    $c1 = endpoint('crm_customers', 'POST', ['name'=>'QA khách', 'phone'=>'0900000097', 'addresses'=>[]])[0];
+    $created[] = ['crm_customers', $c1['id']];
+    try { endpoint('crm_customers', 'POST', ['name'=>'QA trùng', 'phone'=>'090 000 0097', 'addresses'=>[]]); throw new RuntimeException('Duplicate customer phone accepted'); }
+    catch (HttpError $e) { checkAdmin($e->getCode() === 409, 'Không thêm được khách hàng trùng số điện thoại'); }
+    $c2 = endpoint('crm_customers', 'POST', ['name'=>'QA khách 2', 'phone'=>'0900000098', 'addresses'=>[]])[0];
+    $created[] = ['crm_customers', $c2['id']];
+    try { patchAdmin('crm_customers', $c2['id'], ['phone'=>'0900000097']); throw new RuntimeException('Phone change to existing customer accepted'); }
+    catch (HttpError $e) { checkAdmin($e->getCode() === 409, 'Không đổi được số điện thoại sang số của khách khác'); }
     echo "Admin MySQL: $checks checks passed.\n";
 } finally {
     foreach (array_reverse($created) as [$table, $id]) sql('DELETE FROM records WHERE resource=? AND record_id=?', [$table, (string)$id]);

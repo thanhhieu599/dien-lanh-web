@@ -78,6 +78,15 @@ function projectRow(array $row, string $table, string $select, ?array $user): ar
     }
     return $result;
 }
+// Một số điện thoại chỉ thuộc 1 khách hàng (khách tạo tại admin, khách vãng lai, khách đã đăng ký)
+function crmPhoneFree(string $phone, ?string $exceptId): void {
+    foreach (allRecords('crm_customers') as $c) if ((string)$c['id'] !== $exceptId && phoneKey((string)($c['phone'] ?? '')) === $phone) fail('Số điện thoại khách hàng đã tồn tại', 409);
+    $taken = sql('SELECT id FROM users WHERE phone=? LIMIT 1', [$phone])->fetchColumn();
+    if ($taken && $exceptId !== 'profile:' . $taken) {
+        $linked = array_filter(allRecords('crm_customers'), fn($c) => (string)$c['id'] === $exceptId && ($c['profile_id'] ?? null) === $taken);
+        if (!$linked) fail('Số điện thoại đã có tài khoản khách hàng', 409);
+    }
+}
 function crmSummary(): array {
     $customers = allRecords('crm_customers');
     foreach (allRecords('profiles') as $profile) {
@@ -188,6 +197,11 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
     if ($method === 'POST') {
         if (!allowed($table, $method, $user, $body) || !in_array($table, ['products','categories','brands','coupons','posts','banners','stores','services','policies','settings','projects','faqs','crm_customers','maintenance_contracts','maintenance_visits','suppliers'], true)) fail('Không có quyền tạo dữ liệu', 403);
         validateRow($table, $body);
+        if ($table === 'crm_customers') {
+            $body['phone'] = phoneKey((string)($body['phone'] ?? ''));
+            if (!preg_match('/^0[0-9]{9,10}$/', $body['phone'])) fail('Số điện thoại không hợp lệ');
+            crmPhoneFree($body['phone'], null);
+        }
         if ($table === 'suppliers') { unset($body['debt'], $body['total_purchased'], $body['purchase_count']); $body['code'] = trim((string)($body['code'] ?? '')) ?: 'NCC' . str_pad((string)(count(allRecords('suppliers')) + 1), 4, '0', STR_PAD_LEFT); }
         if ($table !== 'products') return [put($table, $body, true)];
         // Sản phẩm mới có tồn ban đầu: ghi vào lịch sử kho
@@ -216,6 +230,14 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
             if (in_array($table, ['categories','brands'], true)) {
                 foreach (allRecords('products') as $p) if (($p[$table === 'brands' ? 'brand' : 'cat'] ?? '') === $id) fail('Dữ liệu đang được sử dụng, hãy chuyển sang ẩn');
             }
+            // Sản phẩm đã bán / đã nhập kho / có lịch sử kho: không xóa (mất dấu vết đơn hàng, kho, báo cáo) — chỉ cho ẩn
+            if ($table === 'products') {
+                $used = sql("SELECT 1 FROM records WHERE (resource='order_items' OR resource='stock_moves' AND JSON_UNQUOTE(JSON_EXTRACT(data,'$.type'))<>'initial') AND JSON_UNQUOTE(JSON_EXTRACT(data,'$.product_id'))=? LIMIT 1", [(string)$id])->fetchColumn();
+                if (!$used) foreach (['purchase_orders','stock_adjustments','stock_exports'] as $doc) {
+                    foreach (allRecords($doc) as $d) foreach ($d['items'] ?? [] as $it) if ((string)($it['product_id'] ?? '') === (string)$id) { $used = true; break 3; }
+                }
+                if ($used) fail('Sản phẩm đã có đơn hàng hoặc giao dịch kho, không xóa được. Hãy tắt "Bán trên website" để ẩn.');
+            }
             sql('DELETE FROM records WHERE resource=? AND record_id=?', [$table, $id]); return null;
         }
         if ($method !== 'PATCH') fail('Phương thức không hỗ trợ', 405);
@@ -225,6 +247,11 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
         unset($patch[pk($table)], $patch['created_at']);
         if ($table === 'crm_customers') {
             $patch = array_intersect_key($patch, array_flip(['name','phone','email','addresses','tags','note','marketing_opt_in']));
+            if (isset($patch['phone']) && phoneKey((string)$patch['phone']) !== phoneKey((string)($row['phone'] ?? ''))) {
+                $patch['phone'] = phoneKey((string)$patch['phone']);
+                if (!preg_match('/^0[0-9]{9,10}$/', $patch['phone'])) fail('Số điện thoại không hợp lệ');
+                crmPhoneFree($patch['phone'], (string)$id);
+            }
         }
         if ($table === 'profiles') {
             $fields = $user['role'] === 'admin' ? ['name','email','addresses','role'] : ['name','email','addresses'];

@@ -26,9 +26,12 @@ const isAc=(i:Row)=>AD.product(i.product_id??i.id)?.cat==='may-lanh'||/máy lạ
   }
 
   // Đơn hàng -> các dòng chứng từ bán hàng
+  // Thuế suất của đơn: đơn tạo tại admin tự chọn thuế suất (và có thể "chưa gồm VAT"); đơn website theo cài đặt
+  export const orderVat = (o:Row, cfg:Row) => (o.vat_rate != null && o.vat_rate !== '' ? Number(o.vat_rate) : Number(cfg.vatRate ?? 10));
   export function voucherLines(o:Row, cfg:Row):Row[] {
-    const vat = Number(cfg.vatRate ?? 10);
+    const vat = orderVat(o, cfg);
     const r = vat > 0 ? vat / 100 : 0;
+    const excluded = r > 0 && o.vat_included === false;
     const items = o.order_items || [];
     const lines:Row[] = items.map((i:Row) => ({
       code: i.sku || `SP${i.product_id}`, name: i.name, unit: isAc(i) ? 'Bộ' : 'Cái', qty: i.qty, price: Number(i.price), gross: Number(i.price) * i.qty, acc: cfg.misaRevenueAcc, goods: true,
@@ -44,13 +47,18 @@ const isAc=(i:Row)=>AD.product(i.product_id??i.id)?.cat==='may-lanh'||/máy lạ
     const goodsSum = lines.filter((l) => l.goods).reduce((s, l) => s + l.gross, 0);
     const disc = Number(o.discount) || 0;
     const ck = allocate(disc, lines.map((l) => (goodsSum >= disc ? (l.goods ? l.gross : 0) : l.gross)));
-    return lines.map((l, i) => {
-      const unitNet = r ? Math.round(l.price / (1 + r)) : l.price;
+    const out = lines.map((l, i) => {
+      // Giá chưa gồm VAT (đơn admin): đơn giá là giá trước thuế, thuế cộng thêm
+      const unitNet = excluded ? l.price : r ? Math.round(l.price / (1 + r)) : l.price;
       const amount = unitNet * l.qty;
-      const ckNet = r ? Math.round(ck[i] / (1 + r)) : ck[i];
-      const tax = vat > 0 ? (l.gross - ck[i]) - (amount - ckNet) : 0;
+      const ckNet = excluded ? ck[i] : r ? Math.round(ck[i] / (1 + r)) : ck[i];
+      const tax = vat > 0 ? (excluded ? Math.round((amount - ckNet) * r) : (l.gross - ck[i]) - (amount - ckNet)) : 0;
       return { ...l, unitNet, amount, ck: ckNet, ckRate: amount ? Math.round((ckNet / amount) * 10000) / 100 : 0, tax, total: amount - ckNet + tax };
     });
+    // Làm tròn thuế từng dòng có thể lệch vài đồng so với tổng đơn: dồn phần lệch vào dòng cuối
+    const diff = Number(o.total) - out.reduce((s, l) => s + l.total, 0);
+    if (excluded && out.length && diff) { const last = out[out.length - 1]; last.tax += diff; last.total += diff; }
+    return out;
   }
 
   function customerOf(o:Row) {
@@ -82,9 +90,10 @@ const isAc=(i:Row)=>AD.product(i.product_id??i.id)?.cat==='may-lanh'||/máy lạ
       lines.forEach((l) => {
         if (!goods.has(l.code)) goods.set(l.code, l);
         net += l.amount - l.ck; tax += l.tax; total += l.total;
+        const ov = orderVat(o, cfg);
         vouchers.push([day, day, o.code, method, cu.code, cu.name, cu.address, cu.tax, o.phone, `Bán hàng theo đơn ${o.code}`,
-          l.code, l.name, l.unit, l.qty, l.price, l.unitNet, l.amount, l.ckRate || '', l.ck || '', vatLabel, l.tax,
-          debit, l.acc, l.ck ? cfg.misaDiscountAcc || l.acc : '', vat > 0 ? cfg.misaVatAcc : '', l.goods ? cfg.misaWarehouse || '' : '',
+          l.code, l.name, l.unit, l.qty, l.price, l.unitNet, l.amount, l.ckRate || '', l.ck || '', ov < 0 ? 'KCT' : `${ov}%`, l.tax,
+          debit, l.acc, l.ck ? cfg.misaDiscountAcc || l.acc : '', ov > 0 ? cfg.misaVatAcc : '', l.goods ? cfg.misaWarehouse || '' : '',
           Number(o.total), AD.PAY_STATUS[o.payment_status]?.[0] || o.payment_status]);
       });
     });

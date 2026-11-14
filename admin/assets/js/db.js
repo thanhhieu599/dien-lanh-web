@@ -1424,6 +1424,8 @@ AD.demo = () => {
         throw new Error("Chế độ demo không xóa dữ liệu khách hàng");
       if (["purchase_orders", "stock_adjustments", "stock_exports", "stock_moves"].includes(table))
         throw new Error("Không được xóa dữ liệu giao dịch");
+      if (table === "products" && (live("orders").some((o) => (o.order_items || []).some((i) => String(i.product_id) === String(id))) || db.stock_moves.some((m) => String(m.product_id) === String(id) && m.type !== "initial")))
+        throw new Error('Sản phẩm đã có đơn hàng hoặc giao dịch kho, không xóa được. Hãy tắt "Bán trên website" để ẩn.');
       if (table === "suppliers" && db.purchase_orders.some((po) => String(po.supplier_id) === String(id)))
         throw new Error("Nhà cung cấp đã có đơn nhập, hãy chuyển sang ngừng giao dịch");
       db[table] = db[table].filter(

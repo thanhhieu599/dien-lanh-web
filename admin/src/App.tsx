@@ -18,6 +18,7 @@ import {
 } from "react-router-dom";
 import { ad, dt, loadCache } from "./services/runtime";
 import { allowed, navigation, roles } from "./services/permissions";
+import { markSaved } from "./services/unsaved";
 import {
   Action,
   Busy,
@@ -472,6 +473,7 @@ function Root() {
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const notice = useCallback((text: string, error = false) => {
     const id = crypto.randomUUID();
+    if (!error) markSaved();
     setNotices((prev) => [...prev.slice(-3), { id, text, error }]);
     timers.current.push(
       setTimeout(

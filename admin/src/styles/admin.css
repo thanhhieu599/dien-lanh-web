@@ -432,3 +432,4 @@
 .cus-invoice b { display: block; margin-bottom: 4px; font-size: 13px; }
 .cus-invoice p { margin: 2px 0; }
 .ar-grid h4.ad-sec small { font-weight: 400; color: #6b7280; }
+.rcv-picker{position:relative;min-width:0}

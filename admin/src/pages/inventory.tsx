@@ -1,5 +1,5 @@
 // Kho hàng: Quản lý kho, Nhập hàng (đơn nhập từ nhà cung cấp), Kiểm hàng (cân bằng kho), Xuất kho, Lịch sử kho.
-import {useMemo, useState, type ReactNode} from 'react';
+import {useEffect, useMemo, useState, type ReactNode} from 'react';
 import {Link, useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import {ad, date, downloadCSV, loadCache, money, today} from '../services/runtime';
 import {EXPORT_REASONS, LEVEL_LABEL, MOVE_TYPES, PURCHASE_STATUS, incomingMap, invOp, purchaseTotals, reservedMap, stockLevel} from '../services/inventory';
@@ -312,18 +312,38 @@ function ExportList() {
       {label: 'Ngày tạo', render: (d) => date(d.created_at)}, {label: 'Nhân viên', key: 'created_by'},
     ]}/>}/></Panel>}</DataState></>;
 }
+// Người nhận: gõ tự do (bộ phận nội bộ) hoặc chọn khách hàng có sẵn → tự điền tên + địa chỉ
+function ReceiverInput({value, readOnly, onChange, onPick}: {value: string; readOnly: boolean; onChange: (v: string) => void; onPick: (c: Row) => void}) {
+  const [hits, setHits] = useState<Row[]>([]); const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const k = value.trim();
+    if (readOnly || !open || k.length < 2) { setHits([]); return; }
+    let live = true;
+    const t = setTimeout(async () => {
+      try { const {rows} = await ad.db.list('crm_customer_summary', {search: {q: k, cols: ['name', 'phone']}, limit: 8}); if (live) setHits(rows); } catch { if (live) setHits([]); }
+    }, 250);
+    return () => { live = false; clearTimeout(t); };
+  }, [value, open, readOnly]);
+  return <div className="rcv-picker">
+    <label><span>Người nhận / bộ phận</span><input value={value} readOnly={readOnly} autoComplete="off" placeholder="Gõ tên / số điện thoại khách hoặc tên bộ phận…" onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 200)} onChange={(e) => { setOpen(true); onChange(e.target.value); }}/></label>
+    {open && hits.length > 0 && <ul className="inv-hits" role="listbox" aria-label="Khách hàng phù hợp">{hits.map((c) => { const a: Row = (c.addresses || [])[0] || {};
+      return <li key={c.id}><button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { onPick(c); setHits([]); setOpen(false); }}><b>{c.name || c.phone}</b><small>{[c.phone, [a.address, a.district, a.province].filter(Boolean).join(', ')].filter(Boolean).join(' · ')}</small></button></li>; })}
+    </ul>}
+  </div>;
+}
+
 function ExportDoc({id}: {id: string}) {
   const navigate = useNavigate(); const notice = useNotice(); const [params] = useSearchParams();
   const state = useData(async () => { await loadCache(); const doc = id === 'new' ? null : await ad.db.get('stock_exports', id); if (id !== 'new' && !doc) throw new Error('Không tìm thấy phiếu xuất.'); return {doc}; }, [id, params.get('r')]);
   const doc = state.data?.doc;
   const [form, setForm] = useState<Row | null>(null);
-  const f: Row = form ?? {reason: doc?.reason || '', receiver: doc?.receiver || '', note: doc?.note || '', items: (doc?.items || []).map((l: Row) => ({...l}))};
+  const f: Row = form ?? {reason: doc?.reason || '', receiver: doc?.receiver || '', receiver_address: doc?.receiver_address || '', customer_id: doc?.customer_id || '', note: doc?.note || '', items: (doc?.items || []).map((l: Row) => ({...l}))};
   const set = (patch: Row) => setForm({...f, ...patch});
   const readonly = doc?.status === 'done' || !canWrite();
   async function save(confirm: boolean) {
     if (!f.reason) throw new Error('Vui lòng chọn lý do xuất.');
     if (!f.items.length) throw new Error('Phiếu xuất chưa có sản phẩm.');
-    const res = await invOp('export_save', {p_id: doc?.id, reason: f.reason, receiver: f.receiver, note: f.note, items: f.items.map((l: Row) => ({product_id: l.product_id, qty: num(l.qty), note: l.note || ''})), confirm});
+    const res = await invOp('export_save', {p_id: doc?.id, reason: f.reason, receiver: f.receiver, receiver_address: f.receiver_address, customer_id: f.customer_id, note: f.note, items: f.items.map((l: Row) => ({product_id: l.product_id, qty: num(l.qty), note: l.note || ''})), confirm});
     await loadCache(); notice(confirm ? `Đã xuất kho theo phiếu ${res.code}.` : `Đã lưu phiếu ${res.code}.`);
     setForm(null); navigate(`/stock-exports/${res.id}?r=${Date.now()}`, {replace: true});
   }
@@ -335,7 +355,8 @@ function ExportDoc({id}: {id: string}) {
   </Head>
   <Panel title="Thông tin phiếu"><div className="ar-grid">
     <label><span>Lý do xuất *</span><Combo name="reason" label="Lý do xuất" value={f.reason} disabled={readonly} options={EXPORT_REASONS} placeholder="Chọn lý do hoặc gõ lý do khác…" onChange={(v) => set({reason: v})}/></label>
-    <label><span>Người nhận / bộ phận</span><input value={f.receiver} readOnly={readonly} onChange={(e) => set({receiver: e.target.value})}/></label>
+    <ReceiverInput value={f.receiver} readOnly={readonly} onChange={(v) => set({receiver: v, customer_id: ''})} onPick={(c) => { const a: Row = (c.addresses || []).find((x: Row) => x.default) || (c.addresses || [])[0] || {}; set({receiver: c.name || c.phone, customer_id: c.id, receiver_address: [a.address, a.district, a.province].filter(Boolean).join(', ') || f.receiver_address}); }}/>
+    <label className="full"><span>Địa chỉ (bộ phận) người nhận</span><input value={f.receiver_address} readOnly={readonly} placeholder="Địa chỉ khách / tên bộ phận nhận – in trên phiếu xuất kho" onChange={(e) => set({receiver_address: e.target.value})}/></label>
     <label className="full"><span>Ghi chú</span><input value={f.note} readOnly={readonly} onChange={(e) => set({note: e.target.value})}/></label>
   </div></Panel>
   <Panel title="Sản phẩm xuất">

@@ -615,7 +615,7 @@ AD.demo = () => {
         a = { ...a, reason: typeof a.reason === "string" ? a.reason.trim().slice(0, 200) : "" };
         if (!a.reason) invFail("Vui lòng chọn hoặc nhập lý do xuất");
         if (!doc) { doc = { id: nextId("stock_exports"), code: nextCode("PXK"), status: "draft", created_by: userName(), created_at: nowIso() }; db.stock_exports.push(doc); }
-        Object.assign(doc, { reason: a.reason, items: invLines(a.items, "export"), note: String(a.note || "").trim(), receiver: String(a.receiver || "").trim(), updated_at: nowIso() });
+        Object.assign(doc, { reason: a.reason, items: invLines(a.items, "export"), note: String(a.note || "").trim(), receiver: String(a.receiver || "").trim().slice(0, 200), receiver_address: String(a.receiver_address || "").trim().slice(0, 300), customer_id: String(a.customer_id || "").trim().slice(0, 80), updated_at: nowIso() });
         if (!a.confirm) return doc;
       }
       let value = 0;

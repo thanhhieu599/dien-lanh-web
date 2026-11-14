@@ -3418,3 +3418,4 @@ body{-webkit-font-smoothing:antialiased;color:#212121}
   .cps-plan { height: 120px; }
   .cps-sun { grid-template-columns: 1fr; }
 }
+.react-review .stars { font-size: 16px; letter-spacing: 1px; margin: 6px 0 4px; display: inline-block; }

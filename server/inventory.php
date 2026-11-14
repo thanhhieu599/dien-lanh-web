@@ -201,7 +201,9 @@ function inventoryEndpoint(array $a): array {
                 $a['reason'] = $reason;
                 $doc = array_merge($doc ?? ['code' => nextCode('PXK'), 'status' => 'draft', 'created_by' => userName($user)], [
                     'reason' => $a['reason'], 'items' => invLines($a['items'] ?? [], 'export'), 'note' => trim((string)($a['note'] ?? '')),
-                    'receiver' => trim((string)($a['receiver'] ?? '')),
+                    'receiver' => mb_substr(trim((string)($a['receiver'] ?? '')), 0, 200),
+                    'receiver_address' => mb_substr(trim((string)($a['receiver_address'] ?? '')), 0, 300),
+                    'customer_id' => mb_substr(trim((string)($a['customer_id'] ?? '')), 0, 80),
                 ]);
                 $doc = put('stock_exports', $doc, !$id);
                 if (empty($a['confirm'])) return $doc;

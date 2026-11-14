@@ -854,11 +854,7 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
                         )}
                       </div>
                     </div>
-                    <span className="stars">
-                      {"★".repeat(
-                        Math.max(0, Math.min(5, Math.round(r.rating))),
-                      )}
-                    </span>
+                    <Stars rating={Math.round(Number(r.rating) || 0)} />
                     <p>{r.text}</p>
                     <small>{dt.u.date(r.date || r.created_at)}</small>
                   </article>

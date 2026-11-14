@@ -1404,6 +1404,25 @@ AD.demo = () => {
         stockMove(row, Number(stock) - (Number(row.stock) || 0), "manual", "", "Sửa tồn kho ở trang sản phẩm");
         patch = rest;
       }
+      // Đổi danh mục / thương hiệu: bỏ sản phẩm khỏi danh sách của danh mục / thương hiệu cũ (giống máy chủ)
+      if (table === "products") {
+        const pid = String(row.id);
+        for (const [list, field] of [[db.categories, "cat"], [db.brands, "brand"]]) {
+          if (!(field in patch) || String(patch[field]) === String(row[field])) continue;
+          for (const g of list) {
+            if (String(g.id) !== String(patch[field]) && Array.isArray(g.product_ids)) g.product_ids = g.product_ids.filter((v) => String(v) !== pid);
+            if (String(g.id) === String(patch[field])) {
+              if (Array.isArray(g.product_ids) && !g.product_ids.map(String).includes(pid)) g.product_ids.push(row.id);
+              if (Array.isArray(g.excluded_product_ids)) g.excluded_product_ids = g.excluded_product_ids.filter((v) => String(v) !== pid);
+            }
+          }
+          if (field === "cat") {
+            const sub = (db.categories.find((c) => String(c.id) === String(patch.cat))?.subs || []).find((x) => x.id === (patch.sub ?? row.sub));
+            if (!sub) patch = { ...patch, sub: "", sub2: "" };
+            else if (!(sub.items || []).some((x) => x.id === (patch.sub2 ?? row.sub2))) patch = { ...patch, sub2: "" };
+          }
+        }
+      }
       Object.assign(row, patch, {
         updated_at: new Date().toISOString(),
         updated_by_name: userName(),

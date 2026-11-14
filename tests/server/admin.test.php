@@ -198,6 +198,19 @@ try {
     $created[] = ['crm_customers', $c2['id']];
     try { patchAdmin('crm_customers', $c2['id'], ['phone'=>'0900000097']); throw new RuntimeException('Phone change to existing customer accepted'); }
     catch (HttpError $e) { checkAdmin($e->getCode() === 409, 'Không đổi được số điện thoại sang số của khách khác'); }
+    // Đổi danh mục / thương hiệu sản phẩm: website không còn hiện ở danh mục cũ (kể cả danh mục đã sắp xếp sản phẩm tay)
+    $catA = endpoint('categories', 'POST', ['id'=>$prefix . '-cat-a', 'name'=>'QA DM A', 'active'=>true, 'subs'=>[['id'=>'nhom-a', 'name'=>'Nhóm A']], 'filters'=>[]])[0];
+    $catB = endpoint('categories', 'POST', ['id'=>$prefix . '-cat-b', 'name'=>'QA DM B', 'active'=>true, 'subs'=>[['id'=>'nhom-b', 'name'=>'Nhóm B']], 'filters'=>[]])[0];
+    $created[] = ['categories', $catA['id']]; $created[] = ['categories', $catB['id']];
+    $moved = endpoint('products', 'POST', ['sku'=>$prefix . '-move', 'slug'=>$prefix . '-move', 'name'=>'QA đổi danh mục', 'cat'=>$catA['id'], 'sub'=>'nhom-a', 'brand'=>$brand, 'price'=>1000, 'stock'=>0, 'active'=>true])[0];
+    $created[] = ['products', $moved['id']];
+    patchAdmin('categories', $catA['id'], ['product_ids'=>[$moved['id']]]);
+    patchAdmin('categories', $catB['id'], ['product_ids'=>[], 'excluded_product_ids'=>[$moved['id']]]);
+    $after = patchAdmin('products', $moved['id'], ['cat'=>$catB['id'], 'sub'=>'nhom-a']);
+    $a = record('categories', $catA['id']); $b = record('categories', $catB['id']);
+    checkAdmin(!in_array((string)$moved['id'], array_map('strval', $a['product_ids']), true), 'Đổi danh mục: sản phẩm rời danh sách của danh mục cũ');
+    checkAdmin(in_array((string)$moved['id'], array_map('strval', $b['product_ids']), true) && !in_array((string)$moved['id'], array_map('strval', $b['excluded_product_ids']), true), 'Đổi danh mục: sản phẩm vào danh sách danh mục mới, không bị loại');
+    checkAdmin(($after['sub'] ?? '') === '', 'Đổi danh mục: bỏ nhóm cũ không thuộc danh mục mới');
     echo "Admin MySQL: $checks checks passed.\n";
 } finally {
     foreach (array_reverse($created) as [$table, $id]) sql('DELETE FROM records WHERE resource=? AND record_id=?', [$table, (string)$id]);

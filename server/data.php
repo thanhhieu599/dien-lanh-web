@@ -78,6 +78,35 @@ function projectRow(array $row, string $table, string $select, ?array $user): ar
     }
     return $result;
 }
+// Đổi danh mục / thương hiệu của sản phẩm: cập nhật danh sách sản phẩm (thứ tự hiển thị) của danh mục / thương hiệu
+// cũ và mới, để website không còn hiện sản phẩm ở chỗ cũ; nhóm (cấp 2, 3) không thuộc danh mục mới thì bỏ
+function syncProductMembership(array $before, array &$row): void {
+    $id = (string)$row['id'];
+    $ids = fn($list) => array_map('strval', $list ?? []);
+    foreach ([['categories', 'cat'], ['brands', 'brand']] as [$table, $field]) {
+        $old = (string)($before[$field] ?? ''); $new = (string)($row[$field] ?? '');
+        if ($old === $new) continue;
+        foreach (allRecords($table) as $g) {
+            $list = $g['product_ids'] ?? null; $changed = false;
+            if ((string)$g['id'] !== $new && is_array($list) && in_array($id, $ids($list), true)) {
+                $g['product_ids'] = array_values(array_filter($list, fn($v) => (string)$v !== $id)); $changed = true;
+            }
+            if ((string)$g['id'] === $new) {
+                if (is_array($list) && !in_array($id, $ids($list), true)) { $g['product_ids'][] = $row['id']; $changed = true; }
+                if (in_array($id, $ids($g['excluded_product_ids'] ?? []), true)) {
+                    $g['excluded_product_ids'] = array_values(array_filter($g['excluded_product_ids'], fn($v) => (string)$v !== $id)); $changed = true;
+                }
+            }
+            if ($changed) put($table, $g);
+        }
+        if ($field === 'cat') {
+            $subs = record('categories', $new)['subs'] ?? [];
+            $sub = array_values(array_filter($subs, fn($s) => ($s['id'] ?? '') === ($row['sub'] ?? '')))[0] ?? null;
+            if (!$sub) { $row['sub'] = ''; $row['sub2'] = ''; }
+            elseif (!in_array($row['sub2'] ?? '', array_column($sub['items'] ?? [], 'id'), true)) $row['sub2'] = '';
+        }
+    }
+}
 // Một số điện thoại chỉ thuộc 1 khách hàng (khách tạo tại admin, khách vãng lai, khách đã đăng ký)
 function crmPhoneFree(string $phone, ?string $exceptId): void {
     foreach (allRecords('crm_customers') as $c) if ((string)$c['id'] !== $exceptId && phoneKey((string)($c['phone'] ?? '')) === $phone) fail('Số điện thoại khách hàng đã tồn tại', 409);
@@ -265,7 +294,9 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
         // Sửa tồn kho tay ở trang sản phẩm: vẫn ghi lịch sử kho
         $stockChange = $table === 'products' && isset($patch['stock']) && is_numeric($patch['stock']) ? (int)$patch['stock'] - (int)($row['stock'] ?? 0) : 0;
         if ($stockChange) unset($patch['stock']);
+        $before = $row;
         $row = array_merge($row, $patch);
+        if ($table === 'products') syncProductMembership($before, $row);
         validateRow($table, $row);
         if ($stockChange) { stockMove($row, $stockChange, 'manual', '', 'Sửa tồn kho ở trang sản phẩm', $user, null, false); validateRow($table, $row); }
         return [put($table, $row)];

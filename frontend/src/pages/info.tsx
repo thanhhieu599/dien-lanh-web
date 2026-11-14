@@ -11,6 +11,26 @@ import { Field } from "../components/forms";
 import { PagedList } from "../components/collections";
 import { LeadForm } from "../components/lead-form";
 import type { Row } from "../types";
+// Vị trí trên bản đồ: ưu tiên ô "Vị trí trên bản đồ" trong admin (tọa độ hoặc link Google Maps),
+// không có thì dùng địa chỉ (bỏ "Khu phố" để Google tìm đúng số nhà, tên đường).
+export function mapQuery(): string {
+  const raw = String(dt.config.mapQuery || "").trim();
+  if (raw) {
+    const at = raw.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || raw.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+    if (at) return `${at[1]},${at[2]}`;
+    try {
+      const u = new URL(raw);
+      const q = u.searchParams.get("q") || u.searchParams.get("query");
+      if (q) return q;
+    } catch {
+      /* không phải link: dùng nguyên văn (tọa độ hoặc tên địa điểm) */
+    }
+    return raw.replace(/\s+/g, " ");
+  }
+  return String(dt.config.address || "")
+    .replace(/,?\s*(khu phố|kp\.?|tổ dân phố)\s*\d+\s*(?=,)/gi, "")
+    .trim();
+}
 export function ContactPage() {
   useMeta("Liên hệ");
   return (
@@ -25,13 +45,13 @@ export function ContactPage() {
         <div className="two-col">
           <div className="contact-main">
             <LeadForm title="Gửi tin nhắn cho chúng tôi" />
-            {dt.config.address && (
+            {mapQuery() && (
               <section className="section-box contact-map">
                 <div className="contact-map-head">
                   <h3>Bản đồ đường đi</h3>
                   <a
                     className="btn btn-outline btn-sm"
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dt.config.address)}`}
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery())}`}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -44,7 +64,7 @@ export function ContactPage() {
                     loading="lazy"
                     title={`Bản đồ ${dt.config.company || "cửa hàng"}`}
                     referrerPolicy="no-referrer-when-downgrade"
-                    src={`https://maps.google.com/maps?q=${encodeURIComponent(dt.config.address)}&output=embed`}
+                    src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery())}&z=17&output=embed`}
                   />
                 </div>
               </section>

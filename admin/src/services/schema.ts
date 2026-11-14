@@ -13,6 +13,12 @@ export const settingsFields:FieldSpec[] = [
     { key: "taxCode", label: "Mã số thuế", col: "third" },
     { key: "logo", label: "Logo công ty (in trên phiếu nhập / xuất kho, hóa đơn)", type: "image", folder: "settings", col: "full", help: "Ảnh nền trắng hoặc trong suốt, khổ ngang khoảng 400 × 160 px. Chưa có logo thì chứng từ in biểu tượng và tên cửa hàng." },
     { key: "address", label: "Địa chỉ", col: "third" },
+    {
+      key: "mapQuery",
+      label: "Vị trí trên bản đồ (trang Liên hệ)",
+      col: "third",
+      help: "Dán tọa độ (vd 10.7712, 106.6040) hoặc link Google Maps có dạng .../@10.77,106.60,... Để trống: dùng địa chỉ",
+    },
     { key: "workingHours", label: "Giờ làm việc (hiển thị)", col: "third" },
     {
       key: "openTime",

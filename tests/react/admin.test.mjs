@@ -876,6 +876,22 @@ try {
     await open("dashboard");
     for (const id of ["may-lanh", cat.id]) await page.evaluate(([id, on]) => AD.db.update("categories", id, { show_home: on }), [id, id === "may-lanh"]);
   }
+  // Thương hiệu: dải logo dưới danh mục nhanh ở trang chủ; tắt "Hiện ở dải Thương hiệu" → ẩn khỏi trang chủ
+  {
+    const homeBrands = async () => { await page.goto(base + "frontend/index.html"); await page.locator("#home-brands").waitFor(); return page.locator("#home-brands .brand-chip-name").allTextContents(); };
+    const b = await page.evaluate(() => DT.brands[0]);
+    assert.ok((await homeBrands()).includes(b.name), "Thương hiệu mặc định hiện ở dải trang chủ");
+    assert.equal(await page.evaluate(() => { const q = document.querySelector(".quick-category-section"); const h = document.querySelector("#home-brands"); return !!(q && h && q.compareDocumentPosition(h) & Node.DOCUMENT_POSITION_FOLLOWING); }), true, "Dải Thương hiệu nằm dưới danh mục nhanh");
+    await open(`brands/${encodeURIComponent(b.id)}`);
+    assert.equal(await page.locator("[name=show_home]").isChecked(), true);
+    await page.locator("[name=show_home]").uncheck();
+    await saved();
+    assert.ok(!(await homeBrands()).includes(b.name), "Tắt: thương hiệu biến khỏi dải trang chủ");
+    await open(`brands/${encodeURIComponent(b.id)}`);
+    await page.locator("[name=show_home]").check();
+    await saved();
+    assert.ok((await homeBrands()).includes(b.name), "Bật lại: thương hiệu hiện lại ở trang chủ");
+  }
   // Cấu hình → Tài khoản & phân quyền: tạo nhân viên, đổi vai trò, đặt lại mật khẩu, khóa / mở khóa
   {
     await open("accounts");

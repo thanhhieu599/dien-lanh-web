@@ -610,9 +610,11 @@ window.AD = window.AD || {};
         },
         { label: "Xuất xứ", key: "origin" },
         { label: "Hiển thị", render: (r) => yes(r.active) },
+        { label: "Trang chủ", render: (r) => yes(r.show_home !== false) },
       ],
       defaults: () => ({
         active: true,
+        show_home: true,
         color: "#0b5ed7",
         sort: AD.cache.brands?.length || 0,
       }),
@@ -631,6 +633,19 @@ window.AD = window.AD || {};
           label: "Hiển thị thương hiệu trên website",
           type: "bool",
           col: "full",
+        },
+        {
+          key: "show_home",
+          label: "Hiện ở dải Thương hiệu trên trang chủ",
+          type: "bool",
+          col: "full",
+          help: "Dải logo thương hiệu ngay dưới danh mục nhanh. Tắt để ẩn khỏi trang chủ, thương hiệu vẫn có trang riêng.",
+        },
+        {
+          key: "sort",
+          label: "Thứ tự hiển thị",
+          type: "number",
+          help: "Số nhỏ hiện trước (trang chủ và trang Thương hiệu).",
         },
         {
           key: "logo",

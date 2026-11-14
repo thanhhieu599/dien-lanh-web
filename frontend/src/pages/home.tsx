@@ -21,6 +21,41 @@ import { MegaMenu, uniqueCategories } from "../components/navigation";
 import { TrustSection } from "../components/trust";
 import type { Row, Product } from "../types";
 
+// Dải "Thương hiệu" dưới danh mục nhanh: thương hiệu đang hiển thị và bật "Hiện ở trang chủ" trong admin
+// (mặc định bật), theo ô Thứ tự; cuộn ngang bằng nút ‹ › hoặc vuốt trên điện thoại
+function BrandStrip() {
+  const track = useRef<HTMLDivElement>(null);
+  const brands = dt.brands.filter((b: Row) => b.show_home !== false);
+  if (!brands.length) return null;
+  const scroll = (dir: number) =>
+    track.current?.scrollBy({ left: dir * track.current.clientWidth * 0.8, behavior: "smooth" });
+  return (
+    <section className="section section-box brand-strip" id="home-brands">
+      <div className="section-head">
+        <h2>Thương hiệu</h2>
+        <div className="brand-strip-nav">
+          <button type="button" aria-label="Thương hiệu trước" onClick={() => scroll(-1)}>‹</button>
+          <button type="button" aria-label="Thương hiệu tiếp theo" onClick={() => scroll(1)}>›</button>
+          <ShopLink className="link" href="thuong-hieu.html">
+            Xem tất cả
+            <Icon name="right" />
+          </ShopLink>
+        </div>
+      </div>
+      <div className="brand-strip-track" ref={track}>
+        {brands.map((b: Row) => (
+          <ShopLink className="brand-chip" href={dt.api.brandUrl(b.id)} key={b.id} aria-label={`Sản phẩm thương hiệu ${b.name}`}>
+            <span className="brand-chip-logo">
+              {b.logo ? <img src={safeImage(b.logo)} alt="" loading="lazy" /> : <b style={{ color: b.color || undefined }}>{b.name}</b>}
+            </span>
+            <span className="brand-chip-name">{b.name}</span>
+          </ShopLink>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // Dải sản phẩm trang chủ: danh mục bật "Hiện ở trang chủ" trong admin (mặc định các nhóm hàng chính),
 // theo thứ tự của danh mục; chỉ hiện danh mục có sản phẩm
 function homeBlocks(categories: ReturnType<typeof uniqueCategories>) {
@@ -255,6 +290,7 @@ export function HomePage() {
           }}
         />
       </section>
+      <BrandStrip />
       {seconds > 0 && (
         <section className="section flash" id="flash">
           <div className="flash-head">

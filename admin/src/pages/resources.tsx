@@ -186,6 +186,8 @@ export function ResourceEditor({ resource: key }: { resource: string }) {
     if (editing && !loaded) throw new Error("Bản ghi không tồn tại.");
     const row: Row = { ...(r.defaults?.() || {}), ...(loaded || {}) };
     // Danh mục chưa bật/tắt "Hiện ở trang chủ": hiện đúng trạng thái website đang dùng (mặc định)
+    // Thương hiệu cũ chưa có cờ trang chủ: mặc định đang hiện (giống website)
+    if (key === "brands" && editing && typeof row.show_home !== "boolean") row.show_home = true;
     if (key === "categories" && editing && typeof row.show_home !== "boolean" && dt.showOnHome)
       row.show_home = dt.showOnHome(row);
     if (key === "coupons" && row.condition_type === undefined)
@@ -722,7 +724,7 @@ export const RESOURCE_TABS: Record<string, ResourceTab[]> = {
     tab("products", "Sản phẩm", "Sản phẩm thuộc danh mục và thứ tự hiển thị trên website.", [], "productMembership"),
   ],
   brands: [
-    tab("general", "Thông tin & logo", "Tên thương hiệu, trạng thái hiển thị và logo trên trang Thương hiệu.", ["name", "active", "logo"]),
+    tab("general", "Thông tin & logo", "Tên thương hiệu, trạng thái hiển thị, bật/tắt ở dải Thương hiệu trang chủ, thứ tự và logo.", ["name", "active", "show_home", "sort", "logo"]),
     tab("products", "Sản phẩm", "Sản phẩm thuộc thương hiệu và thứ tự hiển thị trên website.", [], "productMembership"),
   ],
   products: [

@@ -251,7 +251,7 @@ DT.backend = (() => {
       settings: "key=in.(store,vision,trust,home,catalog)&select=key,value",
       categories:
         "select=id,name,short,icon,art,image,promo_image,promo_title,promo_href,product_ids,excluded_product_ids,subs,filters&order=sort",
-      brands: "select=id,name,slug,origin,color,logo,product_ids&order=sort",
+      brands: "select=id,name,slug,origin,color,logo,product_ids,show_home,sort&order=sort",
       products: "select=*&order=id",
       stores: "select=id,name,city,address,phone,hours,map&order=sort",
       posts:

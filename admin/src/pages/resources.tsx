@@ -294,6 +294,9 @@ function Editor({
         subs: subs.list,
         filters: row.filters || [],
       });
+      // Tab danh mục con ở trang chủ: chỉ giữ nhóm còn tồn tại; chưa chọn (không phải mảng) = tự động
+      if (Array.isArray(row.home_subs)) data.home_subs = row.home_subs.filter((id: string) => subs.list.some((g) => g.id === id));
+      else if (row.home_subs === null) data.home_subs = null;
       if (subs.error) problems.subs = subs.error;
       const filters = normalizeFilters(row.filters);
       data.filters = filters.list;
@@ -615,6 +618,43 @@ function uniqueSlug(name: string, taken: Set<string>) {
   return id;
 }
 // Gán mã (slug) cho nhóm/mục mới thêm; mã cũ giữ nguyên để link và sản phẩm đã gán không bị mất
+// Chọn nhóm (danh mục con) hiện thành tab trên dải sản phẩm trang chủ; đồng bộ theo danh sách nhóm ở trên
+function HomeSubsPicker({ row, onChange }: { row: Row; onChange: (v: string[] | null) => void }) {
+  const max = dt.HOME_SUBS_MAX || 6;
+  const groups: Row[] = (row.subs || []).filter((g: Row) => g.name);
+  const auto = !Array.isArray(row.home_subs);
+  const chosen: string[] = auto ? (dt.homeSubs ? dt.homeSubs(row).map((g: Row) => g.id) : []) : row.home_subs;
+  const count = (id: string) => (ad.cache.products || []).filter((p: Row) => p.cat === row.id && p.sub === id).length;
+  const toggle = (id: string, on: boolean) => {
+    const next = on ? [...chosen, id] : chosen.filter((x) => x !== id);
+    onChange(groups.map((g) => g.id).filter((x: string) => next.includes(x)));
+  };
+  return (
+    <fieldset className="home-subs">
+      <legend>Tab danh mục con trên trang chủ</legend>
+      <p className="ce-hint">
+        Nhóm được chọn hiện thành tab cạnh tên danh mục ở dải sản phẩm trang chủ (tối đa {max}). Nhóm chưa có sản phẩm sẽ tự ẩn.
+        {auto ? " Đang để tự động: lấy 4 nhóm đầu có sản phẩm." : ""}
+      </p>
+      {groups.length === 0 ? <p className="ce-hint">Danh mục chưa có nhóm. Thêm nhóm ở trên rồi lưu.</p> : (
+        <div className="home-subs-list">
+          {groups.map((g) => {
+            const on = chosen.includes(g.id);
+            const n = g.id ? count(g.id) : 0;
+            return (
+              <label key={g.id || g.name} className="home-subs-item">
+                <input type="checkbox" name="home_subs" value={g.id || ""} checked={on} disabled={!g.id || (!on && chosen.length >= max)} onChange={(e) => toggle(g.id, e.target.checked)} />
+                <span>{g.name}</span>
+                <small>{!g.id ? "Lưu để tạo mã nhóm" : n ? `${n} sản phẩm` : "Chưa có sản phẩm"}</small>
+              </label>
+            );
+          })}
+        </div>
+      )}
+      {!auto && <button type="button" className="btn btn-light" onClick={() => onChange(null)}>Dùng tự động</button>}
+    </fieldset>
+  );
+}
 function normalizeSubs(value: unknown): { list: SubGroup[]; error?: string } {
   if (!Array.isArray(value))
     return { list: [], error: "Danh sách nhóm không hợp lệ." };
@@ -719,7 +759,7 @@ export const RESOURCE_TABS: Record<string, ResourceTab[]> = {
   categories: [
     tab("general", "Thông tin chung", "Tên, mã đường dẫn, biểu tượng, thứ tự; bật/tắt hiển thị danh mục trên website và dải sản phẩm ở trang chủ (thứ tự dải theo ô Thứ tự).", ["name", "short", "id", "icon", "art", "sort", "active", "show_home"]),
     tab("images", "Hình ảnh", "Ảnh danh mục (hiện lớn ở đầu trang danh mục) và ảnh quảng cáo ở cột đầu dải sản phẩm trên trang chủ.", ["image", "promo_image", "promo_title", "promo_href"]),
-    tab("menu", "Nhóm & mục menu", "Nhóm là tiêu đề cột trong menu Sản phẩm (vd \"Máy lạnh treo tường\"), mục là các dòng bên dưới. Mã được tạo tự động khi lưu.", [], "subs"),
+    tab("menu", "Nhóm & mục menu", "Nhóm là tiêu đề cột trong menu Sản phẩm (vd \"Máy lạnh treo tường\"), mục là các dòng bên dưới. Mã được tạo tự động khi lưu. Cuối mục: chọn nhóm hiện thành tab trên dải sản phẩm ở trang chủ.", [], "subs"),
     tab("filters", "Bộ lọc sản phẩm", "Bộ lọc là các ô khách bấm ở cột trái trang danh mục để thu hẹp sản phẩm theo thông số (vd Công suất: 1 HP, 1.5 HP; Công nghệ: Inverter). Cách dùng: (1) đặt tên bộ lọc và các giá trị ở đây, (2) vào Sản phẩm → sửa từng sản phẩm → Thuộc tính bộ lọc để chọn giá trị cho sản phẩm đó. Giá trị chưa gán cho sản phẩm nào sẽ tự ẩn trên website. Không dùng bộ lọc để đặt tên sản phẩm hay danh mục.", [], "filters"),
     tab("products", "Sản phẩm", "Sản phẩm thuộc danh mục và thứ tự hiển thị trên website.", [], "productMembership"),
   ],
@@ -807,6 +847,7 @@ function ResourceTabs({
         <p className="ce-hint">{current.hint}</p>
         {keysOf(current, index).length > 0 && <div className={`ar-grid ce-grid tab-${current.id}`}>{pick(keysOf(current, index)).map(field)}</div>}
         {current.extra === "subs" && <SubsEditor value={row.subs || []} error={errors.subs} onChange={(v) => patch({ subs: v })} />}
+        {current.extra === "subs" && resource === "categories" && <HomeSubsPicker row={row} onChange={(v) => patch({ home_subs: v })} />}
         {current.extra === "filters" && <FiltersEditor catId={String(row.id || "")} value={row.filters || []} error={errors.filters} onChange={(v) => patch({ filters: v })} />}
         {current.extra === "productMembership" && <ProductMembership row={row} kind={resource as "categories" | "brands"} onChange={patch} bare />}
         {current.extra === "couponScope" && <CouponScope row={row} onChange={patch} error={errors.scope} />}

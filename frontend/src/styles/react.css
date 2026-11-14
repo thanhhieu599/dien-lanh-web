@@ -3254,3 +3254,17 @@ body{-webkit-font-smoothing:antialiased;color:#212121}
 .brand-chip-name{font-size:13px;font-weight:600;color:var(--muted,#5c6573);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 @media(max-width:1024px){.brand-strip-track{grid-auto-columns:calc((100% - 4 * 14px) / 5)}}
 @media(max-width:640px){.brand-strip-track{grid-auto-columns:calc((100% - 2 * 10px) / 3);gap:10px}.brand-strip-nav button{display:none}}
+
+/* Tab danh mục con trên dải sản phẩm trang chủ */
+.section-head:has(.sub-tabs) { flex-wrap: wrap; gap: 8px 24px; }
+.sub-tabs { display: flex; gap: 4px; margin-left: auto; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+.sub-tabs::-webkit-scrollbar { display: none; }
+.sub-tabs button { position: relative; flex: 0 0 auto; border: 0; background: none; padding: 8px 12px; font: inherit; font-size: 15px; color: var(--text, #26313f); cursor: pointer; white-space: nowrap; }
+.sub-tabs button:hover { color: var(--primary, #1a5ba6); }
+.sub-tabs button.active { color: var(--primary, #1a5ba6); font-weight: 600; }
+.sub-tabs button.active::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: -2px; height: 3px; border-radius: 2px; background: var(--primary, #1a5ba6); }
+.sub-tabs + .link { margin-left: 8px; }
+@media (max-width: 900px) {
+  .sub-tabs { order: 3; flex-basis: 100%; margin-left: 0; border-bottom: 1px solid var(--line, #e3e7ee); }
+  .sub-tabs button { padding: 8px 10px; font-size: 14px; }
+}

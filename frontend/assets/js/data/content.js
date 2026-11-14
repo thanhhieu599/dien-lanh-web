@@ -31,6 +31,14 @@ DT.config = {
 // Danh mục hiện dải sản phẩm ở trang chủ khi admin chưa bật/tắt riêng (Danh mục → "Hiện ở trang chủ")
 DT.homeCategoryDefaults = ['may-lanh', 'tu-lanh', 'may-giat', 'tu-dong-tu-mat', 'vat-tu-dien-lanh'];
 DT.showOnHome = (c) => (typeof c.show_home === 'boolean' ? c.show_home : DT.homeCategoryDefaults.includes(c.id));
+// Danh mục con hiện thành tab ở dải sản phẩm trang chủ. Admin chọn trong Danh mục › Nhóm & mục menu (tối đa 6);
+// chưa chọn thì tự lấy 4 nhóm đầu có sản phẩm. Nhóm đã xóa hoặc chưa có sản phẩm không hiện.
+DT.HOME_SUBS_MAX = 6;
+DT.homeSubs = (c) => {
+  const subs = (c.subs || []).filter((s) => s.id && (DT.products || []).some((p) => p.cat === c.id && p.sub === s.id));
+  if (Array.isArray(c.home_subs)) return c.home_subs.map((id) => subs.find((s) => s.id === id)).filter(Boolean).slice(0, DT.HOME_SUBS_MAX);
+  return subs.slice(0, 4);
+};
 
 DT.visionSlots = [
   { key: 'hero', label: 'Ảnh lớn đầu trang', hint: 'Trụ sở / toàn cảnh công ty', size: '1200 × 1500 px (dọc)' },

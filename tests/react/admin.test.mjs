@@ -876,6 +876,33 @@ try {
     await open("dashboard");
     for (const id of ["may-lanh", cat.id]) await page.evaluate(([id, on]) => AD.db.update("categories", id, { show_home: on }), [id, id === "may-lanh"]);
   }
+  // Danh mục con thành tab trên dải sản phẩm trang chủ: mặc định tự động; admin bỏ chọn → tab biến mất; bấm tab lọc đúng nhóm
+  {
+    const tabsOf = async (cat) => { await page.goto(base + "frontend/index.html"); const sec = page.locator(`section[data-block="${cat}"]`); await sec.waitFor(); return sec.locator(".sub-tabs button").allTextContents(); };
+    const cat = await page.evaluate(() => DT.categories.find((c) => DT.showOnHome(c) && DT.homeSubs(c).length >= 2));
+    assert.ok(cat, "Có danh mục trang chủ có từ 2 nhóm con có sản phẩm");
+    const auto = await page.evaluate((id) => DT.homeSubs(DT.categories.find((c) => c.id === id)).map((s) => s.name), cat.id);
+    assert.deepEqual(await tabsOf(cat.id), ["Nổi bật", ...auto], "Mặc định: tab Nổi bật + tối đa 4 nhóm có sản phẩm");
+    const sec = page.locator(`section[data-block="${cat.id}"]`);
+    await sec.locator(".sub-tabs button", { hasText: auto[0] }).click();
+    const subId = await page.evaluate(([c, n]) => DT.categories.find((x) => x.id === c).subs.find((s) => s.name === n).id, [cat.id, auto[0]]);
+    const names = await sec.locator(".pcard h3, .pcard .name, .pcard a[href*='san-pham']").allTextContents();
+    assert.ok(names.length > 0, "Tab nhóm có sản phẩm");
+    assert.ok(await page.evaluate(([c, s]) => [...document.querySelectorAll(`section[data-block="${c}"] a[href*="id="]`)].every((a) => { const id = Number(new URL(a.href).searchParams.get("id")); const p = DT.products.find((x) => x.id === id); return !p || p.sub === s; }), [cat.id, subId]), "Bấm tab: chỉ còn sản phẩm của nhóm đó");
+    assert.match(await sec.locator(".section-head .link").getAttribute("href"), new RegExp(`sub=${subId}|/${subId}`), "Xem tất cả mở đúng nhóm đang chọn");
+    await open(`categories/${cat.id}`);
+    await tabTo("Nhóm & mục menu");
+    const box = page.locator(".home-subs");
+    assert.equal(await box.locator("input:checked").count(), auto.length, "Admin hiện đúng các nhóm đang hiển thị");
+    await box.locator(".home-subs-item", { hasText: auto[0] }).locator("input").uncheck();
+    await saved();
+    assert.deepEqual(await tabsOf(cat.id), ["Nổi bật", ...auto.slice(1)], "Bỏ chọn trong admin: tab biến khỏi trang chủ");
+    await open(`categories/${cat.id}`);
+    await tabTo("Nhóm & mục menu");
+    await page.locator(".home-subs button", { hasText: "Dùng tự động" }).click();
+    await saved();
+    assert.deepEqual(await tabsOf(cat.id), ["Nổi bật", ...auto], "Dùng tự động: trở lại mặc định");
+  }
   // Thương hiệu: dải logo dưới danh mục nhanh ở trang chủ; tắt "Hiện ở dải Thương hiệu" → ẩn khỏi trang chủ
   {
     const homeBrands = async () => { await page.goto(base + "frontend/index.html"); await page.locator("#home-brands").waitFor(); return page.locator("#home-brands .brand-chip-name").allTextContents(); };

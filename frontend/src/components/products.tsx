@@ -205,14 +205,27 @@ export function CategorySection({
 }: {
   category: import("../types").Category;
 }) {
-  const products = dt.api.list({ cat: c.id, sort: "category" }).items;
+  // Tab danh mục con (chọn trong Admin › Danh mục › Nhóm & mục menu); "" = tất cả sản phẩm của danh mục
+  const tabs: { id: string; name: string }[] = dt.homeSubs ? dt.homeSubs(c) : [];
+  const [tab, setTab] = useState("");
+  const products = dt.api.list({ cat: c.id, sub: tab || undefined, sort: "category" }).items;
   // Ảnh quảng cáo cột đầu: chọn trong Admin › Danh mục › Ảnh quảng cáo trang chủ
   const promo = safeImage(c.promo_image);
   return (
     <section className="section section-box" data-block={c.id}>
       <div className="section-head">
         <h2>{c.name}</h2>
-        <ShopLink className="link" href={dt.api.catUrl(c.id)}>
+        {tabs.length > 0 && (
+          <div className="sub-tabs" role="tablist" aria-label={`Nhóm sản phẩm ${c.name}`}>
+            <button type="button" role="tab" aria-selected={tab === ""} className={tab === "" ? "active" : ""} onClick={() => setTab("")}>Nổi bật</button>
+            {tabs.map((s) => (
+              <button type="button" role="tab" key={s.id} aria-selected={tab === s.id} className={tab === s.id ? "active" : ""} onClick={() => setTab(s.id)}>
+                {s.name}
+              </button>
+            ))}
+          </div>
+        )}
+        <ShopLink className="link" href={dt.api.catUrl(c.id, tab || undefined)}>
           Xem tất cả
           <Icon name="right" />
         </ShopLink>
@@ -230,11 +243,11 @@ export function CategorySection({
               <em>Xem ngay</em>
             </span>
           </ShopLink>
-          <ProductGrid products={products} pageSize={4} />
+          <ProductGrid key={tab} products={products} pageSize={4} />
         </div>
       ) : (
         <div className="block-body">
-          <ProductGrid products={products} />
+          <ProductGrid key={tab} products={products} />
         </div>
       )}
     </section>

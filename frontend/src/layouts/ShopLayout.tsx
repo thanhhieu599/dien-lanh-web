@@ -141,7 +141,8 @@ export function ShopLayout({ children }: { children: ReactNode }) {
     },
     {
       title: "DOANH NGHIỆP",
-      href: "bao-gia-du-an.html",
+      // Bấm "Doanh nghiệp" mở trang Tầm nhìn & Sứ mệnh (giới thiệu doanh nghiệp); các mục con giữ nguyên
+      href: "tam-nhin-su-menh.html",
       items: [
         { title: "Báo giá dự án", href: "bao-gia-du-an.html" },
         { title: "Dự án tiêu biểu", href: "du-an.html" },

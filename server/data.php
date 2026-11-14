@@ -116,6 +116,17 @@ function crmPhoneFree(string $phone, ?string $exceptId): void {
         if (!$linked) fail('Số điện thoại đã có tài khoản khách hàng', 409);
     }
 }
+// Thông tin xuất hóa đơn của khách (tên đơn vị, MST, địa chỉ, email nhận hóa đơn) – dùng khi in hóa đơn cho đơn chưa có
+function crmInvoice($v): array {
+    $v = is_array($v) ? $v : [];
+    $out = [];
+    foreach (['company' => 200, 'taxCode' => 20, 'address' => 300, 'email' => 120] as $k => $max) {
+        $out[$k] = mb_substr(trim((string)($v[$k] ?? '')), 0, $max);
+    }
+    if ($out['taxCode'] !== '' && !preg_match('/^\d{10}(-\d{3})?$/', $out['taxCode'])) fail('Mã số thuế phải gồm 10 số hoặc 13 số (dạng 0123456789-001)');
+    if ($out['email'] !== '' && !filter_var($out['email'], FILTER_VALIDATE_EMAIL)) fail('Email nhận hóa đơn không hợp lệ');
+    return $out;
+}
 function crmSummary(): array {
     $customers = allRecords('crm_customers');
     foreach (allRecords('profiles') as $profile) {
@@ -230,6 +241,7 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
             $body['phone'] = phoneKey((string)($body['phone'] ?? ''));
             if (!preg_match('/^0[0-9]{9,10}$/', $body['phone'])) fail('Số điện thoại không hợp lệ');
             crmPhoneFree($body['phone'], null);
+            if (array_key_exists('invoice', $body)) $body['invoice'] = crmInvoice($body['invoice']);
         }
         if ($table === 'suppliers') { unset($body['debt'], $body['total_purchased'], $body['purchase_count']); $body['code'] = trim((string)($body['code'] ?? '')) ?: 'NCC' . str_pad((string)(count(allRecords('suppliers')) + 1), 4, '0', STR_PAD_LEFT); }
         if ($table !== 'products') return [put($table, $body, true)];
@@ -275,7 +287,8 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
         $patch = $body;
         unset($patch[pk($table)], $patch['created_at']);
         if ($table === 'crm_customers') {
-            $patch = array_intersect_key($patch, array_flip(['name','phone','email','addresses','tags','note','marketing_opt_in']));
+            $patch = array_intersect_key($patch, array_flip(['name','phone','email','addresses','tags','note','marketing_opt_in','invoice']));
+            if (array_key_exists('invoice', $patch)) $patch['invoice'] = crmInvoice($patch['invoice']);
             if (isset($patch['phone']) && phoneKey((string)$patch['phone']) !== phoneKey((string)($row['phone'] ?? ''))) {
                 $patch['phone'] = phoneKey((string)$patch['phone']);
                 if (!preg_match('/^0[0-9]{9,10}$/', $patch['phone'])) fail('Số điện thoại không hợp lệ');

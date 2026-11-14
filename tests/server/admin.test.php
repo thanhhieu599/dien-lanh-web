@@ -198,6 +198,12 @@ try {
     $created[] = ['crm_customers', $c2['id']];
     try { patchAdmin('crm_customers', $c2['id'], ['phone'=>'0900000097']); throw new RuntimeException('Phone change to existing customer accepted'); }
     catch (HttpError $e) { checkAdmin($e->getCode() === 409, 'Không đổi được số điện thoại sang số của khách khác'); }
+    // Thông tin xuất hóa đơn lưu ở hồ sơ khách (đơn web thiếu tên đơn vị / MST vẫn bổ sung được sau)
+    patchAdmin('crm_customers', $c2['id'], ['invoice'=>['company'=>' Công ty QA ', 'taxCode'=>'0316112415', 'address'=>'1 Lê Lợi', 'email'=>'kt@qa.vn', 'hack'=>'x']]);
+    $inv = record('crm_customers', $c2['id'])['invoice'] ?? [];
+    checkAdmin(($inv['company'] ?? '') === 'Công ty QA' && ($inv['taxCode'] ?? '') === '0316112415' && !isset($inv['hack']), 'Lưu tên đơn vị, MST, địa chỉ, email hóa đơn vào hồ sơ khách');
+    try { patchAdmin('crm_customers', $c2['id'], ['invoice'=>['company'=>'X', 'taxCode'=>'12AB']]); throw new RuntimeException('Bad tax code accepted'); }
+    catch (HttpError $e) { checkAdmin($e->getCode() === 400, 'Mã số thuế sai định dạng bị từ chối'); }
     // Đổi danh mục / thương hiệu sản phẩm: website không còn hiện ở danh mục cũ (kể cả danh mục đã sắp xếp sản phẩm tay)
     $catA = endpoint('categories', 'POST', ['id'=>$prefix . '-cat-a', 'name'=>'QA DM A', 'active'=>true, 'subs'=>[['id'=>'nhom-a', 'name'=>'Nhóm A']], 'filters'=>[]])[0];
     $catB = endpoint('categories', 'POST', ['id'=>$prefix . '-cat-b', 'name'=>'QA DM B', 'active'=>true, 'subs'=>[['id'=>'nhom-b', 'name'=>'Nhóm B']], 'filters'=>[]])[0];

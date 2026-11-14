@@ -34,13 +34,28 @@ export function invoiceLines(order: Row, vatRate: number) {
   return {lines, pre, vat: total - pre, total};
 }
 
+// Thông tin xuất hóa đơn lưu ở hồ sơ khách (đơn đặt trên web thường không có tên đơn vị / MST)
+const digits = (v: unknown) => String(v || '').replace(/\D/g, '').replace(/^84/, '0');
+async function customerInvoice(order: Row): Promise<Row> {
+  try {
+    let c: Row | null = order.customer_id ? await ad.db.get('crm_customer_summary', String(order.customer_id)).catch(() => null) : null;
+    const phone = digits(order.phone || order.customer?.phone || order.shipping?.phone);
+    if (!c?.invoice && phone) {
+      const {rows} = await ad.db.list('crm_customer_summary', {search: {q: phone.slice(-9), cols: ['phone']}, limit: 10});
+      c = rows.find((r: Row) => digits(r.phone) === phone && r.invoice) || c;
+    }
+    const v = c?.invoice || {};
+    return {company: v.company || '', taxCode: v.taxCode || '', address: v.address || '', email: v.email || ''};
+  } catch { return {}; }
+}
+
 export function InvoicePage() {
   const id = decodeURIComponent(useLocation().pathname.split('/')[2] || '');
   const navigate = useNavigate(); const notice = useNotice();
   const state = useData(async () => {
     const [order, setting] = await Promise.all([ad.db.get('orders', id, '*,order_items(*)'), ad.db.get('settings', 'store')]);
     if (!order) throw new Error('Không tìm thấy đơn hàng.');
-    return {order, cfg: {...dt.config, ...(setting?.value || {})}};
+    return {order, cfg: {...dt.config, ...(setting?.value || {})}, buyer: await customerInvoice(order)};
   }, [id, useLocation().search]);
   return <DataState state={state}>{state.data && (() => {
     const {order: o, cfg} = state.data;
@@ -48,7 +63,10 @@ export function InvoicePage() {
     const rawRate = Number(o.vat_rate ?? cfg.vatRate ?? 10);
     const rate = Math.max(0, rawRate);
     const {lines, pre, vat, total} = invoiceLines(o, rate);
-    const inv = o.invoice || {};
+    // Thông tin trên đơn được ưu tiên; ô nào trống lấy từ hồ sơ khách hàng (Khách hàng › Sửa khách hàng › Thông tin xuất hóa đơn)
+    const own = o.invoice || {};
+    const inv: Row = {...state.data.buyer};
+    for (const [k, v] of Object.entries(own)) if (String(v ?? '').trim()) inv[k] = v;
     const when = dayParts(o.invoiced_at);
     const address = [o.shipping?.address, o.shipping?.district, o.shipping?.province].filter(Boolean).join(', ');
     return <>

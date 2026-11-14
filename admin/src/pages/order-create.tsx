@@ -64,6 +64,9 @@ export function OrderCreate() {
     const a: Row = (c.addresses || [])[0] || {};
     setCustomer({name: c.name || '', phone: c.phone || '', email: c.email || '', address: a.address || '', district: a.district || '', province: a.province || ''});
     if (a.address) setMethod('delivery');
+    // Khách đã lưu thông tin xuất hóa đơn: điền sẵn
+    const v: Row = c.invoice || {};
+    if (v.company || v.taxCode) { setInvoice({company: v.company || '', taxCode: v.taxCode || '', address: v.address || '', email: v.email || ''}); setWantInvoice(true); }
   }
   function addProduct(p: Row) {
     setLines([...lines, {key: lineKey(), product_id: p.id, name: p.name, sku: p.sku || '', unit: p.unit || 'Cái', qty: 1, price: num(p.price), stock: num(p.stock)}]);

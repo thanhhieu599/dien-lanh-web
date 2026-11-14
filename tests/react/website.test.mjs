@@ -53,6 +53,8 @@ try {
     console.log(`React route: ${route}`);
   }
   await open('index.html');await page.evaluate(()=>window.__reactSentinel=123);
+  {const groups=await page.evaluate(()=>[...document.querySelectorAll('.mm-mega .mega-group')].map(g=>{const sub=new URL(g.querySelector('h4 a').href).searchParams.get('sub');const cat=new URL(g.querySelector('h4 a').href).searchParams.get('cat');return {n:g.querySelectorAll('a.mega-product').length,more:g.querySelector('a.mega-more')?.textContent||'',total:sub?DT.api.list({cat,sub}).items.length:0};}));
+   assert.ok(groups.length>0&&groups.every(g=>g.n===Math.min(5,g.total)&&(g.total>5?g.more.includes(`(${g.total})`):!g.more)),'Menu Sản phẩm: tối đa 5 sản phẩm mỗi nhóm, nhiều hơn có Xem tất cả: '+JSON.stringify(groups.slice(0,4)));}
   {const svc=await page.locator('.mainnav li.has-sub',{hasText:'DỊCH VỤ'}).locator('.mm-sub > div').allTextContents();assert.ok(svc.length<=9&&svc.at(-1).trim()==='Xem tất cả dịch vụ','Menu Dịch vụ: tối đa 7 dịch vụ + Xem tất cả');
    assert.equal(await page.locator('.mainnav > .container > ul > li > a',{hasText:'DOANH NGHIỆP'}).getAttribute('href').then(h=>h.split('/').pop()),'tam-nhin-su-menh.html','Bấm Doanh nghiệp mở trang Tầm nhìn & Sứ mệnh');
    assert.equal(await page.locator('.mainnav a',{hasText:'KHUYẾN MÃI'}).evaluate(e=>getComputedStyle(e).backgroundColor),'rgba(0, 0, 0, 0)','Khuyến mãi cùng kiểu menu chính, không nền đỏ');}

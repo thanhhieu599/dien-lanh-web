@@ -3268,3 +3268,25 @@ body{-webkit-font-smoothing:antialiased;color:#212121}
   .sub-tabs { order: 3; flex-basis: 100%; margin-left: 0; border-bottom: 1px solid var(--line, #e3e7ee); }
   .sub-tabs button { padding: 8px 10px; font-size: 14px; }
 }
+
+/* Mega menu: tên sản phẩm dưới từng nhóm (tối đa 5), tên dài cắt gọn 2 dòng, không chồng lên nhau */
+.mega-group > a.mega-product,
+.mm-sub .mega-group > a.mega-product {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  padding: 5px 0;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--ink-2);
+  border-bottom: 1px dashed transparent;
+}
+.mega-group > a.mega-more,
+.mm-sub .mega-group > a.mega-more {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}

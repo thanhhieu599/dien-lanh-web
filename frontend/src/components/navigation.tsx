@@ -48,6 +48,7 @@ export function MegaMenu() {
   );
 }
 // Bảng nhóm (cấp 2) và mục (cấp 3) của một danh mục, dùng chung cho menu Sản phẩm và menu cạnh banner
+const MEGA_PRODUCTS = 5;
 export function CategoryGroups({ category: c }: { category: Category }) {
   if (!c.subs.length)
     return (
@@ -59,18 +60,33 @@ export function CategoryGroups({ category: c }: { category: Category }) {
     );
   return (
     <>
-      {c.subs.map((s) => (
-        <div className="mega-group" key={s.id}>
-          <h4>
-            <ShopLink href={dt.api.catUrl(c.id, s.id)}>{s.name}</ShopLink>
-          </h4>
-          {(s.items || []).map((it) => (
-            <ShopLink key={it.id} href={dt.api.catUrl(c.id, s.id, it.id)}>
-              {it.name}
-            </ShopLink>
-          ))}
-        </div>
-      ))}
+      {c.subs.map((s) => {
+        // Sản phẩm thuộc nhóm (danh mục cấp 2): hiện tối đa 5 tên, còn lại gom vào "Xem tất cả (N)"
+        const all = dt.api.list({ cat: c.id, sub: s.id, sort: "popular" }).items;
+        const shown = all.slice(0, MEGA_PRODUCTS);
+        return (
+          <div className="mega-group" key={s.id}>
+            <h4>
+              <ShopLink href={dt.api.catUrl(c.id, s.id)}>{s.name}</ShopLink>
+            </h4>
+            {(s.items || []).map((it) => (
+              <ShopLink key={it.id} href={dt.api.catUrl(c.id, s.id, it.id)}>
+                {it.name}
+              </ShopLink>
+            ))}
+            {shown.map((p: any) => (
+              <ShopLink key={p.id} className="mega-product" href={dt.api.url(p)} title={p.name}>
+                {p.name}
+              </ShopLink>
+            ))}
+            {all.length > MEGA_PRODUCTS && (
+              <ShopLink className="mega-more" href={dt.api.catUrl(c.id, s.id)}>
+                Xem tất cả ({all.length}) ›
+              </ShopLink>
+            )}
+          </div>
+        );
+      })}
     </>
   );
 }

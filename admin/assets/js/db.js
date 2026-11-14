@@ -25,6 +25,7 @@ AD.PK = {
   notifications: "id",
   maintenance_contracts: "id",
   maintenance_visits: "id",
+  maintenance_calls: "id",
   suppliers: "id",
   purchase_orders: "id",
   stock_adjustments: "id",
@@ -640,6 +641,7 @@ AD.demo = () => {
   if (!db) db = seed();
   db.touched = db.touched || {};
   db.crm_customers = db.crm_customers || [];
+  db.maintenance_calls = db.maintenance_calls || [];
   db.crm_order_links = db.crm_order_links || {};
   // Bảo trì: bản demo có sẵn vài khách mẫu để xem thống kê; dữ liệu thật nằm trên MySQL
   if (!db.maintenance_contracts) Object.assign(db, demoMaintenance());
@@ -1220,6 +1222,27 @@ AD.demo = () => {
       } else invFail("Thao tác không hợp lệ");
       return save(row);
     },
+    // Danh sách gọi chăm sóc bảo trì (giống rpc maintenance_call trên PHP): lịch sử chỉ thêm, không xóa
+    async maintenanceCall({ p_key, p_action, p_date = "", p_note = "" }) {
+      if (!["admin", "staff"].includes(me().role)) deny();
+      const m = /^(c|o):([A-Za-z0-9_.-]{1,80}):(\d{4}-\d{2}-\d{2})$/.exec(String(p_key || ""));
+      if (!m) invFail("Mã lịch nhắc không hợp lệ");
+      if (!["called", "booked", "skipped", "reset"].includes(p_action)) invFail("Thao tác không hợp lệ");
+      if (p_action === "booked" && !/^\d{4}-\d{2}-\d{2}$/.test(p_date)) invFail("Chọn ngày hẹn bảo trì");
+      const note = String(p_note || "").trim().slice(0, 500);
+      if (p_action === "skipped" && !note) invFail("Nhập lý do bỏ qua");
+      let row = db.maintenance_calls.find((r) => r.id === p_key);
+      if (!row) { row = { id: p_key, kind: m[1] === "c" ? "contract" : "order", ref: m[2], due: m[3], status: "open", calls: 0, history: [], created_at: nowIso() }; db.maintenance_calls.push(row); }
+      if (p_action === "called") row.calls = (row.calls || 0) + 1;
+      if (p_action === "booked") { row.status = "booked"; row.booked_date = p_date; }
+      if (p_action === "skipped") { row.status = "skipped"; delete row.booked_date; }
+      if (p_action === "reset") { row.status = "open"; delete row.booked_date; }
+      if (note) row.note = note;
+      row.history = [...(row.history || []), { at: nowIso(), by: userName(), action: p_action, date: p_date || null, note }].slice(-200);
+      row.updated_at = nowIso(); row.updated_by_name = userName();
+      persist();
+      return { ...row };
+    },
     async issueInvoice(id) {
       if (!["admin", "staff", "accountant"].includes(me().role)) deny();
       syncFromShop();
@@ -1294,6 +1317,7 @@ AD.demo = () => {
     },
     async insert(table, row) {
       if (!writer()) deny();
+      if (table === "maintenance_calls") throw new Error("Không được sửa trực tiếp dữ liệu giao dịch");
 
       if (table === "crm_customers") {
         live(table);
@@ -1354,7 +1378,7 @@ AD.demo = () => {
     },
     async update(table, id, patch) {
       guard(table, id, patch);
-      if (["purchase_orders", "stock_adjustments", "stock_exports", "stock_moves"].includes(table))
+      if (["purchase_orders", "stock_adjustments", "stock_exports", "stock_moves", "maintenance_calls"].includes(table))
         throw new Error("Không được sửa trực tiếp dữ liệu giao dịch");
 
       if (table === "crm_customers" && patch.phone !== undefined) {
@@ -1434,6 +1458,7 @@ AD.demo = () => {
       return row;
     },
     async remove(table, id) {
+      if (table === "maintenance_calls") throw new Error("Không được xóa dữ liệu giao dịch");
       if (!writer()) deny();
       if (table === "reviews") {
         writeBack("reviews", id, { status: "deleted" });

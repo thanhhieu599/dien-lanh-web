@@ -25,7 +25,7 @@ function client() {
   return fn;
 }
 const guest = client();
-const PRIVATE = ['profiles', 'orders', 'order_items', 'order_status_history', 'payments', 'leads', 'crm_customers', 'crm_customer_summary', 'crm_customer_products', 'notifications', 'cart_reminders', 'maintenance_contracts', 'maintenance_visits', 'suppliers', 'purchase_orders', 'stock_adjustments', 'stock_exports', 'stock_moves'];
+const PRIVATE = ['profiles', 'orders', 'order_items', 'order_status_history', 'payments', 'leads', 'crm_customers', 'crm_customer_summary', 'crm_customer_products', 'notifications', 'cart_reminders', 'maintenance_contracts', 'maintenance_visits', 'maintenance_calls', 'suppliers', 'purchase_orders', 'stock_adjustments', 'stock_exports', 'stock_moves'];
 const WRITABLE = ['products', 'categories', 'brands', 'coupons', 'posts', 'banners', 'stores', 'services', 'policies', 'settings', 'projects', 'faqs', ...PRIVATE];
 
 console.log('--- S1. Dữ liệu nội bộ không lộ ra ngoài');

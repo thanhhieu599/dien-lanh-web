@@ -271,7 +271,7 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
         if (!$row) fail('Không tìm thấy bản ghi', 404);
         if (!allowed($table, $method, $user, $row)) fail('Không có quyền', 403);
         if ($method === 'DELETE') {
-            if (in_array($table, ['orders','order_items','order_status_history','profiles','payments','notifications', ...INVENTORY_TABLES], true)) fail('Không được xóa dữ liệu giao dịch', 403);
+            if (in_array($table, ['orders','order_items','order_status_history','profiles','payments','notifications','maintenance_calls', ...INVENTORY_TABLES], true)) fail('Không được xóa dữ liệu giao dịch', 403);
             if ($table === 'suppliers') foreach (allRecords('purchase_orders') as $po) if ((string)($po['supplier_id'] ?? '') === (string)$id) fail('Nhà cung cấp đã có đơn nhập, hãy chuyển sang ngừng giao dịch');
             if (in_array($table, ['categories','brands'], true)) {
                 foreach (allRecords('products') as $p) if (($p[$table === 'brands' ? 'brand' : 'cat'] ?? '') === $id) fail('Dữ liệu đang được sử dụng, hãy chuyển sang ẩn');
@@ -288,7 +288,7 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
         }
         if ($method !== 'PATCH') fail('Phương thức không hỗ trợ', 405);
         if ($table === 'orders') return [updateOrder($row, $body, $user)];
-        if (in_array($table, ['order_items','order_status_history','payments', ...INVENTORY_TABLES], true)) fail('Không được sửa trực tiếp dữ liệu giao dịch', 403);
+        if (in_array($table, ['order_items','order_status_history','payments','maintenance_calls', ...INVENTORY_TABLES], true)) fail('Không được sửa trực tiếp dữ liệu giao dịch', 403);
         $patch = $body;
         unset($patch[pk($table)], $patch['created_at']);
         if ($table === 'crm_customers') {

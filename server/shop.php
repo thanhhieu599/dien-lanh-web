@@ -383,6 +383,32 @@ function rpcEndpoint(string $name, array $args): mixed {
             return $row;
         });
     }
+    // Danh sách gọi chăm sóc bảo trì: mỗi lần đến hạn (khách bảo trì + ngày đến hạn) lưu trạng thái và lịch sử thao tác.
+    // Chỉ ghi qua đây (không sửa/xóa trực tiếp), lịch sử chỉ thêm vào, không mất dữ liệu.
+    if ($name === 'maintenance_call') {
+        $user = staff(); if (!in_array($user['role'], ['admin','staff'], true)) fail('Không có quyền', 403);
+        $key = (string)($args['p_key'] ?? '');
+        if (!preg_match('/^(c|o):([A-Za-z0-9_.-]{1,80}):(\d{4}-\d{2}-\d{2})$/', $key, $m)) fail('Mã lịch nhắc không hợp lệ');
+        if ($m[1] === 'c' && !record('maintenance_contracts', $m[2])) fail('Không tìm thấy khách bảo trì', 404);
+        if ($m[1] === 'o' && !array_filter(allRecords('orders'), fn($o) => (string)($o['code'] ?? '') === $m[2])) fail('Không tìm thấy đơn hàng', 404);
+        $action = (string)($args['p_action'] ?? '');
+        if (!in_array($action, ['called', 'booked', 'skipped', 'reset'], true)) fail('Thao tác không hợp lệ');
+        $date = (string)($args['p_date'] ?? '');
+        if ($action === 'booked' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) fail('Chọn ngày hẹn bảo trì');
+        $note = mb_substr(trim((string)($args['p_note'] ?? '')), 0, 500);
+        if ($action === 'skipped' && $note === '') fail('Nhập lý do bỏ qua');
+        return transaction(function() use ($key, $m, $action, $date, $note) {
+            $row = record('maintenance_calls', $key, true) ?? ['id' => $key, 'kind' => $m[1] === 'c' ? 'contract' : 'order', 'ref' => $m[2], 'due' => $m[3], 'status' => 'open', 'calls' => 0, 'history' => []];
+            if ($action === 'called') $row['calls'] = (int)($row['calls'] ?? 0) + 1;
+            if ($action === 'booked') { $row['status'] = 'booked'; $row['booked_date'] = $date; }
+            if ($action === 'skipped') { $row['status'] = 'skipped'; unset($row['booked_date']); }
+            if ($action === 'reset') { $row['status'] = 'open'; unset($row['booked_date']); }
+            if ($note !== '') $row['note'] = $note;
+            $row['history'][] = ['at' => now(), 'by' => currentUserName(), 'action' => $action, 'date' => $date ?: null, 'note' => $note];
+            $row['history'] = array_slice($row['history'], -200);
+            return put('maintenance_calls', $row);
+        });
+    }
     if ($name === 'maintenance_skip') {
         $user = staff(); if (!in_array($user['role'], ['admin','staff'], true)) fail('Không có quyền', 403);
         $row = record('notifications', $args['p_id'] ?? '') ?? throw new HttpError('Không tìm thấy lịch nhắc', 404);

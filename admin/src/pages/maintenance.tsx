@@ -3,7 +3,7 @@ import {useMemo,useState,type FormEvent} from 'react';
 import {Link,useSearchParams} from 'react-router-dom';
 import {ad,downloadCSV,loadCache,money,today} from '../services/runtime';
 import {Action,DataState,Head,Table,useData,useNotice} from '../components/common';
-import {NotificationsPage} from './operations';
+import {MaintenanceCalls} from './maintenance-calls';
 import {ALL,DateRange} from '../components/date-range';
 import {CYCLES,SOURCES,STATUS,addMonths,contractViews,contractsFromOrders,maintenanceStats,type ContractView} from '../services/maintenance';
 import type {Row} from '../types';
@@ -30,10 +30,11 @@ export function MaintenancePage(){
    <Link className="btn btn-primary" to="/maintenance_visits/new">+ Ghi nhận bảo trì</Link>
   </Head>
   <nav className="mt-tabs" aria-label="Các phần bảo trì">{TABS.map(([k,l])=><button type="button" key={k} className={tab===k?'active':''} aria-current={tab===k?'page':undefined} onClick={()=>set('tab',k)}>{l}</button>)}</nav>
-  {tab==='reminders'?<NotificationsPage maintenance embedded/>:<DataState state={state}>{state.data&&(
+  <DataState state={state}>{state.data&&(
+   tab==='reminders'?<MaintenanceCalls contracts={state.data.contracts} visits={state.data.visits} onChange={reload}/>:
    tab==='customers'?<Customers contracts={state.data.contracts} visits={state.data.visits}/>:
    tab==='visits'?<Visits contracts={state.data.contracts} visits={state.data.visits} period={period} onPeriod={p=>set('period',p)}/>:
-   <Overview contracts={state.data.contracts} visits={state.data.visits} period={period} onPeriod={p=>set('period',p)} onChange={reload}/>)}</DataState>}
+   <Overview contracts={state.data.contracts} visits={state.data.visits} period={period} onPeriod={p=>set('period',p)} onChange={reload}/>)}</DataState>
  </>;
 }
 
@@ -89,7 +90,7 @@ function Overview({contracts,visits,period,onPeriod,onChange}:{contracts:Row[];v
 }
 
 // Ghi nhận nhanh 1 lần bảo trì ngay trong danh sách cần bảo trì
-function QuickVisit({contract,onDone}:{contract:ContractView;onDone:()=>void}){
+export function QuickVisit({contract,onDone}:{contract:ContractView;onDone:()=>void}){
  const [open,setOpen]=useState(false);const [busy,setBusy]=useState(false);const notice=useNotice();
  if(!open)return <button type="button" className="btn btn-light mt-quick" onClick={()=>setOpen(true)}>Ghi nhận</button>;
  async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);setBusy(true);

@@ -474,8 +474,20 @@ try {
   const bytes = await fs.readFile(await xlsx.path());
   assert.equal(bytes.subarray(0, 2).toString(), "PK");
   assert.ok(bytes.length > 3000);
-  await open("maintenance?tab=reminders");
-  assert.match(await page.locator("#view").textContent(), /DTREACTQA/);
+  // Lịch nhắc = danh sách gọi chăm sóc: đơn DTREACTQA (máy lạnh, đã hoàn thành, chọn nhắc bảo trì) có trong lịch
+  await open("maintenance?tab=reminders&f=all");
+  const callItem = page.locator(".mc-item").filter({ hasText: "DTREACTQA" }).first();
+  await callItem.waitFor();
+  assert.equal(await callItem.locator(".mc-zalo").getAttribute("href"), "https://zalo.me/" + (await callItem.locator(".mc-who a").textContent()).replace(/\D/g, "").replace(/^84/, "0"));
+  await callItem.getByRole("button", { name: "Đã hẹn lịch" }).click();
+  await callItem.locator("input[name=note]").fill("Hẹn 9h");
+  await callItem.getByRole("button", { name: "Lưu" }).click();
+  await page.locator(".ar-notices").filter({ hasText: "Đã ghi lịch hẹn" }).waitFor();
+  await open("maintenance?tab=reminders&f=booked");
+  assert.match(await page.locator(".mc-list").textContent(), /DTREACTQA[\s\S]*Hẹn 9h/);
+  const callRows = (await page.evaluate(() => AD.db.list("maintenance_calls", {}))).rows;
+  assert.ok(callRows.some((r) => r.status === "booked" && r.history.at(-1).note === "Hẹn 9h"), "Lưu lịch hẹn kèm lịch sử");
+  await assert.rejects(page.evaluate((id) => AD.db.remove("maintenance_calls", id), callRows[0].id));
   // Đơn DTREACTQA (đã hoàn thành, có chọn nhắc bảo trì) được gợi ý thêm vào danh sách khách bảo trì
   await open("maintenance");
   await page.locator(".mt-import").getByRole("button", { name: "Thêm vào danh sách" }).click();

@@ -95,3 +95,37 @@ export function contractsFromOrders(orders:Row[],contracts:Row[],today=ymd(new D
    status:'active',source:'order',order_code:o.code||'',note:''}];
  });
 }
+
+// ===== Danh sách gọi chăm sóc bảo trì (tab "Lịch nhắc") =====
+// Nguồn lịch: khách bảo trì đang hoạt động (hạn tiếp theo = lần bảo trì gần nhất + chu kỳ) và khách chọn "nhắc bảo trì"
+// khi đặt đơn máy lạnh nhưng chưa vào danh sách bảo trì. Mỗi lần đến hạn có mã riêng: c:<id khách>:<ngày hạn> hoặc
+// o:<mã đơn>:<ngày hạn>; trạng thái gọi / hẹn / bỏ qua lưu ở maintenance_calls theo mã này. Ghi nhận bảo trì xong thì
+// hạn tiếp theo dịch sang chu kỳ mới → mã mới, lịch sử lần trước vẫn giữ nguyên.
+export type CallFilter='todo'|'overdue'|'week'|'month'|'booked'|'skipped'|'all';
+export interface CallRow extends Row {
+ key:string;kind:'contract'|'order';name:string;phone:string;devices:string;units:number;cycleNo:number;due:string;daysLeft:number;
+ status:'open'|'booked'|'skipped';bookedDate:string|null;calls:number;note:string;history:Row[];contract?:ContractView;order:string;source?:Row;
+}
+export function callList(contracts:Row[],visits:Row[],orders:Row[],calls:Row[],today=ymd(new Date())):CallRow[]{
+ const byKey=new Map(calls.map(c=>[String(c.id),c]));
+ const state=(key:string)=>{const c=byKey.get(key)||{};return {status:(c.status==='booked'||c.status==='skipped'?c.status:'open') as CallRow['status'],bookedDate:c.booked_date||null,calls:Number(c.calls)||0,note:c.note||'',history:(c.history||[]) as Row[]};};
+ const rows:CallRow[]=[];
+ for(const c of contractViews(contracts,visits,today)){
+  if(c.status!=='active'||!c.nextDue)continue;
+  const key=`c:${c.id}:${c.nextDue}`;
+  rows.push({key,kind:'contract',name:c.name||'Khách hàng',phone:String(c.phone||''),devices:c.devices||'',units:Number(c.units)||1,cycleNo:c.visits+1,
+   due:c.nextDue,daysLeft:c.daysLeft!,order:c.order_code||'',contract:c,...state(key)});
+ }
+ for(const o of contractsFromOrders(orders,contracts,today)){
+  if(!o.order_code)continue;
+  const key=`o:${o.order_code}:${o.start_date}`;
+  rows.push({key,kind:'order',name:o.name,phone:o.phone,devices:o.devices,units:o.units,cycleNo:1,due:o.start_date,
+   daysLeft:Math.round((Date.parse(o.start_date)-Date.parse(today))/864e5),order:o.order_code,source:o,...state(key)});
+ }
+ return rows.sort((a,b)=>a.due.localeCompare(b.due)||a.name.localeCompare(b.name));
+}
+export function filterCalls(rows:CallRow[],f:CallFilter,today=ymd(new Date())):CallRow[]{
+ const monthEnd=addMonths(`${today.slice(0,7)}-01`,1);
+ return rows.filter(r=>f==='all'?true:f==='booked'?r.status==='booked':f==='skipped'?r.status==='skipped':r.status!=='open'?false:
+  f==='overdue'?r.daysLeft<0:f==='week'?r.daysLeft>=0&&r.daysLeft<=7:f==='month'?r.due>=`${today.slice(0,7)}-01`&&r.due<monthEnd:r.daysLeft<=7);
+}

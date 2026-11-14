@@ -44,6 +44,22 @@ try {
     $visit = endpoint('maintenance_visits', 'POST', ['contract_id'=>$contract['id'], 'date'=>'2026-01-15', 'amount'=>500000, 'payment'=>'bank', 'paid'=>true, 'status'=>'done'])[0];
     $created[] = ['maintenance_visits', $visit['id']];
     checkAdmin(count(endpoint('maintenance_visits', query:['contract_id'=>'eq.' . $contract['id']])) === 1, 'Maintenance visit is stored for its customer');
+    // Lịch nhắc (danh sách gọi): lưu trạng thái + lịch sử qua rpc, không sửa / xóa trực tiếp được
+    $callKey = 'c:' . $contract['id'] . ':2026-07-15';
+    rpcEndpoint('maintenance_call', ['p_key'=>$callKey, 'p_action'=>'called']);
+    $call = rpcEndpoint('maintenance_call', ['p_key'=>$callKey, 'p_action'=>'booked', 'p_date'=>'2026-07-20', 'p_note'=>'9h sáng']);
+    $created[] = ['maintenance_calls', $callKey];
+    checkAdmin($call['status'] === 'booked' && $call['booked_date'] === '2026-07-20' && $call['calls'] === 1 && count($call['history']) === 2 && $call['history'][1]['by'] === 'QA admin', 'Lịch nhắc: ghi lần gọi, hẹn lịch kèm người làm');
+    $call = rpcEndpoint('maintenance_call', ['p_key'=>$callKey, 'p_action'=>'reset']);
+    checkAdmin($call['status'] === 'open' && !isset($call['booked_date']) && count($call['history']) === 3, 'Lịch nhắc: hủy hẹn vẫn giữ lịch sử');
+    foreach ([['p_key'=>$callKey, 'p_action'=>'skipped', 'p_note'=>''], ['p_key'=>$callKey, 'p_action'=>'booked'], ['p_key'=>'c:khong-co:2026-01-01', 'p_action'=>'called'], ['p_key'=>'x', 'p_action'=>'called'], ['p_key'=>$callKey, 'p_action'=>'delete']] as $bad) {
+        try { rpcEndpoint('maintenance_call', $bad); throw new RuntimeException('Bad maintenance call accepted'); }
+        catch (HttpError $e) { checkAdmin(in_array($e->getCode(), [400, 404], true), 'Lịch nhắc: chặn thao tác sai (' . $bad['p_action'] . ')'); }
+    }
+    foreach (['PATCH', 'DELETE'] as $m) {
+        try { endpoint('maintenance_calls', $m, ['history'=>[]], ['id'=>'eq.' . $callKey]); throw new RuntimeException("Direct $m accepted"); }
+        catch (HttpError $e) { checkAdmin($e->getCode() === 403, "Lịch nhắc: không $m trực tiếp được"); }
+    }
     foreach ([
         ['maintenance_contracts', ['name'=>'Sai', 'phone'=>'123', 'cycle_months'=>6, 'start_date'=>'2026-01-01', 'status'=>'active'], 'invalid phone'],
         ['maintenance_contracts', ['name'=>'Sai', 'phone'=>'0900000094', 'cycle_months'=>5, 'start_date'=>'2026-01-01', 'status'=>'active'], 'invalid cycle'],

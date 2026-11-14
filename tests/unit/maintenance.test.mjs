@@ -75,3 +75,25 @@ test('nhập khách từ đơn đã hoàn thành có chọn nhắc bảo trì, k
   assert.equal(rows[0].address,'1 Lê Lợi, TP.HCM');
   assert.equal(rows[0].source,'order');
 });
+
+test('Danh sách gọi bảo trì: hạn theo khách bảo trì + đơn chưa đăng ký, trạng thái theo mã lần đến hạn', async () => {
+  const {callList,filterCalls}=await import('../../admin/src/services/maintenance.ts');
+  const cs=[{id:7,name:'A',phone:'0900000007',cycle_months:6,start_date:'2026-01-01',status:'active',units:2,devices:'2 × Máy lạnh'},{id:8,name:'B',phone:'0900000008',cycle_months:6,start_date:'2026-01-01',status:'paused'}];
+  const vs=[{id:1,contract_id:7,date:'2026-05-10',status:'done'}];
+  const os=[{code:'DH1',status:'done',maintenance_optin:true,phone:'0911111111',customer:{name:'C'},updated_at:'2026-05-20',order_items:[{name:'Máy lạnh 1HP',qty:1}]}];
+  const today='2026-11-14';
+  const calls=[{id:'c:7:2026-11-10',status:'booked',booked_date:'2026-11-16',calls:2,history:[{action:'booked'}]}];
+  const rows=callList(cs,vs,os,calls,today);
+  assert.equal(rows.length,2,'khách tạm dừng không vào danh sách');
+  const a=rows.find(r=>r.kind==='contract');
+  assert.deepEqual([a.key,a.cycleNo,a.daysLeft,a.status,a.bookedDate,a.calls],['c:7:2026-11-10',2,-4,'booked','2026-11-16',2]);
+  const o=rows.find(r=>r.kind==='order');
+  assert.equal(o.key,'o:DH1:2026-11-20'); assert.equal(o.status,'open'); assert.equal(o.daysLeft,6);
+  assert.equal(filterCalls(rows,'booked',today).length,1);
+  assert.equal(filterCalls(rows,'overdue',today).length,0,'đã hẹn thì không còn trong quá hạn');
+  assert.equal(filterCalls(rows,'week',today)[0].key,'o:DH1:2026-11-20');
+  assert.equal(filterCalls(rows,'month',today).length,1);
+  // Ghi nhận bảo trì xong: hạn dịch sang chu kỳ mới → mã mới, trạng thái mới
+  const after=callList(cs,[...vs,{id:2,contract_id:7,date:'2026-11-16',status:'done'}],os,calls,today).find(r=>r.kind==='contract');
+  assert.equal(after.key,'c:7:2027-05-16'); assert.equal(after.status,'open'); assert.equal(after.cycleNo,3);
+});

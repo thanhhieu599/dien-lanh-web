@@ -42,9 +42,21 @@ DT.store = (() => {
         i.id === id &&
         (key === undefined || (i.key || lineKey(i.id, i.options)) === key),
     );
+  // Số lượng tối đa của 1 sản phẩm trong giỏ = tồn kho (cộng mọi dòng cùng sản phẩm), tối đa 99
+  function maxQty(id, exceptItem) {
+    const p = DT.api.productById(id);
+    const stock = Number(p?.stock);
+    const cap = Number.isFinite(stock) ? Math.min(99, stock) : 99;
+    const others = state.cart.filter((i) => String(i.id) === String(id) && i !== exceptItem).reduce((s, i) => s + i.qty, 0);
+    return Math.max(0, cap - others);
+  }
   function addToCart(id, qty = 1, opts = {}) {
     const p = DT.api.productById(id);
     if (!p) return false;
+    if (Number(p.stock) <= 0) {
+      DT.u.toast("Sản phẩm đã hết hàng", "error");
+      return false;
+    }
     const groups = DT.api.optionGroups(p);
     const options = Object.fromEntries(
       groups.map((group) => [group.name, opts.options?.[group.name]]),
@@ -56,8 +68,14 @@ DT.store = (() => {
     const key = lineKey(id, options);
     const item = findLine(id, key);
     const n = Math.min(Math.max(1, Math.floor(Number(qty)) || 1), 99);
-    if (item) item.qty = Math.min(item.qty + n, 99);
-    else state.cart.push({ id, key, qty: n, install: !!opts.install, options });
+    const limit = maxQty(id, item);
+    if (limit <= 0) {
+      DT.u.toast(`Chỉ còn ${Number(p.stock)} sản phẩm trong kho`, "error");
+      return false;
+    }
+    if (item && item.qty + n > limit) DT.u.toast(`Chỉ còn ${Number(p.stock)} sản phẩm trong kho`, "error");
+    if (item) item.qty = Math.min(item.qty + n, limit);
+    else state.cart.push({ id, key, qty: Math.min(n, limit), install: !!opts.install, options });
     save();
     return true;
   }
@@ -65,7 +83,11 @@ DT.store = (() => {
     const item = findLine(id, key);
     if (!item) return;
     if (qty <= 0) state.cart = state.cart.filter((i) => i !== item);
-    else item.qty = Math.min(qty, 99);
+    else {
+      const limit = Math.max(1, maxQty(id, item));
+      if (qty > limit) DT.u.toast(`Chỉ còn ${limit} sản phẩm trong kho`, "error");
+      item.qty = Math.min(qty, limit);
+    }
     save();
   }
   function setInstall(id, on, key) {
@@ -236,6 +258,23 @@ DT.store = (() => {
     save();
     if (be()) await DT.backend.signOut();
   }
+  async function changePassword(current, password) {
+    if (!state.user) return { ok: false, msg: "Vui lòng đăng nhập" };
+    if (String(password || "").length < 8) return { ok: false, msg: "Mật khẩu mới cần ít nhất 8 ký tự" };
+    if (be()) {
+      try {
+        await DT.backend.changePassword(current, password);
+      } catch (e) {
+        return { ok: false, msg: e.message };
+      }
+      return { ok: true, msg: "Đã đổi mật khẩu" };
+    }
+    const u = state.users.find((x) => x.id === state.user.id);
+    if (!u || u.password !== current) return { ok: false, msg: "Mật khẩu hiện tại không đúng" };
+    u.password = password;
+    save();
+    return { ok: true, msg: "Đã đổi mật khẩu" };
+  }
   async function updateProfile(data) {
     if (!state.user) return;
     if (be()) {
@@ -355,6 +394,7 @@ DT.store = (() => {
     register,
     login,
     logout,
+    changePassword,
     updateProfile,
     fullUser,
     saveAddresses,

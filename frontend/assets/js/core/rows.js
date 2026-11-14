@@ -41,7 +41,8 @@ DT.rows = (() => {
     ['price', 'price', num],
     ['oldPrice', 'old_price', numOrNull],
     ['rating', 'rating', num],
-    ['reviews'], ['sold'], ['stock'],
+    // Sản phẩm mới tạo có thể chưa có số lượt bán / đánh giá / tồn: coi là 0 để trang không lỗi
+    ['reviews', 'reviews', numOr0], ['sold', 'sold', numOr0], ['stock', 'stock', numOr0],
     ['badges', 'badges', or([]), or([])],
     ['gift'],
     ['freeInstall', 'free_install'],

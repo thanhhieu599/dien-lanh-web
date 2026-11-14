@@ -138,6 +138,11 @@ DT.backend = (() => {
     return profile();
   }
 
+  // Đổi mật khẩu (phải nhập đúng mật khẩu hiện tại)
+  async function changePassword(current, password) {
+    return http("/auth/password", { method: "POST", body: { current, password } });
+  }
+
   // Đăng xuất: xóa phiên trên máy NGAY (đơn đặt sau đó không bị gắn vào tài khoản cũ, kể cả khi
   // khách chuyển trang liền hoặc mất mạng), rồi mới báo máy chủ hủy phiên bằng token vừa giữ lại
   async function signOut() {
@@ -440,6 +445,7 @@ DT.backend = (() => {
     signUp,
     signIn,
     signOut,
+    changePassword,
     profile,
     hasSession: () => !!session,
   };

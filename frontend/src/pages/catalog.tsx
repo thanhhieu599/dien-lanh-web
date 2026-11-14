@@ -596,7 +596,7 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
           </div>
           <section className="pd-info">
             <p className="pd-status">
-              <b>Đã bán:</b> {p.sold.toLocaleString("vi-VN")}
+              <b>Đã bán:</b> {Number(p.sold || 0).toLocaleString("vi-VN")}
               <span className="sep" aria-hidden="true">
                 |
               </span>

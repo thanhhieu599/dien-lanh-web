@@ -108,7 +108,7 @@ export function ProductCard({
           <span>{p.rating}</span>
           <span className="dot">•</span>
           <span>
-            Đã bán {p.sold >= 1000 ? (p.sold / 1000).toFixed(1) + "k" : p.sold}
+            Đã bán {Number(p.sold) >= 1000 ? (Number(p.sold) / 1000).toFixed(1) + "k" : Number(p.sold) || 0}
           </span>
         </div>
         {flash && (

@@ -65,6 +65,20 @@ try {
             $user = actor(); if (!$user) fail('Phiên đăng nhập hết hạn', 401);
             jsonResponse(['access_token' => 'cookie', 'expires_in' => max(0, $_SESSION['expires_at'] - time()), 'user' => ['id' => $user['id']]]);
         }
+        // Khách / nhân viên tự đổi mật khẩu: phải đăng nhập và nhập đúng mật khẩu hiện tại
+        if ($action === 'password') {
+            $user = actor(); if (!$user) fail('Vui lòng đăng nhập', 401);
+            rateLimit('password', 10);
+            $current = $body['current'] ?? ''; $next = $body['password'] ?? '';
+            if (!is_string($next) || strlen($next) < 8) fail('Mật khẩu mới cần ít nhất 8 ký tự');
+            if (strlen($next) > 72) fail('Mật khẩu quá dài (tối đa 72 byte UTF-8)');
+            $hash = sql('SELECT password_hash FROM users WHERE id=?', [$user['id']])->fetchColumn();
+            if (!$hash || !is_string($current) || !password_verify($current, $hash)) fail('Mật khẩu hiện tại không đúng');
+            if (password_verify($next, $hash)) fail('Mật khẩu mới phải khác mật khẩu hiện tại');
+            sql('UPDATE users SET password_hash=? WHERE id=?', [password_hash($next, PASSWORD_DEFAULT), $user['id']]);
+            session_regenerate_id(true);
+            jsonResponse(['ok' => true]);
+        }
         if (!in_array($action, ['login','signup'], true)) fail('Không tìm thấy chức năng', 404);
         rateLimit('auth', 20);
         $password = $body['password'] ?? '';

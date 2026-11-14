@@ -125,7 +125,7 @@ export function CartPage() {
                       aria-label={`Số lượng ${line.product.name}`}
                       type="number"
                       min={1}
-                      max={99}
+                      max={Math.max(1, Math.min(99, Number(line.product.stock) || 99))}
                       value={line.qty}
                       onChange={(e) =>
                         dt.store.setQty(

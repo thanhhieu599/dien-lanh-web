@@ -42,7 +42,7 @@ export function ShopLayout({ children }: { children: ReactNode }) {
       return /^\/(danh-muc|sp|san-pham|thuong-hieu)/.test(path);
     if (target === "thuong-hieu") return /^\/thuong-hieu/.test(path);
     if (target === "tin-tuc") return /^\/(tin-tuc|bai-viet|hoi-dap)/.test(path);
-    if (target === "bao-gia-du-an")
+    if (target === "bao-gia-du-an" || target === "tam-nhin-su-menh")
       return /^\/(bao-gia-du-an|du-an|gioi-thieu|tam-nhin|he-thong|chinh-sach)/.test(
         path,
       );
@@ -53,6 +53,18 @@ export function ShopLayout({ children }: { children: ReactNode }) {
     setFocused(false);
     window.scrollTo(0, 0);
   }, [location.pathname]);
+  // Link có #mục (vd dich-vu.html#lap-dat từ menu Dịch vụ): đợi nội dung hiện rồi cuộn tới đúng mục
+  useEffect(() => {
+    const id = decodeURIComponent(location.hash.slice(1));
+    if (!id || !/^[\w-]+$/.test(id)) return;
+    let tries = 0;
+    const timer = window.setInterval(() => {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (el || ++tries > 20) window.clearInterval(timer);
+    }, 100);
+    return () => window.clearInterval(timer);
+  }, [location.pathname, location.hash]);
   useEffect(() => {
     setDrawer(false);
     setFocused(false);

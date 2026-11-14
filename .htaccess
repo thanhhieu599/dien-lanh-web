@@ -1,6 +1,8 @@
 # Bảo mật cho thư mục gốc website (Apache). Áp dụng cả khi đưa nguyên mã nguồn lên hosting.
 Options -Indexes
 ServerSignature Off
+# Đường dẫn không tồn tại: hiện trang 404 thân thiện của website thay vì trang lỗi mặc định của máy chủ
+ErrorDocument 404 /frontend/404.html
 
 <IfModule mod_headers.c>
   # setifempty: API (PHP) đã tự đặt header chặt hơn thì giữ của PHP. Chống đoán sai loại tệp, chống nhúng trang vào web lừa đảo (clickjacking), hạn chế lộ đường dẫn.

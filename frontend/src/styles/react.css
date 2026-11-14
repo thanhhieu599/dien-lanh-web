@@ -3148,21 +3148,6 @@ body{-webkit-font-smoothing:antialiased;color:#212121}
   border-bottom-color: #fff;
   font-weight: 700;
 }
-.mainnav > .container > ul > li > a.hot {
-  align-self: center;
-  margin: 8px 0;
-  padding: 7px 14px;
-  border-radius: 6px;
-  border-bottom: 0;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 700;
-}
-.mainnav > .container > ul > li > a.hot:hover,
-.mainnav > .container > ul > li > a.hot.active {
-  background: var(--accent-dark);
-  color: #fff;
-}
 .mainnav > .container > ul > li > a:focus-visible {
   outline: 2px solid #fff;
   outline-offset: -2px;
@@ -3242,4 +3227,14 @@ body{-webkit-font-smoothing:antialiased;color:#212121}
   .recent-orders-table td:last-child {
     margin-top: 6px;
   }
+}
+
+/* Menu Dịch vụ: dòng "Xem tất cả dịch vụ" cuối danh sách */
+.mainnav .mm-sub > div.mm-more {
+  border-top: 1px solid var(--line, #e3e7ee);
+  margin-top: 4px;
+}
+.mainnav .mm-sub > div.mm-more > a {
+  color: var(--primary, #1a5ba6);
+  font-weight: 600;
 }

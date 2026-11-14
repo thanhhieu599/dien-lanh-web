@@ -126,7 +126,8 @@ export function ShopLayout({ children }: { children: ReactNode }) {
       title: "DỊCH VỤ",
       href: "dich-vu.html",
       items: [
-        ...dt.services.map((s) => ({
+        // Menu thả xuống chỉ hiện 7 dịch vụ đầu; còn lại xem ở trang Dịch vụ
+        ...dt.services.slice(0, 7).map((s) => ({
           title: s.name,
           icon: s.icon,
           href: `dich-vu.html#${s.id}`,
@@ -135,6 +136,7 @@ export function ShopLayout({ children }: { children: ReactNode }) {
           title: "Tính công suất máy lạnh",
           href: "tinh-cong-suat-may-lanh.html",
         },
+        { title: "Xem tất cả dịch vụ", href: "dich-vu.html", more: true },
       ],
     },
     {
@@ -361,7 +363,7 @@ export function ShopLayout({ children }: { children: ReactNode }) {
                   <li key={menu.title} className={menu.items ? "has-sub" : ""}>
                     <ShopLink
                       href={menu.href}
-                      className={`${currentPage(menu.href) ? "active" : ""} ${menu.href === "khuyen-mai.html" ? "hot" : ""}`}
+                      className={currentPage(menu.href) ? "active" : ""}
                       aria-current={currentPage(menu.href) ? "page" : undefined}
                     >
                       {menu.title}
@@ -371,7 +373,7 @@ export function ShopLayout({ children }: { children: ReactNode }) {
                       <div className="mm-sub">
                         {menu.items.map((item: any) => (
                           <div
-                            className={item.items?.length ? "mm-has-sub" : ""}
+                            className={item.more ? "mm-more" : item.items?.length ? "mm-has-sub" : ""}
                             key={item.title}
                           >
                             <ShopLink href={item.href}>

@@ -53,6 +53,8 @@ try {
     console.log(`React route: ${route}`);
   }
   await open('index.html');await page.evaluate(()=>window.__reactSentinel=123);
+  {const svc=await page.locator('.mainnav li.has-sub',{hasText:'DỊCH VỤ'}).locator('.mm-sub > div').allTextContents();assert.ok(svc.length<=9&&svc.at(-1).trim()==='Xem tất cả dịch vụ','Menu Dịch vụ: tối đa 7 dịch vụ + Xem tất cả');
+   assert.equal(await page.locator('.mainnav a',{hasText:'KHUYẾN MÃI'}).evaluate(e=>getComputedStyle(e).backgroundColor),'rgba(0, 0, 0, 0)','Khuyến mãi cùng kiểu menu chính, không nền đỏ');}
   await page.locator('.mainnav').getByRole('link',{name:'KHUYẾN MÃI',exact:true}).click();
   await page.waitForURL('**/khuyen-mai.html');assert.equal(await page.evaluate(()=>window.__reactSentinel),123,'Internal links must navigate without reloading');
   await open('danh-muc.html?cat=may-lanh');

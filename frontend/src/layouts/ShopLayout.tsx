@@ -16,6 +16,11 @@ import { Icon, Picture, ShopLink, Rich } from "../components/common";
 // Cột chân trang hiện đủ liên kết; chỉ hiện "Xem thêm" khi danh sách dài hơn mức này
 const FOOTER_LINKS = 12;
 
+// Số hotline -> link Zalo (zalo.me/0xxxxxxxxx)
+function zaloPhone(phone: unknown): string {
+  const d = String(phone || "").replace(/\D/g, "");
+  return d.startsWith("84") ? "0" + d.slice(2) : d;
+}
 export function ShopLayout({ children }: { children: ReactNode }) {
   const state = useShop();
   const navigate = useNavigate();
@@ -708,6 +713,21 @@ export function ShopLayout({ children }: { children: ReactNode }) {
         </ShopLink>
       </nav>
       <div className="floating">
+        {zaloPhone(config.hotline) && (
+          <a
+            className="fl-zalo-chat"
+            href={`https://zalo.me/${zaloPhone(config.hotline)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Chat Zalo với hotline"
+            title={`Chat Zalo ${config.hotline}`}
+          >
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <path d="M24 2.5C11.6 2.5 1.5 11.6 1.5 22.8c0 6.4 3.3 12.1 8.4 15.8L7.6 46l9.3-4.6c2.2.6 4.6.9 7.1.9 12.4 0 22.5-9.1 22.5-20.3S36.4 2.5 24 2.5z" fill="#0068ff" />
+              <text x="24" y="27.6" textAnchor="middle" fontFamily="Arial, Helvetica, sans-serif" fontWeight="700" fontSize="13.5" fill="#fff">Zalo</text>
+            </svg>
+          </a>
+        )}
         <button
           className="fl-zalo"
           aria-label="Mở tư vấn"

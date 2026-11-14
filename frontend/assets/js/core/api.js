@@ -45,20 +45,22 @@ DT.api = (() => {
     Object.entries(options || {})
       .map(([name, value]) => `${name}: ${value}`)
       .join(" · ");
-  const inCategory = (p, id) => {
+  // Danh mục trùng tên (vd bản sao "[TEST 02] Tủ lạnh" của "Tủ lạnh") chỉ hiện 1 lần trên menu website:
+  // sản phẩm của các bản trùng tên được gộp vào danh mục đang hiện, để sửa trong admin là thấy trên web
+  const catKey = (c) => DT.u.norm(c.short || String(c.name || "").replace(/\[TEST[^\]]*\]\s*/gi, ""));
+  const sameName = (id) => {
     const c = category(id);
-    if (
-      !c ||
-      (c.excluded_product_ids || []).some(
-        (value) => String(value) === String(p.id),
-      )
-    )
-      return false;
-    return (
-      p.cat === id ||
-      (c.product_ids || []).some((value) => String(value) === String(p.id))
-    );
+    if (!c) return [];
+    const key = catKey(c);
+    return key ? DT.categories.filter((x) => x.id === id || catKey(x) === key) : [c];
   };
+  const inOne = (p, c) =>
+    !(c.excluded_product_ids || []).some((value) => String(value) === String(p.id)) &&
+    (p.cat === c.id || (c.product_ids || []).some((value) => String(value) === String(p.id)));
+  // Đúng 1 danh mục (dùng cho mã giảm giá: phải khớp cách tính trên máy chủ)
+  const inCategory = (p, id) => { const c = category(id); return !!c && inOne(p, c); };
+  // Hiển thị danh sách trên website: gộp các danh mục trùng tên
+  const inShownCategory = (p, id) => sameName(id).some((c) => inOne(p, c));
   // Thương hiệu bị ẩn / xóa trong quản trị: vẫn hiển thị được sản phẩm (dùng mã thương hiệu làm tên)
   const brand = (id) =>
     DT.brands.find((b) => b.id === id) || {
@@ -112,7 +114,7 @@ DT.api = (() => {
   const originOf = (p) => String(p.origin || p.specs?.['Xuất xứ'] || '').trim();
   function list(f = {}) {
     let items = DT.products.filter((p) => {
-      if (f.cat && !inCategory(p, f.cat)) return false;
+      if (f.cat && !inShownCategory(p, f.cat)) return false;
       if (f.sub && p.sub !== f.sub) return false;
       if (f.sub2 && p.sub2 !== f.sub2) return false;
       if (f.brands?.length && !f.brands.includes(p.brand)) return false;

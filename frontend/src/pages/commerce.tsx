@@ -297,7 +297,6 @@ export function CheckoutPage() {
       const order = await dt.store.placeOrder({
         requestId: requestId.current,
         customer: {
-          gender: data.gender,
           name: data.name.trim(),
           phone: data.phone,
           email: data.email || "",
@@ -379,12 +378,6 @@ export function CheckoutPage() {
                   defaultValue={state.user?.email || ""}
                 />
               </div>
-              <Field label="Xưng hô">
-                <select name="gender">
-                  <option value="anh">Anh</option>
-                  <option value="chi">Chị</option>
-                </select>
-              </Field>
             </section>
             <section className="co-section">
               <h2>2. Nhận hàng</h2>

@@ -6,6 +6,7 @@ import {EXPORT_REASONS, LEVEL_LABEL, MOVE_TYPES, PURCHASE_STATUS, incomingMap, i
 import {Action, DataState, Head, Panel, Table, useData, useNotice} from '../components/common';
 import {MovesTable, ProductPicker} from '../components/stock';
 import {Combo} from '../components/combo';
+import {DateRange, inRange, useRange} from '../components/date-range';
 import type {Row} from '../types';
 
 const PAGE = 30;
@@ -88,16 +89,18 @@ function StockPage() {
 
 /* ------------------------------------------------------------------ Nhập hàng */
 function PurchaseList() {
-  const [params, setParams] = useSearchParams(); const tab = params.get('tab') || 'all'; const [q, setQ] = useState('');
+  const [params, setParams] = useSearchParams(); const tab = params.get('tab') || 'all'; const [q, setQ] = useState(''); const [range, setRange] = useRange(null);
   const state = useData(async () => (await ad.db.list('purchase_orders', {order: 'id.desc', limit: 5000})).rows, []);
-  const rows = (state.data || []).filter((p) => (tab === 'all' || p.status === tab) && (!q.trim() || `${p.code} ${p.supplier_name}`.toLowerCase().includes(q.trim().toLowerCase())));
+  const inPeriod = (state.data || []).filter((p) => inRange(p.created_at, range));
+  const rows = inPeriod.filter((p) => (tab === 'all' || p.status === tab) && (!q.trim() || `${p.code} ${p.supplier_name}`.toLowerCase().includes(q.trim().toLowerCase())));
   const debt = (state.data || []).filter((p) => p.received && p.status !== 'cancelled').reduce((s, p) => s + p.total - num(p.paid), 0);
   return <><Head title="Nhập hàng" subtitle="Đơn nhập hàng từ nhà cung cấp: nhập kho, giá vốn và công nợ phải trả.">
+    <DateRange allowAll value={range} onChange={setRange}/>
     <Link className="btn btn-light" to="/suppliers">Nhà cung cấp</Link>
     {canWrite() && <Link className="btn btn-primary" to="/purchases/new">+ Tạo đơn nhập hàng</Link>}
   </Head>
-  <Tabs label="Lọc đơn nhập" value={tab} onChange={(v) => setParams(v === 'all' ? {} : {tab: v})} items={[['all', 'Tất cả'], ['ordered', 'Đang giao dịch'], ['done', 'Hoàn thành'], ['cancelled', 'Đã hủy']]}/>
-  <div className="ar-toolbar"><label><span>Tìm kiếm</span><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Mã đơn nhập, nhà cung cấp…"/></label><p className="inv-note">Còn phải trả nhà cung cấp: <b className="inv-minus">{money(debt)}</b></p></div>
+  <Tabs label="Lọc đơn nhập" value={tab} onChange={(v) => { const next = new URLSearchParams(params); if (v === 'all') next.delete('tab'); else next.set('tab', v); setParams(next); }} items={[['all', 'Tất cả'], ['ordered', 'Đang giao dịch'], ['done', 'Hoàn thành'], ['cancelled', 'Đã hủy']]}/>
+  <div className="ar-toolbar"><label><span>Tìm kiếm</span><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Mã đơn nhập, nhà cung cấp…"/></label><p className="inv-note">Giá trị nhập trong kỳ: <b>{money(inPeriod.filter((p) => p.status !== 'cancelled').reduce((s, p) => s + num(p.total), 0))}</b> · Còn phải trả nhà cung cấp: <b className="inv-minus">{money(debt)}</b></p></div>
   <DataState state={state}>{state.data && <Panel><Paged rows={rows} render={(page) => <Table rows={page} columns={[
     {label: 'Mã đơn nhập', render: (p) => <><Link to={`/purchases/${p.id}`}>{p.code}</Link><small>{date(p.created_at)}</small></>},
     {label: 'Trạng thái', render: (p) => <Status value={p.status} label={PURCHASE_STATUS[p.status] || p.status}/>},
@@ -298,8 +301,9 @@ function AdjustmentDoc({id}: {id: string}) {
 const reasonLabel = (r: string) => EXPORT_REASONS.find(([k]) => k === r)?.[1] || r;
 function ExportList() {
   const state = useData(async () => (await ad.db.list('stock_exports', {order: 'id.desc', limit: 5000})).rows, []);
-  return <><Head title="Xuất kho" subtitle="Xuất hàng không qua đơn bán: hàng hỏng, hàng mẫu, quà tặng doanh nghiệp, dùng nội bộ, trả nhà cung cấp.">{canWrite() && <Link className="btn btn-primary" to="/stock-exports/new">+ Tạo phiếu xuất</Link>}</Head>
-    <DataState state={state}>{state.data && <Panel><Paged rows={state.data} render={(page) => <Table rows={page} columns={[
+  const [range, setRange] = useRange(null); const rows = (state.data || []).filter((d) => inRange(d.created_at, range));
+  return <><Head title="Xuất kho" subtitle={`Xuất hàng không qua đơn bán: hàng hỏng, hàng mẫu, quà tặng doanh nghiệp, dùng nội bộ, trả nhà cung cấp. Trong kỳ: ${rows.length} phiếu · giá vốn ${money(rows.filter((d) => d.status === 'done').reduce((s, d) => s + num(d.value), 0))}`}><DateRange allowAll value={range} onChange={setRange}/>{canWrite() && <Link className="btn btn-primary" to="/stock-exports/new">+ Tạo phiếu xuất</Link>}</Head>
+    <DataState state={state}>{state.data && <Panel><Paged rows={rows} render={(page) => <Table rows={page} columns={[
       {label: 'Mã phiếu', render: (d) => <Link to={`/stock-exports/${d.id}`}>{d.code}</Link>},
       {label: 'Trạng thái', render: (d) => <Status value={d.status} label={d.status === 'done' ? 'Đã xuất' : 'Nháp'}/>},
       {label: 'Lý do', render: (d) => reasonLabel(d.reason)}, {label: 'Người nhận', render: (d) => d.receiver || '—'},
@@ -351,10 +355,12 @@ function HistoryPage() {
   const [params, setParams] = useSearchParams();
   const product = params.get('product') || ''; const type = params.get('type') || ''; const q = params.get('q') || '';
   const state = useData(async () => { await loadCache(); return (await ad.db.list('stock_moves', {order: 'id.desc', limit: 10000, filters: product ? [['product_id', 'eq', product]] : []})).rows; }, [product]);
-  const rows = (state.data || []).filter((m) => (!type || m.type === type) && (!q || `${m.name} ${m.sku} ${m.ref}`.toLowerCase().includes(q.toLowerCase())));
+  const [range, setRange] = useRange(null);
+  const rows = (state.data || []).filter((m) => inRange(m.created_at, range) && (!type || m.type === type) && (!q || `${m.name} ${m.sku} ${m.ref}`.toLowerCase().includes(q.toLowerCase())));
   const set = (k: string, v: string) => { const next = new URLSearchParams(params); v ? next.set(k, v) : next.delete(k); setParams(next); };
   const p = product ? productOf(product) : null;
   return <><Head title="Lịch sử kho" subtitle={p ? `Sản phẩm: ${p.name} · Tồn hiện tại ${num(p.stock)}` : 'Mọi lần nhập, xuất, bán, hủy đơn, kiểm hàng: ai làm, lúc nào, tồn trước → sau.'}>
+    <DateRange allowAll value={range} onChange={setRange}/>
     {product && <button type="button" className="btn btn-light" onClick={() => set('product', '')}>Xem tất cả sản phẩm</button>}
     <button type="button" className="btn btn-light" onClick={() => downloadCSV('lich-su-kho.csv', [{label: 'Thời gian', key: 'created_at'}, {label: 'SKU', key: 'sku'}, {label: 'Sản phẩm', key: 'name'}, {label: 'Loại', value: (r) => MOVE_TYPES[r.type] || r.type}, {label: 'Chứng từ', key: 'ref'}, {label: 'Thay đổi', key: 'change'}, {label: 'Tồn trước', key: 'before'}, {label: 'Tồn sau', key: 'after'}, {label: 'Giá vốn', key: 'cost'}, {label: 'Người thực hiện', key: 'user_name'}, {label: 'Ghi chú', key: 'note'}], rows)}>Xuất CSV</button>
   </Head>

@@ -392,7 +392,27 @@ try {
   assert.match(await page.locator("#view").innerText(), /Đối soát tiền/);
   assert.notEqual(await page.locator("#rev-collected").innerText(), "0 ₫", "Đơn đã thu tiền được tính vào Đã thu");
   await open("dashboard");
-  assert.match(await page.locator("#view .ar-kpis").innerText(), /Đã thu tiền 30 ngày[\s\S]*Chưa thu tiền/i);
+  assert.match(await page.locator("#view .ar-kpis").innerText(), /Đã thu tiền[\s\S]*Chưa thu tiền/i);
+  // Lọc theo thời gian: mặc định 30 ngày qua; chọn mốc nhanh / tùy chọn → URL giữ kỳ, số liệu và biểu đồ theo kỳ
+  const rangeBtn = page.locator("#view .ar-range-btn").first();
+  assert.match(await rangeBtn.textContent(), /30 ngày qua/);
+  await rangeBtn.click();
+  await page.locator(".ar-range-pop button", { hasText: "Hôm nay" }).click();
+  await page.waitForURL(/from=\d{4}-\d{2}-\d{2}&to=/);
+  await page.waitForFunction(() => /Hôm nay/.test(document.querySelector("#view .ar-range-btn")?.textContent || ""));
+  await page.locator("#view .ar-range-btn").first().click();
+  await page.locator(".ar-range-custom input").first().fill("2026-12-31");
+  await page.locator(".ar-range-custom input").nth(1).fill("2026-01-01");
+  await page.locator(".ar-range-custom .btn-primary").click();
+  assert.match(await page.locator(".ar-range-error").innerText(), /Từ ngày phải trước/);
+  await page.keyboard.press("Escape");
+  await page.locator("#view .ar-range-btn").first().click();
+  await page.locator(".ar-range-pop button", { hasText: "Năm nay" }).click();
+  assert.match(await page.locator("#view").innerText(), /so với kỳ trước/i);
+  for (const route of ["reports", "orders", "leads", "misa", "maintenance", "purchases", "stock-exports", "stock-history"]) {
+    await open(route);
+    assert.equal(await page.locator("#view .ar-range-btn").count(), 1, `${route}: có bộ lọc thời gian`);
+  }
   await open("leads/LEADREACTQA");
   await page.locator("[name=status]").selectOption("contacted");
   await page.locator("[name=assigned_to]").selectOption("demo-sales-1");

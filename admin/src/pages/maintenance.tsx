@@ -4,16 +4,17 @@ import {Link,useSearchParams} from 'react-router-dom';
 import {ad,downloadCSV,loadCache,money,today} from '../services/runtime';
 import {Action,DataState,Head,Table,useData,useNotice} from '../components/common';
 import {NotificationsPage} from './operations';
+import {ALL,DateRange} from '../components/date-range';
 import {CYCLES,SOURCES,STATUS,addMonths,contractViews,contractsFromOrders,maintenanceStats,type ContractView} from '../services/maintenance';
 import type {Row} from '../types';
 
 const TABS:[string,string][]=[['overview','Tổng quan'],['customers','Khách đăng ký'],['visits','Lịch sử & chi phí'],['reminders','Lịch nhắc']];
-const PERIODS:[string,string][]=[['3','3 tháng'],['6','6 tháng'],['12','12 tháng'],['ytd','Từ đầu năm'],['all','Toàn bộ']];
 const cycleLabel=(m:unknown)=>CYCLES.find(([k])=>k===String(m))?.[1]||`${m} tháng`;
 const dueText=(c:Row)=>c.daysLeft==null?'—':c.daysLeft<0?`Quá hạn ${-c.daysLeft} ngày`:c.daysLeft===0?'Hôm nay':`Còn ${c.daysLeft} ngày`;
 
 function range(period:string,visits:Row[]){
  const to=today();
+ if(period.includes('~')){const [f,t]=period.split('~');return {from:f,to:t};}
  if(period==='ytd')return {from:`${to.slice(0,4)}-01-01`,to};
  if(period==='all')return {from:visits.map(v=>v.date).sort()[0]||to,to};
  return {from:addMonths(`${to.slice(0,7)}-01`,-(Number(period)||12)+1),to};
@@ -37,7 +38,7 @@ export function MaintenancePage(){
 }
 
 function PeriodPicker({period,onPeriod}:{period:string;onPeriod:(p:string)=>void}){
- return <div className="mt-period" role="group" aria-label="Khoảng thời gian">{PERIODS.map(([k,l])=><button type="button" key={k} className={period===k?'active':''} aria-pressed={period===k} onClick={()=>onPeriod(k)}>{l}</button>)}</div>;
+ return <DateRange allowAll value={period==='all'?ALL:range(period,[])} onChange={r=>onPeriod(r.from&&r.to?`${r.from}~${r.to}`:'all')}/>;
 }
 
 function Overview({contracts,visits,period,onPeriod,onChange}:{contracts:Row[];visits:Row[];period:string;onPeriod:(p:string)=>void;onChange:()=>void}){
@@ -56,7 +57,7 @@ function Overview({contracts,visits,period,onPeriod,onChange}:{contracts:Row[];v
   ['Tỷ lệ giữ chân',`${s.retention}%`,'Khách cũ vẫn còn bảo trì'],
  ];
  return <>
-  <div className="mt-bar"><PeriodPicker period={period} onPeriod={onPeriod}/><span className="mt-range">{from.split('-').reverse().join('/')} – {to.split('-').reverse().join('/')}</span>
+  <div className="mt-bar"><PeriodPicker period={period} onPeriod={onPeriod}/>
    <Action run={async()=>{downloadCSV(`bao-tri-${from}-${to}.csv`,[{label:'Khách hàng',key:'name'},{label:'Điện thoại',key:'phone'},{label:'Công ty',key:'company'},{label:'Thiết bị',key:'units'},{label:'Chu kỳ (tháng)',key:'cycle_months'},{label:'Trạng thái',value:r=>STATUS[r.status]||r.status},{label:'Lần gần nhất',key:'lastVisit'},{label:'Hạn tiếp theo',key:'nextDue'},{label:'Số lần',key:'visits'},{label:'Tổng chi tiêu',key:'spend'},{label:'Chưa thu',key:'unpaid'}],contractViews(contracts,visits));notice('Đã xuất danh sách khách bảo trì');}}>Xuất CSV</Action></div>
   <div className="ar-kpis mt-kpis">{kpis.map(([l,v,sub])=><div key={l}><span>{l}</span><strong>{v}</strong>{sub&&<small>{sub}</small>}</div>)}</div>
   {!!imports.data?.length&&<div className="ar-notice mt-import"><span>{imports.data.length} khách đã chọn "nhắc bảo trì" khi đặt hàng nhưng chưa có trong danh sách bảo trì.</span>

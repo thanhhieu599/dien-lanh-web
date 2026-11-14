@@ -620,7 +620,7 @@ export function ShopLayout({ children }: { children: ReactNode }) {
               <h4>Thanh toán</h4>
               <div className="pay-logos">
                 <span>COD</span>
-                <span>VietQR</span>
+                <span>Chuyển khoản</span>
               </div>
               <h4>Kết nối với chúng tôi</h4>
               <div className="socials">

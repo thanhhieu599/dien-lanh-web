@@ -74,7 +74,15 @@ try {
   await page.locator('input[value=bank]').check();
   const bank=page.locator('.checkout-bank');await bank.waitFor();
   for(const text of ['75575668','ACB','CONG TY TNHH KY NGHE LANH KHANH LE'])assert.ok((await bank.textContent()).includes(text),`Thiếu ${text}`);
-  assert.match(await bank.locator('img.checkout-qr').getAttribute('src'),/970416-75575668/);
+  // Không tự sinh VietQR: chưa tải ảnh QR thì chỉ hiện số tài khoản; có ảnh QR trong Cài đặt thì hiện đúng ảnh đó
+  assert.equal(await bank.locator('img.checkout-qr').count(),0);
+  await page.evaluate(()=>{DT.config.bankQr='data:image/png;base64,iVBORw0KGgo=';});
+  await page.locator('input[value=cod]').check();await page.locator('input[value=bank]').check();
+  assert.equal(await page.locator('.checkout-bank img.checkout-qr').getAttribute('src'),'data:image/png;base64,iVBORw0KGgo=');
+  await page.evaluate(()=>{DT.config.bankQr='javascript:alert(1)';});
+  await page.locator('input[value=cod]').check();await page.locator('input[value=bank]').check();
+  assert.equal(await page.locator('.checkout-bank img.checkout-qr').count(),0,'Chặn link ảnh QR độc hại');
+  await page.evaluate(()=>{delete DT.config.bankQr;});
   await page.locator('input[value=cod]').check();
   await page.locator('[name=name]').fill('React Customer');await page.locator('[name=phone]').fill('0912345678');await page.locator('[name=province]').fill('TP.HCM');await page.locator('[name=district]').fill('Quận 1');await page.locator('[name=address]').fill('123 Test');await page.locator('[name=agree]').check();await page.getByRole('button',{name:'ĐẶT HÀNG',exact:true}).click();await page.waitForURL('**/dat-hang-thanh-cong.html?code=*');
   const order=await page.evaluate(()=>DT.store.get().orders[0]);assert.equal(order.items[0].qty,2);

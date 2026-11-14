@@ -1,19 +1,19 @@
-// Thanh toán: chỉ có 2 phương thức là COD (trả tiền khi nhận hàng) và chuyển khoản ngân hàng (VietQR).
+// Thanh toán: chỉ có 2 phương thức là COD (trả tiền khi nhận hàng) và chuyển khoản ngân hàng.
+// Chuyển khoản: hiện ảnh mã QR ngân hàng do quản trị tải lên + số tài khoản; nhân viên xác nhận thanh toán thủ công.
 // Không dùng cổng thanh toán online (thẻ, ví điện tử, trả góp).
 window.DT = window.DT || {};
 
 DT.payments = (() => {
   // Phương thức hợp lệ, khớp với kiểm tra phía máy chủ (server/shop.php)
-  const METHODS = { cod: 'Thanh toán khi nhận hàng (COD)', bank: 'Chuyển khoản ngân hàng / VietQR' };
+  const METHODS = { cod: 'Thanh toán khi nhận hàng (COD)', bank: 'Chuyển khoản ngân hàng' };
 
-  // Ảnh QR VietQR: mọi app ngân hàng quét được, tự điền số tiền + nội dung (mã đơn)
-  function qrUrl(amount, content) {
-    const c = DT.config;
-    if (!c.bankBin || !c.bankAccount) return '';
-    const q = new URLSearchParams({ accountName: c.bankOwner || '' });
-    if (Number(amount) > 0) q.set('amount', String(Math.round(amount)));
-    if (content) q.set('addInfo', content);
-    return `https://img.vietqr.io/image/${encodeURIComponent(c.bankBin)}-${encodeURIComponent(c.bankAccount)}-compact2.png?${q}`;
+  // Ảnh mã QR ngân hàng tĩnh (Cài đặt › Liên hệ & chuyển khoản › Ảnh mã QR ngân hàng). Không tự điền số tiền:
+  // khách nhập số tiền + nội dung là mã đơn. Tham số giữ để tương thích chỗ gọi cũ.
+  function qrUrl(_amount, _content) {
+    const src = String(DT.config.bankQr || '').trim();
+    if (/^data:image\/(png|jpeg|webp|gif);base64,[a-z0-9+/=]+$/i.test(src)) return src; // ảnh demo lưu dạng data URL
+    const url = DT.u.safeUrl(src);
+    return /^(tel|mailto|zalo):/i.test(url) ? '' : url;
   }
 
   // Khối thanh toán dưới thông tin đơn (trang đặt hàng thành công, tra cứu đơn)
@@ -32,7 +32,7 @@ DT.payments = (() => {
             <div><span>Số tiền</span><b class="price">${money(o.total)}</b></div>
             <div><span>Nội dung</span><b>${esc(o.code)}</b> <button type="button" class="link" data-copy="${esc(o.code)}">Sao chép</button></div>
           </div></div>
-        <p class="muted" data-bank-note>Quét mã QR bằng app ngân hàng: số tiền và nội dung được điền sẵn. ${o.paymentStatus === 'partial' ? '<b>Đơn hàng đã nhận thanh toán một phần, vui lòng chuyển phần còn lại hoặc gọi hotline.</b>' : ''}</p>
+        <p class="muted" data-bank-note>Quét mã QR bằng app ngân hàng, nhập đúng <b>số tiền</b> và <b>nội dung là mã đơn</b>. Cửa hàng xác nhận đơn sau khi kiểm tra tiền đã về tài khoản. ${o.paymentStatus === 'partial' ? '<b>Đơn hàng đã nhận thanh toán một phần, vui lòng chuyển phần còn lại hoặc gọi hotline.</b>' : ''}</p>
       </div>`;
     }
     return '';

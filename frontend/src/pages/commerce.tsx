@@ -487,7 +487,7 @@ export function CheckoutPage() {
                     <div><dt>Số tiền</dt><dd><b>{money(totals.total)}</b></dd></div>
                   </dl>
                   <p className="checkout-bank-note">
-                    Vui lòng bấm <b>Đặt hàng</b> trước, sau đó chuyển khoản với nội dung là <b>mã đơn hàng</b> (mã QR có sẵn số tiền và nội dung sẽ hiện ngay sau khi đặt) để cửa hàng xác nhận nhanh.
+                    Vui lòng bấm <b>Đặt hàng</b> trước, sau đó chuyển khoản đúng <b>số tiền</b> với nội dung là <b>mã đơn hàng</b> (hiện ngay sau khi đặt). Cửa hàng kiểm tra tài khoản và xác nhận đơn cho bạn.
                   </p>
                 </div>
               )}
@@ -649,7 +649,10 @@ export function OrderDetails({
               <div><dt>Số tiền</dt><dd><b>{money(order.total)}</b></dd></div>
             </dl>
             <p>
-              Nội dung: <b>{order.code}</b>
+              Nội dung chuyển khoản: <b>{order.code}</b>
+            </p>
+            <p className="checkout-bank-note">
+              Quét mã QR bằng app ngân hàng, nhập đúng số tiền và nội dung là mã đơn. Cửa hàng xác nhận đơn sau khi kiểm tra tiền đã về tài khoản.
             </p>
           </div>
         )}

@@ -35,7 +35,7 @@ export const settingsFields:FieldSpec[] = [
     {
       key: "_b",
       type: "custom",
-      render: () => '<h4 class="ad-sec">Liên hệ</h4>',
+      render: () => '<h4 class="ad-sec">Liên hệ & chuyển khoản</h4>',
       read: () => undefined,
       col: "full",
     },
@@ -56,6 +56,14 @@ export const settingsFields:FieldSpec[] = [
       col: "third",
       help: "Chỉ dán phần content của thẻ meta google-site-verification",
     },
+    { key: "bankName", label: "Ngân hàng (hiển thị)", col: "third" },
+    { key: "bankAccount", label: "Số tài khoản", col: "third" },
+    {
+      key: "bankOwner",
+      label: "Chủ tài khoản (như trên app ngân hàng)",
+      col: "full",
+    },
+    { key: "bankQr", label: "Ảnh mã QR ngân hàng", type: "image", folder: "settings", col: "full", help: "Tải ảnh mã QR nhận tiền lấy từ app ngân hàng (vuông, rõ nét). Khách quét mã này rồi tự nhập số tiền và nội dung là mã đơn. Để trống: chỉ hiện số tài khoản." },
     {
       key: "_c",
       type: "custom",
@@ -70,22 +78,6 @@ export const settingsFields:FieldSpec[] = [
       type: "money",
       required: true,
       col: "third",
-    },
-    {
-      key: "_d",
-      type: "custom",
-      render: () =>
-        '<h4 class="ad-sec">Tài khoản nhận chuyển khoản</h4><p class="muted">Dùng để tạo mã QR VietQR trên trang đơn hàng và email gửi khách. Mã ngân hàng (BIN): Vietcombank 970436, Techcombank 970407, MB 970422, ACB 970416, BIDV 970418, VietinBank 970415, VPBank 970432.</p>',
-      read: () => undefined,
-      col: "full",
-    },
-    { key: "bankName", label: "Ngân hàng (hiển thị)", col: "third" },
-    { key: "bankBin", label: "Mã ngân hàng (BIN VietQR)", col: "third" },
-    { key: "bankAccount", label: "Số tài khoản", col: "third" },
-    {
-      key: "bankOwner",
-      label: "Chủ tài khoản (không dấu, như trên app ngân hàng)",
-      col: "full",
     },
     {
       key: "_e",

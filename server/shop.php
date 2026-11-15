@@ -3,6 +3,12 @@ declare(strict_types=1);
 require_once __DIR__ . '/inventory.php';
 require_once __DIR__ . '/users.php';
 
+// Nhóm khách hàng của 1 hồ sơ CRM: nhóm đã gán, nếu chưa gán thì khách có nhãn VIP thuộc nhóm VIP, còn lại là Bán lẻ.
+function customerGroupOf(array $c): string {
+    if (!empty($c['group']) && is_string($c['group'])) return $c['group'];
+    return in_array('VIP', $c['tags'] ?? [], true) ? 'vip' : 'ban-le';
+}
+
 function phoneKey(string $phone): string {
     return preg_replace('/^\+?84/', '0', preg_replace('/[^0-9+]/', '', $phone));
 }
@@ -67,7 +73,7 @@ function couponResult(?array $coupon, array $lines, string $phone, array $data =
             $ok = false;
             foreach ($customersOf() as $c) if (phoneKey($c['phone'] ?? '') === $phone) {
                 foreach ($coupon['customer_groups'] as $group) {
-                    if ($group === 'vip' && in_array('VIP', $c['tags'] ?? [], true) || str_starts_with($group, 'tag:') && in_array(substr($group, 4), $c['tags'] ?? [], true)) $ok = true;
+                    if ($group === 'vip' && customerGroupOf($c) === 'vip' || str_starts_with($group, 'group:') && customerGroupOf($c) === substr($group, 6) || str_starts_with($group, 'tag:') && in_array(substr($group, 4), $c['tags'] ?? [], true)) $ok = true;
                 }
             }
             if (!$ok) return $bad('Mã chỉ dành cho nhóm khách hàng đã được chọn');
@@ -385,6 +391,41 @@ function rpcEndpoint(string $name, array $args): mixed {
     }
     // Danh sách gọi chăm sóc bảo trì: mỗi lần đến hạn (khách bảo trì + ngày đến hạn) lưu trạng thái và lịch sử thao tác.
     // Chỉ ghi qua đây (không sửa/xóa trực tiếp), lịch sử chỉ thêm vào, không mất dữ liệu.
+    // Quản lý nhóm khách hàng (chỉ quản trị viên): thêm / sửa / xóa. Xóa nhóm: khách trong nhóm chuyển về "Khách bán lẻ",
+    // mã giảm giá đang áp cho nhóm đó bỏ nhóm khỏi danh sách áp dụng – không để dữ liệu trỏ tới nhóm không tồn tại.
+    if ($name === 'customer_group') {
+        $user = staff(); if ($user['role'] !== 'admin') fail('Chỉ quản trị viên được sửa nhóm khách hàng', 403);
+        $op = (string)($args['p_op'] ?? '');
+        return transaction(function() use ($op, $args) {
+            $groups = customerGroups();
+            if ($op === 'save') {
+                $g = is_array($args['p_group'] ?? null) ? $args['p_group'] : [];
+                $name = mb_substr(trim((string)($g['name'] ?? '')), 0, 60);
+                if ($name === '') fail('Nhập tên nhóm');
+                $color = preg_match('/^#[0-9a-fA-F]{6}$/', (string)($g['color'] ?? '')) ? strtolower($g['color']) : '#64748b';
+                $desc = mb_substr(trim((string)($g['desc'] ?? '')), 0, 200);
+                $id = (string)($g['id'] ?? '');
+                $i = array_search($id, array_column($groups, 'id'), true);
+                foreach ($groups as $k => $o) if ($k !== $i && mb_strtolower($o['name']) === mb_strtolower($name)) fail('Tên nhóm đã tồn tại');
+                if ($i === false) {
+                    $base = trim(preg_replace('/[^a-z0-9]+/', '-', strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', str_replace(['đ','Đ'], 'd', $name)) ?: '')), '-') ?: 'nhom';
+                    $id = $base; $n = 2; while (in_array($id, array_column($groups, 'id'), true)) $id = $base . '-' . $n++;
+                    $groups[] = ['id' => $id, 'name' => $name, 'color' => $color, 'desc' => $desc];
+                } else $groups[$i] = array_merge($groups[$i], ['name' => $name, 'color' => $color, 'desc' => $desc]);
+            } elseif ($op === 'delete') {
+                $id = (string)($args['p_id'] ?? '');
+                $i = array_search($id, array_column($groups, 'id'), true);
+                if ($i === false) fail('Không tìm thấy nhóm', 404);
+                if (!empty($groups[$i]['locked'])) fail('Không xóa được nhóm mặc định');
+                array_splice($groups, $i, 1);
+                foreach (allRecords('crm_customers') as $c) if (($c['group'] ?? null) === $id || $id === 'vip' && empty($c['group']) && in_array('VIP', $c['tags'] ?? [], true)) put('crm_customers', array_merge($c, ['group' => 'ban-le']));
+                foreach (allRecords('coupons') as $cp) if (array_intersect($cp['customer_groups'] ?? [], ['group:' . $id] + ($id === 'vip' ? [1 => 'vip'] : []))) put('coupons', array_merge($cp, ['customer_groups' => array_values(array_diff($cp['customer_groups'], ['group:' . $id, $id === 'vip' ? 'vip' : '']))]));
+            } else fail('Thao tác không hợp lệ');
+            $row = record('settings', 'customer_groups', true) ?? ['key' => 'customer_groups'];
+            put('settings', array_merge($row, ['key' => 'customer_groups', 'value' => ['groups' => array_values($groups)]]));
+            return array_values($groups);
+        });
+    }
     if ($name === 'maintenance_call') {
         $user = staff(); if (!in_array($user['role'], ['admin','staff'], true)) fail('Không có quyền', 403);
         $key = (string)($args['p_key'] ?? '');

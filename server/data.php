@@ -113,6 +113,23 @@ function syncProductMembership(array $before, array &$row): void {
     }
 }
 // Một số điện thoại chỉ thuộc 1 khách hàng (khách tạo tại admin, khách vãng lai, khách đã đăng ký)
+// ===== Nhóm khách hàng (phân khúc để chạy ưu đãi / chiến dịch) =====
+// Danh sách nhóm lưu ở settings 'customer_groups'; mỗi khách có 1 nhóm (crm_customers.group). Chưa gán: VIP nếu có nhãn VIP, còn lại Bán lẻ.
+const DEFAULT_CUSTOMER_GROUPS = [
+    ['id' => 'ban-le', 'name' => 'Khách bán lẻ', 'color' => '#64748b', 'desc' => 'Mặc định cho khách mới mua lẻ', 'locked' => true],
+    ['id' => 'tiem-nang', 'name' => 'Khách tiềm năng', 'color' => '#0ea5e9', 'desc' => 'Đã hỏi giá / để lại thông tin, chưa mua hoặc mua ít'],
+    ['id' => 'than-thiet', 'name' => 'Khách hàng thân thiết', 'color' => '#16a34a', 'desc' => 'Mua nhiều lần, chăm sóc định kỳ'],
+    ['id' => 'vip', 'name' => 'Khách VIP', 'color' => '#d97706', 'desc' => 'Doanh số cao, ưu đãi riêng'],
+];
+function customerGroups(): array {
+    $groups = record('settings', 'customer_groups')['value']['groups'] ?? null;
+    return is_array($groups) && $groups ? $groups : DEFAULT_CUSTOMER_GROUPS;
+}
+function validCustomerGroup(mixed $id): string {
+    $id = (string)$id;
+    foreach (customerGroups() as $g) if (($g['id'] ?? '') === $id) return $id;
+    fail('Nhóm khách hàng không tồn tại');
+}
 function crmPhoneFree(string $phone, ?string $exceptId): void {
     foreach (allRecords('crm_customers') as $c) if ((string)$c['id'] !== $exceptId && phoneKey((string)($c['phone'] ?? '')) === $phone) fail('Số điện thoại khách hàng đã tồn tại', 409);
     $taken = sql('SELECT id FROM users WHERE phone=? LIMIT 1', [$phone])->fetchColumn();
@@ -160,6 +177,7 @@ function crmSummary(): array {
         $c['last_order_code'] = $rows[0]['code'] ?? null;
         $c['last_order_at'] = $rows[0]['created_at'] ?? null;
         $c['role'] ??= 'customer'; $c['tags'] ??= []; $c['addresses'] ??= [];
+        $c['group'] = customerGroupOf($c);
     }
     return $customers;
 }
@@ -252,6 +270,7 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
             if (!preg_match('/^0[0-9]{9,10}$/', $body['phone'])) fail('Số điện thoại không hợp lệ');
             crmPhoneFree($body['phone'], null);
             if (array_key_exists('invoice', $body)) $body['invoice'] = crmInvoice($body['invoice']);
+            if (array_key_exists('group', $body)) $body['group'] = validCustomerGroup($body['group']);
         }
         if ($table === 'suppliers') { unset($body['debt'], $body['total_purchased'], $body['purchase_count']); $body['code'] = trim((string)($body['code'] ?? '')) ?: 'NCC' . str_pad((string)(count(allRecords('suppliers')) + 1), 4, '0', STR_PAD_LEFT); }
         if ($table !== 'products') return [put($table, $body, true)];
@@ -297,7 +316,8 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
         $patch = $body;
         unset($patch[pk($table)], $patch['created_at']);
         if ($table === 'crm_customers') {
-            $patch = array_intersect_key($patch, array_flip(['name','phone','email','addresses','tags','note','invoice']));
+            $patch = array_intersect_key($patch, array_flip(['name','phone','email','addresses','tags','note','invoice','group']));
+            if (array_key_exists('group', $patch)) $patch['group'] = validCustomerGroup($patch['group']);
             if (array_key_exists('invoice', $patch)) $patch['invoice'] = crmInvoice($patch['invoice']);
             if (isset($patch['phone']) && phoneKey((string)$patch['phone']) !== phoneKey((string)($row['phone'] ?? ''))) {
                 $patch['phone'] = phoneKey((string)$patch['phone']);

@@ -5,7 +5,7 @@ export const roles:Record<string,{label:string;home:string}>= {
 export const navigation=[
  {title:'Tổng quan',items:[['dashboard','home','Tổng quan']]},
  {title:'Bán hàng',items:[['orders','cart','Đơn hàng'],// Yêu cầu khách gửi từ website (liên hệ, báo giá dự án, đặt lịch…); nhân viên kinh doanh thấy "Khách hàng của tôi"
-['leads','chat','Yêu cầu khách hàng'],['customers','user','Khách hàng'],['maintenance','wrench','Bảo trì']]},
+['leads','chat','Yêu cầu khách hàng'],['customers','user','Khách hàng'],['customer-groups','tag','Nhóm khách hàng'],['maintenance','wrench','Bảo trì']]},
  {title:'Sản phẩm',items:[['products','box','Sản phẩm'],['categories','grid','Danh mục'],['brands','tag','Thương hiệu'],['reviews','star','Đánh giá']]},
  {title:'Kho hàng',items:[['inventory','list','Quản lý kho'],['purchases','truck','Nhập hàng'],['stocktakes','check','Kiểm hàng'],['stock-exports','up','Xuất kho'],['suppliers','building','Nhà cung cấp'],['stock-history','clock','Lịch sử kho']]},
  {title:'Marketing',items:[['coupons','percent','Mã giảm giá'],['banners','zap','Banner'],['posts','file','Bài viết'],['vision','eye','Trang Tầm nhìn'],['projects','building','Dự án tiêu biểu'],['jobs','user','Tuyển dụng'],['faqs','chat','Hỏi đáp (FAQ)'],['trust','shield','Uy tín & đánh giá'],['content','file','Nội dung website']]},

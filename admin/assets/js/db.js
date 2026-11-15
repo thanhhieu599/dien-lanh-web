@@ -912,6 +912,7 @@ AD.demo = () => {
         last_order_code: orders[0]?.code || null,
 
         is_vip: (customer.tags || []).includes("VIP"),
+        group: DT.customerGroupOf(customer),
       };
     });
   }
@@ -1244,6 +1245,35 @@ AD.demo = () => {
       row.updated_at = nowIso(); row.updated_by_name = userName();
       persist();
       return { ...row };
+    },
+    // Nhóm khách hàng (giống rpc customer_group trên PHP): xóa nhóm → khách về Bán lẻ, mã giảm giá bỏ nhóm đó
+    async customerGroup({ p_op, p_group = {}, p_id = "" }) {
+      if (me().role !== "admin") deny();
+      const row = db.settings.find((s) => s.key === "customer_groups");
+      const groups = [...(row?.value?.groups || DT.CUSTOMER_GROUPS)].map((g) => ({ ...g }));
+      if (p_op === "save") {
+        const name = String(p_group.name || "").trim().slice(0, 60);
+        if (!name) invFail("Nhập tên nhóm");
+        const color = /^#[0-9a-f]{6}$/i.test(p_group.color || "") ? p_group.color.toLowerCase() : "#64748b";
+        const desc = String(p_group.desc || "").trim().slice(0, 200);
+        const i = groups.findIndex((g) => g.id === p_group.id);
+        if (groups.some((g, k) => k !== i && g.name.toLowerCase() === name.toLowerCase())) invFail("Tên nhóm đã tồn tại");
+        if (i < 0) {
+          const base = DT.u.slugify(name) || "nhom"; let id = base, n = 2;
+          while (groups.some((g) => g.id === id)) id = `${base}-${n++}`;
+          groups.push({ id, name, color, desc });
+        } else Object.assign(groups[i], { name, color, desc });
+      } else if (p_op === "delete") {
+        const i = groups.findIndex((g) => g.id === p_id);
+        if (i < 0) invFail("Không tìm thấy nhóm");
+        if (groups[i].locked) invFail("Không xóa được nhóm mặc định");
+        groups.splice(i, 1);
+        for (const c of db.crm_customers) if (DT.customerGroupOf(c) === p_id) c.group = "ban-le";
+        for (const cp of db.coupons || []) if (cp.customer_groups) cp.customer_groups = cp.customer_groups.filter((g) => g !== `group:${p_id}` && !(p_id === "vip" && g === "vip"));
+      } else invFail("Thao tác không hợp lệ");
+      if (row) row.value = { groups }; else db.settings.push({ key: "customer_groups", value: { groups } });
+      persist();
+      return groups;
     },
     async issueInvoice(id) {
       if (!["admin", "staff", "accountant"].includes(me().role)) deny();

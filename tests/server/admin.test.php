@@ -241,6 +241,22 @@ try {
     checkAdmin(!in_array((string)$moved['id'], array_map('strval', $a['product_ids']), true), 'Đổi danh mục: sản phẩm rời danh sách của danh mục cũ');
     checkAdmin(in_array((string)$moved['id'], array_map('strval', $b['product_ids']), true) && !in_array((string)$moved['id'], array_map('strval', $b['excluded_product_ids']), true), 'Đổi danh mục: sản phẩm vào danh sách danh mục mới, không bị loại');
     checkAdmin(($after['sub'] ?? '') === '', 'Đổi danh mục: bỏ nhóm cũ không thuộc danh mục mới');
+    // Nhóm khách hàng: gán nhóm có sẵn, chặn nhóm không tồn tại; thêm nhóm mới; xóa nhóm → khách về Bán lẻ, mã giảm giá bỏ nhóm
+    patchAdmin('crm_customers', $c2['id'], ['group'=>'than-thiet']);
+    checkAdmin((record('crm_customers', $c2['id'])['group'] ?? '') === 'than-thiet' && customerGroupOf(endpoint('crm_customer_summary', query:['id'=>'eq.' . $c2['id']])[0]) === 'than-thiet', 'Nhóm khách hàng: gán nhóm có sẵn');
+    try { patchAdmin('crm_customers', $c2['id'], ['group'=>'khong-co']); throw new RuntimeException('Unknown group accepted'); }
+    catch (HttpError $e) { checkAdmin($e->getCode() === 400, 'Nhóm khách hàng: chặn nhóm không tồn tại'); }
+    $before = record('settings', 'customer_groups');
+    $groups = rpcEndpoint('customer_group', ['p_op'=>'save', 'p_group'=>['name'=>'QA Đại lý ' . $prefix, 'color'=>'#7c3aed']]);
+    $newId = end($groups)['id'];
+    patchAdmin('crm_customers', $c2['id'], ['group'=>$newId]);
+    $cp = endpoint('coupons', 'POST', ['code'=>strtoupper(substr($prefix, 0, 12)) . 'G', 'type'=>'fixed', 'value'=>1000, 'active'=>true, 'customer_groups'=>['group:' . $newId, 'tag:QA']])[0];
+    $created[] = ['coupons', $cp['code']];
+    try { rpcEndpoint('customer_group', ['p_op'=>'delete', 'p_id'=>'ban-le']); throw new RuntimeException('Default group deleted'); }
+    catch (HttpError $e) { checkAdmin($e->getCode() === 400, 'Nhóm khách hàng: không xóa được nhóm mặc định'); }
+    rpcEndpoint('customer_group', ['p_op'=>'delete', 'p_id'=>$newId]);
+    checkAdmin((record('crm_customers', $c2['id'])['group'] ?? '') === 'ban-le' && record('coupons', $cp['code'])['customer_groups'] === ['tag:QA'] && !in_array($newId, array_column(customerGroups(), 'id'), true), 'Nhóm khách hàng: xóa nhóm → khách về Bán lẻ, mã giảm giá bỏ nhóm');
+    if ($before) put('settings', $before); else sql("DELETE FROM records WHERE resource='settings' AND record_id='customer_groups'");
     echo "Admin MySQL: $checks checks passed.\n";
 } finally {
     foreach (array_reverse($created) as [$table, $id]) sql('DELETE FROM records WHERE resource=? AND record_id=?', [$table, (string)$id]);

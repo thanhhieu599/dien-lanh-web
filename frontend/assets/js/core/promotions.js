@@ -77,8 +77,10 @@ DT.promotions = (() => {
         const matches = c.customer_groups.some((group) =>
           customers.some((customer) =>
             group === "vip"
-              ? (customer.tags || []).includes("VIP")
-              : group.startsWith("tag:") &&
+              ? DT.customerGroupOf(customer) === "vip"
+              : group.startsWith("group:")
+                ? DT.customerGroupOf(customer) === group.slice(6)
+                : group.startsWith("tag:") &&
                   (customer.tags || []).includes(group.slice(4)),
           ),
         );

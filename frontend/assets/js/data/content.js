@@ -354,3 +354,13 @@ DT.jobs = [
     benefits: '<ul><li>Làm giờ hành chính, nghỉ Chủ nhật luân phiên.</li><li>Thưởng theo KPI, BHXH đầy đủ.</li></ul>',
   },
 ];
+
+// Nhóm khách hàng mặc định (phải khớp DEFAULT_CUSTOMER_GROUPS trong server/data.php). Quản trị › Nhóm khách hàng
+// thêm / sửa nhóm; mỗi khách thuộc 1 nhóm, chưa gán: VIP nếu có nhãn VIP, còn lại Khách bán lẻ.
+DT.CUSTOMER_GROUPS = [
+  { id: 'ban-le', name: 'Khách bán lẻ', color: '#64748b', desc: 'Mặc định cho khách mới mua lẻ', locked: true },
+  { id: 'tiem-nang', name: 'Khách tiềm năng', color: '#0ea5e9', desc: 'Đã hỏi giá / để lại thông tin, chưa mua hoặc mua ít' },
+  { id: 'than-thiet', name: 'Khách hàng thân thiết', color: '#16a34a', desc: 'Mua nhiều lần, chăm sóc định kỳ' },
+  { id: 'vip', name: 'Khách VIP', color: '#d97706', desc: 'Doanh số cao, ưu đãi riêng' },
+];
+DT.customerGroupOf = (c) => (c && typeof c.group === 'string' && c.group) || ((c?.tags || []).includes('VIP') ? 'vip' : 'ban-le');

@@ -449,10 +449,12 @@ try {
     async (id) => (await AD.db.get("crm_customers", id)).tags.includes("React"),
     customerId,
   );
+  await page.getByLabel("Đổi nhóm khách hàng").selectOption("vip");
+  await waitUntil(async (id) => (await AD.db.get("crm_customers", id)).group === "vip", customerId);
   await open("customers");
-  await page.locator('select[name=segment]').selectOption("vip");
+  await page.locator('select[name=group]').first().selectOption("vip");
   await page.getByRole("button", {name:"Lọc", exact:true}).click();
-  await page.waitForURL("**/customers?segment=vip");
+  await page.waitForURL("**/customers?group=vip");
   await page.waitForFunction(() => document.querySelectorAll('.ar-table tbody tr').length === 1);
   assert.equal(await page.locator('.ar-table tbody tr').count(), 1, 'VIP filter excludes regular customers');
   assert.match(await page.locator('.ar-table').textContent(), /Khách CRM React/);

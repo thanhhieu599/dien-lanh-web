@@ -24,6 +24,7 @@ import {
   useNotice,
 } from "../components/common";
 import { EditorField, ProductMembership } from "../components/fields";
+import { loadGroups } from "../services/customer-groups";
 import type { Row, FieldSpec } from "../types";
 export function ResourceList({ resource: key }: { resource: string }) {
   const r = ad.resources[key];
@@ -592,12 +593,14 @@ function CouponScope({ row, onChange, error }: { row: Row; onChange: (patch: Row
 // Mã giảm giá: nhóm khách hàng được dùng mã
 function CouponGroups({ row, onChange }: { row: Row; onChange: (patch: Row) => void }) {
   const groups = useData(async () => {
-    const result = await ad.db.list("crm_customer_summary", { limit: 50000 });
-    return Array.from(new Set(result.rows.flatMap((r) => r.tags || []))).map(String);
+    const [list, result] = await Promise.all([loadGroups(), ad.db.list("crm_customer_summary", { limit: 50000 })]);
+    const tags = Array.from(new Set(result.rows.flatMap((r) => r.tags || []))).map(String).filter((t) => t !== "VIP");
+    // Nhóm khách hàng (Quản trị › Nhóm khách hàng) + nhãn tự do. Mã cũ chọn "vip" vẫn được hiểu là nhóm Khách VIP.
+    return [...list.map((g) => [g.id === "vip" && (row.customer_groups || []).includes("vip") ? "vip" : `group:${g.id}`, g.name]), ...tags.map((t) => [`tag:${t}`, `Nhãn: ${t}`])];
   });
   return (
     <div className="coupon-checks">
-      {[["vip", "Khách VIP"], ...(groups.data || []).filter((t) => t !== "VIP").map((t) => [`tag:${t}`, t])].map(([value, label]) => (
+      {(groups.data || []).map(([value, label]) => (
         <label className="ar-check" key={value}>
           <input type="checkbox" checked={(row.customer_groups || []).includes(value)} onChange={() => onChange(toggleIn(row, "customer_groups", value))} />
           {label}

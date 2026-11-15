@@ -50,7 +50,7 @@ export function PolicyPage({ type }: { type: string }) {
 export function AboutPage({ vision = false }: { vision?: boolean }) {
   useMeta(vision ? "Tầm nhìn & Sứ mệnh" : "Giới thiệu công ty");
   return vision ? (
-    <VisionPage trust={<TrustSection />} />
+    <VisionPage trust={null} />
   ) : (
     <CompanyPage trust={<TrustSection />} />
   );

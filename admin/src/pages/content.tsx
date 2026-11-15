@@ -6,6 +6,7 @@ import type {Row} from '../types';
 const labels:Record<string,string>={benefits:'Cam kết bán hàng',title:'Tiêu đề',sub:'Mô tả phụ',desc:'Mô tả',cta:'Nút hành động',href:'Liên kết',story:'Giới thiệu thương hiệu',stats:'Số liệu',value:'Giá trị',label:'Nhãn',btn:'Nhãn nút',btnHref:'Liên kết nút',flash:'Flash Sale',endsAt:'Thời điểm kết thúc',mini:'Banner nhỏ',newsletter:'Đăng ký nhận tin',b2b:'Doanh nghiệp',points:'Lợi ích',priceRanges:'Khoảng lọc giá',bundles:'Gợi ý mua kèm',icon:'Biểu tượng',name:'Tên',image:'Ảnh',url:'Liên kết',logos:'Đối tác',certs:'Chứng nhận',reviews:'Đánh giá thực tế',google:'Google Business',rating:'Điểm đánh giá',count:'Số đánh giá',updated:'Ngày cập nhật',placeId:'Place ID',text:'Nội dung',source:'Nguồn',date:'Ngày',images:'Hình ảnh',link:'Liên kết'};
 // Nhãn tiếng Việt cho từng khóa dữ liệu; khóa chưa có nhãn hiển thị nguyên tên
 const more:Record<string,string>={link:'Chữ liên kết phụ',kicker:'Dòng nhỏ trên tiêu đề',linkHref:'Liên kết phụ',issuer:'Đơn vị cấp',salesPolicy:'Chính sách bán hàng',sku:'Mã SKU phụ kiện',note:'Ghi chú',subs:'Áp dụng cho loại (mã, cách nhau dấu phẩy)',minHp:'Công suất từ (HP)',maxHp:'Công suất đến (HP)',v:'Mã',min:'Từ (₫)',max:'Đến (₫)',points:'Lợi ích',endsAt:'Kết thúc (để trống = 0 giờ mỗi ngày)'};
+more.show='Hiện trên website';
 const label=(key:string)=>more[key]||labels[key]||key;
 // Mô tả ngắn hiện dưới tên mục
 const hints:Record<string,string>={mini:'2 thẻ nhỏ cạnh banner trang chủ. Có thể chèn ảnh nền, chữ hiện đè lên ảnh.',story:'Khối giới thiệu thương hiệu trên trang chủ.',b2b:'Khối khách hàng doanh nghiệp trên trang chủ và trang Doanh nghiệp.',flash:'Tiêu đề và thời điểm kết thúc Flash Sale.',benefits:'Dải cam kết dưới banner.',salesPolicy:'Chính sách hiện ở trang sản phẩm.',newsletter:'Ô đăng ký nhận tin ở cuối trang.',priceRanges:'Các mức giá trong bộ lọc danh mục.',bundles:'Phụ kiện gợi ý mua kèm theo loại máy.',images:'Ảnh các vị trí trên trang Tầm nhìn & Sứ mệnh.',logos:'Logo đối tác, khách hàng tiêu biểu.',certs:'Giấy chứng nhận, chứng chỉ.',reviews:'Đánh giá thật của khách hàng.',google:'Thông tin hồ sơ Google Business.'};
@@ -16,7 +17,7 @@ function rowName(list:string,item:any,i:number){const name=item&&typeof item==='
 function blank(sample:any,list:string):any{
  if(sample&&typeof sample==='object')return Object.fromEntries(Object.keys(sample).map(k=>[k,Array.isArray(sample[k])?[]:typeof sample[k]==='number'?0:typeof sample[k]==='boolean'?false:'']));
  if(typeof sample==='string'||sample===undefined&&list==='points')return '';
- return list==='logos'?{name:'',image:'',url:''}:list==='certs'?{title:'',issuer:'',image:''}:list==='reviews'?{name:'',rating:5,text:'',source:'Google',date:''}:'';
+ return list==='logos'?{name:'',image:'',url:''}:list==='certs'?{title:'',issuer:'',image:'',show:true}:list==='reviews'?{name:'',rating:5,text:'',source:'Google',date:''}:'';
 }
 // Một ô nhập: ảnh, chọn biểu tượng, số, bật/tắt, chữ ngắn hoặc chữ dài
 function Leaf({name,path,value,onChange,onPending}:{name:string;path:Path;value:any;onChange:(v:any)=>void;onPending:(n:number)=>void}){
@@ -70,7 +71,7 @@ function sectionsOf(value:Row):{id:string;path:string[];title:string;group?:stri
  const out:{id:string;path:string[];title:string;group?:string}[]=[];
  for(const [k,v] of Object.entries(value)){
   // Mục đã gỡ khỏi website: khối Giải pháp doanh nghiệp ở trang chủ, Khách hàng & đối tác
-  if(k==='b2b'||k==='logos')continue;
+  if(k==='b2b'||k==='logos'||k==='showCerts')continue;
   if((k==='home'||k==='catalog')&&v&&typeof v==='object'&&!Array.isArray(v))for(const sub of Object.keys(v))out.push({id:`${k}.${sub}`,path:[k,sub],title:label(sub),group:k==='home'?'Trang chủ':'Danh mục & phụ kiện'});
   else out.push({id:k,path:[k],title:label(k)});
  }
@@ -83,7 +84,7 @@ export function ContentPage({resource:key}:{resource:string}){
  const state=useData(async()=>{
   if(key==='content'){const [home,catalog]=await Promise.all([ad.db.get('settings','home'),ad.db.get('settings','catalog')]);return {home:dt.siteContent(home?.value||{}),catalog:{priceRanges:dt.priceRanges,bundles:dt.bundleRules,...catalog?.value}};}
   if(key==='vision'){const row=ad.db.mode==='demo'?JSON.parse(localStorage.getItem(dt.VISION_DEMO_KEY)||'null'):await ad.db.get('settings','vision');const images=row?.value?.images||row?.images||dt.visionImages();return {images:Object.fromEntries((dt.visionSlots||[]).map((slot:Row)=>[slot.key,images[slot.key]||'']))};}
-  const row=ad.db.mode==='demo'?JSON.parse(localStorage.getItem(dt.TRUST_DEMO_KEY)||'null'):await ad.db.get('settings','trust');const source=row?.value||row||dt.trust||{};return {logos:[],certs:[],reviews:[],...source,google:{url:'',placeId:'',rating:0,count:0,updated:'',...source.google}};
+  const row=ad.db.mode==='demo'?JSON.parse(localStorage.getItem(dt.TRUST_DEMO_KEY)||'null'):await ad.db.get('settings','trust');const source=row?.value||row||dt.trust||{};return {logos:[],reviews:[],...source,showCerts:source.showCerts!==false,certs:(source.certs||[]).map((c:Row)=>({title:'',issuer:'',image:'',...c,show:c?.show!==false})),google:{url:'',placeId:'',rating:0,count:0,updated:'',...source.google}};
  },[key]);
  return <DataState state={state}>{state.data&&<ContentEditor key={key} resource={key} initial={state.data}/>}</DataState>;
 }
@@ -97,6 +98,7 @@ function ContentEditor({resource:key,initial}:{resource:string;initial:Row}){con
     <section className="ar-panel ce-section" aria-labelledby="ce-title"><fieldset disabled={busy}>
      <h2 id="ce-title" className="ce-title">{current.title}</h2>
      {hints[current.path.at(-1)!]&&<p className="ce-hint">{hints[current.path.at(-1)!]}</p>}
+     {key==='trust'&&current.path[0]==='certs'&&<label className="ar-check ce-toggle"><input type="checkbox" checked={value.showCerts!==false} onChange={e=>setValue(prev=>({...prev,showCerts:e.target.checked}))}/><span><b>Hiện mục “Chứng nhận & năng lực” trên website</b> – tắt thì mục này ẩn ở mọi trang (trang chủ, Giới thiệu, Dự án…). Từng chứng nhận cũng có ô “Hiện trên website” riêng.</span></label>}
      <Block key={current.id} value={getIn(value,current.path)} path={current.path} onPending={n=>setPending(v=>v+n)} onChange={next=>setValue(prev=>setIn(prev,current.path,next))}/>
     </fieldset></section>
     <p className="ce-note">Chỉ nhập số liệu, chứng nhận và đánh giá có nguồn xác thực. Bỏ ảnh chỉ gỡ khỏi nội dung, không xóa file đang dùng ở nơi khác.</p>

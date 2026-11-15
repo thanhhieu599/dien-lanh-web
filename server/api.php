@@ -11,18 +11,22 @@ try {
     // (cùng trình duyệt) không làm mất quyền của trang quản trị đang mở, và ngược lại
     session_name(($_SERVER['HTTP_X_DT_ADMIN'] ?? '') === '1' ? 'dt_admin' : 'dt_session');
     session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'secure' => config()['secure_cookies'], 'httponly' => true, 'samesite' => 'Lax']);
-    session_start();
-    if (isset($_SESSION['expires_at']) && $_SESSION['expires_at'] < time()) $_SESSION = [];
     $method = $_SERVER['REQUEST_METHOD'];
+    $route = trim($_GET['route'] ?? '', '/');
+    // Khách chỉ xem (GET, chưa có cookie phiên) không cần phiên: bỏ tạo file phiên cho mỗi lượt xem
+    if (isset($_COOKIE[session_name()]) || $method !== 'GET' || str_starts_with($route, 'auth/')) session_start(); else $_SESSION = [];
+    if (isset($_SESSION['expires_at']) && $_SESSION['expires_at'] < time()) $_SESSION = [];
     if (!in_array($method, ['GET','POST','PATCH','DELETE'], true)) fail('Phương thức không hỗ trợ', 405);
     if ($method !== 'GET') requireMutation();
-    $route = trim($_GET['route'] ?? '', '/');
     if ($route === 'health' && $method === 'GET') { sql('SELECT 1'); jsonResponse(['ok' => true, 'database' => 'mysql']); }
     // Phiên bản dữ liệu công khai: website so với bản lưu tạm để thấy ngay giá / tồn kho / nội dung admin vừa sửa
     if ($route === 'version' && $method === 'GET') {
-        $row = sql("SELECT COUNT(*), MAX(JSON_UNQUOTE(JSON_EXTRACT(data,'$.updated_at'))) FROM records WHERE resource IN ('settings','categories','brands','products','stores','posts','banners','services','policies','coupons','projects','faqs')")->fetch(PDO::FETCH_NUM);
-        header('Cache-Control: no-store');
-        jsonResponse(['version' => $row[0] . ':' . ($row[1] ?? '')]);
+        $version = cacheGet('version', 30);
+        if ($version === null) {
+            $row = sql("SELECT COUNT(*), MAX(JSON_UNQUOTE(JSON_EXTRACT(data,'$.updated_at'))) FROM records WHERE resource IN ('" . implode("','", PUBLIC_TABLES) . "')")->fetch(PDO::FETCH_NUM);
+            $version = $row[0] . ':' . ($row[1] ?? ''); cachePut('version', $version);
+        }
+        jsonResponse(['version' => $version]);
     }
 
     if (str_starts_with($route, 'media/')) {
@@ -117,6 +121,56 @@ try {
             sql("UPDATE records SET data=JSON_SET(data,'$.last_login_at',?,'$.login_count',CAST(? AS UNSIGNED)) WHERE resource='profiles' AND record_id=?", [now(), $count, $user['id']]);
         } catch (Throwable $e) { error_log('login stats: ' . $e->getMessage()); }
         jsonResponse(['access_token'=>'cookie', 'expires_in'=>28800, 'user'=>['id'=>$user['id']]]);
+    }
+    // Dữ liệu công khai cho website (không phải trang quản trị): trả từ bộ đệm, kèm ETag để trình duyệt hỏi lại rẻ (304).
+    // catalog?parts={bảng: truy vấn}: gộp toàn bộ dữ liệu trang chủ vào 1 request (lượt vào đầu tiên 14 → 3 request).
+    $isAdmin = ($_SERVER['HTTP_X_DT_ADMIN'] ?? '') === '1';
+    if ($method === 'GET' && !$isAdmin && ($route === 'catalog' || str_starts_with($route, 'data/') && in_array(substr($route, 5), PUBLIC_TABLES, true))) {
+        if ($route === 'catalog') {
+            $parts = json_decode((string)($_GET['parts'] ?? ''), true);
+            if (!is_array($parts) || !$parts || count($parts) > 20) fail('Yêu cầu không hợp lệ');
+            foreach ($parts as $t => $q) if (!in_array($t, PUBLIC_TABLES, true) || !is_string($q) || strlen($q) > 2000) fail('Yêu cầu không hợp lệ');
+            ksort($parts);
+            $key = 'catalog|' . json_encode($parts, JSON_UNESCAPED_UNICODE);
+        } else {
+            $key = 'data|' . substr($route, 5) . '|' . http_build_query(array_diff_key($_GET, ['_' => 1, 'route' => 1]));
+        }
+        $hit = cacheGet($key, 60);
+        if ($hit === null) {
+            $range = '';
+            if ($route === 'catalog') {
+                $out = [];
+                foreach ($parts as $t => $q) { parse_str($q, $get); $_GET = $get; $out[$t] = dataEndpoint($t, 'GET', []); }
+                $value = $out;
+            } else {
+                $value = dataEndpoint(substr($route, 5), 'GET', []);
+                foreach (headers_list() as $h) if (stripos($h, 'Content-Range:') === 0) $range = trim(substr($h, 14));
+            }
+            $body = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+            $hit = '"' . substr(hash('sha256', $body), 0, 32) . "\"\n$range\n$body";
+            cachePut($key, $hit);
+        }
+        [$etag, $range, $json] = explode("\n", $hit, 3);
+        header('Cache-Control: no-cache');
+        header('ETag: ' . $etag);
+        header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: DENY');
+        header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none'");
+        header('Referrer-Policy: strict-origin-when-cross-origin');
+        header_remove('X-Powered-By');
+        if ($range !== '') header('Content-Range: ' . $range);
+        header('Vary: Accept-Encoding');
+        if (trim($_SERVER['HTTP_IF_NONE_MATCH'] ?? '') === $etag) { http_response_code(304); exit; }
+        header('Content-Type: application/json; charset=utf-8');
+        // Nén gzip 1 lần rồi lưu cùng bộ đệm (dữ liệu trang chủ ~200KB → ~25KB), khách sau dùng lại bản đã nén
+        if (strlen($json) > 1024 && str_contains($_SERVER['HTTP_ACCEPT_ENCODING'] ?? '', 'gzip') && function_exists('gzencode')) {
+            $gz = cacheGet($key . '|gz|' . $etag, 60);
+            if ($gz === null) { $gz = gzencode($json, 6); cachePut($key . '|gz|' . $etag, $gz); }
+            header('Content-Encoding: gzip');
+            header('Content-Length: ' . strlen($gz));
+            echo $gz; exit;
+        }
+        echo $json; exit;
     }
     if (str_starts_with($route, 'data/')) jsonResponse(dataEndpoint(substr($route, 5), $method, $body));
     if (str_starts_with($route, 'rpc/') && $method === 'POST') jsonResponse(rpcEndpoint(substr($route, 4), $body));

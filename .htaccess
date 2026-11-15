@@ -20,3 +20,17 @@ RedirectMatch 404 /(tests|tools|docs|supabase|node_modules)(/|$)
 <FilesMatch "\.(md|log|sql|lock|ya?ml|sh|bak|old|orig|swp|ini|env|dist|tsx?|mjs|map)$|^(package(-lock)?\.json|tsconfig\.json|composer\.(json|lock)|vite\.config\..*)$">
   Require all denied
 </FilesMatch>
+
+# Tốc độ khi nhiều khách cùng vào: nén văn bản; file JS/CSS có mã băm trong tên (react-assets) không bao giờ đổi
+# nội dung → trình duyệt giữ 1 năm, lần sau không tải lại. Ảnh giữ 7 ngày.
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain application/javascript text/javascript application/json image/svg+xml
+</IfModule>
+<IfModule mod_headers.c>
+  <FilesMatch "-(?=[A-Za-z0-9_-]*[A-Z0-9])[A-Za-z0-9_-]{8}\.(js|css)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.(png|jpe?g|webp|gif|svg|ico|woff2?)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+</IfModule>

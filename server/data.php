@@ -69,6 +69,11 @@ function matches(array $row, array $query): bool {
 }
 function projectRow(array $row, string $table, string $select, ?array $user): array {
     if ($table === 'reviews' && !in_array($user['role'] ?? '', ['admin', 'staff'], true)) unset($row['phone'], $row['user_id']);
+    // Khách / website không được thấy giá vốn, giá sỉ, mức tồn tối thiểu và tên nhân viên đã sửa dữ liệu
+    if (!in_array($user['role'] ?? '', ['admin', 'staff', 'sales', 'accountant'], true)) {
+        unset($row['created_by_name'], $row['updated_by_name']);
+        if ($table === 'products') unset($row['cost_price'], $row['wholesale_price'], $row['min_stock']);
+    }
     $columns = preg_split('/,(?![^()]*\))/', $select);
     $result = in_array('*', $columns, true) ? $row : [];
     foreach ($columns as $column) {
@@ -279,7 +284,7 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
                 }
                 if ($used) fail('Sản phẩm đã có đơn hàng hoặc giao dịch kho, không xóa được. Hãy tắt "Bán trên website" để ẩn.');
             }
-            sql('DELETE FROM records WHERE resource=? AND record_id=?', [$table, $id]); return null;
+            bumpPublic($table); sql('DELETE FROM records WHERE resource=? AND record_id=?', [$table, $id]); return null;
         }
         if ($method !== 'PATCH') fail('Phương thức không hỗ trợ', 405);
         if ($table === 'orders') return [updateOrder($row, $body, $user)];

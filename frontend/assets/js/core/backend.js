@@ -268,6 +268,13 @@ DT.backend = (() => {
       projects: "select=*&published=is.true&order=sort,year.desc",
       faqs: "select=id,category,question,answer,sort&active=is.true&order=sort,id",
     };
+    // Gộp 1 request (máy chủ có bộ đệm); máy chủ cũ chưa hỗ trợ thì tải từng bảng như trước
+    try {
+      const all = await http(`/catalog?parts=${encodeURIComponent(JSON.stringify(q))}`, { auth: false });
+      if (all && typeof all === "object" && Object.keys(q).every((k) => Array.isArray(all[k]))) return all;
+    } catch {
+      /* quay về cách tải từng bảng */
+    }
     const keys = Object.keys(q);
     const results = await Promise.all(keys.map((k) => select(k, q[k])));
     return Object.fromEntries(keys.map((k, i) => [k, results[i]]));

@@ -39,6 +39,15 @@ const pub = await guest('data/settings?select=*');
 ok(pub.data.every((s) => ['store', 'vision', 'trust', 'home', 'catalog'].includes(s.key)), 'S1 Chỉ cài đặt công khai được đọc');
 const reviews = await guest('data/reviews?select=*');
 ok(reviews.status === 200 && reviews.data.every((r) => r.phone === undefined), 'S1 Số điện thoại người đánh giá không lộ');
+const prods = await guest('data/products?select=*');
+ok(prods.status === 200 && prods.data.length && prods.data.every((p) => ['cost_price', 'wholesale_price', 'min_stock', 'created_by_name', 'updated_by_name'].every((k) => p[k] === undefined)), 'S1 Khách không thấy giá vốn, giá sỉ, tồn tối thiểu, tên nhân viên sửa');
+// Đường gộp dữ liệu trang chủ (có bộ đệm): chỉ bảng công khai, không lộ cài đặt nội bộ, không lộ khi đi qua bộ đệm
+for (const t of ['profiles', 'orders', 'crm_customers', 'reviews', 'leads']) ok((await guest(`catalog?parts=${encodeURIComponent(JSON.stringify({ [t]: 'select=*' }))}`)).status === 400, `S1 Gộp dữ liệu: chặn bảng ${t}`);
+for (let i = 0; i < 2; i++) {
+  const cat = await guest(`catalog?parts=${encodeURIComponent(JSON.stringify({ settings: 'select=*', products: 'select=*' }))}`);
+  ok(cat.status === 200 && cat.data.settings.every((s) => ['store', 'vision', 'trust', 'home', 'catalog'].includes(s.key)) && cat.data.products.every((p) => p.active !== false && ['cost_price', 'wholesale_price', 'min_stock', 'created_by_name', 'updated_by_name'].every((k) => p[k] === undefined)), `S1 Gộp dữ liệu lần ${i + 1}${i ? ' (từ bộ đệm)' : ''}: chỉ dữ liệu công khai, không lộ giá vốn / giá sỉ`);
+  if (i) ok(cat.headers.get('etag') && (await guest(`catalog?parts=${encodeURIComponent(JSON.stringify({ settings: 'select=*', products: 'select=*' }))}`, { headers: { 'If-None-Match': cat.headers.get('etag') } })).status === 304, 'S1 Bộ đệm: trình duyệt hỏi lại nhận 304 (không tải lại)');
+}
 
 console.log('--- S2. Người lạ / khách hàng không ghi được dữ liệu');
 for (const t of WRITABLE) {

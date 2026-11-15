@@ -372,7 +372,7 @@ function rpcEndpoint(string $name, array $args): mixed {
                 put('brands', $row, true);
                 if ($old) {
                     foreach (allRecords('products') as $p) if ($p['brand'] === $old) { $p['brand'] = $brand['id']; put('products', $p); }
-                    sql("DELETE FROM records WHERE resource='brands' AND record_id=?", [$old]);
+                    bumpPublic('brands'); sql("DELETE FROM records WHERE resource='brands' AND record_id=?", [$old]);
                 }
             } else put('brands', $row);
             foreach ($brand['product_ids'] ?? [] as $productId) {

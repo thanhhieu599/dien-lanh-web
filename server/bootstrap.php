@@ -38,6 +38,48 @@ function jsonResponse(mixed $value, int $status = 200): never {
     exit;
 }
 function now(): string { return gmdate('Y-m-d\TH:i:s\Z'); }
+// ===== Bộ nhớ đệm dữ liệu công khai (chịu tải nhiều khách xem cùng lúc) =====
+// Danh mục, sản phẩm, bài viết… giống nhau với mọi khách: lưu kết quả ra file tạm, khách sau đọc file, không mở MySQL.
+// Mọi thao tác ghi vào các bảng này đổi "thế hệ" bộ đệm → dữ liệu cũ bỏ ngay. Thêm hạn 60 giây phòng sửa thẳng DB.
+const PUBLIC_TABLES = ['settings','categories','brands','products','stores','posts','banners','services','policies','coupons','projects','faqs'];
+function cacheDir(): ?string {
+    static $dir;
+    if ($dir === null) {
+        $path = sys_get_temp_dir() . '/dt-cache-' . substr(hash('sha256', __DIR__ . '|' . (config()['database'] ?? '')), 0, 16);
+        if (!is_dir($path)) @mkdir($path, 0700, true);
+        $dir = is_dir($path) && is_writable($path) ? $path : '';
+    }
+    return $dir ?: null;
+}
+function cacheGen(): string {
+    $dir = cacheDir(); if (!$dir) return '';
+    $gen = @file_get_contents("$dir/gen");
+    if ($gen === false || $gen === '') { $gen = bin2hex(random_bytes(8)); @file_put_contents("$dir/gen", $gen, LOCK_EX); }
+    return $gen;
+}
+// Đổi số này khi thay đổi cách lọc dữ liệu công khai để bỏ bộ đệm cũ ngay khi cập nhật code
+const CACHE_SCHEMA = '1';
+function cacheFile(string $key): ?string { $dir = cacheDir(); return $dir ? "$dir/" . hash('sha256', CACHE_SCHEMA . '|' . filemtime(__FILE__) . '|' . @filemtime(__DIR__ . '/data.php') . '|' . cacheGen() . '|' . $key) : null; }
+function cacheGet(string $key, int $ttl): ?string {
+    $f = cacheFile($key);
+    if (!$f || !is_file($f) || filemtime($f) < time() - $ttl) return null;
+    $v = @file_get_contents($f);
+    return $v === false ? null : $v;
+}
+function cachePut(string $key, string $value): void {
+    $f = cacheFile($key); if (!$f) return;
+    $tmp = $f . '.' . getmypid() . '.tmp';
+    if (@file_put_contents($tmp, $value) !== false) @rename($tmp, $f);
+    // Thỉnh thoảng dọn file cũ của các thế hệ trước
+    if (random_int(1, 200) === 1) foreach (glob(dirname($f) . '/*') ?: [] as $old) if (basename($old) !== 'gen' && @filemtime($old) < time() - 300) @unlink($old);
+}
+function bumpPublic(string $table): void {
+    static $registered = false;
+    if (!in_array($table, PUBLIC_TABLES, true) || !($dir = cacheDir())) return;
+    @file_put_contents("$dir/gen", bin2hex(random_bytes(8)), LOCK_EX);
+    // Đổi thêm lần nữa khi kết thúc request (sau khi giao dịch đã ghi xong) để không giữ dữ liệu đọc lúc chưa commit
+    if (!$registered) { $registered = true; register_shutdown_function(fn() => @file_put_contents("$dir/gen", bin2hex(random_bytes(8)), LOCK_EX)); }
+}
 function pk(string $table): string {
     return ['coupons' => 'code', 'posts' => 'slug', 'projects' => 'slug', 'policies' => 'key', 'settings' => 'key'][$table] ?? 'id';
 }
@@ -74,6 +116,7 @@ function put(string $table, array $row, bool $insert = false): array {
         $row['updated_by_name'] = $by;
     }
     $encoded = json_encode($row, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    bumpPublic($table);
     if (!$insert && record($table, $row[$key]) !== null) {
         sql('UPDATE records SET data=? WHERE resource=? AND record_id=?', [$encoded, $table, (string)$row[$key]]);
     } else {

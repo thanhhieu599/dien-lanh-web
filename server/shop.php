@@ -67,7 +67,7 @@ function couponResult(?array $coupon, array $lines, string $phone, array $data =
             $ok = false;
             foreach ($customersOf() as $c) if (phoneKey($c['phone'] ?? '') === $phone) {
                 foreach ($coupon['customer_groups'] as $group) {
-                    if ($group === 'vip' && in_array('VIP', $c['tags'] ?? [], true) || $group === 'marketing' && ($c['marketing_opt_in'] ?? false) || str_starts_with($group, 'tag:') && in_array(substr($group, 4), $c['tags'] ?? [], true)) $ok = true;
+                    if ($group === 'vip' && in_array('VIP', $c['tags'] ?? [], true) || str_starts_with($group, 'tag:') && in_array(substr($group, 4), $c['tags'] ?? [], true)) $ok = true;
                 }
             }
             if (!$ok) return $bad('Mã chỉ dành cho nhóm khách hàng đã được chọn');
@@ -178,7 +178,7 @@ function flatText(mixed $v, int $max = 500): array {
 function crmUpsert(array $customer, array $shipping): array {
     $customerId = 'phone:' . $customer['phone'];
     $crm = record('crm_customers', $customerId, true);
-    if (!$crm) $crm = put('crm_customers', ['id'=>$customerId, 'phone'=>$customer['phone'], 'name'=>$customer['name'], 'email'=>$customer['email'] ?? '', 'addresses'=> $shipping['method'] === 'delivery' ? [$shipping] : [], 'tags'=>[], 'marketing_opt_in'=>false], true);
+    if (!$crm) $crm = put('crm_customers', ['id'=>$customerId, 'phone'=>$customer['phone'], 'name'=>$customer['name'], 'email'=>$customer['email'] ?? '', 'addresses'=> $shipping['method'] === 'delivery' ? [$shipping] : [], 'tags'=>[]], true);
     else {
         // Khách cũ: bổ sung email còn trống và địa chỉ giao hàng mới (giữ tối đa 5)
         $changed = false;

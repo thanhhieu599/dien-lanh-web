@@ -835,7 +835,6 @@ AD.demo = () => {
 
           note: "",
           tags: [],
-          marketing_opt_in: null,
 
           created_at:
             profile?.created_at ||
@@ -1330,7 +1329,6 @@ AD.demo = () => {
           note: "",
           tags: [],
           addresses: [],
-          marketing_opt_in: null,
           ...row,
           phone: crmPhone(row.phone),
         };

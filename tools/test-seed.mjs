@@ -43,7 +43,7 @@ export function buildTestSeed(source, dt, clock = new Date()) {
   }
   const names = ['Nguyễn An','Trần Bình','Lê Chi','Phạm Dũng','Hoàng Hà','Vũ Hạnh','Đặng Hùng','Bùi Khánh','Đỗ Lan','Hồ Linh','Ngô Minh','Dương Nam','Lý Ngọc','Đinh Phúc','Mai Thanh'];
   result.profiles = list(i => stamp({id:`test-profile-${key(i)}`, name:`[TEST] ${names[i]}`, phone:`09099000${key(i)}`, email:`customer${key(i)}@example.test`, role:'customer', addresses:[{name:names[i],phone:`09099000${key(i)}`,address:`${10+i} Đường mẫu`,district:'Bình Thạnh',province:'TP. Hồ Chí Minh',default:true}]}, i));
-  result.crm_customers = result.profiles.map((p,i) => stamp({id:`test-customer-${key(i)}`,profile_id:p.id,name:p.name,phone:p.phone,email:p.email,addresses:p.addresses,tags:i % 3 === 0 ? ['TEST','VIP'] : ['TEST'],note:'Hồ sơ mẫu để kiểm tra CRM',marketing_opt_in:i % 2 === 0}, i));
+  result.crm_customers = result.profiles.map((p,i) => stamp({id:`test-customer-${key(i)}`,profile_id:p.id,name:p.name,phone:p.phone,email:p.email,addresses:p.addresses,tags:i % 3 === 0 ? ['TEST','VIP'] : ['TEST'],note:'Hồ sơ mẫu để kiểm tra CRM'}, i));
   result.orders = []; result.order_items = []; result.order_status_history = []; result.payments = [];
   const statuses = ['done','done','done','done','done','pending','confirmed','shipping','installing','cancelled','pending','confirmed','shipping','installing','done'];
   for (let i = 0; i < count; i++) {

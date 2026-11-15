@@ -271,7 +271,7 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
         // Profiles created by CLI/seed can appear in CRM before a CRM row exists.
         if (!$row && $table === 'crm_customers' && $method === 'PATCH' && str_starts_with($id, 'profile:')) {
             $profile = record('profiles', substr($id, 8), true);
-            if ($profile) $row = array_merge($profile, ['id'=>$id, 'profile_id'=>$profile['id'], 'tags'=>[], 'note'=>'', 'marketing_opt_in'=>null]);
+            if ($profile) $row = array_merge($profile, ['id'=>$id, 'profile_id'=>$profile['id'], 'tags'=>[], 'note'=>'']);
         }
         if (!$row) fail('Không tìm thấy bản ghi', 404);
         if (!allowed($table, $method, $user, $row)) fail('Không có quyền', 403);
@@ -297,7 +297,7 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
         $patch = $body;
         unset($patch[pk($table)], $patch['created_at']);
         if ($table === 'crm_customers') {
-            $patch = array_intersect_key($patch, array_flip(['name','phone','email','addresses','tags','note','marketing_opt_in','invoice']));
+            $patch = array_intersect_key($patch, array_flip(['name','phone','email','addresses','tags','note','invoice']));
             if (array_key_exists('invoice', $patch)) $patch['invoice'] = crmInvoice($patch['invoice']);
             if (isset($patch['phone']) && phoneKey((string)$patch['phone']) !== phoneKey((string)($row['phone'] ?? ''))) {
                 $patch['phone'] = phoneKey((string)$patch['phone']);

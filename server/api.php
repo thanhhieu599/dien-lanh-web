@@ -100,7 +100,7 @@ try {
                 sql('INSERT INTO users(id,phone,email,password_hash) VALUES(?,?,?,?)', [$id, $phone, $email ?: null, password_hash($password, PASSWORD_DEFAULT)]);
                 // Khách từng mua hàng bằng số này (hồ sơ khách vãng lai): gắn tài khoản vào hồ sơ cũ, giữ lịch sử mua
                 $crm = record('crm_customers', 'phone:' . $phone, true);
-                if (!$crm) put('crm_customers', ['id'=>'phone:' . $phone, 'profile_id'=>$id, 'phone'=>$phone, 'email'=>$email, 'name'=>trim($data['name']), 'addresses'=>[], 'tags'=>[], 'marketing_opt_in'=>false, 'registered_at'=>now()], true);
+                if (!$crm) put('crm_customers', ['id'=>'phone:' . $phone, 'profile_id'=>$id, 'phone'=>$phone, 'email'=>$email, 'name'=>trim($data['name']), 'addresses'=>[], 'tags'=>[], 'registered_at'=>now()], true);
                 else put('crm_customers', array_merge($crm, ['profile_id'=>$id, 'registered_at'=>now(), 'email'=>($crm['email'] ?? '') ?: $email, 'name'=>($crm['name'] ?? '') ?: trim($data['name'])]));
                 return put('profiles', ['id'=>$id, 'phone'=>$phone, 'email'=>$email, 'name'=>trim($data['name']), 'addresses'=>[], 'role'=>'customer'], true);
             });

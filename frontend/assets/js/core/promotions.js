@@ -78,9 +78,7 @@ DT.promotions = (() => {
           customers.some((customer) =>
             group === "vip"
               ? (customer.tags || []).includes("VIP")
-              : group === "marketing"
-                ? customer.marketing_opt_in === true
-                : group.startsWith("tag:") &&
+              : group.startsWith("tag:") &&
                   (customer.tags || []).includes(group.slice(4)),
           ),
         );

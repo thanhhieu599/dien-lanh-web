@@ -597,7 +597,7 @@ function CouponGroups({ row, onChange }: { row: Row; onChange: (patch: Row) => v
   });
   return (
     <div className="coupon-checks">
-      {[["vip", "Khách VIP"], ["marketing", "Khách đồng ý nhận quảng cáo"], ...(groups.data || []).filter((t) => t !== "VIP").map((t) => [`tag:${t}`, t])].map(([value, label]) => (
+      {[["vip", "Khách VIP"], ...(groups.data || []).filter((t) => t !== "VIP").map((t) => [`tag:${t}`, t])].map(([value, label]) => (
         <label className="ar-check" key={value}>
           <input type="checkbox" checked={(row.customer_groups || []).includes(value)} onChange={() => onChange(toggleIn(row, "customer_groups", value))} />
           {label}

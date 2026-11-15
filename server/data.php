@@ -20,7 +20,7 @@ function allowed(string $table, string $method, ?array $user, ?array $row = null
     }
     if ($method !== 'GET') return false;
     if (in_array($table, ['categories', 'brands', 'products', 'stores', 'banners', 'services', 'faqs'], true)) return ($row['active'] ?? true) !== false;
-    if (in_array($table, ['posts', 'projects'], true)) return ($row['published'] ?? true) !== false;
+    if (in_array($table, ['posts', 'projects', 'jobs'], true)) return ($row['published'] ?? true) !== false;
     if ($table === 'settings') return in_array($row['key'] ?? '', ['store', 'vision', 'trust', 'home', 'catalog'], true);
     if ($table === 'policies') return true;
     if ($table === 'coupons') return ($row['active'] ?? true) && ($row['is_public'] ?? true);
@@ -169,6 +169,11 @@ function validateRow(string $table, array $row): void {
         foreach (['price', 'stock'] as $field) if (!isset($row[$field]) || !is_numeric($row[$field]) || $row[$field] < 0 || floor((float)$row[$field]) != $row[$field]) fail("{$field} không hợp lệ");
         if (!record('categories', $row['cat']) || !record('brands', $row['brand'])) fail('Danh mục hoặc thương hiệu không tồn tại');
     }
+    // Tuyển dụng: cần tiêu đề và đường dẫn hợp lệ
+    if ($table === 'jobs') {
+        if (trim((string)($row['title'] ?? '')) === '' || !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', (string)($row['slug'] ?? ''))) fail('Cần tên vị trí và đường dẫn hợp lệ');
+        if (isset($row['quantity']) && $row['quantity'] !== null && $row['quantity'] !== '' && (!is_numeric($row['quantity']) || $row['quantity'] < 0)) fail('Số lượng không hợp lệ');
+    }
     // Bảo trì: khách đăng ký (hợp đồng) và từng lần bảo trì kèm chi phí
     if ($table === 'maintenance_contracts') {
         if (trim((string)($row['name'] ?? '')) === '' || !preg_match('/^0\d{9,10}$/', (string)($row['phone'] ?? ''))) fail('Cần tên khách và số điện thoại hợp lệ');
@@ -240,7 +245,7 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
     }
     if (!$user) fail('Vui lòng đăng nhập', 401);
     if ($method === 'POST') {
-        if (!allowed($table, $method, $user, $body) || !in_array($table, ['products','categories','brands','coupons','posts','banners','stores','services','policies','settings','projects','faqs','crm_customers','maintenance_contracts','maintenance_visits','suppliers'], true)) fail('Không có quyền tạo dữ liệu', 403);
+        if (!allowed($table, $method, $user, $body) || !in_array($table, ['products','categories','brands','coupons','posts','banners','stores','services','policies','settings','projects','faqs','jobs','crm_customers','maintenance_contracts','maintenance_visits','suppliers'], true)) fail('Không có quyền tạo dữ liệu', 403);
         validateRow($table, $body);
         if ($table === 'crm_customers') {
             $body['phone'] = phoneKey((string)($body['phone'] ?? ''));

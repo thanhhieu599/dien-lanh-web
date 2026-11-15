@@ -13,7 +13,7 @@ if ($command === 'migrate') {
     $inserted = 0;
     transaction(function() use ($seed, $isTest, &$inserted) {
         foreach ($seed as $table => $rows) {
-            $allowed = ['products','categories','brands','coupons','posts','projects','faqs','banners','stores','services','policies','settings'];
+            $allowed = ['products','categories','brands','coupons','posts','projects','jobs','faqs','banners','stores','services','policies','settings'];
             if ($isTest) $allowed = array_merge($allowed, ['profiles','crm_customers','orders','order_items','order_status_history','payments','leads','reviews','notifications','cart_reminders']);
             if (!in_array($table, $allowed, true)) continue;
             foreach ($rows as $row) if (!record($table, $row[pk($table)])) { put($table, $row, true); $inserted++; }

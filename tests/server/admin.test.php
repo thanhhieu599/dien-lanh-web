@@ -44,6 +44,14 @@ try {
     $visit = endpoint('maintenance_visits', 'POST', ['contract_id'=>$contract['id'], 'date'=>'2026-01-15', 'amount'=>500000, 'payment'=>'bank', 'paid'=>true, 'status'=>'done'])[0];
     $created[] = ['maintenance_visits', $visit['id']];
     checkAdmin(count(endpoint('maintenance_visits', query:['contract_id'=>'eq.' . $contract['id']])) === 1, 'Maintenance visit is stored for its customer');
+    // Tuyển dụng: tên + đường dẫn bắt buộc, số lượng không âm; vị trí ẩn không hiện cho khách
+    $job = endpoint('jobs', 'POST', ['slug'=>$prefix . '-job', 'title'=>'QA tuyển dụng', 'published'=>false, 'quantity'=>2])[0];
+    $created[] = ['jobs', $job['slug']];
+    foreach ([['slug'=>'Sai Slug', 'title'=>'X'], ['slug'=>$prefix . '-job2', 'title'=>''], ['slug'=>$prefix . '-job3', 'title'=>'X', 'quantity'=>-1]] as $bad) {
+        try { endpoint('jobs', 'POST', $bad); throw new RuntimeException('Bad job accepted'); }
+        catch (HttpError $e) { checkAdmin($e->getCode() === 400, 'Tuyển dụng: chặn dữ liệu sai'); }
+    }
+    checkAdmin(allowed('jobs', 'GET', null, $job) === false && allowed('jobs', 'GET', null, ['published'=>true]) === true, 'Tuyển dụng: vị trí ẩn không hiện cho khách');
     // Lịch nhắc (danh sách gọi): lưu trạng thái + lịch sử qua rpc, không sửa / xóa trực tiếp được
     $callKey = 'c:' . $contract['id'] . ':2026-07-15';
     rpcEndpoint('maintenance_call', ['p_key'=>$callKey, 'p_action'=>'called']);

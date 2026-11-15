@@ -69,6 +69,7 @@ export interface Runtime extends Row {
   config: Row;
   posts: Row[];
   projects: Row[];
+  jobs: Row[];
   faqs: Row[];
   services: Row[];
   stores: Row[];

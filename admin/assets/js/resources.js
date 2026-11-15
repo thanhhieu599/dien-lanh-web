@@ -1134,6 +1134,50 @@ window.AD = window.AD || {};
       pk: "slug",
     },
 
+    jobs: {
+      title: "Tuyển dụng",
+      icon: "user",
+      table: "jobs",
+      order: "sort.asc",
+      search: ["title", "slug", "department", "location"],
+      filters: [
+        { key: "published", label: "Trạng thái", options: [["true", "Đang tuyển"], ["false", "Ẩn / đã đóng"]] },
+      ],
+      columns: [
+        { label: "Vị trí", render: (r) => `<b>${esc(r.title)}</b><small>${esc([r.department, r.location].filter(Boolean).join(" • "))}</small>` },
+        { label: "Mức lương", render: (r) => esc(r.salary || "Thỏa thuận") },
+        { label: "Số lượng", render: (r) => esc(r.quantity ? `${r.quantity} người` : "—") },
+        { label: "Hạn nộp", render: (r) => esc(r.deadline ? String(r.deadline).slice(0, 10).split("-").reverse().join("/") : "—") },
+        { label: "Trạng thái", render: (r) => (r.published ? (r.deadline && String(r.deadline).slice(0, 10) < new Date().toISOString().slice(0, 10) ? '<span class="st st-muted">Hết hạn</span>' : '<span class="st st-ok">Đang tuyển</span>') : '<span class="st st-muted">Ẩn</span>') + (r.featured ? ' <span class="st st-info">Gấp</span>' : "") },
+      ],
+      defaults: () => ({ published: false, featured: false, sort: 0, type: "Toàn thời gian", quantity: 1 }),
+      fields: [
+        { key: "title", label: "Tên vị trí tuyển dụng", required: true, col: "full" },
+        { key: "slug", label: "Đường dẫn (slug)", readonlyOnEdit: true, col: "third", validate: slugRule, help: "Để trống = tự tạo từ tên" },
+        { key: "department", label: "Bộ phận", col: "third", type: "select", free: true, options: ["Kỹ thuật", "Kinh doanh", "Chăm sóc khách hàng", "Kho – Giao nhận", "Kế toán", "Marketing", "Khác"] },
+        { key: "location", label: "Nơi làm việc", col: "third" },
+        { key: "type", label: "Hình thức", col: "third", type: "select", free: true, options: ["Toàn thời gian", "Bán thời gian", "Thời vụ", "Thực tập"] },
+        { key: "salary", label: "Mức lương (vd 10 – 15 triệu, Thỏa thuận)", col: "third" },
+        { key: "quantity", label: "Số lượng cần tuyển", type: "number", col: "third" },
+        { key: "experience", label: "Kinh nghiệm", col: "third" },
+        { key: "deadline", label: "Hạn nộp hồ sơ", type: "date", col: "third" },
+        { key: "sort", label: "Thứ tự", type: "number", col: "third", def: 0 },
+        { key: "published", label: "Đăng tuyển công khai", type: "bool", col: "third" },
+        { key: "featured", label: "Tuyển gấp (nổi bật)", type: "bool", col: "third" },
+        { key: "image", label: "Ảnh đại diện (không bắt buộc)", type: "image", folder: "jobs", col: "full", help: "Ảnh ngang 16:9 (vd 1200 × 675). Để trống: hiện biểu tượng bộ phận." },
+        { key: "summary", label: "Mô tả ngắn (hiện ở thẻ tuyển dụng, 120–200 ký tự)", type: "textarea", col: "full", rows: 2 },
+        { key: "description", label: "Mô tả công việc", type: "html", col: "full", rows: 10 },
+        { key: "requirements", label: "Yêu cầu ứng viên", type: "html", col: "full", rows: 8 },
+        { key: "benefits", label: "Quyền lợi", type: "html", col: "full", rows: 8 },
+        { key: "contact", label: "Cách nộp hồ sơ khác (email / Zalo / địa chỉ)", type: "textarea", col: "full", rows: 2, help: "Để trống: dùng hotline và email trong Cài đặt cửa hàng." },
+      ],
+      beforeSave: (row, editing) => {
+        if (!editing && !row.slug) row.slug = DT.u.slugify(row.title);
+      },
+      preview: (row) => `../frontend/tuyen-dung.html?slug=${row.slug}`,
+      pk: "slug",
+    },
+
     faqs: {
       title: "Hỏi đáp (FAQ)",
       icon: "chat",

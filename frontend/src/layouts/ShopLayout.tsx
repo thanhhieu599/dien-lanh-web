@@ -175,7 +175,7 @@ export function ShopLayout({ children }: { children: ReactNode }) {
       ],
     },
     { title: "THƯƠNG HIỆU", href: "thuong-hieu.html" },
-
+    { title: "TUYỂN DỤNG", href: "tuyen-dung.html" },
     { title: "LIÊN HỆ", href: "lien-he.html" },
   ];
   const logo = (
@@ -605,6 +605,7 @@ export function ShopLayout({ children }: { children: ReactNode }) {
                   },
                   { title: "Dịch vụ điện lạnh", href: "dich-vu.html" },
                   { title: "Tin tức - Tư vấn", href: "tin-tuc.html" },
+                  { title: "Tuyển dụng", href: "tuyen-dung.html" },
                   { title: "Liên hệ - Góp ý", href: "lien-he.html" },
                 ]}
                 label="Thông tin công ty"

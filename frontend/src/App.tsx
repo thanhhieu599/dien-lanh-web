@@ -23,6 +23,7 @@ const Brands = lazy(()=>import('./pages/content').then(m=>({default:m.BrandsPage
 const Blog = lazy(()=>import('./pages/content').then(m=>({default:m.BlogPage})));
 const Faq = lazy(()=>import('./pages/content').then(m=>({default:m.FaqPage})));
 const Projects = lazy(()=>import('./pages/content').then(m=>({default:m.ProjectsPage})));
+const Jobs = lazy(()=>import('./pages/jobs').then(m=>({default:m.JobsPage})));
 const Calculator = lazy(()=>import('./pages/calculator').then(m=>({default:m.CalculatorPage})));
 
 class PageBoundary extends Component<{children:ReactNode},{failed:boolean}> {
@@ -37,7 +38,7 @@ function CurrentPage() {
   useEffect(()=>{
     document.documentElement.dataset.frontend='react';
     document.documentElement.dataset.reactReady='true';
-    const pages:Record<string,string>={'index':'home','danh-muc':'category','tim-kiem':'search','khuyen-mai':'khuyen-mai','san-pham':'product','sp':'product','gio-hang':'cart','thanh-toan':'checkout','tai-khoan':'account','yeu-thich':'wishlist','so-sanh':'compare','lien-he':'contact','dich-vu':'services','bao-gia-du-an':'b2b','he-thong-cua-hang':'stores','chinh-sach':'policy','gioi-thieu':'about','tam-nhin-su-menh':'vision','thuong-hieu':'brands','tin-tuc':'blog','bai-viet':'article','hoi-dap':'faq','du-an':'projects','du-an-chi-tiet':'project','tinh-cong-suat-may-lanh':'calculator','tra-cuu-don-hang':'track','dat-hang-thanh-cong':'success'};
+    const pages:Record<string,string>={'index':'home','tuyen-dung':'jobs','danh-muc':'category','tim-kiem':'search','khuyen-mai':'khuyen-mai','san-pham':'product','sp':'product','gio-hang':'cart','thanh-toan':'checkout','tai-khoan':'account','yeu-thich':'wishlist','so-sanh':'compare','lien-he':'contact','dich-vu':'services','bao-gia-du-an':'b2b','he-thong-cua-hang':'stores','chinh-sach':'policy','gioi-thieu':'about','tam-nhin-su-menh':'vision','thuong-hieu':'brands','tin-tuc':'blog','bai-viet':'article','hoi-dap':'faq','du-an':'projects','du-an-chi-tiet':'project','tinh-cong-suat-may-lanh':'calculator','tra-cuu-don-hang':'track','dat-hang-thanh-cong':'success'};
     document.body.dataset.page=segments[0]==='tin-tuc'&&segments.length>1?'article':segments[0]==='du-an'&&segments.length>1?'project':pages[segments[0].replace(/\.html$/,'')] || 'page';
     document.getElementById('root')?.setAttribute('aria-busy','false');
     for(const key of Object.keys(document.body.dataset))if(key.startsWith('q'))delete document.body.dataset[key];
@@ -77,6 +78,7 @@ function CurrentPage() {
     case 'bai-viet.html':return <Blog slug={query.get('slug') || ''}/>;
     case 'hoi-dap.html':return <Faq/>;
     case 'du-an.html':return <Projects/>;
+    case 'tuyen-dung.html':return <Jobs slug={query.get('slug') || ''}/>;
     case 'du-an-chi-tiet.html':return <Projects slug={query.get('slug') || ''}/>;
     case 'tinh-cong-suat-may-lanh.html':return <Calculator/>;
     default:return <div className="container"><h1>Không tìm thấy trang</h1><Empty title="Trang bạn tìm không tồn tại"/></div>;

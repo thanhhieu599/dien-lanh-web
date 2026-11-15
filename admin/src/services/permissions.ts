@@ -8,7 +8,7 @@ export const navigation=[
 ['leads','chat','Yêu cầu khách hàng'],['customers','user','Khách hàng'],['maintenance','wrench','Bảo trì']]},
  {title:'Sản phẩm',items:[['products','box','Sản phẩm'],['categories','grid','Danh mục'],['brands','tag','Thương hiệu'],['reviews','star','Đánh giá']]},
  {title:'Kho hàng',items:[['inventory','list','Quản lý kho'],['purchases','truck','Nhập hàng'],['stocktakes','check','Kiểm hàng'],['stock-exports','up','Xuất kho'],['suppliers','building','Nhà cung cấp'],['stock-history','clock','Lịch sử kho']]},
- {title:'Marketing',items:[['coupons','percent','Mã giảm giá'],['banners','zap','Banner'],['posts','file','Bài viết'],['vision','eye','Trang Tầm nhìn'],['projects','building','Dự án tiêu biểu'],['faqs','chat','Hỏi đáp (FAQ)'],['trust','shield','Uy tín & đánh giá'],['content','file','Nội dung website']]},
+ {title:'Marketing',items:[['coupons','percent','Mã giảm giá'],['banners','zap','Banner'],['posts','file','Bài viết'],['vision','eye','Trang Tầm nhìn'],['projects','building','Dự án tiêu biểu'],['jobs','user','Tuyển dụng'],['faqs','chat','Hỏi đáp (FAQ)'],['trust','shield','Uy tín & đánh giá'],['content','file','Nội dung website']]},
  {title:'Phân tích',items:[['reports','grid','Báo cáo'],['notifications','mail','Nhật ký thông báo'],['misa','file','Xuất Excel MISA']]},
  {title:'Cấu hình',items:[['settings','tool','Cài đặt cửa hàng'],['accounts','shield','Tài khoản & phân quyền'],['stores','pin','Cửa hàng'],['services','wrench','Dịch vụ'],['policies','shield','Chính sách']]},
 ];

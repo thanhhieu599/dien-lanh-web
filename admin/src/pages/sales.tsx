@@ -11,7 +11,7 @@ export const orderFlow=['pending','confirmed','shipping','installing','done'];
 export function orderNextStatuses(from:string){const i=orderFlow.indexOf(from);if(i<0)return [];return [...orderFlow.slice(i+1),...(['pending','confirmed'].includes(from)?['cancelled']:[])];}
 export const paymentStates=['unpaid','partial','paid','refunded'];
 // Yêu cầu khách gửi từ website (form liên hệ, báo giá dự án, đặt lịch dịch vụ, đăng ký nhận tin, khảo sát công suất)
-export const LEAD_TYPES:Record<string,string>={'b2b-quote':'Báo giá dự án',b2b:'Báo giá doanh nghiệp',service:'Đặt lịch dịch vụ',contact:'Liên hệ',newsletter:'Đăng ký nhận tin',rfq:'Yêu cầu báo giá',survey:'Khảo sát',consult:'Tư vấn'};
+export const LEAD_TYPES:Record<string,string>={'b2b-quote':'Báo giá dự án',recruit:'Ứng tuyển',b2b:'Báo giá doanh nghiệp',service:'Đặt lịch dịch vụ',contact:'Liên hệ',newsletter:'Đăng ký nhận tin',rfq:'Yêu cầu báo giá',survey:'Khảo sát',consult:'Tư vấn'};
 // Tên hiển thị các trường khách nhập trong form
 const LEAD_FIELDS:Record<string,string>={name:'Họ tên',phone:'Số điện thoại',email:'Email',company:'Tên doanh nghiệp',taxCode:'Mã số thuế',qty:'Số lượng dự kiến',address:'Địa chỉ',message:'Nội dung / nhu cầu',service:'Dịch vụ',date:'Ngày hẹn mong muốn',product:'Sản phẩm quan tâm',items:'Sản phẩm trong giỏ'};
 const leadStates=['new','contacted','quoted','won','lost','spam'];

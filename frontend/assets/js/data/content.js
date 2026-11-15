@@ -326,3 +326,31 @@ DT.siteText = (s, { rich = false } = {}) => {
   t = DT.u.esc(fill(t));
   return rich ? t.replace(/\*([^*]+)\*/g, '<span>$1</span>').replace(/\n/g, '<br>') : t.replace(/\*/g, '');
 };
+
+// Tuyển dụng: vị trí đang tuyển (dữ liệu MẪU). Khi kết nối database, quản lý tại Quản trị › Tuyển dụng.
+DT.jobs = [
+  {
+    slug: 'ky-thuat-vien-dien-lanh', title: 'Kỹ thuật viên điện lạnh', department: 'Kỹ thuật', location: 'TP. Hồ Chí Minh',
+    type: 'Toàn thời gian', salary: '10 – 18 triệu', quantity: 5, experience: '1 năm trở lên', deadline: '2026-12-31', featured: true, published: true, sort: 1,
+    summary: 'Lắp đặt, bảo trì, sửa chữa máy lạnh dân dụng và hệ thống âm trần, tủ đứng cho văn phòng, nhà xưởng.',
+    description: '<ul><li>Lắp đặt máy lạnh treo tường, âm trần, tủ đứng theo đúng kỹ thuật.</li><li>Vệ sinh, bảo trì định kỳ; kiểm tra gas, điện, chẩn đoán và sửa lỗi.</li><li>Tư vấn khách cách sử dụng tiết kiệm điện, ghi nhận công việc trên phiếu.</li></ul>',
+    requirements: '<ul><li>Tốt nghiệp trung cấp / cao đẳng điện lạnh hoặc có kinh nghiệm tương đương.</li><li>Có xe máy, bằng lái; sức khỏe tốt, làm việc trên cao được.</li><li>Trung thực, cẩn thận, giao tiếp lịch sự với khách.</li></ul>',
+    benefits: '<ul><li>Lương cứng + thưởng theo công trình, phụ cấp xăng xe, điện thoại.</li><li>BHXH, BHYT đầy đủ; đồng phục, dụng cụ được cấp.</li><li>Đào tạo nâng cao về hệ thống VRV/VRF, cơ hội lên trưởng nhóm.</li></ul>',
+  },
+  {
+    slug: 'nhan-vien-kinh-doanh-du-an', title: 'Nhân viên kinh doanh dự án (B2B)', department: 'Kinh doanh', location: 'TP. Hồ Chí Minh',
+    type: 'Toàn thời gian', salary: '12 – 25 triệu + hoa hồng', quantity: 2, experience: '1–2 năm', deadline: '2026-12-15', published: true, sort: 2,
+    summary: 'Tìm kiếm, chăm sóc khách hàng doanh nghiệp: nhà xưởng, văn phòng, chuỗi cửa hàng; lập báo giá và theo dõi hợp đồng.',
+    description: '<ul><li>Tìm kiếm khách hàng doanh nghiệp, khảo sát nhu cầu cùng kỹ thuật.</li><li>Lập báo giá, đàm phán, theo dõi hợp đồng và công nợ.</li><li>Chăm sóc khách hàng cũ, bán hợp đồng bảo trì định kỳ.</li></ul>',
+    requirements: '<ul><li>Tốt nghiệp cao đẳng trở lên; ưu tiên có kinh nghiệm bán hàng kỹ thuật, điện lạnh, M&amp;E.</li><li>Giao tiếp tốt, chủ động, chịu áp lực doanh số.</li></ul>',
+    benefits: '<ul><li>Hoa hồng hấp dẫn theo doanh số, thưởng quý / năm.</li><li>BHXH đầy đủ, du lịch hằng năm.</li></ul>',
+  },
+  {
+    slug: 'nhan-vien-cham-soc-khach-hang', title: 'Nhân viên chăm sóc khách hàng', department: 'Chăm sóc khách hàng', location: 'TP. Hồ Chí Minh',
+    type: 'Toàn thời gian', salary: '8 – 11 triệu', quantity: 1, experience: 'Không yêu cầu', deadline: '2026-12-20', published: true, sort: 3,
+    summary: 'Tiếp nhận cuộc gọi, Zalo, đơn hàng online; sắp xếp lịch kỹ thuật và nhắc lịch bảo trì cho khách.',
+    description: '<ul><li>Trả lời khách qua điện thoại, Zalo, website.</li><li>Xác nhận đơn, điều phối lịch lắp đặt / bảo trì cho kỹ thuật.</li><li>Gọi nhắc vệ sinh định kỳ, ghi nhận phản hồi khách hàng.</li></ul>',
+    requirements: '<ul><li>Giọng nói dễ nghe, tin học văn phòng cơ bản.</li><li>Cẩn thận, kiên nhẫn; ưu tiên có kinh nghiệm CSKH.</li></ul>',
+    benefits: '<ul><li>Làm giờ hành chính, nghỉ Chủ nhật luân phiên.</li><li>Thưởng theo KPI, BHXH đầy đủ.</li></ul>',
+  },
+];

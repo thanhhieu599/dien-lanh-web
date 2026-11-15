@@ -41,7 +41,7 @@ function now(): string { return gmdate('Y-m-d\TH:i:s\Z'); }
 // ===== Bộ nhớ đệm dữ liệu công khai (chịu tải nhiều khách xem cùng lúc) =====
 // Danh mục, sản phẩm, bài viết… giống nhau với mọi khách: lưu kết quả ra file tạm, khách sau đọc file, không mở MySQL.
 // Mọi thao tác ghi vào các bảng này đổi "thế hệ" bộ đệm → dữ liệu cũ bỏ ngay. Thêm hạn 60 giây phòng sửa thẳng DB.
-const PUBLIC_TABLES = ['settings','categories','brands','products','stores','posts','banners','services','policies','coupons','projects','faqs'];
+const PUBLIC_TABLES = ['settings','categories','brands','products','stores','posts','banners','services','policies','coupons','projects','faqs','jobs'];
 function cacheDir(): ?string {
     static $dir;
     if ($dir === null) {
@@ -81,10 +81,10 @@ function bumpPublic(string $table): void {
     if (!$registered) { $registered = true; register_shutdown_function(fn() => @file_put_contents("$dir/gen", bin2hex(random_bytes(8)), LOCK_EX)); }
 }
 function pk(string $table): string {
-    return ['coupons' => 'code', 'posts' => 'slug', 'projects' => 'slug', 'policies' => 'key', 'settings' => 'key'][$table] ?? 'id';
+    return ['coupons' => 'code', 'posts' => 'slug', 'projects' => 'slug', 'jobs' => 'slug', 'policies' => 'key', 'settings' => 'key'][$table] ?? 'id';
 }
 function tables(): array {
-    return explode(',', 'settings,categories,brands,products,stores,posts,banners,services,policies,coupons,profiles,orders,order_items,order_status_history,leads,reviews,payments,notifications,projects,faqs,crm_customers,cart_reminders,maintenance_contracts,maintenance_visits,maintenance_calls,suppliers,purchase_orders,stock_adjustments,stock_exports,stock_moves');
+    return explode(',', 'settings,categories,brands,products,stores,posts,banners,services,policies,coupons,jobs,profiles,orders,order_items,order_status_history,leads,reviews,payments,notifications,projects,faqs,crm_customers,cart_reminders,maintenance_contracts,maintenance_visits,maintenance_calls,suppliers,purchase_orders,stock_adjustments,stock_exports,stock_moves');
 }
 function record(string $table, mixed $id, bool $lock = false): ?array {
     $row = sql('SELECT data FROM records WHERE resource=? AND record_id=?' . ($lock ? ' FOR UPDATE' : ''), [$table, (string)$id])->fetchColumn();

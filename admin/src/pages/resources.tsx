@@ -786,6 +786,11 @@ export const RESOURCE_TABS: Record<string, ResourceTab[]> = {
     tab("content", "Nội dung", "Bài viết chi tiết: yêu cầu, giải pháp, kết quả.", ["content"]),
     tab("testimonial", "Cảm nhận khách hàng", "Lời nhận xét của khách hàng về dự án.", ["testimonial", "testimonial_name", "testimonial_role"]),
   ],
+  jobs: [
+    tab("info", "Thông tin vị trí", "Tên vị trí, bộ phận, lương, số lượng, hạn nộp và trạng thái đăng.", ["title", "slug", "department", "location", "type", "salary", "quantity", "experience", "deadline", "sort", "published", "featured", "image", "summary"]),
+    tab("content", "Mô tả công việc", "Công việc cụ thể ứng viên sẽ làm.", ["description"]),
+    tab("req", "Yêu cầu & quyền lợi", "Yêu cầu ứng viên, quyền lợi và cách nộp hồ sơ.", ["requirements", "benefits", "contact"]),
+  ],
   posts: [
     tab("info", "Thông tin bài viết", "Tiêu đề, đường dẫn, chuyên mục, ngày đăng và mô tả ngắn cho Google.", ["title", "slug", "cat", "date", "author", "art", "published", "excerpt"]),
     tab("content", "Nội dung", "Nội dung bài viết.", ["content"]),

@@ -41,6 +41,8 @@ const reviews = await guest('data/reviews?select=*');
 ok(reviews.status === 200 && reviews.data.every((r) => r.phone === undefined), 'S1 Số điện thoại người đánh giá không lộ');
 const prods = await guest('data/products?select=*');
 ok(prods.status === 200 && prods.data.length && prods.data.every((p) => ['cost_price', 'wholesale_price', 'min_stock', 'created_by_name', 'updated_by_name'].every((k) => p[k] === undefined)), 'S1 Khách không thấy giá vốn, giá sỉ, tồn tối thiểu, tên nhân viên sửa');
+const jobs = await guest('data/jobs?select=*');
+ok(jobs.status === 200 && jobs.data.every((j) => j.published !== false), 'S1 Tuyển dụng: khách chỉ thấy vị trí đã đăng');
 // Đường gộp dữ liệu trang chủ (có bộ đệm): chỉ bảng công khai, không lộ cài đặt nội bộ, không lộ khi đi qua bộ đệm
 for (const t of ['profiles', 'orders', 'crm_customers', 'reviews', 'leads']) ok((await guest(`catalog?parts=${encodeURIComponent(JSON.stringify({ [t]: 'select=*' }))}`)).status === 400, `S1 Gộp dữ liệu: chặn bảng ${t}`);
 for (let i = 0; i < 2; i++) {

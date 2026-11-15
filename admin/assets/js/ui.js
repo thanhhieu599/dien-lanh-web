@@ -20,7 +20,7 @@ AD.LEAD_STATUS = {
   new: ['Mới', 'warn'], contacted: ['Đã liên hệ', 'info'], quoted: ['Đã báo giá', 'info'],
   won: ['Chốt đơn', 'ok'], lost: ['Thất bại', 'muted'], spam: ['Spam', 'muted'],
 };
-AD.LEAD_TYPE = { 'b2b-quote': 'Báo giá dự án', service: 'Đặt lịch dịch vụ', contact: 'Liên hệ', newsletter: 'Nhận tin' };
+AD.LEAD_TYPE = { 'b2b-quote': 'Báo giá dự án', recruit: 'Ứng tuyển', service: 'Đặt lịch dịch vụ', contact: 'Liên hệ', newsletter: 'Nhận tin' };
 AD.REVIEW_STATUS = { pending: ['Chờ duyệt', 'warn'], approved: ['Đã duyệt', 'ok'], rejected: ['Từ chối', 'muted'] };
 
 AD.ui = (() => {

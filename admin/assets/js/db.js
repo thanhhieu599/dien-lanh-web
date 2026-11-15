@@ -16,6 +16,7 @@ AD.PK = {
   policies: "key",
   settings: "key",
   projects: "slug",
+  jobs: "slug",
   faqs: "id",
   orders: "id",
   leads: "id",
@@ -402,6 +403,7 @@ AD.demo = () => {
       coupons: DT.coupons.map((c) => ({ ...DT.rows.coupon.toRow(c), is_public: true, active: true, starts_at: null, ends_at: null, usage_limit: null, used_count: 0 })),
       posts: DT.posts.map((p) => ({ ...p, published: true })),
       projects: (DT.projects || []).map((p, i) => ({ ...DT.rows.project.toRow(p), published: true, sort: i })),
+      jobs: (DT.jobs || []).map((j, i) => ({ ...j, sort: j.sort ?? i })),
       faqs: (DT.faqs || []).map((f) => ({ ...f, active: true })),
       banners: DT.banners.map((b, i) => ({
         id: i + 1,
@@ -436,6 +438,7 @@ AD.demo = () => {
     "coupons",
     "posts",
     "projects",
+    "jobs",
     "faqs",
     "banners",
     "stores",

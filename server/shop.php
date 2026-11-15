@@ -350,7 +350,7 @@ function rpcEndpoint(string $name, array $args): mixed {
     }
     if ($name === 'submit_lead') {
         rateLimit('lead', 15);
-        if (!in_array($args['p_type'] ?? '', ['contact','service','b2b','b2b-quote','newsletter','rfq','survey','consult'], true)) fail('Loại yêu cầu không hợp lệ');
+        if (!in_array($args['p_type'] ?? '', ['contact','service','b2b','b2b-quote','newsletter','rfq','survey','consult','recruit'], true)) fail('Loại yêu cầu không hợp lệ');
         $data = is_array($args['p_data'] ?? null) ? $args['p_data'] : [];
         return put('leads', ['code' => 'LH' . strtoupper(bin2hex(random_bytes(5))), 'type' => $args['p_type'], 'status' => 'new', 'data' => $data, 'name' => cleanText($data['name'] ?? '', 200), 'phone' => phoneKey(cleanText($data['phone'] ?? '', 30)), 'company' => cleanText($data['company'] ?? '', 200), 'source_url' => cleanText($args['p_source_url'] ?? '', 500), 'assigned_to' => null, 'notes' => []], true);
     }

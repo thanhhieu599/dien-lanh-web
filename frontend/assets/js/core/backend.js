@@ -213,6 +213,7 @@ DT.backend = (() => {
       DT.projects = d.projects.map(DT.rows.project.toView);
     }
     if (d.faqs) DT.faqs = d.faqs;
+    if (d.jobs) DT.jobs = d.jobs;
     if (d.categories)
       DT.categories = d.categories.map((c) => ({
         ...c,
@@ -267,6 +268,7 @@ DT.backend = (() => {
       coupons: "select=*",
       projects: "select=*&published=is.true&order=sort,year.desc",
       faqs: "select=id,category,question,answer,sort&active=is.true&order=sort,id",
+      jobs: "select=*&published=is.true&order=sort,deadline",
     };
     // Gộp 1 request (máy chủ có bộ đệm); máy chủ cũ chưa hỗ trợ thì tải từng bảng như trước
     try {
@@ -313,6 +315,7 @@ DT.backend = (() => {
       d.projects = db.projects
         .filter((p) => p.published)
         .sort((a, b) => bySort(a, b) || (b.year || 0) - (a.year || 0));
+    if (has("jobs")) d.jobs = db.jobs.filter((j) => j.published !== false).sort(bySort);
     if (has("faqs"))
       d.faqs = db.faqs
         .filter(on)

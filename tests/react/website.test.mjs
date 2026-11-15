@@ -151,5 +151,15 @@ try {
     }
   }
   assert.deepEqual(errors,[],'No uncaught browser errors');
+  // Tuyển dụng: menu chính có mục, danh sách vị trí, lọc theo bộ phận, trang chi tiết, gửi hồ sơ ứng tuyển
+  await open('index.html');
+  assert.equal(await page.locator('#site-header nav a',{hasText:'TUYỂN DỤNG'}).count()>0,true,'Menu chính có Tuyển dụng');
+  await open('tuyen-dung.html');
+  const jobCount=await page.locator('.job-card').count();assert.ok(jobCount>=1,'Có vị trí tuyển dụng');
+  const deptTab=page.locator('.job-filter button').nth(1);if(await deptTab.count()){await deptTab.click();assert.ok(await page.locator('.job-card').count()<=jobCount);}
+  await page.locator('.job-card h3 a').first().click();await page.locator('.job-head h1').waitFor();
+  assert.equal(await page.evaluate(()=>document.querySelectorAll('script[data-ld="JobPosting"]').length),1,'Có dữ liệu JobPosting cho Google');
+  const apply=page.locator('#ung-tuyen');await apply.locator('[name=name]').fill('Ứng viên QA');await apply.locator('[name=phone]').fill('0912345679');await apply.locator('[name=consent]').check();
+  await apply.getByRole('button',{name:'Gửi hồ sơ'}).click();await apply.locator('[role=status]').waitFor();
   console.log('PASS: React routes, SPA navigation, filtering, cart, checkout, orders, account, leads, existing admin, mobile');
 } finally {await browser.close();server.close();}

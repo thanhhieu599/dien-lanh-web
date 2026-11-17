@@ -20,6 +20,8 @@ import {
   Pager,
   Panel,
   Table,
+  BulkBar,
+  useBulk,
   useData,
   useNotice,
 } from "../components/common";
@@ -52,6 +54,8 @@ export function ResourceList({ resource: key }: { resource: string }) {
       }),
     [key, params.toString()],
   );
+  // Chọn nhiều dòng để xóa
+  const bulk = useBulk(key);
   const summary = (row: Row) =>
     row.name || row.title || row.question || row.code || (row.contract_id ? `Bảo trì ${row.date}` : row.id) || row.key;
   // Cột riêng khai báo trong resources.js (listColumns): tiền, đúng/sai, tên khách bảo trì
@@ -125,9 +129,11 @@ export function ResourceList({ resource: key }: { resource: string }) {
       <DataState state={state}>
         {state.data && (
           <Panel>
+            <BulkBar table={r.table} select={bulk} reload={state.reload} />
             <Table
               rows={state.data.rows}
               rowKey={ad.PK[key]}
+              select={bulk}
               columns={[
                 {
                   label: r.title,

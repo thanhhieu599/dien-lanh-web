@@ -590,6 +590,31 @@ try {
   await page.getByRole("button", { name: "Thử lại" }).click();
   await page.locator(".ar-table").waitFor();
 
+  // Chọn nhiều để xóa (Hỏi đáp): chọn 2 dòng -> thanh thao tác -> Xóa đã chọn
+  {
+    await open("faqs");
+    const before = (await page.evaluate(() => AD.db.list("faqs", { limit: 1000 }))).count;
+    assert.ok(before >= 2, "cần ít nhất 2 câu hỏi mẫu");
+    assert.equal(await page.locator(".ar-bulk").count(), 0);
+    const boxes = page.getByRole("checkbox", { name: "Chọn dòng này" });
+    await boxes.nth(0).check();
+    await boxes.nth(1).check();
+    assert.match(await page.locator(".ar-bulk").innerText(), /Đã chọn 2/);
+    await page.locator(".ar-bulk").getByRole("button", { name: "Bỏ chọn" }).click();
+    assert.equal(await page.locator(".ar-bulk").count(), 0);
+    await page.getByRole("checkbox", { name: "Chọn tất cả trên trang" }).check();
+    assert.ok(await boxes.nth(0).isChecked() && await boxes.nth(1).isChecked(), "Chọn tất cả trên trang");
+    await page.getByRole("checkbox", { name: "Chọn tất cả trên trang" }).uncheck();
+    await boxes.nth(0).check();
+    await boxes.nth(1).check();
+    await page.locator(".ar-bulk").getByRole("button", { name: "Xóa đã chọn" }).click();
+    await page.locator(".ar-notices").filter({ hasText: "Đã xóa 2 mục" }).waitFor();
+    assert.equal((await page.evaluate(() => AD.db.list("faqs", { limit: 1000 }))).count, before - 2);
+    // Đơn hàng là chứng từ: không có ô chọn để xóa
+    await open("orders");
+    assert.equal(await page.getByRole("checkbox", { name: "Chọn dòng này" }).count(), 0);
+  }
+
   // Quản trị viên: yêu cầu từ website (liên hệ, báo giá, đặt lịch…) xem ở mục "Yêu cầu khách hàng"
   assert.equal((await page.locator("[data-nav=leads]").innerText()).trim().startsWith("Yêu cầu khách hàng"), true);
   // Both UI routes and data writes must respect the current role.

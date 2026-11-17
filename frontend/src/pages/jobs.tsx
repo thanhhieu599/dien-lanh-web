@@ -165,11 +165,14 @@ export function JobsPage({ slug }: { slug?: string }) {
         ) : (
           <div className="section-box job-empty"><Icon name="user" /><p>Hiện chưa có vị trí đang tuyển. Bạn vẫn có thể gửi hồ sơ, chúng tôi sẽ liên hệ khi có vị trí phù hợp.</p></div>
         )}
-        <section className="job-perks">
-          <h2>Vì sao làm việc cùng chúng tôi</h2>
-          <div className="job-perk-grid">{perks.map(([i, t, d]) => <div className="job-perk" key={t}><span><Icon name={i} /></span><b>{t}</b><p>{d}</p></div>)}</div>
-        </section>
-        <div className="job-general"><ApplyForm /></div>
+        {/* Vì sao làm việc cùng chúng tôi (4 mục xếp dọc) song song, cao bằng form ứng tuyển */}
+        <div className="job-bottom">
+          <section className="job-perks">
+            <h2>Vì sao làm việc cùng chúng tôi</h2>
+            <div className="job-perk-grid">{perks.map(([i, t, d]) => <div className="job-perk" key={t}><span><Icon name={i} /></span><div><b>{t}</b><p>{d}</p></div></div>)}</div>
+          </section>
+          <div className="job-general"><ApplyForm /></div>
+        </div>
       </div>
     </>
   );

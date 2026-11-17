@@ -18,7 +18,6 @@ import {
 } from "../components/products";
 import { PagedList } from "../components/collections";
 import { MegaMenu, uniqueCategories } from "../components/navigation";
-import { TrustSection } from "../components/trust";
 import type { Row, Product } from "../types";
 
 // Dải "Thương hiệu" dưới danh mục nhanh: thương hiệu đang hiển thị và bật "Hiện ở trang chủ" trong admin
@@ -344,7 +343,6 @@ export function HomePage() {
           />
         </section>
       )}
-      <TrustSection />
       <section className="section section-box">
         <div className="section-head">
           <h2>Dịch vụ điện lạnh</h2>

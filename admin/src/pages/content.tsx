@@ -70,8 +70,8 @@ function Block({value,path,onChange,onPending}:{value:any;path:Path;onChange:(v:
 function sectionsOf(value:Row):{id:string;path:string[];title:string;group?:string}[]{
  const out:{id:string;path:string[];title:string;group?:string}[]=[];
  for(const [k,v] of Object.entries(value)){
-  // Mục đã gỡ khỏi website: khối Giải pháp doanh nghiệp ở trang chủ, Khách hàng & đối tác
-  if(k==='b2b'||k==='logos'||k==='showCerts')continue;
+  // Mục đã gỡ khỏi website: khối Giải pháp doanh nghiệp ở trang chủ, Khách hàng & đối tác, Chứng nhận & năng lực
+  if(k==='b2b'||k==='logos'||k==='showCerts'||k==='certs')continue;
   if((k==='home'||k==='catalog')&&v&&typeof v==='object'&&!Array.isArray(v))for(const sub of Object.keys(v))out.push({id:`${k}.${sub}`,path:[k,sub],title:label(sub),group:k==='home'?'Trang chủ':'Danh mục & phụ kiện'});
   else out.push({id:k,path:[k],title:label(k)});
  }
@@ -98,10 +98,9 @@ function ContentEditor({resource:key,initial}:{resource:string;initial:Row}){con
     <section className="ar-panel ce-section" aria-labelledby="ce-title"><fieldset disabled={busy}>
      <h2 id="ce-title" className="ce-title">{current.title}</h2>
      {hints[current.path.at(-1)!]&&<p className="ce-hint">{hints[current.path.at(-1)!]}</p>}
-     {key==='trust'&&current.path[0]==='certs'&&<label className="ar-check ce-toggle"><input type="checkbox" checked={value.showCerts!==false} onChange={e=>setValue(prev=>({...prev,showCerts:e.target.checked}))}/><span><b>Hiện mục “Chứng nhận & năng lực” trên website</b> – tắt thì mục này ẩn ở mọi trang (trang chủ, Giới thiệu, Dự án…). Từng chứng nhận cũng có ô “Hiện trên website” riêng.</span></label>}
      <Block key={current.id} value={getIn(value,current.path)} path={current.path} onPending={n=>setPending(v=>v+n)} onChange={next=>setValue(prev=>setIn(prev,current.path,next))}/>
     </fieldset></section>
-    <p className="ce-note">Chỉ nhập số liệu, chứng nhận và đánh giá có nguồn xác thực. Bỏ ảnh chỉ gỡ khỏi nội dung, không xóa file đang dùng ở nơi khác.</p>
+    <p className="ce-note">Chỉ nhập số liệu và đánh giá có nguồn xác thực. Bỏ ảnh chỉ gỡ khỏi nội dung, không xóa file đang dùng ở nơi khác.</p>
     <div className="ar-form-foot ce-savebar"><span>Lưu áp dụng cho tất cả các mục{sections.length>1?' bên trái':''}.</span><button className="btn btn-primary" disabled={busy||pending>0} aria-busy={busy}>{pending?'Đang tải ảnh…':busy?'Đang lưu…':'Lưu nội dung'}</button></div>
    </div>
   </form></>;

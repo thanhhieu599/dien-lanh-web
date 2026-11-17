@@ -14,8 +14,6 @@ import {
 import { NumberedList, PagedList } from "../components/collections";
 import { ProductSection } from "../components/products";
 import type { Row } from "../types";
-import { TrustSection } from "../components/trust";
-export { TrustSection } from "../components/trust";
 import { CompanyPage, VisionPage } from "./company";
 export { LeadForm } from "../components/lead-form";
 export { ContactPage, QuotePage, ServicesPage, StoresPage } from "./info";
@@ -52,7 +50,7 @@ export function AboutPage({ vision = false }: { vision?: boolean }) {
   return vision ? (
     <VisionPage trust={null} />
   ) : (
-    <CompanyPage trust={<TrustSection />} />
+    <CompanyPage trust={null} />
   );
 }
 export function BrandsPage({ id }: { id?: string }) {
@@ -468,7 +466,6 @@ export function ProjectsPage({ slug }: { slug?: string }) {
             />
           </>
         )}
-        <TrustSection />
       </div>
     </>
   );

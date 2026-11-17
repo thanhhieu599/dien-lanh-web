@@ -26,19 +26,21 @@ try {
 
     echo "--- Tạo tài khoản nhân viên\n";
     $phones[] = $ph = phoneNo(3);
-    $new = call(['p_op' => 'create', 'p_name' => 'Kế toán Lan', 'p_phone' => $ph, 'p_email' => "$p@vidu.vn", 'p_role' => 'accountant', 'p_password' => 'KeToan!2026']);
-    ok(isset($new['ok']) && $new['ok']['role'] === 'accountant' && $new['ok']['created_by_name'] === 'QA Admin chính', 'U4 Tạo tài khoản kế toán, ghi người tạo');
+    $new = call(['p_op' => 'create', 'p_name' => 'Kinh doanh Lan', 'p_phone' => $ph, 'p_email' => "$p@vidu.vn", 'p_role' => 'sales', 'p_password' => 'KeToan!2026']);
+    ok(isset($new['ok']) && $new['ok']['role'] === 'sales' && $new['ok']['created_by_name'] === 'QA Admin chính', 'U4 Tạo tài khoản nhân viên kinh doanh, ghi người tạo');
+    ok(isset(call(['p_op' => 'create', 'p_name' => 'Kế toán cũ', 'p_phone' => phoneNo(8), 'p_role' => 'accountant', 'p_password' => 'MatKhau!2026'])['error']), 'U4b Chỉ cấp vai trò Quản trị viên / Nhân viên kinh doanh');
+    as_(record('profiles', $new['ok']['id'])); ok((call(['p_op' => 'list'])['status'] ?? 0) === 403, 'U4c Nhân viên kinh doanh không quản lý được tài khoản'); as_($admin);
     $made[] = $new['ok']['id'];
     $hash = sql('SELECT password_hash FROM users WHERE phone=?', [$ph])->fetchColumn();
     ok($hash && password_verify('KeToan!2026', $hash) && !str_contains(json_encode(record('profiles', $new['ok']['id'])), 'KeToan'), 'U5 Mật khẩu được mã hóa, không lưu dạng chữ');
-    ok((call(['p_op' => 'create', 'p_name' => 'Trùng', 'p_phone' => $ph, 'p_role' => 'staff', 'p_password' => 'MatKhau!2026'])['status'] ?? 0) === 409, 'U6 Không tạo trùng số điện thoại');
-    ok(isset(call(['p_op' => 'create', 'p_name' => 'Yếu', 'p_phone' => phoneNo(4), 'p_role' => 'staff', 'p_password' => '123'])['error']), 'U7 Mật khẩu dưới 8 ký tự bị từ chối');
+    ok((call(['p_op' => 'create', 'p_name' => 'Trùng', 'p_phone' => $ph, 'p_role' => 'sales', 'p_password' => 'MatKhau!2026'])['status'] ?? 0) === 409, 'U6 Không tạo trùng số điện thoại');
+    ok(isset(call(['p_op' => 'create', 'p_name' => 'Yếu', 'p_phone' => phoneNo(4), 'p_role' => 'sales', 'p_password' => '123'])['error']), 'U7 Mật khẩu dưới 8 ký tự bị từ chối');
     ok(isset(call(['p_op' => 'create', 'p_name' => 'Lạ', 'p_phone' => phoneNo(5), 'p_role' => 'superadmin', 'p_password' => 'MatKhau!2026'])['error']), 'U8 Vai trò lạ bị từ chối');
 
     echo "--- Đổi vai trò, đặt lại mật khẩu, khóa\n";
-    $r = call(['p_op' => 'set_role', 'p_id' => $new['ok']['id'], 'p_role' => 'sales']);
-    ok(($r['ok']['role'] ?? '') === 'sales', 'U9 Đổi vai trò kế toán → kinh doanh');
-    ok(isset(call(['p_op' => 'set_role', 'p_id' => $admin['id'], 'p_role' => 'staff'])['error']), 'U10 Không tự hạ quyền của chính mình');
+    $r = call(['p_op' => 'set_role', 'p_id' => $new['ok']['id'], 'p_role' => 'admin']);
+    ok(($r['ok']['role'] ?? '') === 'admin' && (call(['p_op' => 'set_role', 'p_id' => $new['ok']['id'], 'p_role' => 'sales'])['ok']['role'] ?? '') === 'sales', 'U9 Đổi vai trò kinh doanh → quản trị viên → kinh doanh');
+    ok(isset(call(['p_op' => 'set_role', 'p_id' => $admin['id'], 'p_role' => 'sales'])['error']), 'U10 Không tự hạ quyền của chính mình');
     ok(isset(call(['p_op' => 'lock', 'p_id' => $admin['id']])['error']), 'U11 Không tự khóa chính mình');
     call(['p_op' => 'set_password', 'p_id' => $new['ok']['id'], 'p_password' => 'MoiDoi!2026']);
     ok(password_verify('MoiDoi!2026', sql('SELECT password_hash FROM users WHERE phone=?', [$ph])->fetchColumn()), 'U12 Đặt lại mật khẩu nhân viên');
@@ -55,15 +57,15 @@ try {
     $cid = bin2hex(random_bytes(16));
     sql('INSERT INTO users(id,phone,email,password_hash) VALUES(?,?,NULL,?)', [$cid, $cph, password_hash('Khach!2026', PASSWORD_DEFAULT)]);
     put('profiles', ['id' => $cid, 'phone' => $cph, 'name' => 'Khách thành nhân viên', 'role' => 'customer'], true); $made[] = $cid;
-    ok((call(['p_op' => 'grant', 'p_phone' => $cph, 'p_role' => 'staff'])['ok']['role'] ?? '') === 'staff', 'U16 Cấp vai trò nhân viên cho tài khoản khách đã đăng ký');
+    ok((call(['p_op' => 'grant', 'p_phone' => $cph, 'p_role' => 'sales'])['ok']['role'] ?? '') === 'sales', 'U16 Cấp vai trò nhân viên kinh doanh cho tài khoản khách đã đăng ký');
     // Chỉ còn 1 quản trị viên đang hoạt động → không hạ quyền / khóa được
     $others = array_filter(allRecords('profiles'), fn($x) => ($x['role'] ?? '') === 'admin' && empty($x['locked']) && $x['id'] !== $admin['id']);
     foreach ($others as $o) { $o['locked'] = true; put('profiles', $o); }
     $second = call(['p_op' => 'create', 'p_name' => 'Admin phụ', 'p_phone' => $phones[] = phoneNo(7), 'p_role' => 'admin', 'p_password' => 'AdminPhu!2026'])['ok']; $made[] = $second['id'];
     as_(record('profiles', $second['id']));
-    ok(isset(call(['p_op' => 'set_role', 'p_id' => $admin['id'], 'p_role' => 'staff'])['ok']), 'U17 Admin phụ hạ quyền được admin chính khi vẫn còn quản trị viên khác');
+    ok(isset(call(['p_op' => 'set_role', 'p_id' => $admin['id'], 'p_role' => 'sales'])['ok']), 'U17 Admin phụ hạ quyền được admin chính khi vẫn còn quản trị viên khác');
     as_(record('profiles', $second['id']));
-    $self = call(['p_op' => 'set_role', 'p_id' => $second['id'], 'p_role' => 'staff']);
+    $self = call(['p_op' => 'set_role', 'p_id' => $second['id'], 'p_role' => 'sales']);
     ok(isset($self['error']), 'U18 Quản trị viên cuối cùng không bị hạ quyền / khóa (hệ thống luôn có người quản trị)');
     $_GET = ['id' => 'eq.' . $second['id']];
     try { dataEndpoint('profiles', 'PATCH', ['locked' => true]); } catch (HttpError $e) {}

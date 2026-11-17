@@ -188,12 +188,19 @@ try {
     foreach (['staff','sales','accountant'] as $role) {
         put('profiles', array_merge($admin, ['role'=>$role]));
         if ($role === 'sales') {
-            checkAdmin(patchAdmin('leads', $lead['id'], ['status'=>'contacted', 'staff_note'=>'Called', 'assigned_to'=>null])['assigned_to'] === $admin['id'], 'Sales updates assigned lead without reassigning it');
-            checkAdmin(endpoint('leads', query:['id'=>'eq.' . $otherLead['id']]) === [], 'Sales cannot read unassigned leads');
+            // Nhân viên kinh doanh: mọi quyền như quản trị viên, trừ quản lý tài khoản
+            checkAdmin(count(endpoint('leads', query:['id'=>'eq.' . $otherLead['id']])) === 1, 'Sales reads every lead like admin');
+            checkAdmin(patchAdmin('leads', $otherLead['id'], ['staff_note'=>'Sales QA'])['staff_note'] === 'Sales QA', 'Sales edits any lead');
+            $store = record('settings', 'store');
+            checkAdmin(patchAdmin('settings', 'store', ['value'=>$store['value']])['key'] === 'store', 'Sales can change store settings like admin');
+            $cust = fixture('profiles', ['id'=>$prefix . '-cust', 'phone'=>'0999' . substr((string)time(), -6), 'name'=>'QA khách', 'role'=>'customer']);
+            try { patchAdmin('profiles', $cust['id'], ['role'=>'admin']); } catch (HttpError $e) {}
+            checkAdmin((record('profiles', $cust['id'])['role'] ?? '') === 'customer', 'Sales cannot change account roles');
             try {
-                patchAdmin('leads', $otherLead['id'], ['status'=>'won']);
-                throw new RuntimeException('Sales must not update unassigned leads');
-            } catch (HttpError $e) { checkAdmin($e->getCode() === 403, 'Sales cannot edit another lead'); }
+                rpcEndpoint('admin_users', ['p_op'=>'list']);
+                throw new RuntimeException('Sales must not manage accounts');
+            } catch (HttpError $e) { checkAdmin($e->getCode() === 403, 'Sales cannot open Accounts & permissions'); }
+            continue;
         }
         if ($role === 'accountant') {
             checkAdmin(patchAdmin('orders', $order['id'], ['payment_status'=>'partial', 'status'=>'done'])["status"] === 'pending', 'Accountant can save partial payment while order status stays protected');

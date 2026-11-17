@@ -129,7 +129,7 @@ function purchasePay(array $po, array $p, array $user): array {
 function inventoryEndpoint(array $a): array {
     $user = staff();
     $op = $a['p_op'] ?? '';
-    $writer = in_array($user['role'], ['admin', 'staff'], true);
+    $writer = in_array($user['role'], ['admin', 'staff', 'sales'], true);
     if (!$writer && !($user['role'] === 'accountant' && $op === 'purchase_pay')) fail('Không có quyền', 403);
     return transaction(function() use ($a, $op, $user) {
         $id = $a['p_id'] ?? null;
@@ -237,7 +237,7 @@ function inventoryEndpoint(array $a): array {
 // Hóa đơn bán hàng: cấp số hóa đơn 1 lần cho đơn (không cấp cho đơn đã hủy)
 function issueInvoice(array $a): array {
     $user = staff();
-    if (!in_array($user['role'], ['admin', 'staff', 'accountant'], true)) fail('Không có quyền', 403);
+    if (!in_array($user['role'], ['admin', 'staff', 'sales', 'accountant'], true)) fail('Không có quyền', 403);
     return transaction(function() use ($a, $user) {
         $o = record('orders', $a['p_id'] ?? '', true) ?? fail('Không tìm thấy đơn hàng', 404);
         if ($o['status'] === 'cancelled') fail('Đơn đã hủy, không xuất hóa đơn');

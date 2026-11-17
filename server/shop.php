@@ -267,7 +267,7 @@ function adminOrderTotals(array $lines, int $install, int $shipping, int $discou
     return ['subtotal' => $goods, 'vat' => $vat, 'total' => $included || $rate <= 0 ? $base : $base + $vat];
 }
 function adminCreateOrder(array $args): array {
-    $user = staff(); if (!in_array($user['role'], ['admin','staff'], true)) fail('Không có quyền tạo đơn hàng', 403);
+    $user = staff(); if (!in_array($user['role'], ['admin','staff','sales'], true)) fail('Không có quyền tạo đơn hàng', 403);
     $customer = flatText($args['p_customer'] ?? [], 300);
     $customer['phone'] = phoneKey($customer['phone'] ?? '');
     if (!preg_match('/^0[0-9]{9,10}$/', $customer['phone'])) fail('Số điện thoại khách hàng không hợp lệ');
@@ -365,7 +365,7 @@ function rpcEndpoint(string $name, array $args): mixed {
         return put('cart_reminders', ['data' => $args], true);
     }
     if ($name === 'save_brand') {
-        $user = staff(); if (!in_array($user['role'], ['staff','admin'], true)) fail('Không có quyền', 403);
+        $user = staff(); if (!in_array($user['role'], ['staff','admin','sales'], true)) fail('Không có quyền', 403);
         $brand = $args['p_brand'] ?? []; $old = $args['p_id'] ?? null;
         $brand['id'] = $old ?: ($brand['slug'] ?? '');
         if (empty($brand['id']) || empty($brand['name'])) fail('Thiếu thông tin thương hiệu');
@@ -394,7 +394,7 @@ function rpcEndpoint(string $name, array $args): mixed {
     // Quản lý nhóm khách hàng (chỉ quản trị viên): thêm / sửa / xóa. Xóa nhóm: khách trong nhóm chuyển về "Khách bán lẻ",
     // mã giảm giá đang áp cho nhóm đó bỏ nhóm khỏi danh sách áp dụng – không để dữ liệu trỏ tới nhóm không tồn tại.
     if ($name === 'customer_group') {
-        $user = staff(); if ($user['role'] !== 'admin') fail('Chỉ quản trị viên được sửa nhóm khách hàng', 403);
+        $user = staff(); if (!in_array($user['role'], ['admin','sales'], true)) fail('Không có quyền sửa nhóm khách hàng', 403);
         $op = (string)($args['p_op'] ?? '');
         return transaction(function() use ($op, $args) {
             $groups = customerGroups();
@@ -427,7 +427,7 @@ function rpcEndpoint(string $name, array $args): mixed {
         });
     }
     if ($name === 'maintenance_call') {
-        $user = staff(); if (!in_array($user['role'], ['admin','staff'], true)) fail('Không có quyền', 403);
+        $user = staff(); if (!in_array($user['role'], ['admin','staff','sales'], true)) fail('Không có quyền', 403);
         $key = (string)($args['p_key'] ?? '');
         if (!preg_match('/^(c|o):([A-Za-z0-9_.-]{1,80}):(\d{4}-\d{2}-\d{2})$/', $key, $m)) fail('Mã lịch nhắc không hợp lệ');
         if ($m[1] === 'c' && !record('maintenance_contracts', $m[2])) fail('Không tìm thấy khách bảo trì', 404);
@@ -451,7 +451,7 @@ function rpcEndpoint(string $name, array $args): mixed {
         });
     }
     if ($name === 'maintenance_skip') {
-        $user = staff(); if (!in_array($user['role'], ['admin','staff'], true)) fail('Không có quyền', 403);
+        $user = staff(); if (!in_array($user['role'], ['admin','staff','sales'], true)) fail('Không có quyền', 403);
         $row = record('notifications', $args['p_id'] ?? '') ?? throw new HttpError('Không tìm thấy lịch nhắc', 404);
         $row['status'] = ($args['p_skip'] ?? false) ? 'skipped' : 'pending'; return put('notifications', $row);
     }

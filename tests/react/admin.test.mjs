@@ -597,20 +597,24 @@ try {
   await page.waitForFunction(() => AD.me?.role === "sales");
   await open("leads");
   assert.match(await page.locator("#view").textContent(), /Khách tư vấn React/);
-  assert.equal(await page.locator("[data-nav=products]").count(), 0);
-  assert.equal(await page.locator("[data-nav=leads]").count(), 1, "Nhân viên kinh doanh vẫn có Khách hàng của tôi");
+  // Nhân viên kinh doanh: thấy mọi mục như quản trị viên, trừ Tài khoản & phân quyền
+  assert.equal(await page.locator("[data-nav=products]").count(), 1);
+  assert.equal(await page.locator("[data-nav=settings]").count(), 1);
+  assert.equal(await page.locator("[data-nav=accounts]").count(), 0, "Nhân viên kinh doanh không thấy Tài khoản & phân quyền");
   await open("settings");
+  assert.doesNotMatch(await page.locator("#view h1").textContent(), /Không có quyền/);
+  await open("accounts");
   assert.match(await page.locator("#view h1").textContent(), /Không có quyền/);
   assert.match(
     await page.evaluate(async () => {
       try {
-        await AD.db.update("products", 1001, { price: 1 });
+        await AD.db.adminUsers({ p_op: "list" });
         return "allowed";
       } catch (e) {
         return e.message;
       }
     }),
-    /quyền/i,
+    /quản trị viên/i,
   );
   await page.locator("#demo-role").selectOption("accountant");
   await page.waitForFunction(() => AD.me?.role === "accountant");
@@ -940,7 +944,9 @@ try {
     const form = page.locator("#acc-create");
     await form.locator("[name=name]").fill("Nhân viên kho QA");
     await form.locator("[name=phone]").fill("0977111222");
-    await form.locator("[name=role]").selectOption("staff");
+    // Chỉ còn 2 vai trò được cấp: Quản trị viên và Nhân viên kinh doanh
+    assert.deepEqual(await form.locator("[name=role] option").evaluateAll((o) => o.map((x) => x.value)), ["admin", "sales"]);
+    await form.locator("[name=role]").selectOption("sales");
     await form.locator("[name=password]").fill("KhoHang!2026");
     await form.locator("[name=confirm]").fill("KhoHang!2027");
     await form.getByRole("button", { name: "Tạo tài khoản" }).click();
@@ -950,7 +956,7 @@ try {
     await page.locator(".ar-toast").filter({ hasText: "Đã tạo tài khoản" }).waitFor();
     const row = page.locator("#view tr", { hasText: "Nhân viên kho QA" });
     await row.waitFor();
-    await row.getByLabel("Vai trò của Nhân viên kho QA").selectOption("accountant");
+    await row.getByLabel("Vai trò của Nhân viên kho QA").selectOption("admin");
     await page.locator(".ar-toast").filter({ hasText: "Đã đổi vai trò" }).waitFor();
     await row.getByRole("button", { name: "Đặt lại mật khẩu" }).click();
     await row.getByLabel("Mật khẩu mới cho Nhân viên kho QA").fill("MatKhauMoi!26");
@@ -959,14 +965,14 @@ try {
     await row.getByRole("button", { name: "Khóa" }).click();
     await row.getByText("Đã khóa").waitFor();
     const acc = (await page.evaluate(() => AD.db.adminUsers({ p_op: "list" }))).find((x) => x.phone === "0977111222");
-    assert.equal(acc.role, "accountant"); assert.equal(acc.locked, true);
+    assert.equal(acc.role, "admin"); assert.equal(acc.locked, true);
     // Bản thân: không tự đổi vai trò / tự khóa
     const mine = page.locator("#view tr", { hasText: "Bạn" });
     assert.equal(await mine.locator("select").isDisabled(), true);
     assert.equal(await mine.getByRole("button", { name: "Khóa" }).count(), 0);
-    // Nhân viên vận hành không thấy mục này
-    await page.locator("#demo-role").selectOption("staff");
-    await page.waitForFunction(() => AD.me?.role === "staff");
+    // Nhân viên kinh doanh không thấy mục này
+    await page.locator("#demo-role").selectOption("sales");
+    await page.waitForFunction(() => AD.me?.role === "sales");
     assert.equal(await page.locator("[data-nav=accounts]").count(), 0, "Chỉ quản trị viên thấy Tài khoản & phân quyền");
     await page.locator("#demo-role").selectOption("admin");
     await page.waitForFunction(() => AD.me?.role === "admin");

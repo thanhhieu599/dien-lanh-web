@@ -3,6 +3,8 @@ declare(strict_types=1);
 // Cấu hình → Tài khoản & phân quyền: chỉ Quản trị viên được tạo tài khoản nhân viên, đổi vai trò,
 // đặt lại mật khẩu, khóa / mở khóa. Luôn giữ ít nhất 1 quản trị viên đang hoạt động.
 const STAFF_ROLES = ['admin', 'staff', 'sales', 'accountant'];
+// Vai trò được cấp mới: chỉ Quản trị viên và Nhân viên kinh doanh (tài khoản staff/accountant cũ vẫn đăng nhập được)
+const ASSIGNABLE_ROLES = ['admin', 'sales'];
 
 function staffPublic(array $p): array {
     return ['id' => $p['id'], 'name' => $p['name'] ?? '', 'phone' => $p['phone'] ?? '', 'email' => $p['email'] ?? '',
@@ -29,7 +31,7 @@ function adminUsers(array $a): mixed {
             $phone = phoneKey(cleanText($a['p_phone'] ?? '', 20));
             $name = cleanText($a['p_name'] ?? '', 120);
             $email = cleanText($a['p_email'] ?? '', 160);
-            $role = in_array($a['p_role'] ?? '', STAFF_ROLES, true) ? $a['p_role'] : fail('Vai trò không hợp lệ');
+            $role = in_array($a['p_role'] ?? '', ASSIGNABLE_ROLES, true) ? $a['p_role'] : fail('Vai trò không hợp lệ');
             if (!preg_match('/^0[0-9]{9,10}$/', $phone)) fail('Số điện thoại không hợp lệ');
             if ($name === '') fail('Vui lòng nhập họ tên nhân viên');
             if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) fail('Email không hợp lệ');
@@ -52,7 +54,7 @@ function adminUsers(array $a): mixed {
         if (!$p) fail('Không tìm thấy tài khoản', 404);
         $self = $p['id'] === $me['id'];
         if ($op === 'set_role') {
-            $role = in_array($a['p_role'] ?? '', [...STAFF_ROLES, 'customer'], true) ? $a['p_role'] : fail('Vai trò không hợp lệ');
+            $role = in_array($a['p_role'] ?? '', [...ASSIGNABLE_ROLES, 'customer'], true) ? $a['p_role'] : fail('Vai trò không hợp lệ');
             if ($self && $role !== 'admin') fail('Không thể tự hạ quyền của chính mình');
             if (($p['role'] ?? '') === 'admin' && $role !== 'admin' && activeAdmins($p['id']) < 1) fail('Phải còn ít nhất 1 quản trị viên');
             $p['role'] = $role;

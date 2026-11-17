@@ -38,7 +38,7 @@ export function AccountsPage() {
         {label: 'Nhân viên', render: (r) => <><b>{r.name}</b>{r.id === me && <span className="ar-badge"> Bạn</span>}<small>{[r.phone, r.email].filter(Boolean).join(' · ')}</small></>},
         {label: 'Vai trò', render: (r) => <select aria-label={`Vai trò của ${r.name}`} value={r.role} disabled={r.id === me}
           onChange={(e) => { const role = e.target.value; if (!window.confirm(`Đổi vai trò của ${r.name} thành "${ROLE_LABEL[role] || 'Khách hàng'}"?`)) { e.target.value = r.role; return; } run(() => usersOp('set_role', {p_id: r.id, p_role: role}), 'Đã đổi vai trò.').catch(() => {}); }}>
-          {roleOptions}<option value="customer">Bỏ quyền (thành khách hàng)</option></select>},
+          {roleOptions}{!ROLE_INFO.some(([k]) => k === r.role) && <option value={r.role}>{ROLE_LABEL[r.role] || r.role}</option>}<option value="customer">Bỏ quyền (thành khách hàng)</option></select>},
         {label: 'Trạng thái', render: (r) => <span className={`ar-badge ${r.locked ? 'negative' : 'positive'}`}>{r.locked ? 'Đã khóa' : 'Đang hoạt động'}</span>},
         {label: 'Tạo lúc', render: (r) => <>{r.created_at ? date(r.created_at) : '—'}<small>{r.created_by_name ? `bởi ${r.created_by_name}` : ''}</small></>},
         {label: 'Thao tác', render: (r) => resetFor === r.id
@@ -56,7 +56,7 @@ export function AccountsPage() {
           <label>Họ tên *<input name="name" required maxLength={120}/></label>
           <label>Số điện thoại (dùng để đăng nhập) *<input name="phone" required inputMode="tel"/></label>
           <label>Email<input name="email" type="email"/></label>
-          <label>Vai trò *<select name="role" required defaultValue="staff">{roleOptions}</select></label>
+          <label>Vai trò *<select name="role" required defaultValue="sales">{roleOptions}</select></label>
           <label>Mật khẩu *<input name="password" type="password" required minLength={8} maxLength={72} autoComplete="new-password"/></label>
           <label>Nhập lại mật khẩu *<input name="confirm" type="password" required minLength={8} maxLength={72} autoComplete="new-password"/></label>
           <button className="btn btn-primary full" disabled={busy} aria-busy={busy}>Tạo tài khoản</button>
@@ -70,7 +70,7 @@ export function AccountsPage() {
           <p className="inv-muted">Nhân viên đã tự đăng ký tài khoản trên website: nhập số điện thoại để cấp vai trò.</p>
           <form className="ar-grid" id="acc-grant" onSubmit={grant}>
             <label>Số điện thoại *<input name="phone" required inputMode="tel"/></label>
-            <label>Vai trò *<select name="role" required defaultValue="staff">{roleOptions}</select></label>
+            <label>Vai trò *<select name="role" required defaultValue="sales">{roleOptions}</select></label>
             <button className="btn btn-light full">Cấp quyền</button>
           </form>
         </Panel>

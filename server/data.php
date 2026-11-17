@@ -10,9 +10,10 @@ function allowed(string $table, string $method, ?array $user, ?array $row = null
         if (in_array($table, ['settings', 'policies'], true)) return $method === 'GET';
         return true;
     }
+    // Nhân viên kinh doanh: mọi quyền như quản trị viên, trừ quản lý tài khoản (không xóa/tạo hồ sơ, không đổi vai trò)
     if ($role === 'sales') {
-        if ($table === 'leads') return $row && ($row['assigned_to'] ?? null) === $user['id'];
-        if ($table === 'profiles') return $method === 'GET' && in_array($row['role'] ?? '', ['admin', 'staff', 'sales'], true);
+        if ($table === 'profiles') return in_array($method, ['GET', 'PATCH'], true);
+        return true;
     }
     if ($role === 'accountant') {
         return $method === 'GET' && in_array($table, ['orders', 'order_items', 'order_status_history', 'payments', 'products', 'categories', 'brands', 'settings', 'profiles', 'crm_customers', 'crm_customer_summary', 'crm_customer_products', 'maintenance_contracts', 'maintenance_visits', 'suppliers', 'purchase_orders', 'stock_adjustments', 'stock_exports', 'stock_moves'], true)
@@ -68,7 +69,7 @@ function matches(array $row, array $query): bool {
     return true;
 }
 function projectRow(array $row, string $table, string $select, ?array $user): array {
-    if ($table === 'reviews' && !in_array($user['role'] ?? '', ['admin', 'staff'], true)) unset($row['phone'], $row['user_id']);
+    if ($table === 'reviews' && !in_array($user['role'] ?? '', ['admin', 'staff', 'sales'], true)) unset($row['phone'], $row['user_id']);
     // Khách / website không được thấy giá vốn, giá sỉ, mức tồn tối thiểu và tên nhân viên đã sửa dữ liệu
     if (!in_array($user['role'] ?? '', ['admin', 'staff', 'sales', 'accountant'], true)) {
         unset($row['created_by_name'], $row['updated_by_name']);
@@ -332,7 +333,6 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
             if (isset($patch['role']) && ($row['role'] ?? '') === 'admin' && $patch['role'] !== 'admin' && activeAdmins((string)$id) < 1) fail('Phải còn ít nhất 1 quản trị viên');
             if (isset($patch['email'])) sql('UPDATE users SET email=? WHERE id=?', [$patch['email'] ?: null, $id]);
         }
-        if ($table === 'leads' && $user['role'] === 'sales') $patch = array_intersect_key($patch, array_flip(['status','notes','staff_note']));
         if ($table === 'suppliers') unset($patch['debt'], $patch['total_purchased'], $patch['purchase_count']);
         // Sửa tồn kho tay ở trang sản phẩm: vẫn ghi lịch sử kho
         $stockChange = $table === 'products' && isset($patch['stock']) && is_numeric($patch['stock']) ? (int)$patch['stock'] - (int)($row['stock'] ?? 0) : 0;

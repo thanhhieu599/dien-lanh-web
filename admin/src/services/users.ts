@@ -8,9 +8,8 @@ export function usersOp(op: string, args: Row = {}): Promise<any> {
 }
 // Mô tả quyền từng vai trò (khớp services/permissions.ts và máy chủ)
 export const ROLE_INFO: [string, string, string][] = [
-  ['admin', 'Quản trị viên', 'Toàn quyền: mọi chức năng, cài đặt cửa hàng, nội dung website, tài khoản & phân quyền.'],
-  ['staff', 'Nhân viên vận hành', 'Đơn hàng, khách hàng, sản phẩm, kho hàng, marketing, báo cáo. Không sửa cài đặt cửa hàng và tài khoản.'],
-  ['sales', 'Nhân viên kinh doanh', 'Chỉ xem và chăm sóc các yêu cầu khách hàng được giao cho mình.'],
-  ['accountant', 'Kế toán', 'Đơn hàng & thanh toán, hóa đơn, phiếu kho, báo cáo, xuất Excel MISA. Chỉ được cập nhật tình trạng thanh toán.'],
+  ['admin', 'Quản trị viên', 'Toàn quyền: mọi chức năng, gồm cả Tài khoản & phân quyền (tạo tài khoản, đổi vai trò, đặt lại mật khẩu, khóa).'],
+  ['sales', 'Nhân viên kinh doanh', 'Mọi chức năng như quản trị viên, trừ mục Tài khoản & phân quyền (không thấy, không tạo/sửa/khóa tài khoản).'],
 ];
-export const ROLE_LABEL: Record<string, string> = Object.fromEntries(ROLE_INFO.map(([k, l]) => [k, l]));
+// Vai trò cũ (không còn cấp mới) vẫn hiện đúng tên nếu tài khoản còn giữ
+export const ROLE_LABEL: Record<string, string> = {staff: 'Nhân viên vận hành', accountant: 'Kế toán', ...Object.fromEntries(ROLE_INFO.map(([k, l]) => [k, l]))};

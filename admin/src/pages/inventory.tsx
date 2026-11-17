@@ -12,7 +12,7 @@ import type {Row} from '../types';
 const PAGE = 30;
 const num = (v: unknown) => Number(v) || 0;
 const productOf = (id: unknown) => (ad.cache.products || []).find((p: Row) => String(p.id) === String(id));
-const canWrite = () => ['admin', 'staff'].includes(ad.me?.role || '');
+const canWrite = () => ['admin', 'staff', 'sales'].includes(ad.me?.role || '');
 
 function Tabs({items, value, onChange, label}: {items: [string, ReactNode][]; value: string; onChange: (v: string) => void; label: string}) {
   return <nav className="mt-tabs" aria-label={label}>{items.map(([k, l]) => <button type="button" key={k} className={value === k ? 'active' : ''} aria-current={value === k ? 'page' : undefined} onClick={() => onChange(k)}>{l}</button>)}</nav>;
@@ -220,7 +220,7 @@ function PurchaseView({doc}: {doc: Row}) {
   <Panel title={left > 0 && doc.status !== 'cancelled' ? 'Đơn nhập chưa thanh toán đủ' : 'Thanh toán'}>
     <div className="inv-pay"><span>Tiền cần trả NCC: <b>{money(doc.total)}</b></span><span>Đã trả: <b>{money(doc.paid)}</b></span><span>Còn phải trả: <b className={left > 0 ? 'inv-minus' : ''}>{money(left)}</b></span></div>
     {(doc.payments || []).length > 0 && <Table rows={doc.payments.map((p: Row, i: number) => ({...p, id: i}))} columns={[{label: 'Thời gian', render: (p) => date(p.at)}, {label: 'Hình thức', render: (p) => (p.method === 'cash' ? 'Tiền mặt' : 'Chuyển khoản')}, {label: 'Số tiền', render: (p) => money(p.amount)}, {label: 'Người ghi nhận', key: 'by'}, {label: 'Ghi chú', key: 'note'}]}/>}
-    {left > 0 && doc.status !== 'cancelled' && ['admin', 'staff', 'accountant'].includes(ad.me?.role || '') && <div className="inv-payform">
+    {left > 0 && doc.status !== 'cancelled' && ['admin', 'staff', 'sales', 'accountant'].includes(ad.me?.role || '') && <div className="inv-payform">
       <select aria-label="Hình thức thanh toán" value={pay.method} onChange={(e) => setPay({...pay, method: e.target.value})}><option value="bank">Chuyển khoản</option><option value="cash">Tiền mặt</option></select>
       <input aria-label="Số tiền thanh toán" type="number" min={0} step={1000} value={pay.amount} onChange={(e) => setPay({...pay, amount: Number(e.target.value)})}/>
       <input aria-label="Ghi chú thanh toán" placeholder="Ghi chú (số UNC, phiếu chi…)" value={pay.note} onChange={(e) => setPay({...pay, note: e.target.value})}/>

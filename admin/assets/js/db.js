@@ -559,7 +559,7 @@ AD.demo = () => {
   }
   function inventoryOp(op, a = {}) {
     const role = me().role;
-    if (!["admin", "staff"].includes(role) && !(role === "accountant" && op === "purchase_pay")) deny();
+    if (!["admin", "staff", "sales"].includes(role) && !(role === "accountant" && op === "purchase_pay")) deny();
     // Làm trên bản sao: lỗi giữa chừng thì không ghi gì (giống transaction của máy chủ)
     const snapshot = JSON.stringify({ products: db.products, suppliers: db.suppliers, purchase_orders: db.purchase_orders, stock_adjustments: db.stock_adjustments, stock_exports: db.stock_exports, stock_moves: db.stock_moves, counters: db.counters, touched: db.touched });
     try {
@@ -1060,13 +1060,8 @@ AD.demo = () => {
   // Giả lập phân quyền như RLS trên database: kinh doanh chỉ thấy lead được giao; kế toán không thấy lead
   const visible = (t, rows) => {
     const u = me();
-    if (t.startsWith("crm_") && !["admin", "staff"].includes(u.role)) {
+    if (t.startsWith("crm_") && !["admin", "staff", "sales"].includes(u.role)) {
       return [];
-    }
-    if (u.role === "sales") {
-      if (t === "leads") return rows.filter((l) => l.assigned_to === u.id);
-      if (["orders", "payments", "notifications", "profiles"].includes(t))
-        return t === "profiles" ? rows.filter((p) => p.id === u.id) : [];
     }
     if (u.role === "accountant") {
       if (["leads", "notifications"].includes(t)) return [];
@@ -1099,20 +1094,13 @@ AD.demo = () => {
   function guard(table, id, patch) {
     const u = me();
     if (
-      u.role === "sales" &&
-      (table !== "leads" ||
-        Object.keys(patch).some((k) => !["status", "staff_note"].includes(k)) ||
-        !live("leads").some((l) => String(l.id) === String(id)))
-    )
-      deny();
-    if (
       u.role === "accountant" &&
       (table !== "orders" ||
         Object.keys(patch).some((k) => k !== "payment_status"))
     )
       deny();
   }
-  const writer = () => ["admin", "staff"].includes(me().role);
+  const writer = () => ["admin", "staff", "sales"].includes(me().role);
 
   return {
     mode: "demo",
@@ -1183,6 +1171,7 @@ AD.demo = () => {
     async adminUsers(a = {}) {
       if (me().role !== "admin") invFail("Chỉ quản trị viên được quản lý tài khoản");
       const ROLES = ["admin", "staff", "sales", "accountant"];
+      const ASSIGNABLE = ["admin", "sales"];
       db.staff_accounts = db.staff_accounts || STAFF.map((s) => ({ ...s, email: "", locked: false, created_at: null }));
       const list = db.staff_accounts;
       const pub = (x) => ({ id: x.id, name: x.name, phone: x.phone, email: x.email || "", role: x.role, locked: !!x.locked, created_at: x.created_at || null, created_by_name: x.created_by_name || null });
@@ -1192,7 +1181,7 @@ AD.demo = () => {
       if (a.p_op === "list") return list.filter((x) => ROLES.includes(x.role)).map(pub);
       if (a.p_op === "create") {
         const phone = phoneOf(a.p_phone), name = String(a.p_name || "").trim();
-        if (!ROLES.includes(a.p_role)) invFail("Vai trò không hợp lệ");
+        if (!ASSIGNABLE.includes(a.p_role)) invFail("Vai trò không hợp lệ");
         if (!/^0[0-9]{9,10}$/.test(phone)) invFail("Số điện thoại không hợp lệ");
         if (!name) invFail("Vui lòng nhập họ tên nhân viên");
         if (typeof a.p_password !== "string" || a.p_password.length < 8 || a.p_password.length > 72) invFail("Mật khẩu phải dài 8–72 ký tự");
@@ -1211,7 +1200,7 @@ AD.demo = () => {
       const self = row.id === me().id;
       const op = a.p_op === "grant" ? "set_role" : a.p_op;
       if (op === "set_role") {
-        if (![...ROLES, "customer"].includes(a.p_role)) invFail("Vai trò không hợp lệ");
+        if (![...ASSIGNABLE, "customer"].includes(a.p_role)) invFail("Vai trò không hợp lệ");
         if (self && a.p_role !== "admin") invFail("Không thể tự hạ quyền của chính mình");
         if (row.role === "admin" && a.p_role !== "admin" && admins(row.id) < 1) invFail("Phải còn ít nhất 1 quản trị viên");
         row.role = a.p_role;
@@ -1227,7 +1216,7 @@ AD.demo = () => {
     },
     // Danh sách gọi chăm sóc bảo trì (giống rpc maintenance_call trên PHP): lịch sử chỉ thêm, không xóa
     async maintenanceCall({ p_key, p_action, p_date = "", p_note = "" }) {
-      if (!["admin", "staff"].includes(me().role)) deny();
+      if (!["admin", "staff", "sales"].includes(me().role)) deny();
       const m = /^(c|o):([A-Za-z0-9_.-]{1,80}):(\d{4}-\d{2}-\d{2})$/.exec(String(p_key || ""));
       if (!m) invFail("Mã lịch nhắc không hợp lệ");
       if (!["called", "booked", "skipped", "reset"].includes(p_action)) invFail("Thao tác không hợp lệ");
@@ -1248,7 +1237,7 @@ AD.demo = () => {
     },
     // Nhóm khách hàng (giống rpc customer_group trên PHP): xóa nhóm → khách về Bán lẻ, mã giảm giá bỏ nhóm đó
     async customerGroup({ p_op, p_group = {}, p_id = "" }) {
-      if (me().role !== "admin") deny();
+      if (!["admin", "sales"].includes(me().role)) deny();
       const row = db.settings.find((s) => s.key === "customer_groups");
       const groups = [...(row?.value?.groups || DT.CUSTOMER_GROUPS)].map((g) => ({ ...g }));
       if (p_op === "save") {
@@ -1276,7 +1265,7 @@ AD.demo = () => {
       return groups;
     },
     async issueInvoice(id) {
-      if (!["admin", "staff", "accountant"].includes(me().role)) deny();
+      if (!["admin", "staff", "sales", "accountant"].includes(me().role)) deny();
       syncFromShop();
       const o = db.orders.find((x) => String(x.id) === String(id)) || invFail("Không tìm thấy đơn hàng");
       if (o.status === "cancelled") invFail("Đơn đã hủy, không xuất hóa đơn");

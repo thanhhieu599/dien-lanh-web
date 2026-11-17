@@ -361,11 +361,9 @@ function Shell({
                   >
                     <Icon name={icon} />
                     <span>
-                      {key === "leads" && user.role === "sales"
-                        ? "Khách hàng của tôi"
-                        : key === "orders" && user.role === "accountant"
-                          ? "Đơn hàng & thanh toán"
-                          : title}
+                      {key === "orders" && user.role === "accountant"
+                        ? "Đơn hàng & thanh toán"
+                        : title}
                     </span>
                     {badges[key] > 0 && <em>{badges[key]}</em>}
                   </Link>

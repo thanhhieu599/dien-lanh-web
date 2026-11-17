@@ -8,7 +8,7 @@ import {groupOf,groupOp,loadGroups,type CustomerGroup} from '../services/custome
 import type {Row} from '../types';
 const COLORS=['#64748b','#0ea5e9','#16a34a','#d97706','#dc2626','#7c3aed','#db2777','#0d9488'];
 export function CustomerGroupsPage(){
- const [edit,setEdit]=useState<Partial<CustomerGroup>|null>(null);const [rev,setRev]=useState(0);const notice=useNotice();const admin=ad.me?.role==='admin';
+ const [edit,setEdit]=useState<Partial<CustomerGroup>|null>(null);const [rev,setRev]=useState(0);const notice=useNotice();const admin=['admin','sales'].includes(ad.me?.role||'');
  const state=useData(async()=>{const [groups,cs,coupons]=await Promise.all([loadGroups(),ad.db.list('crm_customer_summary',{limit:50000}),ad.db.list('coupons',{limit:50000}).catch(()=>({rows:[]}))]);return {groups,customers:cs.rows as Row[],coupons:coupons.rows as Row[]};},[rev]);
  const d=state.data;
  const stats=(id:string)=>{const list=(d?.customers||[]).filter(c=>groupOf(c)===id);const spent=list.reduce((s,c)=>s+Number(c.total_spent||0),0);return {list,count:list.length,spent,avg:list.length?spent/list.length:0,coupons:(d?.coupons||[]).filter(cp=>(cp.customer_groups||[]).includes(`group:${id}`)||id==='vip'&&(cp.customer_groups||[]).includes('vip')).length};};

@@ -40,7 +40,7 @@ try {
             readfile($file); exit;
         }
         $user = staff();
-        if (!in_array($user['role'], ['admin','staff'], true) || str_starts_with($path, 'vision/') && $user['role'] !== 'admin') fail('Không có quyền tải ảnh', 403);
+        if (!in_array($user['role'], ['admin','staff','sales'], true) || str_starts_with($path, 'vision/') && !in_array($user['role'], ['admin','sales'], true)) fail('Không có quyền tải ảnh', 403);
         if ($method === 'DELETE') { if (is_file($file)) unlink($file); jsonResponse(null); }
         if ($method !== 'POST') fail('Phương thức không hỗ trợ', 405);
         $bytes = file_get_contents('php://input', false, null, 0, 8 * 1024 * 1024 + 1);

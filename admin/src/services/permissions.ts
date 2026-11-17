@@ -1,6 +1,6 @@
 import type { User } from '../types';
 export const roles:Record<string,{label:string;home:string}>= {
- admin:{label:'Quản trị viên',home:'dashboard'},staff:{label:'Nhân viên vận hành',home:'dashboard'},sales:{label:'Nhân viên kinh doanh',home:'leads'},accountant:{label:'Kế toán',home:'orders'},
+ admin:{label:'Quản trị viên',home:'dashboard'},staff:{label:'Nhân viên vận hành',home:'dashboard'},sales:{label:'Nhân viên kinh doanh',home:'dashboard'},accountant:{label:'Kế toán',home:'orders'},
 };
 export const navigation=[
  {title:'Tổng quan',items:[['dashboard','home','Tổng quan']]},
@@ -13,5 +13,7 @@ export const navigation=[
  {title:'Cấu hình',items:[['settings','tool','Cài đặt cửa hàng'],['accounts','shield','Tài khoản & phân quyền'],['stores','pin','Cửa hàng'],['services','wrench','Dịch vụ'],['policies','shield','Chính sách']]},
 ];
 export const adminOnly=['accounts','settings','vision','trust','content','policies'];
-export function allowed(user:User|null,key:string){if(!user || !roles[user.role])return false;if(user.role==='admin')return true;if(user.role==='staff')return !adminOnly.includes(key);return (user.role==='sales'?['leads']:['orders','invoice','voucher','reports','misa','inventory','purchases','suppliers','stock-history']).includes(key);}
-export const operational=(user:User|null)=>!!user && ['admin','staff'].includes(user.role);
+export function allowed(user:User|null,key:string){if(!user || !roles[user.role])return false;if(user.role==='admin')return true;
+ // Nhân viên kinh doanh: thấy mọi mục như quản trị viên, trừ Tài khoản & phân quyền
+ if(user.role==='sales')return key!=='accounts';if(user.role==='staff')return !adminOnly.includes(key);return (['orders','invoice','voucher','reports','misa','inventory','purchases','suppliers','stock-history']).includes(key);}
+export const operational=(user:User|null)=>!!user && ['admin','staff','sales'].includes(user.role);

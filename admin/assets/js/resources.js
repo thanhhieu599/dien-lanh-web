@@ -553,12 +553,6 @@ window.AD = window.AD || {};
           help: "Ảnh dọc 600 × 900 px.",
         },
         {
-          key: "promo_title",
-          label: "Chữ trên ảnh quảng cáo",
-          col: "half",
-          placeholder: "GĂNG TAY TOWA",
-        },
-        {
           key: "promo_href",
           label: "Liên kết khi bấm ảnh quảng cáo",
           col: "half",

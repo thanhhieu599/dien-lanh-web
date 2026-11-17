@@ -235,13 +235,10 @@ export function CategorySection({
           <ShopLink
             className="cat-promo"
             href={c.promo_href || dt.api.catUrl(c.id)}
-            aria-label={`${c.promo_title || c.name} - Xem ngay`}
+            aria-label={c.promo_title || c.name}
           >
+            {/* Chỉ hiện ảnh, không chữ / nút đè lên ảnh */}
             <img src={promo} alt="" loading="lazy" />
-            <span className="cat-promo-text">
-              <b>{c.promo_title || c.name}</b>
-              <em>Xem ngay</em>
-            </span>
           </ShopLink>
           <ProductGrid key={tab} products={products} pageSize={4} />
         </div>

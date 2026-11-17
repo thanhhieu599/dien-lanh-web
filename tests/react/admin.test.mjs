@@ -246,17 +246,15 @@ try {
   assert.equal(await page.getByRole("button", { name: "Thêm", exact: true }).count(), 0);
   await page.getByLabel("Tìm sản phẩm").fill("DT1050");
   assert.equal(await page.getByRole("button", { name: "Thêm", exact: true }).count(), 1);
-  // Ảnh quảng cáo trang chủ của danh mục: có ô tải ảnh, chữ và liên kết lưu đúng
+  // Ảnh quảng cáo trang chủ của danh mục: có ô tải ảnh (không còn ô chữ trên ảnh), liên kết lưu đúng
   await catTab("Hình ảnh");
   assert.equal(await page.locator('[data-field="promo_image"]').count(), 1);
-  await page.locator("[name=promo_title]").fill("Máy lạnh QA");
+  assert.equal(await page.locator("[name=promo_title]").count(), 0);
   await page.locator("[name=promo_href]").fill("khuyen-mai.html");
   await saved();
   const promoCat = await read("categories", "may-lanh");
-  assert.equal(promoCat.promo_title, "Máy lạnh QA");
   assert.equal(promoCat.promo_href, "khuyen-mai.html");
   await catTab("Hình ảnh");
-  await page.locator("[name=promo_title]").fill("");
   await page.locator("[name=promo_href]").fill("");
   await saved();
   // Hỏi đáp: câu hỏi tạo trong admin hiện trên trang Hỏi đáp điện lạnh của website

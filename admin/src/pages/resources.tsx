@@ -762,7 +762,7 @@ const tab = (id: string, label: string, hint: string, keys: string[], extra?: st
 export const RESOURCE_TABS: Record<string, ResourceTab[]> = {
   categories: [
     tab("general", "Thông tin chung", "Tên, mã đường dẫn, biểu tượng, thứ tự; bật/tắt hiển thị danh mục trên website và dải sản phẩm ở trang chủ (thứ tự dải theo ô Thứ tự).", ["name", "short", "id", "icon", "art", "sort", "active", "show_home"]),
-    tab("images", "Hình ảnh", "Ảnh danh mục (hiện lớn ở đầu trang danh mục) và ảnh quảng cáo ở cột đầu dải sản phẩm trên trang chủ.", ["image", "promo_image", "promo_title", "promo_href"]),
+    tab("images", "Hình ảnh", "Ảnh danh mục (hiện lớn ở đầu trang danh mục) và ảnh quảng cáo ở cột đầu dải sản phẩm trên trang chủ.", ["image", "promo_image", "promo_href"]),
     tab("menu", "Nhóm & mục menu", "Nhóm là tiêu đề cột trong menu Sản phẩm (vd \"Máy lạnh treo tường\"), mục là các dòng bên dưới. Mã được tạo tự động khi lưu. Cuối mục: chọn nhóm hiện thành tab trên dải sản phẩm ở trang chủ.", [], "subs"),
     tab("filters", "Bộ lọc sản phẩm", "Bộ lọc là các ô khách bấm ở cột trái trang danh mục để thu hẹp sản phẩm theo thông số (vd Công suất: 1 HP, 1.5 HP; Công nghệ: Inverter). Cách dùng: (1) đặt tên bộ lọc và các giá trị ở đây, (2) vào Sản phẩm → sửa từng sản phẩm → Thuộc tính bộ lọc để chọn giá trị cho sản phẩm đó. Giá trị chưa gán cho sản phẩm nào sẽ tự ẩn trên website. Không dùng bộ lọc để đặt tên sản phẩm hay danh mục.", [], "filters"),
     tab("products", "Sản phẩm", "Sản phẩm thuộc danh mục và thứ tự hiển thị trên website.", [], "productMembership"),

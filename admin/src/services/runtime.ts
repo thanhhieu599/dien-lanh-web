@@ -24,7 +24,7 @@ export async function bootstrap(){
  await script('assets/js/resources.js');await script('assets/js/xlsx.js');
  ad.PAY_STATUS={unpaid:['Chưa thanh toán'],partial:['Thanh toán một phần'],paid:['Đã thanh toán'],refunded:['Đã hoàn tiền']};
  ad.resources.banners.fields.push({key:'sub',label:'Mô tả banner',col:'full'},{key:'cta',label:'Nhãn nút hành động',col:'half'});
- const bannerTitle=ad.resources.banners.fields.find(f=>f.key==='title');if(bannerTitle)bannerTitle.help='Tiêu đề hiển thị trên banner React và mô tả ảnh.';
+ 
  ad.resources.coupons.fields.push(
   {key:'scope',label:'Phạm vi sản phẩm',type:'select',options:[['all','Tất cả sản phẩm'],['categories','Danh mục đã chọn'],['products','Sản phẩm đã chọn']],def:'all',col:'half'},
   {key:'condition_type',label:'Điều kiện áp dụng',type:'select',options:[['none','Không có điều kiện'],['order_min','Tổng đơn tối thiểu'],['eligible_min','Giá trị hàng đủ điều kiện'],['eligible_qty','Số sản phẩm đủ điều kiện']],def:'none',col:'half'},

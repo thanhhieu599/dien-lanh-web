@@ -492,3 +492,6 @@
 /* Trong khối gộp: không lồng khung nền / viền */
 .ar-sec .cg-quick{padding:0;background:none;border-radius:0}
 .ar-sec .cus-invoice{padding:0;border:0;border-radius:0}
+/* Ô ảnh dạng thẻ dùng chung (sản phẩm, danh mục, banner, bài viết…) */
+.ar-slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,270px));gap:var(--ar-space-4)}
+@media(max-width:700px){.ar-slots{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--ar-space-3)}}

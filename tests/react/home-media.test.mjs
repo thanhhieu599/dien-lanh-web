@@ -23,11 +23,12 @@ try {
     assert.equal(await page.locator('.mini-banner.mb-1.has-image img.mini-banner-bg').count(),1,`${width}: thẻ 1 thiếu ảnh nền`);
     assert.match(await page.locator('.mini-banner.mb-1').innerText(),/Flash Sale/);
     assert.equal(await page.locator('.mini-banner.mb-2.has-image').count(),0);
-    // Hình 2: cột đầu dải Máy lạnh là ảnh quảng cáo, có chữ + nút, tối đa 4 sản phẩm bên cạnh
+    // Hình 2: cột đầu dải Máy lạnh là ảnh quảng cáo (chỉ ảnh), tối đa 4 sản phẩm bên cạnh
     const promo=page.locator('[data-block="may-lanh"] .cat-promo');
     assert.equal(await promo.count(),1,`${width}: thiếu ảnh quảng cáo danh mục`);
     assert.match(await promo.getAttribute('href'),/khuyen-mai/);
-    assert.match(await promo.innerText(),/Máy lạnh QA[\s\S]*Xem ngay/i);
+    assert.equal((await promo.innerText()).trim(),'','Ảnh quảng cáo danh mục không có chữ / nút đè lên');
+    assert.equal(await promo.locator('img').count(),1);
     assert.ok(await page.locator('[data-block="may-lanh"] [data-collection-items] > *').count()<=4);
     // Danh mục không có ảnh vẫn hiển thị như cũ
     assert.equal(await page.locator('[data-block="tu-lanh"] .cat-promo').count(),0);

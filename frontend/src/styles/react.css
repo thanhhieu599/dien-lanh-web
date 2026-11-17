@@ -2652,6 +2652,11 @@ button:disabled {
   transform: scale(1.03);
 }
 
+/* Cột phải banner trang chủ chỉ còn 2 banner nhỏ: chia đều chiều cao banner lớn (≈ 300 × 166 px, hợp ảnh 16:9) */
+.hero-right {
+  grid-template-rows: 1fr 1fr;
+}
+
 /* Banner đầu trang Khuyến mãi = ảnh banner nhỏ 1 trang chủ: rộng hết khung, tỉ lệ 3:1 (điện thoại 2:1), cắt giữa */
 .promo-hero {
   margin: 0 0 16px;

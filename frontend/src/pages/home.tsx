@@ -210,46 +210,6 @@ export function HomePage() {
               )}
             </ShopLink>
           ))}
-          <div className="hero-user">
-            <b>
-              {state.user
-                ? `Xin chào, ${state.user.name}!`
-                : "Đăng nhập để nhận ưu đãi thành viên"}
-            </b>
-            <div className="btns">
-              {state.user ? (
-                <>
-                  <ShopLink
-                    className="btn btn-sm btn-outline"
-                    href="tai-khoan.html#orders"
-                  >
-                    Đơn hàng
-                  </ShopLink>
-                  <ShopLink
-                    className="btn btn-sm btn-primary"
-                    href="yeu-thich.html"
-                  >
-                    Yêu thích
-                  </ShopLink>
-                </>
-              ) : (
-                <>
-                  <ShopLink
-                    className="btn btn-sm btn-primary"
-                    href="tai-khoan.html"
-                  >
-                    Đăng nhập
-                  </ShopLink>
-                  <ShopLink
-                    className="btn btn-sm btn-outline"
-                    href="tai-khoan.html#register"
-                  >
-                    Đăng ký
-                  </ShopLink>
-                </>
-              )}
-            </div>
-          </div>
         </div>
       </section>
 

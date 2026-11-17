@@ -47,7 +47,9 @@ try {
   );
   assert.equal(await page.locator(".hero-banner-copy").count(), 0);
   assert.equal(await page.locator(".slider-nav").count(), 2);
-  assert.equal(await page.locator(".hero-user").count(), 1);
+  // Cột phải banner chỉ còn 2 banner nhỏ (đã bỏ ô Đăng nhập / Đăng ký nhận ưu đãi)
+  assert.equal(await page.locator(".hero-user").count(), 0);
+  assert.equal(await page.locator(".hero-right .mini-banner").count(), 2);
   assert.equal(
     await page.locator("#brand-story").count(),
     0,

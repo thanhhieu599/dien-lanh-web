@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { dt, formValues, money, toast } from "../services/runtime";
+import { dt, formValues, money, safeImage, toast } from "../services/runtime";
 import { useShop } from "../hooks/useShop";
 import {
   Breadcrumb,
@@ -135,6 +135,20 @@ export function ListingPage({
             <h1 id="cat-title">{brand.name}</h1>
             <p>{brand.origin ? `Xuất xứ ${brand.origin} · ` : ""}{total} sản phẩm chính hãng</p>
           </div>
+        ) : mode === "sale" && safeImage(dt.siteContent().promo?.image) ? (
+          // Trang Khuyến mãi: banner lớn chỉ có ảnh thay cho khung tiêu đề (tiêu đề vẫn có cho Google / trình đọc màn hình)
+          <>
+            <h1 id="cat-title" className="sr-only">{title}</h1>
+            {dt.siteContent().promo.href ? (
+              <ShopLink className="promo-hero" href={dt.siteContent().promo.href} aria-label={title}>
+                <img src={safeImage(dt.siteContent().promo.image)} alt={title} />
+              </ShopLink>
+            ) : (
+              <div className="promo-hero">
+                <img src={safeImage(dt.siteContent().promo.image)} alt={title} />
+              </div>
+            )}
+          </>
         ) : mode === "search" ? (
           // Trang Sản phẩm / tìm kiếm: không dùng khung tiêu đề riêng, tiêu đề nằm trên thanh kết quả
           <h1 id="cat-title" className="listing-title">{title}</h1>

@@ -2622,30 +2622,48 @@ button:disabled {
   }
 }
 
-/* Thẻ cạnh banner trang chủ: ảnh nền chọn trong Admin › Nội dung website › Banner nhỏ.
-   Chữ vẫn đè lên ảnh; lớp phủ trắng bên trái giữ chữ dễ đọc trên mọi ảnh. */
-.mini-banner.has-image {
+/* 2 banner nhỏ cạnh banner trang chủ: chỉ ảnh (Admin › Nội dung website › Banner nhỏ), bấm vào mở liên kết.
+   Chưa có ảnh: khung xám có biểu tượng ảnh. */
+.hero-right .mini-banner {
+  position: relative;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--bg, #f3f5f8);
   isolation: isolate;
+}
+.hero-right .mini-banner > .ic {
+  position: static;
+  width: 40px;
+  height: 40px;
+  opacity: 0.35;
+  color: var(--muted);
 }
 .mini-banner-bg {
   position: absolute;
   inset: 0;
-  z-index: -2;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: right center;
   transition: transform var(--motion-normal, 0.25s);
 }
-.mini-banner.has-image::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(90deg, rgb(255 255 255 / 94%) 0%, rgb(255 255 255 / 82%) 45%, rgb(255 255 255 / 0%) 85%);
-}
 .mini-banner.has-image:hover .mini-banner-bg {
-  transform: scale(1.04);
+  transform: scale(1.03);
+}
+
+/* Banner lớn đầu trang Khuyến mãi: chỉ ảnh (Admin › Nội dung website › Banner trang Khuyến mãi) */
+.promo-hero {
+  display: block;
+  margin: 0 0 16px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg, #f3f5f8);
+}
+.promo-hero img {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 /* Dải danh mục trang chủ có ảnh quảng cáo ở cột đầu (Admin › Danh mục › Ảnh quảng cáo trang chủ) */

@@ -195,25 +195,21 @@ export function HomePage() {
           )}
         </div>
         <div className="hero-right">
-          {content.mini
-            .slice(0, 2)
-            .filter((m: Row) => m.title)
-            .map((m: Row, i: number) => (
-              <ShopLink
-                className={`mini-banner mb-${i + 1}${safeImage(m.image) ? " has-image" : ""}`}
-                href={m.href || "#"}
-                key={i}
-              >
-                {safeImage(m.image) ? (
-                  <img className="mini-banner-bg" src={safeImage(m.image)} alt="" loading="eager" />
-                ) : (
-                  <Icon name={i ? "tool" : "zap"} />
-                )}
-                <b>{rich(m.title)}</b>
-                <span>{rich(m.sub)}</span>
-                {m.cta && <em>{m.cta}</em>}
-              </ShopLink>
-            ))}
+          {/* 2 banner nhỏ: chỉ ảnh, bấm vào mở liên kết; chưa có ảnh thì hiện khung ảnh trống */}
+          {content.mini.slice(0, 2).map((m: Row, i: number) => (
+            <ShopLink
+              className={`mini-banner mb-${i + 1}${safeImage(m.image) ? " has-image" : ""}`}
+              href={m.href || "#"}
+              key={i}
+              aria-label={`Banner ${i + 1}`}
+            >
+              {safeImage(m.image) ? (
+                <img className="mini-banner-bg" src={safeImage(m.image)} alt="" loading="eager" />
+              ) : (
+                <Icon name="image" />
+              )}
+            </ShopLink>
+          ))}
           <div className="hero-user">
             <b>
               {state.user

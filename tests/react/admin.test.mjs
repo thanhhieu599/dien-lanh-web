@@ -549,8 +549,16 @@ try {
   await open("products/1001");
   assert.equal(await page.getByText("Hỗ trợ trả góp").count(), 0);
   await open("content");
-  // Mỗi thẻ cạnh banner trang chủ có ô chọn ảnh nền
-  assert.equal(await page.getByText("Ảnh nền thẻ", { exact: true }).count(), 2);
+  // 2 banner nhỏ cạnh banner trang chủ: chỉ ô ảnh + liên kết (không còn tiêu đề, mô tả, nút)
+  assert.equal(await page.getByText("Ảnh banner", { exact: true }).count(), 2);
+  assert.equal(await page.locator(".ce-section").getByLabel("Liên kết").count(), 2);
+  assert.equal(await page.locator(".ce-section").getByLabel(/Tiêu đề|Mô tả phụ|Nút hành động/).count(), 0);
+  // Banner trang Khuyến mãi: ô ảnh + liên kết, lưu đúng vào nội dung trang chủ
+  await page.locator(".ce-nav button", { hasText: "Banner trang Khuyến mãi" }).click();
+  assert.equal(await page.getByText("Ảnh banner", { exact: true }).count(), 1);
+  await page.locator(".ce-section").getByLabel("Liên kết").fill("danh-muc.html?cat=may-lanh");
+  await saved("#view .ar-form-foot button", "Đã lưu nội dung website.");
+  assert.equal((await read("settings", "home")).value.promo.href, "danh-muc.html?cat=may-lanh");
   // Sửa 1 số liệu ở mục Giới thiệu thương hiệu, lưu và đọc lại từ dữ liệu
   await page.locator(".ce-nav button", { hasText: "Giới thiệu thương hiệu" }).click();
   await page.getByLabel("Giá trị 1", { exact: true }).fill("12+");

@@ -14,15 +14,18 @@ try {
     await blockExternal(context);
     const page=await context.newPage();const errors=[];
     page.on('pageerror',e=>errors.push(e.message));
-    await page.route('**/data/content.js*',async r=>{const res=await r.fetch();r.fulfill({response:res,body:(await res.text())+`\nDT.siteContentDefaults.mini[0].image=${JSON.stringify(IMG)};`});});
+    await page.route('**/data/content.js*',async r=>{const res=await r.fetch();r.fulfill({response:res,body:(await res.text())+`\nDT.siteContentDefaults.mini[0].image=${JSON.stringify(IMG)};DT.siteContentDefaults.promo={image:${JSON.stringify(IMG)},href:'danh-muc.html?cat=may-lanh'};`});});
     await page.route('**/data/catalog.js*',async r=>{const res=await r.fetch();r.fulfill({response:res,body:(await res.text())+`\nObject.assign(DT.categories.find(c=>c.id==='may-lanh'),{promo_image:${JSON.stringify(IMG)},promo_title:'Máy lạnh QA',promo_href:'khuyen-mai.html'});`});});
     async function open(route){await page.goto(base+route);await page.waitForSelector('html[data-react-ready="true"] #main h1',{state:'attached'});await page.waitForFunction(()=>!document.querySelector('#main .react-loading'));}
 
     await open('index.html');
-    // Hình 1: thẻ có ảnh -> ảnh nền + chữ vẫn hiện; thẻ chưa có ảnh giữ nguyên biểu tượng
-    assert.equal(await page.locator('.mini-banner.mb-1.has-image img.mini-banner-bg').count(),1,`${width}: thẻ 1 thiếu ảnh nền`);
-    assert.match(await page.locator('.mini-banner.mb-1').innerText(),/Flash Sale/);
+    // Hình 1: 2 banner nhỏ chỉ có ảnh + liên kết (không chữ, không nút); chưa có ảnh thì hiện khung ảnh trống
+    assert.equal(await page.locator('.mini-banner.mb-1.has-image img.mini-banner-bg').count(),1,`${width}: thẻ 1 thiếu ảnh`);
+    assert.equal((await page.locator('.mini-banner.mb-1').innerText()).trim(),'','Banner nhỏ không có chữ');
+    assert.match(await page.locator('.mini-banner.mb-1').getAttribute('href'),/khuyen-mai/);
+    assert.equal(await page.locator('.mini-banner.mb-2').count(),1);
     assert.equal(await page.locator('.mini-banner.mb-2.has-image').count(),0);
+    assert.equal(await page.locator('.mini-banner em, .mini-banner b').count(),0,'Banner nhỏ không còn nút / tiêu đề');
     // Hình 2: cột đầu dải Máy lạnh là ảnh quảng cáo (chỉ ảnh), tối đa 4 sản phẩm bên cạnh
     const promo=page.locator('[data-block="may-lanh"] .cat-promo');
     assert.equal(await promo.count(),1,`${width}: thiếu ảnh quảng cáo danh mục`);
@@ -34,6 +37,15 @@ try {
     assert.equal(await page.locator('[data-block="tu-lanh"] .cat-promo').count(),0);
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${width}: trang chủ tràn ngang`);
     const box=await promo.boundingBox();assert.ok(box.width>100&&box.height>100,`${width}: ảnh quảng cáo quá nhỏ`);
+
+    // Hình 2: trang Khuyến mãi có banner lớn chỉ ảnh thay khung tiêu đề (tiêu đề ẩn cho trình đọc màn hình)
+    await open('khuyen-mai.html');
+    assert.equal(await page.locator('.promo-hero img').count(),1,`${width}: thiếu banner trang Khuyến mãi`);
+    assert.match(await page.locator('.promo-hero').getAttribute('href'),/cat=may-lanh/);
+    assert.equal((await page.locator('.promo-hero').innerText()).trim(),'');
+    assert.equal(await page.locator('.cat-hero').count(),0,'Không còn khung tiêu đề Khuyến mãi');
+    assert.equal(await page.locator('h1#cat-title.sr-only').count(),1);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${width}: trang Khuyến mãi tràn ngang`);
 
     // Hình 4: trang Doanh nghiệp có số liệu, lợi ích, quy trình, lĩnh vực và form báo giá
     await open('bao-gia-du-an.html');

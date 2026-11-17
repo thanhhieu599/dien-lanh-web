@@ -447,8 +447,8 @@ function Editor({
         }
         subtitle={
           editing
-            ? stamp(row) || "Chỉnh sửa dữ liệu dùng chung với website"
-            : "Tạo bản ghi mới"
+            ? stamp(row) || undefined
+            : undefined
         }
       >
         <Link className="btn btn-light" to={`/${key}`}>
@@ -857,7 +857,6 @@ function ResourceTabs({
       </nav>
       <section className="ar-panel ce-section" aria-labelledby="tab-title">
         <h2 id="tab-title" className="ce-title">{current.label}</h2>
-        <p className="ce-hint">{current.hint}</p>
         {keysOf(current, index).length > 0 && <div className={`ar-grid ce-grid tab-${current.id}`}>{pick(keysOf(current, index)).map(field)}</div>}
         {current.extra === "subs" && <SubsEditor value={row.subs || []} error={errors.subs} onChange={(v) => patch({ subs: v })} />}
         {current.extra === "subs" && resource === "categories" && <HomeSubsPicker row={row} onChange={(v) => patch({ home_subs: v })} />}

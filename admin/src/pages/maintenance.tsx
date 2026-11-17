@@ -25,7 +25,7 @@ export function MaintenancePage(){
  const state=useData(async()=>{const [c,v]=await Promise.all([ad.db.list('maintenance_contracts',{limit:50000,order:'name.asc'}),ad.db.list('maintenance_visits',{limit:50000,order:'date.desc'})]);return {contracts:c.rows,visits:v.rows};},[params.get('r')]);
  const set=(key:string,value:string)=>{const next=new URLSearchParams(params);next.set(key,value);setParams(next);};
  const reload=()=>set('r',String(Date.now()));
- return <><Head title="Bảo trì" subtitle="Khách đăng ký bảo trì định kỳ, chi phí từng lần và thống kê doanh thu bảo trì.">
+ return <><Head title="Bảo trì">
    <Link className="btn btn-light" to="/maintenance_contracts/new">+ Khách bảo trì</Link>
    <Link className="btn btn-primary" to="/maintenance_visits/new">+ Ghi nhận bảo trì</Link>
   </Head>

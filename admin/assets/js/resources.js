@@ -165,7 +165,6 @@ window.AD = window.AD || {};
           label: "Đường dẫn (slug)",
           col: "third",
           validate: slugRule,
-          help: "Để trống = tự tạo từ tên sản phẩm",
         },
         {
           key: "brand",
@@ -204,7 +203,6 @@ window.AD = window.AD || {};
                 (s) => s.id === ctx.values.sub,
               )?.items || []
             ).map((s) => [s.id, s.name]),
-          help: "Chọn nhóm trước. Danh sách mục sửa tại Danh mục.",
         },
         {
           key: "warranty",
@@ -217,14 +215,12 @@ window.AD = window.AD || {};
           label: "Công nghệ",
           col: "third",
           placeholder: "Inverter",
-          help: "Để trống = lấy theo thuộc tính lọc",
         },
         {
           key: "origin",
           label: "Xuất xứ",
           col: "third",
           placeholder: "Malaysia",
-          help: "Để trống = lấy từ thông số kỹ thuật",
         },
         {
           key: "_g2",
@@ -257,7 +253,6 @@ window.AD = window.AD || {};
           type: "money",
           step: 1,
           col: "quarter",
-          help: "Giá cho khách doanh nghiệp / đại lý",
         },
         {
           key: "cost_price",
@@ -265,7 +260,6 @@ window.AD = window.AD || {};
           type: "money",
           step: 1,
           col: "quarter",
-          help: "Tự tính lại (bình quân) mỗi lần nhập hàng",
         },
         {
           key: "stock",
@@ -274,7 +268,7 @@ window.AD = window.AD || {};
           step: 1,
           col: "quarter",
           required: true,
-          help: "Mọi thay đổi được ghi vào Lịch sử kho. Nên dùng Nhập hàng / Kiểm hàng.",
+          help: "Nên đổi qua Nhập hàng / Kiểm hàng.",
           validate: (v) =>
             v < 0 || !Number.isInteger(v) ? "Số nguyên ≥ 0" : null,
         },
@@ -294,7 +288,6 @@ window.AD = window.AD || {};
           type: "number",
           step: 1,
           col: "quarter",
-          help: "Dưới mức này báo Sắp hết hàng",
           validate: (v) => (v != null && (v < 0 || !Number.isInteger(v)) ? "Số nguyên ≥ 0" : null),
         },
         { key: "location", label: "Vị trí lưu kho", col: "quarter", placeholder: "VD: Kệ A2" },
@@ -305,7 +298,6 @@ window.AD = window.AD || {};
           step: 0.1,
           col: "quarter",
           def: 5,
-          help: "Số sao hiện trên website",
           validate: (v) =>
             v != null && (v < 1 || v > 5) ? "Từ 1 đến 5" : null,
         },
@@ -374,14 +366,13 @@ window.AD = window.AD || {};
           label: "Tùy chọn sản phẩm",
           type: "kv",
           col: "full",
-          help: "Mỗi dòng là một nhóm lựa chọn trên trang sản phẩm, ngay trên Số lượng. Nhập các giá trị cách nhau bằng dấu phẩy, ví dụ: Kích thước — S, M, L; Model — R32, R410A.",
+          help: "Mỗi dòng 1 nhóm, các giá trị cách nhau dấu phẩy.",
         },
         {
           key: "product_tags",
           label: "Tags",
           type: "tags",
           col: "full",
-          help: "Phân tách bằng dấu phẩy, ví dụ: tiết kiệm điện, gia đình, văn phòng.",
         },
         {
           key: "_g3",
@@ -395,7 +386,6 @@ window.AD = window.AD || {};
           label: "Thuộc tính bộ lọc",
           type: "custom",
           col: "full",
-          help: "Dùng cho bộ lọc ở trang danh mục (theo cấu hình của danh mục)",
           render: (v, ctx) => {
             const fs = catOf(ctx.values.cat)?.filters || [];
             if (!fs.length)
@@ -560,21 +550,19 @@ window.AD = window.AD || {};
           type: "image",
           folder: "categories",
           col: "full",
-          help: "Ảnh dọc khoảng 600 × 900 px (tỉ lệ 2:3), hiện ở cột đầu tiên của dải danh mục trên trang chủ. Để trống = dải chỉ có sản phẩm như cũ.",
+          help: "Ảnh dọc 600 × 900 px.",
         },
         {
           key: "promo_title",
           label: "Chữ trên ảnh quảng cáo",
           col: "half",
           placeholder: "GĂNG TAY TOWA",
-          help: "Để trống = dùng tên danh mục",
         },
         {
           key: "promo_href",
           label: "Liên kết khi bấm ảnh quảng cáo",
           col: "half",
           placeholder: "danh-muc.html?cat=may-lanh",
-          help: "Để trống = mở trang danh mục này",
         },
         {
           key: "_category_products",
@@ -639,13 +627,11 @@ window.AD = window.AD || {};
           label: "Hiện ở dải Thương hiệu trên trang chủ",
           type: "bool",
           col: "full",
-          help: "Dải logo thương hiệu ngay dưới danh mục nhanh. Tắt để ẩn khỏi trang chủ, thương hiệu vẫn có trang riêng.",
         },
         {
           key: "sort",
           label: "Thứ tự hiển thị",
           type: "number",
-          help: "Số nhỏ hiện trước (trang chủ và trang Thương hiệu).",
         },
         {
           key: "logo",
@@ -653,7 +639,7 @@ window.AD = window.AD || {};
           type: "image",
           folder: "brands",
           col: "full",
-          help: "Ảnh vuông 1200 × 1200 px (JPG, PNG hoặc WebP), nền trắng hoặc trong suốt. Website hiện trọn ảnh trong khung vuông. Chưa có ảnh thì website hiện tên thương hiệu.",
+          help: "Ảnh vuông 1200 × 1200 px.",
         },
         {
           key: "_brand_products",
@@ -792,7 +778,7 @@ window.AD = window.AD || {};
           label: "Công khai (gợi ý ở giỏ hàng)",
           type: "bool",
           col: "third",
-          help: "Tắt = mã riêng, gửi cho khách VIP / doanh nghiệp",
+          help: "Tắt = mã riêng, không hiện trên website.",
         },
       ],
       beforeSave: (row) => {
@@ -830,14 +816,13 @@ window.AD = window.AD || {};
           type: "image",
           folder: "banners",
           col: "full",
-          help: "Banner chỉ hiển thị hình. Kích thước khuyến nghị 1200 × 780 px (ngang), chữ và nút bấm thiết kế sẵn trong ảnh.",
+          help: "Ảnh ngang 1200 × 780 px.",
         },
         {
           key: "title",
           label: "Tên banner",
           required: true,
           col: "half",
-          help: "Không hiện trên banner; dùng làm mô tả ảnh cho Google và người khiếm thị",
         },
         {
           key: "href",
@@ -909,7 +894,6 @@ window.AD = window.AD || {};
           readonlyOnEdit: true,
           col: "third",
           validate: slugRule,
-          help: "Để trống = tự tạo từ tiêu đề",
         },
         {
           key: "cat",
@@ -1028,7 +1012,6 @@ window.AD = window.AD || {};
           readonlyOnEdit: true,
           col: "third",
           validate: slugRule,
-          help: "Để trống = tự tạo từ tên",
         },
         {
           key: "client",
@@ -1112,7 +1095,6 @@ window.AD = window.AD || {};
         {
           key: "content",
           label: "Nội dung dự án",
-          help: "Gợi ý bố cục: Yêu cầu – Giải pháp – Kết quả (dùng Định dạng > Tiêu đề lớn).",
           type: "html",
           col: "full",
           rows: 12,
@@ -1153,7 +1135,7 @@ window.AD = window.AD || {};
       defaults: () => ({ published: false, featured: false, sort: 0, type: "Toàn thời gian", quantity: 1 }),
       fields: [
         { key: "title", label: "Tên vị trí tuyển dụng", required: true, col: "full" },
-        { key: "slug", label: "Đường dẫn (slug)", readonlyOnEdit: true, col: "third", validate: slugRule, help: "Để trống = tự tạo từ tên" },
+        { key: "slug", label: "Đường dẫn (slug)", readonlyOnEdit: true, col: "third", validate: slugRule },
         { key: "department", label: "Bộ phận", col: "third", type: "select", free: true, options: ["Kỹ thuật", "Kinh doanh", "Chăm sóc khách hàng", "Kho – Giao nhận", "Kế toán", "Marketing", "Khác"] },
         { key: "location", label: "Nơi làm việc", col: "third" },
         { key: "type", label: "Hình thức", col: "third", type: "select", free: true, options: ["Toàn thời gian", "Bán thời gian", "Thời vụ", "Thực tập"] },
@@ -1164,12 +1146,12 @@ window.AD = window.AD || {};
         { key: "sort", label: "Thứ tự", type: "number", col: "third", def: 0 },
         { key: "published", label: "Đăng tuyển công khai", type: "bool", col: "third" },
         { key: "featured", label: "Tuyển gấp (nổi bật)", type: "bool", col: "third" },
-        { key: "image", label: "Ảnh đại diện (không bắt buộc)", type: "image", folder: "jobs", col: "full", help: "Ảnh ngang 16:9 (vd 1200 × 675). Để trống: hiện biểu tượng bộ phận." },
+        { key: "image", label: "Ảnh đại diện (không bắt buộc)", type: "image", folder: "jobs", col: "full", help: "Ảnh ngang 1200 × 675 px." },
         { key: "summary", label: "Mô tả ngắn (hiện ở thẻ tuyển dụng, 120–200 ký tự)", type: "textarea", col: "full", rows: 2 },
         { key: "description", label: "Mô tả công việc", type: "html", col: "full", rows: 10 },
         { key: "requirements", label: "Yêu cầu ứng viên", type: "html", col: "full", rows: 8 },
         { key: "benefits", label: "Quyền lợi", type: "html", col: "full", rows: 8 },
-        { key: "contact", label: "Cách nộp hồ sơ khác (email / Zalo / địa chỉ)", type: "textarea", col: "full", rows: 2, help: "Để trống: dùng hotline và email trong Cài đặt cửa hàng." },
+        { key: "contact", label: "Cách nộp hồ sơ khác (email / Zalo / địa chỉ)", type: "textarea", col: "full", rows: 2 },
       ],
       beforeSave: (row, editing) => {
         if (!editing && !row.slug) row.slug = DT.u.slugify(row.title);
@@ -1242,7 +1224,6 @@ window.AD = window.AD || {};
         {
           key: "answer",
           label: "Câu trả lời",
-          help: "2-5 câu, trả lời thẳng vào câu hỏi ngay ở câu đầu.",
           type: "html",
           required: true,
           col: "full",
@@ -1348,7 +1329,7 @@ window.AD = window.AD || {};
           type: "image",
           folder: "services",
           col: "full",
-          help: "Ảnh ngang 1200 × 750 px (tỉ lệ 16:10). Chưa có ảnh thì hiện biểu tượng.",
+          help: "Ảnh ngang 1200 × 750 px.",
         },
         { key: "description", label: "Mô tả", type: "textarea", col: "full" },
         { key: "active", label: "Hiển thị", type: "bool", col: "third" },
@@ -1377,7 +1358,7 @@ window.AD = window.AD || {};
       defaults: () => ({ active: true }),
       fields: [
         { key: "name", label: "Tên nhà cung cấp", required: true, col: "half" },
-        { key: "code", label: "Mã nhà cung cấp", col: "half", help: "Để trống: tự tạo NCC0001, NCC0002…" },
+        { key: "code", label: "Mã nhà cung cấp", col: "half" },
         { key: "phone", label: "Số điện thoại", col: "third", validate: (v) => (v && !/^[0-9+ .()-]{8,20}$/.test(String(v)) ? "Số điện thoại không hợp lệ" : null) },
         { key: "email", label: "Email", col: "third" },
         { key: "tax_code", label: "Mã số thuế", col: "third", validate: (v) => (v && !/^\d{10}(-\d{3})?$/.test(String(v)) ? "Mã số thuế gồm 10 số (hoặc 10 số-3 số)" : null) },
@@ -1417,9 +1398,9 @@ window.AD = window.AD || {};
         { key: "devices", label: "Thiết bị bảo trì", type: "textarea", rows: 2, col: "full", placeholder: "Ví dụ: 4 × máy treo tường 1.5 HP Daikin, 1 × tủ mát" },
         { key: "units", label: "Số thiết bị", type: "number", step: 1, col: "third", def: 1, validate: (v) => (v != null && (v < 0 || !Number.isInteger(v)) ? "Số nguyên ≥ 0" : null) },
         { key: "cycle_months", label: "Chu kỳ bảo trì", type: "select", required: true, col: "third", options: [["1", "Hàng tháng"], ["2", "2 tháng/lần"], ["3", "3 tháng/lần"], ["4", "4 tháng/lần"], ["6", "6 tháng/lần"], ["12", "12 tháng/lần"]] },
-        { key: "start_date", label: "Ngày bảo trì đầu tiên", type: "date", required: true, col: "third", help: "Hạn tiếp theo = lần bảo trì gần nhất + chu kỳ" },
+        { key: "start_date", label: "Ngày bảo trì đầu tiên", type: "date", required: true, col: "third" },
         { key: "fee_per_visit", label: "Phí mỗi lần (₫)", type: "money", step: 1, col: "third", def: 0 },
-        { key: "contract_value", label: "Giá trị hợp đồng/năm (₫)", type: "money", step: 1, col: "third", help: "Để trống nếu tính theo từng lần" },
+        { key: "contract_value", label: "Giá trị hợp đồng/năm (₫)", type: "money", step: 1, col: "third" },
         { key: "status", label: "Trạng thái", type: "select", required: true, col: "third", options: [["active", "Đang bảo trì"], ["paused", "Tạm dừng"], ["ended", "Đã kết thúc"]] },
         { key: "source", label: "Nguồn khách", type: "select", free: true, col: "third", options: [["order", "Đơn hàng website"], ["website", "Form website"], ["phone", "Gọi điện / Zalo"], ["referral", "Giới thiệu"], ["contract", "Hợp đồng doanh nghiệp"], ["manual", "Nhập tay"]] },
         { key: "order_code", label: "Mã đơn hàng liên quan", col: "third" },

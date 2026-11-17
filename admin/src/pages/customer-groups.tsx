@@ -12,7 +12,7 @@ export function CustomerGroupsPage(){
  const state=useData(async()=>{const [groups,cs,coupons]=await Promise.all([loadGroups(),ad.db.list('crm_customer_summary',{limit:50000}),ad.db.list('coupons',{limit:50000}).catch(()=>({rows:[]}))]);return {groups,customers:cs.rows as Row[],coupons:coupons.rows as Row[]};},[rev]);
  const d=state.data;
  const stats=(id:string)=>{const list=(d?.customers||[]).filter(c=>groupOf(c)===id);const spent=list.reduce((s,c)=>s+Number(c.total_spent||0),0);return {list,count:list.length,spent,avg:list.length?spent/list.length:0,coupons:(d?.coupons||[]).filter(cp=>(cp.customer_groups||[]).includes(`group:${id}`)||id==='vip'&&(cp.customer_groups||[]).includes('vip')).length};};
- return <><Head title="Nhóm khách hàng" subtitle="Phân khúc khách để chạy ưu đãi, chiến dịch chăm sóc. Mỗi khách thuộc 1 nhóm; khách mới mặc định là Khách bán lẻ.">{admin&&<button className="btn btn-primary" onClick={()=>setEdit({color:COLORS[4]})}>Thêm nhóm</button>}</Head>
+ return <><Head title="Nhóm khách hàng">{admin&&<button className="btn btn-primary" onClick={()=>setEdit({color:COLORS[4]})}>Thêm nhóm</button>}</Head>
  <DataState state={state}>{d&&<div className="cg-grid">{d.groups.map(g=>{const s=stats(g.id);return <Panel key={g.id}><div className="cg-card" style={{'--c':g.color} as React.CSSProperties}>
   <div className="cg-head"><span className="cg-dot"/><div><h2>{g.name}</h2>{g.desc&&<p>{g.desc}</p>}</div>{g.locked&&<span className="cg-lock">Mặc định</span>}</div>
   <dl className="cg-stats"><div><dt>Khách hàng</dt><dd>{s.count}</dd></div><div><dt>Tổng chi tiêu</dt><dd>{money(s.spent)}</dd></div><div><dt>TB / khách</dt><dd>{money(s.avg)}</dd></div><div><dt>Mã giảm giá</dt><dd>{s.coupons}</dd></div></dl>

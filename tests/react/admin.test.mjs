@@ -500,6 +500,8 @@ try {
   assert.equal(await page.locator(".ar-slot").count(), 10);
   assert.equal(await page.locator(".ar-gallery").count(), 0);
   const firstSlot = page.locator(".ar-slot").first();
+  // Ảnh mẫu trả về ngay trong máy: không phụ thuộc mạng (ảnh lỗi tải sẽ bị thay bằng khung chờ làm test chập chờn)
+  await page.route("https://example.com/**", (route) => route.fulfill({ contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64") }));
   await firstSlot.getByRole("button", { name: "Dán link" }).click();
   await firstSlot.locator("input[type=url]").fill("https://example.com/tru-so.jpg");
   await firstSlot.getByRole("button", { name: "Dùng" }).click();

@@ -11,20 +11,19 @@ export const settingsFields:FieldSpec[] = [
     { key: "slogan", label: "Slogan", col: "third" },
     { key: "company", label: "Tên công ty (pháp lý)", col: "third" },
     { key: "taxCode", label: "Mã số thuế", col: "third" },
-    { key: "logo", label: "Logo công ty (in trên phiếu nhập / xuất kho, hóa đơn)", type: "image", folder: "settings", col: "full", help: "Ảnh nền trắng hoặc trong suốt, khổ ngang khoảng 400 × 160 px. Chưa có logo thì chứng từ in biểu tượng và tên cửa hàng." },
+    { key: "logo", label: "Logo công ty (in trên phiếu nhập / xuất kho, hóa đơn)", type: "image", folder: "settings", col: "full", help: "Ảnh ngang 400 × 160 px." },
     { key: "address", label: "Địa chỉ", col: "third" },
     {
       key: "mapQuery",
       label: "Vị trí trên bản đồ (trang Liên hệ)",
       col: "third",
-      help: "Dán tọa độ (vd 10.7712, 106.6040) hoặc link Google Maps có dạng .../@10.77,106.60,... Để trống: dùng địa chỉ",
+      help: "Tọa độ hoặc link Google Maps.",
     },
     { key: "workingHours", label: "Giờ làm việc (hiển thị)", col: "third" },
     {
       key: "openTime",
       label: "Giờ mở cửa (vd 07:30)",
       col: "third",
-      help: "Khung chat & form hẹn giờ gọi lại theo giờ này",
     },
     {
       key: "closeTime",
@@ -63,7 +62,7 @@ export const settingsFields:FieldSpec[] = [
       label: "Chủ tài khoản (như trên app ngân hàng)",
       col: "full",
     },
-    { key: "bankQr", label: "Ảnh mã QR ngân hàng", type: "image", folder: "settings", col: "full", help: "Tải ảnh mã QR nhận tiền lấy từ app ngân hàng (vuông, rõ nét). Khách quét mã này rồi tự nhập số tiền và nội dung là mã đơn. Để trống: chỉ hiện số tài khoản." },
+    { key: "bankQr", label: "Ảnh mã QR ngân hàng", type: "image", folder: "settings", col: "full", help: "Ảnh QR nhận tiền lấy từ app ngân hàng." },
     {
       key: "_c",
       type: "custom",
@@ -111,7 +110,6 @@ export const settingsFields:FieldSpec[] = [
         ["true", "Hiện (khuyến nghị, Nghị định 13/2023)"],
         ["false", "Không hiện"],
       ],
-      help: "Pixel chỉ chạy sau khi khách bấm Đồng ý",
     },
     {
       key: "_f",
@@ -127,7 +125,6 @@ export const settingsFields:FieldSpec[] = [
       type: "number",
       col: "third",
       def: 6,
-      help: "Khuyến nghị 6 tháng (gia đình), 3 tháng (nhà hàng, xưởng)",
     },
     {
       key: "maintenanceCycles",
@@ -135,7 +132,6 @@ export const settingsFields:FieldSpec[] = [
       type: "number",
       col: "third",
       def: 4,
-      help: "VD 4 lần x 6 tháng = nhắc trong 2 năm",
     },
     {
       key: "_g",
@@ -164,7 +160,6 @@ export const settingsFields:FieldSpec[] = [
       label: "Ký hiệu hóa đơn",
       col: "third",
       placeholder: "VD: 1C26TKL",
-      help: "In trên Hóa đơn bán hàng; số hóa đơn tự tăng 0000001, 0000002…",
     },
     { key: "warehouseName", label: "Tên kho (in trên phiếu nhập/xuất)", col: "third", placeholder: "VD: Kho hàng hóa" },
     { key: "warehouseAddress", label: "Địa điểm kho", col: "third", placeholder: "Để trống: dùng địa chỉ cửa hàng" },
@@ -219,13 +214,12 @@ export const settingsFields:FieldSpec[] = [
       label: "TK chiết khấu thương mại",
       col: "third",
       placeholder: "5211",
-      help: "Theo TT133 không dùng 521: để trống, chiết khấu trừ thẳng vào doanh thu",
+      help: "TT133: để trống.",
     },
     {
       key: "misaWarehouse",
       label: "Mã kho trong MISA",
       col: "third",
       placeholder: "KHO01",
-      help: "Để trống nếu không lập kèm phiếu xuất kho",
     },
   ];

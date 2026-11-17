@@ -91,7 +91,7 @@ export function ContentPage({resource:key}:{resource:string}){
 function ContentEditor({resource:key,initial}:{resource:string;initial:Row}){const [value,setValue]=useState<Row>(initial);const [busy,setBusy]=useState(false);const [pending,setPending]=useState(0);const notice=useNotice();const title=key==='content'?'Nội dung website':key==='vision'?'Trang Tầm nhìn':'Uy tín & đánh giá';
  async function submit(e:FormEvent){e.preventDefault();if(busy||pending)return;if(key==='trust'&&(Number(value.google?.rating)<0||Number(value.google?.rating)>5)){notice('Điểm Google phải từ 0 đến 5.',true);return;}setBusy(true);try{if(key==='content'){await saveSetting('home',value.home);await saveSetting('catalog',value.catalog);}else if(ad.db.mode==='demo'){localStorage.setItem(key==='vision'?dt.VISION_DEMO_KEY:dt.TRUST_DEMO_KEY,JSON.stringify(value));}else await saveSetting(key,value);notice('Đã lưu nội dung website.');}catch(err){notice(err instanceof Error?err.message:String(err),true);}finally{setBusy(false);}}
  const sections=sectionsOf(value);const [active,setActive]=useState(sections[0]?.id);const current=sections.find(x=>x.id===active)||sections[0];
- return <><Head title={title} subtitle="Chọn mục bên trái để chỉnh; dữ liệu dùng chung với website."/>
+ return <><Head title={title}/>
   <form className="ce-layout" onSubmit={submit}>
    {sections.length>1&&<nav className="ce-nav" aria-label="Các mục nội dung">{sections.map((x,i)=><div key={x.id}>{x.group&&x.group!==sections[i-1]?.group&&<span className="ce-nav-group">{x.group}</span>}<button type="button" className={x.id===current.id?'active':''} aria-current={x.id===current.id?'true':undefined} onClick={()=>setActive(x.id)}>{x.title}</button></div>)}</nav>}
    <div className="ce-main">
@@ -100,8 +100,8 @@ function ContentEditor({resource:key,initial}:{resource:string;initial:Row}){con
      {hints[current.path.at(-1)!]&&<p className="ce-hint">{hints[current.path.at(-1)!]}</p>}
      <Block key={current.id} value={getIn(value,current.path)} path={current.path} onPending={n=>setPending(v=>v+n)} onChange={next=>setValue(prev=>setIn(prev,current.path,next))}/>
     </fieldset></section>
-    <p className="ce-note">Chỉ nhập số liệu và đánh giá có nguồn xác thực. Bỏ ảnh chỉ gỡ khỏi nội dung, không xóa file đang dùng ở nơi khác.</p>
-    <div className="ar-form-foot ce-savebar"><span>Lưu áp dụng cho tất cả các mục{sections.length>1?' bên trái':''}.</span><button className="btn btn-primary" disabled={busy||pending>0} aria-busy={busy}>{pending?'Đang tải ảnh…':busy?'Đang lưu…':'Lưu nội dung'}</button></div>
+
+    <div className="ar-form-foot ce-savebar"><span/><button className="btn btn-primary" disabled={busy||pending>0} aria-busy={busy}>{pending?'Đang tải ảnh…':busy?'Đang lưu…':'Lưu nội dung'}</button></div>
    </div>
   </form></>;
 }

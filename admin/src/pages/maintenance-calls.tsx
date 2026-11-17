@@ -46,7 +46,7 @@ export function MaintenanceCalls({contracts,visits,onChange}:{contracts:Row[];vi
   </div>
   {!shown.length?<div className="ar-empty"><p>{f==='todo'?'Không có khách cần gọi trong 7 ngày tới.':'Không có lịch nhắc phù hợp.'}</p></div>:
   <div className="mc-list">{shown.map(r=><CallItem key={r.key} r={r} act={act} adopt={adopt} onVisit={()=>{refresh();onChange();}}/>)}</div>}
-  <p className="mc-foot">Lịch tính tự động từ khách bảo trì đang hoạt động (lần gần nhất + chu kỳ) và đơn máy lạnh đã hoàn thành có chọn nhắc bảo trì. Ghi nhận bảo trì xong, khách tự chuyển sang lần tiếp theo.</p>
+  
  </>}</DataState>;
 }
 

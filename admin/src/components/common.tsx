@@ -10,6 +10,8 @@ export function Rich({html}:{html:unknown}){return <div className="ar-rich" dang
 export function Image({src,alt=''}:{src:unknown;alt?:string}){const url=safeUrl(src);const [failed,setFailed]=useState('');return url&&url!==failed?<img src={url} alt={alt} loading="lazy" onError={()=>setFailed(url)}/>:<span className="ar-image-placeholder"><Icon name="image"/><span>Chưa có ảnh</span></span>;}
 export function Head({title,subtitle,children}:{title:string;subtitle?:string;children?:ReactNode}){return <div className="ad-head ar-head"><div><h1>{title}</h1>{subtitle&&<p>{subtitle}</p>}</div><div className="ar-actions">{children}</div></div>;}
 export function Panel({title,children}:{title?:string;children:ReactNode}){return <section className="ar-panel">{title&&<h2>{title}</h2>}{children}</section>;}
+// Một phần trong khối (ngăn bằng đường kẻ mảnh) – dùng thay cho nhiều khối rời
+export function Sec({title,children,className=''}:{title?:string;children:ReactNode;className?:string}){return <div className={`ar-sec ${className}`.trim()}>{title&&<h3>{title}</h3>}{children}</div>;}
 export function Busy(){return <div className="ar-empty" role="status">Đang tải dữ liệu…</div>;}
 export function ErrorBox({error,retry}:{error:unknown;retry?:()=>void}){return <div className="ar-error ad-error" role="alert"><p>{error instanceof Error?error.message:String(error)}</p>{retry&&<button className="btn btn-light" onClick={retry}>Thử lại</button>}</div>;}
 export function Empty({text='Chưa có dữ liệu'}:{text?:string}){return <div className="ar-empty"><Icon name="search"/><p>{text}</p></div>;}

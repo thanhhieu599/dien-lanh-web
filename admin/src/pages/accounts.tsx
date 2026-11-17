@@ -3,7 +3,7 @@
 import {useState, type FormEvent} from 'react';
 import {ad, date} from '../services/runtime';
 import {ROLE_INFO, ROLE_LABEL, usersOp} from '../services/users';
-import {Action, DataState, Head, Panel, Table, useData, useNotice} from '../components/common';
+import {Action, DataState, Head, Panel, Sec, Table, useData, useNotice} from '../components/common';
 import type {Row} from '../types';
 
 const roleOptions = ROLE_INFO.map(([k, l]) => <option key={k} value={k}>{l}</option>);
@@ -32,8 +32,8 @@ export function AccountsPage() {
     try { await run(() => usersOp('set_password', {p_id: row.id, p_password: v.password}), `Đã đặt lại mật khẩu cho ${row.name}.`); setResetFor(null); } catch { /* đã báo lỗi */ }
   }
   return <>
-    <Head title="Tài khoản & phân quyền" subtitle="Tạo tài khoản cho nhân viên, chọn vai trò để giới hạn quyền, đặt lại mật khẩu hoặc khóa khi nhân viên nghỉ việc. Chỉ quản trị viên thấy mục này."/>
-    <Panel title="Danh sách tài khoản nhân viên">
+    <Head title="Tài khoản & phân quyền" subtitle="Nhân viên kinh doanh dùng được mọi chức năng, trừ mục này."/>
+    <Panel><Sec title="Danh sách tài khoản">
       <DataState state={state}>{state.data && <Table rows={state.data} columns={[
         {label: 'Nhân viên', render: (r) => <><b>{r.name}</b>{r.id === me && <span className="ar-badge"> Bạn</span>}<small>{[r.phone, r.email].filter(Boolean).join(' · ')}</small></>},
         {label: 'Vai trò', render: (r) => <select aria-label={`Vai trò của ${r.name}`} value={r.role} disabled={r.id === me}
@@ -48,10 +48,9 @@ export function AccountsPage() {
             {r.id !== me && <Action className={`btn btn-light${r.locked ? '' : ' ce-del'}`} confirm={r.locked ? `Mở khóa tài khoản ${r.name}?` : `Khóa tài khoản ${r.name}? Nhân viên sẽ bị đăng xuất và không đăng nhập được.`}
               run={() => run(() => usersOp(r.locked ? 'unlock' : 'lock', {p_id: r.id}), r.locked ? 'Đã mở khóa.' : 'Đã khóa tài khoản.')}>{r.locked ? 'Mở khóa' : 'Khóa'}</Action>}
           </div>},
-      ]}/>}</DataState>
-    </Panel>
-    <div className="ar-two-columns">
-      <Panel title="Tạo tài khoản nhân viên">
+      ]}/>}</DataState></Sec>
+    <div className="inv-cols">
+      <Sec title="Tạo tài khoản nhân viên">
         <form className="ar-grid" id="acc-create" onSubmit={create}>
           <label>Họ tên *<input name="name" required maxLength={120}/></label>
           <label>Số điện thoại (dùng để đăng nhập) *<input name="phone" required inputMode="tel"/></label>
@@ -61,20 +60,15 @@ export function AccountsPage() {
           <label>Nhập lại mật khẩu *<input name="confirm" type="password" required minLength={8} maxLength={72} autoComplete="new-password"/></label>
           <button className="btn btn-primary full" disabled={busy} aria-busy={busy}>Tạo tài khoản</button>
         </form>
-      </Panel>
-      <div>
-        <Panel title="Vai trò & quyền hạn">
-          <dl className="acc-roles">{ROLE_INFO.map(([k, l, d]) => <div key={k}><dt>{l}</dt><dd>{d}</dd></div>)}</dl>
-        </Panel>
-        <Panel title="Cấp quyền cho tài khoản có sẵn">
-          <p className="inv-muted">Nhân viên đã tự đăng ký tài khoản trên website: nhập số điện thoại để cấp vai trò.</p>
+      </Sec>
+      <Sec title="Cấp quyền cho tài khoản đã đăng ký trên website">
           <form className="ar-grid" id="acc-grant" onSubmit={grant}>
             <label>Số điện thoại *<input name="phone" required inputMode="tel"/></label>
             <label>Vai trò *<select name="role" required defaultValue="sales">{roleOptions}</select></label>
             <button className="btn btn-light full">Cấp quyền</button>
           </form>
-        </Panel>
-      </div>
+      </Sec>
     </div>
+    </Panel>
   </>;
 }

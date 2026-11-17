@@ -3,7 +3,7 @@ import {useEffect, useMemo, useState, type ReactNode} from 'react';
 import {Link, useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import {ad, date, downloadCSV, loadCache, money, today} from '../services/runtime';
 import {EXPORT_REASONS, LEVEL_LABEL, MOVE_TYPES, PURCHASE_STATUS, incomingMap, invOp, purchaseTotals, reservedMap, stockLevel, suppliersOf} from '../services/inventory';
-import {Action, DataState, Head, Panel, Table, useData, useNotice} from '../components/common';
+import {Action, DataState, Head, Panel, Sec, Table, useData, useNotice} from '../components/common';
 import {MovesTable, ProductPicker} from '../components/stock';
 import {Combo} from '../components/combo';
 import {DateRange, inRange, useRange} from '../components/date-range';
@@ -55,7 +55,7 @@ function StockPage() {
   }), [state.data, q, cat, brand, level]);
   const all = state.data || [];
   const sum = (key: string, list = all) => list.reduce((s, p) => s + num(p[key]), 0);
-  return <><Head title="Quản lý kho" subtitle="Tồn kho, hàng đang giao dịch, hàng đang về và giá trị tồn của từng sản phẩm.">
+  return <><Head title="Quản lý kho">
     {canWrite() && <><Link className="btn btn-light" to="/stocktakes/new">Kiểm hàng</Link><Link className="btn btn-light" to="/stock-exports/new">Xuất kho</Link><Link className="btn btn-primary" to="/purchases/new">+ Nhập hàng</Link></>}
   </Head>
   <DataState state={state}>{state.data && <>
@@ -94,7 +94,7 @@ function PurchaseList() {
   const inPeriod = (state.data || []).filter((p) => inRange(p.created_at, range));
   const rows = inPeriod.filter((p) => (tab === 'all' || p.status === tab) && (!q.trim() || `${p.code} ${p.supplier_name}`.toLowerCase().includes(q.trim().toLowerCase())));
   const debt = (state.data || []).filter((p) => p.received && p.status !== 'cancelled').reduce((s, p) => s + p.total - num(p.paid), 0);
-  return <><Head title="Nhập hàng" subtitle="Đơn nhập hàng từ nhà cung cấp: nhập kho, giá vốn và công nợ phải trả.">
+  return <><Head title="Nhập hàng">
     <DateRange allowAll value={range} onChange={setRange}/>
     <Link className="btn btn-light" to="/suppliers">Nhà cung cấp</Link>
     {canWrite() && <Link className="btn btn-primary" to="/purchases/new">+ Tạo đơn nhập hàng</Link>}
@@ -149,24 +149,24 @@ function PurchaseForm({doc}: {doc: Row | null}) {
     notice(receive ? `Đã tạo đơn ${po.code} và nhập kho.` : `Đã lưu đơn ${po.code}.`);
     navigate(`/purchases/${po.id}`);
   }
-  return <><Head title={doc ? `Sửa đơn ${doc.code}` : 'Tạo đơn nhập hàng'} subtitle="Chọn nhà cung cấp, thêm sản phẩm và số lượng. Nhập kho sẽ cộng tồn và tính lại giá vốn.">
+  return <><Head title={doc ? `Sửa đơn ${doc.code}` : 'Tạo đơn nhập hàng'}>
     <Link className="btn btn-light" to={doc ? `/purchases/${doc.id}` : '/purchases'}>Thoát</Link>
     <Action run={() => save(false)}>{doc ? 'Lưu thay đổi' : 'Tạo & chưa nhập'}</Action>
     <Action className="btn btn-primary" id="po-receive" run={() => save(true)}>{doc ? 'Lưu & nhập kho' : 'Tạo & nhập hàng'}</Action>
   </Head>
   {error && <p className="ar-error ad-error" role="alert">{error}</p>}
-  <div className="inv-cols">
-    <Panel title="Nhà cung cấp"><DataState state={suppliersState}>{suppliersState.data && <>
+  <Panel><div className="inv-cols">
+    <Sec><DataState state={suppliersState}>{suppliersState.data && <>
       <label className="inv-field"><span>Nhà cung cấp</span><Combo name="supplier" label="Nhà cung cấp" value={supplierId || newSupplier} placeholder="Chọn nhà cung cấp hoặc gõ tên mới…" newHint="Tạo nhà cung cấp mới" options={suppliersState.data.map((s): [string, string] => [String(s.id), `${s.name}${s.phone ? ` · ${s.phone}` : ''}`])} onChange={(v) => { const hit = suppliersState.data!.some((s) => String(s.id) === v); setSupplierId(hit ? v : ''); setNewSupplier(hit ? '' : v); }}/></label>
       {supplier ? <div className="inv-supplier"><b>{supplier.name}</b><span>{[supplier.phone, supplier.tax_code && `MST ${supplier.tax_code}`].filter(Boolean).join(' · ')}</span><span>{supplier.address}</span><span>Công nợ hiện tại: <b className="inv-minus">{money(supplier.debt)}</b></span></div>
-        : newSupplier ? <p className="inv-muted">Nhà cung cấp mới <b>{newSupplier}</b> sẽ được tạo khi lưu đơn. Bổ sung số điện thoại, mã số thuế sau trong mục Nhà cung cấp.</p> : <p className="inv-muted">Chọn từ danh sách hoặc gõ tên nhà cung cấp mới.</p>}
-    </>}</DataState></Panel>
-    <Panel title="Thông tin đơn nhập">
+        : newSupplier ? <p className="inv-muted">Nhà cung cấp mới <b>{newSupplier}</b> sẽ được tạo khi lưu đơn.</p> : null}
+    </>}</DataState></Sec>
+    <Sec>
       <label className="inv-field"><span>Ngày hẹn giao</span><input type="date" value={expected || ''} onChange={(e) => setExpected(e.target.value)}/></label>
       <label className="inv-field"><span>Ghi chú đơn</span><textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="VD: Hàng tặng gói riêng"/></label>
-    </Panel>
+    </Sec>
   </div>
-  <Panel title="Sản phẩm nhập">
+  <Sec title="Sản phẩm nhập">
     <ProductPicker exclude={items.map((l) => l.product_id)} onPick={(p) => { setItems([...items, {product_id: p.id, name: p.name, sku: p.sku, unit: p.unit || 'Cái', qty: 1, price: num(p.import_price) || num(p.cost_price), discount: 0, tax_rate: 0}]); const own = suppliersOf(p.id, suppliersState.data || []); if (!supplierId && !newSupplier && own[0]) { setSupplierId(String(own[0].id)); notice(`Đã chọn nhà cung cấp ${own[0].name} theo sản phẩm ${p.name}.`); } }}/>
     {items.length ? <div className="ar-table-scroll"><table className="ar-table inv-lines"><thead><tr><th>#</th><th>Sản phẩm</th><th>Đơn vị</th><th>SL nhập</th><th>Đơn giá</th><th>Chiết khấu</th><th>Thuế %</th><th>Thành tiền</th><th/></tr></thead><tbody>
       {items.map((l, i) => <tr key={l.product_id}>
@@ -177,7 +177,7 @@ function PurchaseForm({doc}: {doc: Row | null}) {
         <td><select aria-label={`Thuế ${l.name}`} value={l.tax_rate} onChange={(e) => setLine(i, {tax_rate: Number(e.target.value)})}>{[0, 5, 8, 10].map((r) => <option key={r} value={r}>{r}%</option>)}</select></td>
         <td>{money(num(l.qty) * num(l.price) - num(l.discount))}</td>
         <td><button type="button" className="btn btn-light" aria-label={`Bỏ ${l.name}`} onClick={() => setItems(items.filter((_, k) => k !== i))}>×</button></td>
-      </tr>)}</tbody></table></div> : <p className="inv-muted">Đơn nhập chưa có sản phẩm nào. Tìm sản phẩm ở ô phía trên để thêm.</p>}
+      </tr>)}</tbody></table></div> : <p className="inv-muted">Chưa có sản phẩm.</p>}
     <div className="inv-totals">
       <div><span>Số lượng</span><b>{totals.qty}</b></div>
       <div><span>Tổng tiền hàng</span><b>{money(totals.goods)}</b></div>
@@ -189,7 +189,7 @@ function PurchaseForm({doc}: {doc: Row | null}) {
       {!doc?.paid && <div><span>Thanh toán ngay</span><select aria-label="Phương thức thanh toán" value={pay.method} onChange={(e) => setPay({...pay, method: e.target.value})}><option value="bank">Chuyển khoản</option><option value="cash">Tiền mặt</option></select><input aria-label="Số tiền thanh toán ngay" type="number" min={0} step={1000} value={pay.amount} onChange={(e) => setPay({...pay, amount: Number(e.target.value)})}/></div>}
       <div><span>Còn phải trả</span><b className="inv-minus">{money(totals.total - num(doc?.paid) - pay.amount)}</b></div>
     </div>
-  </Panel></>;
+  </Sec></Panel></>;
 }
 
 function PurchaseView({doc}: {doc: Row}) {
@@ -209,16 +209,25 @@ function PurchaseView({doc}: {doc: Row}) {
   </Head>
   <div className="inv-steps" aria-label="Tiến trình đơn nhập">{['Tạo đơn', 'Nhập kho', 'Hoàn thành'].map((s, i) => <span key={s} className={doc.status === 'cancelled' ? '' : i < step ? 'done' : ''}><b>{i + 1}</b>{s}<small>{i === 0 ? date(doc.created_at) : i === 1 && doc.received ? date(doc.received_at) : ''}</small></span>)}
     <Status value={doc.status} label={PURCHASE_STATUS[doc.status] || doc.status}/></div>
-  <div className="inv-cols">
-    <Panel title="Nhà cung cấp"><div className="inv-supplier"><Link to={`/suppliers/${doc.supplier_id}`}><b>{doc.supplier_name}</b></Link></div></Panel>
-    <Panel title="Thông tin đơn nhập"><dl className="inv-dl">
-      <div><dt>Nhập kho</dt><dd>{doc.received ? `Đã nhập · ${date(doc.received_at)} · ${doc.received_by || ''}` : 'Chưa nhập'}</dd></div>
-      <div><dt>Ngày hẹn giao</dt><dd>{doc.expected_date || '—'}</dd></div>
-      <div><dt>Ghi chú</dt><dd>{doc.note || '—'}</dd></div>
-    </dl></Panel>
-  </div>
-  <Panel title={left > 0 && doc.status !== 'cancelled' ? 'Đơn nhập chưa thanh toán đủ' : 'Thanh toán'}>
-    <div className="inv-pay"><span>Tiền cần trả NCC: <b>{money(doc.total)}</b></span><span>Đã trả: <b>{money(doc.paid)}</b></span><span>Còn phải trả: <b className={left > 0 ? 'inv-minus' : ''}>{money(left)}</b></span></div>
+  <Panel>
+  <dl className="inv-meta">
+    <div><dt>Nhà cung cấp</dt><dd><Link to={`/suppliers/${doc.supplier_id}`}><b>{doc.supplier_name}</b></Link></dd></div>
+    <div><dt>Nhập kho</dt><dd>{doc.received ? `${date(doc.received_at)} · ${doc.received_by || ''}` : 'Chưa nhập'}</dd></div>
+    <div><dt>Ngày hẹn giao</dt><dd>{doc.expected_date || '—'}</dd></div>
+    <div><dt>Ghi chú</dt><dd>{doc.note || '—'}</dd></div>
+  </dl>
+  <Sec title="Sản phẩm"><Table rows={doc.items.map((l: Row, i: number) => ({...l, id: i}))} columns={[
+    {label: 'STT', render: (l) => l.id + 1}, {label: 'Sản phẩm', render: (l) => <><Link to={`/products/${encodeURIComponent(l.product_id)}`}>{l.name}</Link><small>{l.sku}</small></>},
+    {label: 'Đơn vị', key: 'unit'}, {label: 'SL nhập', key: 'qty'}, {label: 'Đơn giá', render: (l) => money(l.price)}, {label: 'Chiết khấu', render: (l) => money(l.discount)}, {label: 'Thuế', render: (l) => `${l.tax_rate}%`}, {label: 'Thành tiền', render: (l) => money(l.qty * l.price - l.discount)},
+  ]}/>
+    <div className="inv-totals">
+      <div><span>Số lượng</span><b>{doc.qty}</b></div><div><span>Tổng tiền hàng</span><b>{money(doc.goods)}</b></div><div><span>Chiết khấu</span><b>{money(doc.discount)}</b></div>
+      {(doc.costs || []).map((c: Row, i: number) => <div key={i}><span>{c.name}</span><b>{money(c.amount)}</b></div>)}
+      <div><span>Thuế</span><b>{money(doc.tax)}</b></div><div className="inv-total"><span>Tiền cần trả NCC</span><b>{money(doc.total)}</b></div>
+      <div><span>Đã trả</span><b>{money(doc.paid)}</b></div><div><span>Còn phải trả</span><b className={left > 0 ? 'inv-minus' : ''}>{money(left)}</b></div>
+    </div>
+  </Sec>
+  {((doc.payments || []).length > 0 || (left > 0 && doc.status !== 'cancelled')) && <Sec title="Thanh toán">
     {(doc.payments || []).length > 0 && <Table rows={doc.payments.map((p: Row, i: number) => ({...p, id: i}))} columns={[{label: 'Thời gian', render: (p) => date(p.at)}, {label: 'Hình thức', render: (p) => (p.method === 'cash' ? 'Tiền mặt' : 'Chuyển khoản')}, {label: 'Số tiền', render: (p) => money(p.amount)}, {label: 'Người ghi nhận', key: 'by'}, {label: 'Ghi chú', key: 'note'}]}/>}
     {left > 0 && doc.status !== 'cancelled' && ['admin', 'staff', 'sales', 'accountant'].includes(ad.me?.role || '') && <div className="inv-payform">
       <select aria-label="Hình thức thanh toán" value={pay.method} onChange={(e) => setPay({...pay, method: e.target.value})}><option value="bank">Chuyển khoản</option><option value="cash">Tiền mặt</option></select>
@@ -226,23 +235,14 @@ function PurchaseView({doc}: {doc: Row}) {
       <input aria-label="Ghi chú thanh toán" placeholder="Ghi chú (số UNC, phiếu chi…)" value={pay.note} onChange={(e) => setPay({...pay, note: e.target.value})}/>
       <Action className="btn btn-primary" id="po-pay" run={async () => { await invOp('purchase_pay', {p_id: doc.id, ...pay}); notice('Đã ghi nhận thanh toán cho nhà cung cấp.'); reload(); }}>Thanh toán</Action>
     </div>}
-  </Panel>
-  <Panel title="Thông tin sản phẩm"><Table rows={doc.items.map((l: Row, i: number) => ({...l, id: i}))} columns={[
-    {label: 'STT', render: (l) => l.id + 1}, {label: 'Sản phẩm', render: (l) => <><Link to={`/products/${encodeURIComponent(l.product_id)}`}>{l.name}</Link><small>{l.sku}</small></>},
-    {label: 'Đơn vị', key: 'unit'}, {label: 'SL nhập', key: 'qty'}, {label: 'Đơn giá', render: (l) => money(l.price)}, {label: 'Chiết khấu', render: (l) => money(l.discount)}, {label: 'Thuế', render: (l) => `${l.tax_rate}%`}, {label: 'Thành tiền', render: (l) => money(l.qty * l.price - l.discount)},
-  ]}/>
-    <div className="inv-totals">
-      <div><span>Số lượng</span><b>{doc.qty}</b></div><div><span>Tổng tiền hàng</span><b>{money(doc.goods)}</b></div><div><span>Chiết khấu</span><b>{money(doc.discount)}</b></div>
-      {(doc.costs || []).map((c: Row, i: number) => <div key={i}><span>{c.name}</span><b>{money(c.amount)}</b></div>)}
-      <div><span>Thuế</span><b>{money(doc.tax)}</b></div><div className="inv-total"><span>Tiền cần trả</span><b>{money(doc.total)}</b></div>
-    </div>
+  </Sec>}
   </Panel></>;
 }
 
 /* ------------------------------------------------------------------ Kiểm hàng */
 function AdjustmentList() {
   const state = useData(async () => (await ad.db.list('stock_adjustments', {order: 'id.desc', limit: 5000})).rows, []);
-  return <><Head title="Kiểm hàng" subtitle="Đếm hàng thực tế, so với tồn trên hệ thống và cân bằng kho.">{canWrite() && <Link className="btn btn-primary" to="/stocktakes/new">+ Tạo phiếu kiểm</Link>}</Head>
+  return <><Head title="Kiểm hàng">{canWrite() && <Link className="btn btn-primary" to="/stocktakes/new">+ Tạo phiếu kiểm</Link>}</Head>
     <DataState state={state}>{state.data && <Panel><Paged rows={state.data} render={(page) => <Table rows={page} columns={[
       {label: 'Mã phiếu kiểm', render: (d) => <Link to={`/stocktakes/${d.id}`}>{d.code}</Link>},
       {label: 'Trạng thái', render: (d) => <Status value={d.status} label={d.status === 'balanced' ? 'Đã cân bằng' : 'Đang kiểm'}/>},
@@ -275,13 +275,12 @@ function AdjustmentDoc({id}: {id: string}) {
     await loadCache(); notice(balance ? `Đã cân bằng kho theo phiếu ${res.code}.` : `Đã lưu phiếu ${res.code}.`);
     setItems(null); setNote(null); navigate(`/stocktakes/${res.id}?r=${Date.now()}`, {replace: true});
   }
-  return <DataState state={state}>{state.data && <><Head title={doc ? `Phiếu kiểm ${doc.code}` : 'Tạo phiếu kiểm hàng'} subtitle={doc?.status === 'balanced' ? `Đã cân bằng ${date(doc.balanced_at)} · ${doc.balanced_by}` : 'Nhập số đếm thực tế; hệ thống tự tính lệch so với tồn kho.'}>
+  return <DataState state={state}>{state.data && <><Head title={doc ? `Phiếu kiểm ${doc.code}` : 'Tạo phiếu kiểm hàng'} subtitle={doc?.status === 'balanced' ? `Đã cân bằng ${date(doc.balanced_at)} · ${doc.balanced_by}` : undefined}>
     <Link className="btn btn-light" to="/stocktakes">Thoát</Link>
     {!readonly && <><Action run={() => save(false)}>{doc ? 'Lưu phiếu' : 'Tạo phiếu kiểm'}</Action><Action className="btn btn-primary" id="adj-balance" run={() => save(true)}>Cân bằng kho</Action></>}
     {doc?.status === 'draft' && canWrite() && <Action confirm="Xóa phiếu kiểm nháp này?" run={async () => { await invOp('delete_draft', {p_id: doc.id, p_kind: 'adjustment'}); navigate('/stocktakes'); }}>Xóa phiếu</Action>}
   </Head>
-  <Panel title="Thông tin phiếu"><label className="inv-field"><span>Ghi chú</span><input value={note ?? doc?.note ?? ''} readOnly={readonly} onChange={(e) => setNote(e.target.value)} placeholder={`VD: Kiểm hàng ngày ${today()}`}/></label></Panel>
-  <Panel>
+  <Panel><label className="inv-field"><span>Ghi chú</span><input value={note ?? doc?.note ?? ''} readOnly={readonly} onChange={(e) => setNote(e.target.value)} placeholder={`VD: Kiểm hàng ngày ${today()}`}/></label>
     {!readonly && <div className="inv-cols"><ProductPicker exclude={lines.map((l) => l.product_id)} onPick={(p) => addProducts([p])}/>
       <label className="inv-field"><span>Thêm cả danh mục</span><span className="inv-inline"><select aria-label="Danh mục cần kiểm" value={cat} onChange={(e) => setCat(e.target.value)}><option value="">— Chọn danh mục —</option>{(ad.cache.categories || []).map((c: Row) => <option key={c.id} value={c.id}>{c.name}</option>)}</select><button type="button" className="btn btn-light" disabled={!cat} onClick={() => addProducts((ad.cache.products || []).filter((p: Row) => p.cat === cat))}>Thêm</button></span></label></div>}
     <Tabs label="Lọc dòng kiểm" value={filter} onChange={setFilter} items={[['all', `Tất cả (${lines.length})`], ['todo', `Chưa kiểm (${lines.filter((l) => diffOf(l) == null).length})`], ['match', `Khớp (${lines.filter((l) => diffOf(l) === 0).length})`], ['diff', `Lệch (${lines.filter((l) => diffOf(l)).length})`]]}/>
@@ -302,7 +301,7 @@ const reasonLabel = (r: string) => EXPORT_REASONS.find(([k]) => k === r)?.[1] ||
 function ExportList() {
   const state = useData(async () => (await ad.db.list('stock_exports', {order: 'id.desc', limit: 5000})).rows, []);
   const [range, setRange] = useRange(null); const rows = (state.data || []).filter((d) => inRange(d.created_at, range));
-  return <><Head title="Xuất kho" subtitle={`Xuất hàng không qua đơn bán: hàng hỏng, hàng mẫu, quà tặng doanh nghiệp, dùng nội bộ, trả nhà cung cấp. Trong kỳ: ${rows.length} phiếu · giá vốn ${money(rows.filter((d) => d.status === 'done').reduce((s, d) => s + num(d.value), 0))}`}><DateRange allowAll value={range} onChange={setRange}/>{canWrite() && <Link className="btn btn-primary" to="/stock-exports/new">+ Tạo phiếu xuất</Link>}</Head>
+  return <><Head title="Xuất kho" subtitle={`Trong kỳ: ${rows.length} phiếu · giá vốn ${money(rows.filter((d) => d.status === 'done').reduce((s, d) => s + num(d.value), 0))}`}><DateRange allowAll value={range} onChange={setRange}/>{canWrite() && <Link className="btn btn-primary" to="/stock-exports/new">+ Tạo phiếu xuất</Link>}</Head>
     <DataState state={state}>{state.data && <Panel><Paged rows={rows} render={(page) => <Table rows={page} columns={[
       {label: 'Mã phiếu', render: (d) => <Link to={`/stock-exports/${d.id}`}>{d.code}</Link>},
       {label: 'Trạng thái', render: (d) => <Status value={d.status} label={d.status === 'done' ? 'Đã xuất' : 'Nháp'}/>},
@@ -350,19 +349,19 @@ function ExportDoc({id}: {id: string}) {
     await loadCache(); notice(confirm ? `Đã xuất kho theo phiếu ${res.code}.` : `Đã lưu phiếu ${res.code}.`);
     setForm(null); navigate(`/stock-exports/${res.id}?r=${Date.now()}`, {replace: true});
   }
-  return <DataState state={state}>{state.data && <><Head title={doc ? `Phiếu xuất ${doc.code}` : 'Tạo phiếu xuất kho'} subtitle={doc?.status === 'done' ? `Đã xuất ${date(doc.done_at)} · ${doc.done_by} · Giá trị ${money(doc.value)}` : 'Hàng ra khỏi kho không qua đơn bán.'}>
+  return <DataState state={state}>{state.data && <><Head title={doc ? `Phiếu xuất ${doc.code}` : 'Tạo phiếu xuất kho'} subtitle={doc?.status === 'done' ? `Đã xuất ${date(doc.done_at)} · ${doc.done_by} · Giá trị ${money(doc.value)}` : undefined}>
     <Link className="btn btn-light" to="/stock-exports">Thoát</Link>
     {doc?.status === 'done' && <Link className="btn btn-light" to={`/voucher/xuat/${doc.id}`}>In phiếu xuất kho</Link>}
     {!readonly && <><Action run={() => save(false)}>Lưu nháp</Action><Action className="btn btn-primary" id="exp-confirm" confirm="Xuất kho: trừ tồn kho các sản phẩm trong phiếu?" run={() => save(true)}>Xuất kho</Action></>}
     {doc?.status === 'draft' && canWrite() && <Action confirm="Xóa phiếu nháp này?" run={async () => { await invOp('delete_draft', {p_id: doc.id, p_kind: 'export'}); navigate('/stock-exports'); }}>Xóa phiếu</Action>}
   </Head>
-  <Panel title="Thông tin phiếu"><div className="ar-grid">
+  <Panel><div className="ar-grid">
     <label><span>Lý do xuất *</span><Combo name="reason" label="Lý do xuất" value={f.reason} disabled={readonly} options={EXPORT_REASONS} placeholder="Chọn lý do hoặc gõ lý do khác…" onChange={(v) => set({reason: v, ...(v === 'return_supplier' ? fromSupplier(f.items) : {})})}/></label>
     <ReceiverInput value={f.receiver} readOnly={readonly} onChange={(v) => set({receiver: v, customer_id: ''})} onPick={(c) => { const a: Row = (c.addresses || []).find((x: Row) => x.default) || (c.addresses || [])[0] || {}; set({receiver: c.name || c.phone, customer_id: c.id, receiver_address: [a.address, a.district, a.province].filter(Boolean).join(', ') || f.receiver_address}); }}/>
     <label className="full"><span>Địa chỉ (bộ phận) người nhận</span><input value={f.receiver_address} readOnly={readonly} placeholder="Địa chỉ khách / tên bộ phận nhận – in trên phiếu xuất kho" onChange={(e) => set({receiver_address: e.target.value})}/></label>
     <label className="full"><span>Ghi chú</span><input value={f.note} readOnly={readonly} onChange={(e) => set({note: e.target.value})}/></label>
-  </div></Panel>
-  <Panel title="Sản phẩm xuất">
+  </div>
+  <Sec title="Sản phẩm xuất">
     {!readonly && <ProductPicker exclude={f.items.map((l: Row) => l.product_id)} onPick={(p) => { const items = [...f.items, {product_id: p.id, name: p.name, sku: p.sku, unit: p.unit || 'Cái', qty: 1, note: ''}]; set({items, ...(f.reason === 'return_supplier' ? fromSupplier(items) : {})}); }}/>}
     {f.items.length ? <div className="ar-table-scroll"><table className="ar-table inv-lines"><thead><tr><th>Sản phẩm</th><th>Đơn vị</th><th>Có thể bán</th><th>SL xuất</th><th>Ghi chú</th>{!readonly && <th/>}</tr></thead><tbody>
       {f.items.map((l: Row, i: number) => <tr key={l.product_id}>
@@ -370,8 +369,8 @@ function ExportDoc({id}: {id: string}) {
         <td>{readonly ? l.qty : <input aria-label={`Số lượng xuất ${l.name}`} type="number" min={1} step={1} value={l.qty} onChange={(e) => set({items: f.items.map((x: Row, k: number) => (k === i ? {...x, qty: e.target.value === '' ? '' : Number(e.target.value)} : x))})}/>}</td>
         <td>{readonly ? l.note || '—' : <input aria-label={`Ghi chú ${l.name}`} value={l.note || ''} onChange={(e) => set({items: f.items.map((x: Row, k: number) => (k === i ? {...x, note: e.target.value} : x))})}/>}</td>
         {!readonly && <td><button type="button" className="btn btn-light" aria-label={`Bỏ ${l.name}`} onClick={() => set({items: f.items.filter((_: Row, k: number) => k !== i)})}>×</button></td>}
-      </tr>)}</tbody></table></div> : <p className="inv-muted">Phiếu xuất chưa có sản phẩm.</p>}
-  </Panel></>}</DataState>;
+      </tr>)}</tbody></table></div> : <p className="inv-muted">Chưa có sản phẩm.</p>}
+  </Sec></Panel></>}</DataState>;
 }
 
 // Dòng nhỏ dưới tên sản phẩm: nhà cung cấp của sản phẩm (lấy từ Nhà cung cấp › Sản phẩm cung cấp)

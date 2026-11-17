@@ -476,3 +476,19 @@
 @media(max-width:640px){.cg-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .cg-quick{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 var(--ar-space-4);padding:var(--ar-space-3);border-radius:10px;background:var(--ar-bg)}
 .cg-quick>span:first-child{font-weight:600;font-size:13px}.cg-quick select{width:auto;min-height:36px;margin-left:auto}
+
+/* Gộp khối: các phần trong cùng 1 khối ngăn bằng đường kẻ mảnh, tiêu đề phần gọn */
+.ar-sec{min-width:0}
+.ar-sec>h3{margin:0 0 var(--ar-space-4);font-size:var(--ar-font-16);font-weight:700}
+.ar-panel>:is(.ar-sec,.inv-cols,.inv-meta,.ar-grid,.inv-field,.ar-two-columns)+:is(.ar-sec,.inv-cols,.inv-meta){border-top:1px solid var(--ar-border);margin-top:var(--ar-space-6);padding-top:var(--ar-space-6)}
+.inv-cols>.ar-sec{margin:0;padding:0;border:0}
+.inv-supplier{padding:var(--ar-space-2) 0 0;background:none;border-radius:0}
+/* Thông tin chung của chứng từ: 1 hàng nhiều cột */
+.inv-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:var(--ar-space-4) var(--ar-space-6);margin:0;font-size:var(--ar-font-14)}
+.inv-meta dt{color:var(--ar-muted);font-size:var(--ar-font-13);margin-bottom:2px}
+.inv-meta dd{margin:0;overflow-wrap:anywhere}
+.inv-meta>div{display:block;text-align:left}
+.inv-meta dt,.inv-meta dd{text-align:left}
+/* Trong khối gộp: không lồng khung nền / viền */
+.ar-sec .cg-quick{padding:0;background:none;border-radius:0}
+.ar-sec .cus-invoice{padding:0;border:0;border-radius:0}

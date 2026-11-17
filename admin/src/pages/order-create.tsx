@@ -5,7 +5,7 @@ import {Link, useNavigate} from 'react-router-dom';
 import {ad, money} from '../services/runtime';
 import {loadCache} from '../services/runtime';
 import {adminOrderTotals, createOrder, VAT_RATES, type OrderLine} from '../services/orders';
-import {Action, Head, MoneyInput, Panel, useNotice} from '../components/common';
+import {Action, Head, MoneyInput, Panel, Sec, useNotice} from '../components/common';
 import {ProductPicker} from '../components/stock';
 import type {Row} from '../types';
 
@@ -91,13 +91,13 @@ export function OrderCreate() {
       setError(msg); throw e;
     }
   }
-  return <><Head title="Tạo đơn hàng" subtitle="Chọn khách hàng và sản phẩm có sẵn hoặc tự nhập; chỉnh giá, phí, chiết khấu và thuế GTGT. Sản phẩm trong hệ thống được trừ kho khi tạo đơn.">
+  return <><Head title="Tạo đơn hàng">
     <Link className="btn btn-light" to="/orders">Thoát</Link>
     <Action className="btn btn-primary" id="order-create" run={submit}>Tạo đơn hàng</Action>
   </Head>
   {error && <p className="ar-error ad-error" role="alert">{error}</p>}
-  <div className="inv-cols">
-    <Panel title="Khách hàng">
+  <Panel><div className="inv-cols">
+    <Sec title="Khách hàng">
       <CustomerSearch onPick={pickCustomer}/>
       <div className="ar-grid">
         <label>Tên khách hàng *<input name="c_name" value={customer.name} onChange={(e) => setC({name: e.target.value})}/></label>
@@ -110,8 +110,8 @@ export function OrderCreate() {
           <label>Tỉnh / Thành phố<input name="c_province" value={customer.province} onChange={(e) => setC({province: e.target.value})}/></label>
         </>}
       </div>
-    </Panel>
-    <Panel title="Thanh toán & xử lý">
+    </Sec>
+    <Sec title="Thanh toán & xử lý">
       <div className="ar-grid">
         <label>Phương thức<select name="payment" value={payment} onChange={(e) => setPayment(e.target.value)}><option value="cod">COD / tiền mặt</option><option value="bank">Chuyển khoản</option></select></label>
         <label>Tình trạng thanh toán<select name="payment_status" value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)}><option value="unpaid">Chưa thanh toán</option><option value="partial">Thanh toán một phần</option><option value="paid">Đã thanh toán</option></select></label>
@@ -126,9 +126,9 @@ export function OrderCreate() {
           <label className="full">Địa chỉ đơn vị<input name="inv_address" value={invoice.address} onChange={(e) => setInvoice({...invoice, address: e.target.value})}/></label>
         </>}
       </div>
-    </Panel>
+    </Sec>
   </div>
-  <Panel title="Sản phẩm">
+  <Sec title="Sản phẩm">
     <ProductPicker label="Thêm sản phẩm có sẵn" exclude={lines.map((l) => l.product_id).filter((v) => v != null)} onPick={addProduct}/>
     <p><button type="button" className="inv-link" id="order-add-custom" onClick={() => setLines([...lines, {key: lineKey(), product_id: null, name: '', sku: '', unit: 'Cái', qty: 1, price: 0}])}>+ Thêm dòng tự nhập (hàng ngoài hệ thống, dịch vụ, vật tư…)</button></p>
     {lines.length ? <div className="ar-table-scroll"><table className="ar-table inv-lines order-lines"><thead><tr><th>#</th><th>Tên sản phẩm / dịch vụ</th><th>Mã SKU</th><th>Đơn vị</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th><th/></tr></thead><tbody>
@@ -141,7 +141,7 @@ export function OrderCreate() {
         <td><MoneyInput aria-label={`Đơn giá dòng ${i + 1}`} value={l.price} onChange={(v) => setLine(i, {price: v})}/></td>
         <td>{money(num(l.qty) * num(l.price))}</td>
         <td><button type="button" className="btn btn-light" aria-label={`Bỏ dòng ${i + 1}`} onClick={() => setLines(lines.filter((_, k) => k !== i))}>×</button></td>
-      </tr>)}</tbody></table></div> : <p className="inv-muted">Chưa có sản phẩm. Tìm sản phẩm ở ô phía trên hoặc thêm dòng tự nhập.</p>}
+      </tr>)}</tbody></table></div> : <p className="inv-muted">Chưa có sản phẩm.</p>}
     <div className="inv-totals">
       <div><span>Tổng tiền hàng</span><b>{money(t.goods)}</b></div>
       <div><span>Phí lắp đặt</span><MoneyInput aria-label="Phí lắp đặt" value={install} onChange={setInstall}/></div>
@@ -152,5 +152,5 @@ export function OrderCreate() {
       <div><span>Tiền thuế GTGT{vatIncluded && vatRate > 0 ? ' (đã gồm trong giá)' : ''}</span><b>{money(t.vat)}</b></div>
       <div className="inv-total"><span>Tổng thanh toán</span><b id="order-total">{money(t.total)}</b></div>
     </div>
-  </Panel></>;
+  </Sec></Panel></>;
 }

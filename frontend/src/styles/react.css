@@ -2556,19 +2556,20 @@ button:disabled {
   box-shadow: 0 8px 20px rgb(19 32 50 / 10%);
   transform: translateY(-2px);
 }
+/* Ảnh thương hiệu vuông (tải lên 1200 × 1200 px): khung vuông, ảnh luôn hiện trọn */
 .brand-card-logo {
   display: grid;
   place-items: center;
   width: 100%;
-  aspect-ratio: 2/1;
+  aspect-ratio: 1/1;
   padding: 12px;
   background: #f7f8f9;
   border-radius: var(--radius);
   overflow: hidden;
 }
 .brand-card-logo img {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 .brand-card-logo b {
@@ -2883,9 +2884,9 @@ button:disabled {
   align-items: center;
   justify-content: center;
   flex: none;
-  width: 240px;
+  width: 160px;
   max-width: 100%;
-  height: 110px;
+  height: 160px;
   overflow: hidden;
 }
 /* Ảnh logo bất kỳ kích thước: luôn nằm gọn trong khung, không đè lên tên thương hiệu */
@@ -2915,8 +2916,8 @@ button:disabled {
     padding: 18px 16px 14px;
   }
   .brand-hero-logo {
-    width: 180px;
-    height: 80px;
+    width: 120px;
+    height: 120px;
   }
   .brand-hero h1 {
     font-size: 22px;
@@ -3258,8 +3259,8 @@ body{-webkit-font-smoothing:antialiased;color:#212121}
 .brand-strip-track::-webkit-scrollbar{display:none}
 .brand-chip{scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 10px;border:1px solid var(--line,#e3e7ee);border-radius:10px;background:#fff;text-decoration:none;min-width:0;transition:border-color .15s,box-shadow .15s}
 .brand-chip:hover{border-color:var(--primary,#1a5ba6);box-shadow:0 4px 12px rgba(15,43,79,.08)}
-.brand-chip-logo{height:52px;width:100%;display:grid;place-items:center}
-.brand-chip-logo img{max-height:52px;max-width:100%;object-fit:contain}
+.brand-chip-logo{height:72px;width:100%;display:grid;place-items:center}
+.brand-chip-logo img{width:72px;height:72px;max-width:100%;object-fit:contain}
 .brand-chip-logo b{font-size:16px;text-align:center;overflow-wrap:anywhere}
 .brand-chip-name{font-size:13px;font-weight:600;color:var(--muted,#5c6573);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 @media(max-width:1024px){.brand-strip-track{grid-auto-columns:calc((100% - 4 * 14px) / 5)}}

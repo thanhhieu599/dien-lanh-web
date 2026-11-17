@@ -653,7 +653,7 @@ window.AD = window.AD || {};
           type: "image",
           folder: "brands",
           col: "full",
-          help: "Logo nền trắng hoặc trong suốt, khổ ngang khoảng 400 × 200 px. Chưa có logo thì website hiện tên thương hiệu.",
+          help: "Ảnh vuông 1200 × 1200 px (JPG, PNG hoặc WebP), nền trắng hoặc trong suốt. Website hiện trọn ảnh trong khung vuông. Chưa có ảnh thì website hiện tên thương hiệu.",
         },
         {
           key: "_brand_products",

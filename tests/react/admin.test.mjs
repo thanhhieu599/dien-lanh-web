@@ -553,12 +553,8 @@ try {
   assert.equal(await page.getByText("Ảnh banner", { exact: true }).count(), 2);
   assert.equal(await page.locator(".ce-section").getByLabel("Liên kết").count(), 2);
   assert.equal(await page.locator(".ce-section").getByLabel(/Tiêu đề|Mô tả phụ|Nút hành động/).count(), 0);
-  // Banner trang Khuyến mãi: ô ảnh + liên kết, lưu đúng vào nội dung trang chủ
-  await page.locator(".ce-nav button", { hasText: "Banner trang Khuyến mãi" }).click();
-  assert.equal(await page.getByText("Ảnh banner", { exact: true }).count(), 1);
-  await page.locator(".ce-section").getByLabel("Liên kết").fill("danh-muc.html?cat=may-lanh");
-  await saved("#view .ar-form-foot button", "Đã lưu nội dung website.");
-  assert.equal((await read("settings", "home")).value.promo.href, "danh-muc.html?cat=may-lanh");
+  // Banner trang Khuyến mãi dùng ảnh banner nhỏ 1: không có mục riêng
+  assert.equal(await page.locator(".ce-nav button", { hasText: "Banner trang Khuyến mãi" }).count(), 0);
   // Sửa 1 số liệu ở mục Giới thiệu thương hiệu, lưu và đọc lại từ dữ liệu
   await page.locator(".ce-nav button", { hasText: "Giới thiệu thương hiệu" }).click();
   await page.getByLabel("Giá trị 1", { exact: true }).fill("12+");

@@ -2652,18 +2652,27 @@ button:disabled {
   transform: scale(1.03);
 }
 
-/* Banner lớn đầu trang Khuyến mãi: chỉ ảnh (Admin › Nội dung website › Banner trang Khuyến mãi) */
+/* Banner đầu trang Khuyến mãi = ảnh banner nhỏ 1 trang chủ: rộng hết khung, tỉ lệ 3:1 (điện thoại 2:1), cắt giữa */
 .promo-hero {
-  display: block;
   margin: 0 0 16px;
   border-radius: var(--radius);
   overflow: hidden;
   background: var(--bg, #f3f5f8);
+  aspect-ratio: 3 / 1;
+  max-height: 420px;
+  width: 100%;
 }
 .promo-hero img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+@media (max-width: 640px) {
+  .promo-hero {
+    aspect-ratio: 2 / 1;
+  }
 }
 
 /* Dải danh mục trang chủ có ảnh quảng cáo ở cột đầu (Admin › Danh mục › Ảnh quảng cáo trang chủ) */

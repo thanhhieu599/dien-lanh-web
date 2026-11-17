@@ -135,19 +135,14 @@ export function ListingPage({
             <h1 id="cat-title">{brand.name}</h1>
             <p>{brand.origin ? `Xuất xứ ${brand.origin} · ` : ""}{total} sản phẩm chính hãng</p>
           </div>
-        ) : mode === "sale" && safeImage(dt.siteContent().promo?.image) ? (
-          // Trang Khuyến mãi: banner lớn chỉ có ảnh thay cho khung tiêu đề (tiêu đề vẫn có cho Google / trình đọc màn hình)
+        ) : mode === "sale" && safeImage(dt.siteContent().mini[0]?.image) ? (
+          // Trang Khuyến mãi: dùng ảnh banner nhỏ 1 của trang chủ làm banner đầu trang, chỉ ảnh
+          // (tiêu đề vẫn có cho Google / trình đọc màn hình)
           <>
             <h1 id="cat-title" className="sr-only">{title}</h1>
-            {dt.siteContent().promo.href ? (
-              <ShopLink className="promo-hero" href={dt.siteContent().promo.href} aria-label={title}>
-                <img src={safeImage(dt.siteContent().promo.image)} alt={title} />
-              </ShopLink>
-            ) : (
-              <div className="promo-hero">
-                <img src={safeImage(dt.siteContent().promo.image)} alt={title} />
-              </div>
-            )}
+            <div className="promo-hero">
+              <img src={safeImage(dt.siteContent().mini[0].image)} alt={title} />
+            </div>
           </>
         ) : mode === "search" ? (
           // Trang Sản phẩm / tìm kiếm: không dùng khung tiêu đề riêng, tiêu đề nằm trên thanh kết quả

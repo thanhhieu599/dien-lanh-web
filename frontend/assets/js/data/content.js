@@ -269,13 +269,12 @@ DT.trustData = () => {
 // *chữ* = tô màu nhấn mạnh, xuống dòng = ngắt dòng,
 // [chữ có {ký hiệu}|chữ thay thế] = dùng chữ thay thế khi ký hiệu chưa có dữ liệu (vd chưa đặt ngưỡng miễn phí ship).
 DT.siteContentDefaults = {
-  // 2 banner nhỏ cạnh banner lớn trang chủ: chỉ ảnh + liên kết (chữ, nút thiết kế sẵn trong ảnh)
+  // 2 banner nhỏ cạnh banner lớn trang chủ: chỉ ảnh + liên kết (chữ, nút thiết kế sẵn trong ảnh).
+  // Ảnh banner nhỏ 1 cũng là banner đầu trang Khuyến mãi.
   mini: [
     { image: '', href: 'khuyen-mai.html' },
     { image: '', href: 'dich-vu.html' },
   ],
-  // Banner lớn đầu trang Khuyến mãi (chỉ ảnh); trống = hiện tiêu đề "Khuyến mãi" như cũ
-  promo: { image: '', href: '' },
   story: {
     kicker: 'Về {ten}', title: 'Kiến tạo không gian *mát lành, bền vững* cho mọi công trình Việt',
     stats: [{ value: '10+', label: 'Năm kinh nghiệm' }, { value: '50.000+', label: 'Khách hàng' }, { value: '500+', label: 'Dự án doanh nghiệp' }],
@@ -309,7 +308,7 @@ DT.siteContent = (saved = DT.homeContent) => {
   const d = DT.siteContentDefaults; const o = saved || {};
   const obj = (k) => ({ ...d[k], ...(o[k] || {}) });
   const list = (k) => (Array.isArray(o[k]) && o[k].length ? o[k] : d[k]);
-  return { mini: list('mini').map((m) => ({ image: m?.image || '', href: m?.href || '' })), promo: { image: obj('promo').image || '', href: obj('promo').href || '' }, story: obj('story'), b2b: obj('b2b'), flash: obj('flash'), benefits: list('benefits'), salesPolicy: list('salesPolicy'), newsletter: obj('newsletter') };
+  return { mini: list('mini').map((m) => ({ image: m?.image || '', href: m?.href || '' })), story: obj('story'), b2b: obj('b2b'), flash: obj('flash'), benefits: list('benefits'), salesPolicy: list('salesPolicy'), newsletter: obj('newsletter') };
 };
 // Thay ký hiệu & định dạng chữ (đã an toàn HTML)
 DT.siteText = (s, { rich = false } = {}) => {

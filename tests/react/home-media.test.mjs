@@ -14,7 +14,7 @@ try {
     await blockExternal(context);
     const page=await context.newPage();const errors=[];
     page.on('pageerror',e=>errors.push(e.message));
-    await page.route('**/data/content.js*',async r=>{const res=await r.fetch();r.fulfill({response:res,body:(await res.text())+`\nDT.siteContentDefaults.mini[0].image=${JSON.stringify(IMG)};DT.siteContentDefaults.promo={image:${JSON.stringify(IMG)},href:'danh-muc.html?cat=may-lanh'};`});});
+    await page.route('**/data/content.js*',async r=>{const res=await r.fetch();r.fulfill({response:res,body:(await res.text())+`\nDT.siteContentDefaults.mini[0].image=${JSON.stringify(IMG)};`});});
     await page.route('**/data/catalog.js*',async r=>{const res=await r.fetch();r.fulfill({response:res,body:(await res.text())+`\nObject.assign(DT.categories.find(c=>c.id==='may-lanh'),{promo_image:${JSON.stringify(IMG)},promo_title:'Máy lạnh QA',promo_href:'khuyen-mai.html'});`});});
     async function open(route){await page.goto(base+route);await page.waitForSelector('html[data-react-ready="true"] #main h1',{state:'attached'});await page.waitForFunction(()=>!document.querySelector('#main .react-loading'));}
 
@@ -38,11 +38,13 @@ try {
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${width}: trang chủ tràn ngang`);
     const box=await promo.boundingBox();assert.ok(box.width>100&&box.height>100,`${width}: ảnh quảng cáo quá nhỏ`);
 
-    // Hình 2: trang Khuyến mãi có banner lớn chỉ ảnh thay khung tiêu đề (tiêu đề ẩn cho trình đọc màn hình)
+    // Trang Khuyến mãi: ảnh banner nhỏ 1 làm banner đầu trang (chỉ ảnh), rộng hết khung, tỉ lệ 3:1 (điện thoại 2:1)
     await open('khuyen-mai.html');
     assert.equal(await page.locator('.promo-hero img').count(),1,`${width}: thiếu banner trang Khuyến mãi`);
-    assert.match(await page.locator('.promo-hero').getAttribute('href'),/cat=may-lanh/);
+    assert.equal(await page.locator('.promo-hero img').getAttribute('src'),IMG,'Banner Khuyến mãi = ảnh banner nhỏ 1');
     assert.equal((await page.locator('.promo-hero').innerText()).trim(),'');
+    const hero=await page.locator('.promo-hero').boundingBox();const ratio=hero.width/hero.height;
+    assert.ok(width<=640?Math.abs(ratio-2)<0.1:ratio>=2.9&&ratio<=3.6,`${width}: tỉ lệ banner Khuyến mãi ${ratio.toFixed(2)}`);
     assert.equal(await page.locator('.cat-hero').count(),0,'Không còn khung tiêu đề Khuyến mãi');
     assert.equal(await page.locator('h1#cat-title.sr-only').count(),1);
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${width}: trang Khuyến mãi tràn ngang`);

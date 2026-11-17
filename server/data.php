@@ -212,6 +212,9 @@ function validateRow(string $table, array $row): void {
         if (trim((string)($row['name'] ?? '')) === '') fail('Vui lòng nhập tên nhà cung cấp');
         if (!empty($row['phone']) && !preg_match('/^[0-9+ .()-]{8,20}$/', (string)$row['phone'])) fail('Số điện thoại nhà cung cấp không hợp lệ');
         if (!empty($row['tax_code']) && !preg_match('/^\d{10}(-\d{3})?$/', (string)$row['tax_code'])) fail('Mã số thuế gồm 10 số (hoặc 10 số-3 số)');
+        // Sản phẩm cung cấp: danh sách mã sản phẩm (số hoặc chữ), không trùng
+        if (isset($row['product_ids']) && (!is_array($row['product_ids']) || !array_is_list($row['product_ids']) || count($row['product_ids']) > 5000
+            || array_filter($row['product_ids'], fn($id) => !is_int($id) && !(is_string($id) && preg_match('/^[A-Za-z0-9_.-]{1,80}$/', $id))))) fail('Danh sách sản phẩm của nhà cung cấp không hợp lệ');
     }
     if ($table === 'products') {
         foreach (['cost_price', 'wholesale_price', 'min_stock'] as $field) if (isset($row[$field]) && $row[$field] !== null && $row[$field] !== '' && (!is_numeric($row[$field]) || $row[$field] < 0)) fail("{$field} không hợp lệ");

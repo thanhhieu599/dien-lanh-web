@@ -23,7 +23,7 @@ import {
   useData,
   useNotice,
 } from "../components/common";
-import { EditorField, ProductMembership } from "../components/fields";
+import { EditorField, ProductMembership, SupplierProducts } from "../components/fields";
 import { loadGroups } from "../services/customer-groups";
 import type { Row, FieldSpec } from "../types";
 export function ResourceList({ resource: key }: { resource: string }) {
@@ -287,6 +287,7 @@ function Editor({
       if (!data.slug) problems.name = "Tên thương hiệu cần có chữ hoặc số.";
       data.product_ids = row.product_ids;
     }
+    if (key === "suppliers") data.product_ids = Array.isArray(row.product_ids) ? row.product_ids : [];
     if (key === "categories") {
       const subs = normalizeSubs(row.subs);
       Object.assign(data, {
@@ -766,6 +767,10 @@ export const RESOURCE_TABS: Record<string, ResourceTab[]> = {
     tab("filters", "Bộ lọc sản phẩm", "Bộ lọc là các ô khách bấm ở cột trái trang danh mục để thu hẹp sản phẩm theo thông số (vd Công suất: 1 HP, 1.5 HP; Công nghệ: Inverter). Cách dùng: (1) đặt tên bộ lọc và các giá trị ở đây, (2) vào Sản phẩm → sửa từng sản phẩm → Thuộc tính bộ lọc để chọn giá trị cho sản phẩm đó. Giá trị chưa gán cho sản phẩm nào sẽ tự ẩn trên website. Không dùng bộ lọc để đặt tên sản phẩm hay danh mục.", [], "filters"),
     tab("products", "Sản phẩm", "Sản phẩm thuộc danh mục và thứ tự hiển thị trên website.", [], "productMembership"),
   ],
+  suppliers: [
+    tab("info", "Thông tin nhà cung cấp", "Tên, liên hệ, mã số thuế, tài khoản ngân hàng và điều khoản thanh toán.", ["name", "code", "phone", "email", "tax_code", "contact", "address", "bank", "payment_terms", "active", "note"]),
+    tab("products", "Sản phẩm cung cấp", "Sản phẩm do nhà cung cấp này cung cấp. Khi lập đơn nhập hàng, chọn sản phẩm là ô Nhà cung cấp tự điền; phiếu xuất kho hiện nhà cung cấp dưới tên sản phẩm.", [], "supplierProducts"),
+  ],
   brands: [
     tab("general", "Thông tin & logo", "Tên thương hiệu, trạng thái hiển thị, bật/tắt ở dải Thương hiệu trang chủ, thứ tự và logo.", ["name", "active", "show_home", "sort", "logo"]),
     tab("products", "Sản phẩm", "Sản phẩm thuộc thương hiệu và thứ tự hiển thị trên website.", [], "productMembership"),
@@ -830,7 +835,7 @@ function ResourceTabs({
   const leftovers = fields.filter((f) => !listed.has(f.key)).map((f) => f.key);
   const keysOf = (t: ResourceTab, i: number) => (i === 0 ? [...t.keys, ...leftovers] : t.keys);
   const count = (t: ResourceTab) =>
-    t.extra === "subs" ? (row.subs || []).length : t.extra === "filters" ? (row.filters || []).length : t.extra === "productMembership" ? memberCount : t.extra === "couponGroups" ? (row.customer_groups || []).length || null : null;
+    t.extra === "subs" ? (row.subs || []).length : t.extra === "filters" ? (row.filters || []).length : t.extra === "productMembership" ? memberCount : t.extra === "couponGroups" ? (row.customer_groups || []).length || null : t.extra === "supplierProducts" ? (row.product_ids || []).length : null;
   const index = Math.max(0, tabs.findIndex((t) => t.id === active));
   const current = tabs[index];
   const pick = (keys: string[]) => keys.map((k) => fields.find((f) => f.key === k)).filter(Boolean) as FieldSpec[];
@@ -860,6 +865,7 @@ function ResourceTabs({
         {current.extra === "productMembership" && <ProductMembership row={row} kind={resource as "categories" | "brands"} onChange={patch} bare />}
         {current.extra === "couponScope" && <CouponScope row={row} onChange={patch} error={errors.scope} />}
         {current.extra === "couponGroups" && <CouponGroups row={row} onChange={patch} />}
+        {current.extra === "supplierProducts" && <SupplierProducts value={row.product_ids} onChange={(v) => patch({ product_ids: v })} />}
         {current.extra === "stockHistory" && <ProductStockHistory productId={row.id} />}
       </section>
     </div>

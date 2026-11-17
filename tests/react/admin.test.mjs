@@ -723,6 +723,28 @@ try {
       assert.equal(sup.name, "Công ty TNHH Vật tư QA Mới");
       await page.evaluate((id) => AD.db.inventory("purchase_cancel", { p_id: id }), draft.id);
     }
+    // Nhà cung cấp › Sản phẩm cung cấp: chọn sản phẩm khi nhập hàng tự điền nhà cung cấp; phiếu trả NCC tự điền người nhận
+    {
+      await open(`suppliers/${po.supplier_id}`);
+      await page.locator(".ce-nav button", { hasText: "Sản phẩm cung cấp" }).click();
+      await page.locator("#supplier-products input[type=search]").fill(before.sku);
+      await page.locator("#supplier-products .pm-results button", { hasText: "Thêm" }).first().click();
+      assert.match(await page.locator("#supplier-products .pm-list").innerText(), new RegExp(before.sku));
+      await saved();
+      await waitUntil(async ([id, p]) => ((await AD.db.get("suppliers", id)).product_ids || []).map(String).includes(String(p)), [po.supplier_id, pid]);
+      const supName = (await read("suppliers", po.supplier_id)).name;
+      await open("purchases/new");
+      await page.locator(".inv-picker input").fill(before.sku);
+      await page.keyboard.press("Enter");
+      await waitUntil(async (name) => document.querySelector("[name=supplier]")?.value.startsWith(name), supName);
+      assert.ok((await page.locator(".inv-lines").innerText()).includes(`NCC: ${supName}`), "Dòng sản phẩm hiện nhà cung cấp");
+      await open("stock-exports/new");
+      await page.locator("[name=reason]").click();
+      await page.locator(".ar-combo-list li", { hasText: "Trả nhà cung cấp" }).click();
+      await page.locator(".inv-picker input").fill(before.sku);
+      await page.keyboard.press("Enter");
+      await waitUntil(async (name) => [...document.querySelectorAll("#view input")].some((i) => i.value === name), supName);
+    }
     // Kiểm hàng: thực tế ít hơn 2 -> cân bằng kho
     await open("stocktakes/new");
     await page.locator(".inv-picker input").fill(before.sku);

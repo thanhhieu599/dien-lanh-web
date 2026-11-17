@@ -2,7 +2,7 @@
 import {useEffect, useMemo, useState, type ReactNode} from 'react';
 import {Link, useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import {ad, date, downloadCSV, loadCache, money, today} from '../services/runtime';
-import {EXPORT_REASONS, LEVEL_LABEL, MOVE_TYPES, PURCHASE_STATUS, incomingMap, invOp, purchaseTotals, reservedMap, stockLevel} from '../services/inventory';
+import {EXPORT_REASONS, LEVEL_LABEL, MOVE_TYPES, PURCHASE_STATUS, incomingMap, invOp, purchaseTotals, reservedMap, stockLevel, suppliersOf} from '../services/inventory';
 import {Action, DataState, Head, Panel, Table, useData, useNotice} from '../components/common';
 import {MovesTable, ProductPicker} from '../components/stock';
 import {Combo} from '../components/combo';
@@ -167,10 +167,10 @@ function PurchaseForm({doc}: {doc: Row | null}) {
     </Panel>
   </div>
   <Panel title="Sản phẩm nhập">
-    <ProductPicker exclude={items.map((l) => l.product_id)} onPick={(p) => setItems([...items, {product_id: p.id, name: p.name, sku: p.sku, unit: p.unit || 'Cái', qty: 1, price: num(p.import_price) || num(p.cost_price), discount: 0, tax_rate: 0}])}/>
+    <ProductPicker exclude={items.map((l) => l.product_id)} onPick={(p) => { setItems([...items, {product_id: p.id, name: p.name, sku: p.sku, unit: p.unit || 'Cái', qty: 1, price: num(p.import_price) || num(p.cost_price), discount: 0, tax_rate: 0}]); const own = suppliersOf(p.id, suppliersState.data || []); if (!supplierId && !newSupplier && own[0]) { setSupplierId(String(own[0].id)); notice(`Đã chọn nhà cung cấp ${own[0].name} theo sản phẩm ${p.name}.`); } }}/>
     {items.length ? <div className="ar-table-scroll"><table className="ar-table inv-lines"><thead><tr><th>#</th><th>Sản phẩm</th><th>Đơn vị</th><th>SL nhập</th><th>Đơn giá</th><th>Chiết khấu</th><th>Thuế %</th><th>Thành tiền</th><th/></tr></thead><tbody>
       {items.map((l, i) => <tr key={l.product_id}>
-        <td>{i + 1}</td><td><b>{l.name}</b><small>{l.sku}</small></td><td>{l.unit}</td>
+        <td>{i + 1}</td><td><b>{l.name}</b><small>{l.sku}</small><SupplierHint productId={l.product_id} suppliers={suppliersState.data} current={supplierId}/></td><td>{l.unit}</td>
         <td><input aria-label={`Số lượng ${l.name}`} type="number" min={1} step={1} value={l.qty} onChange={(e) => setLine(i, {qty: e.target.value === '' ? '' : Number(e.target.value)})}/></td>
         <td><input aria-label={`Đơn giá ${l.name}`} type="number" min={0} step={1000} value={l.price} onChange={(e) => setLine(i, {price: Number(e.target.value)})}/></td>
         <td><input aria-label={`Chiết khấu ${l.name}`} type="number" min={0} step={1000} value={l.discount} onChange={(e) => setLine(i, {discount: Number(e.target.value)})}/></td>
@@ -336,9 +336,12 @@ function ExportDoc({id}: {id: string}) {
   const navigate = useNavigate(); const notice = useNotice(); const [params] = useSearchParams();
   const state = useData(async () => { await loadCache(); const doc = id === 'new' ? null : await ad.db.get('stock_exports', id); if (id !== 'new' && !doc) throw new Error('Không tìm thấy phiếu xuất.'); return {doc}; }, [id, params.get('r')]);
   const doc = state.data?.doc;
+  const suppliersState = useData(async () => (await ad.db.list('suppliers', {order: 'name.asc', limit: 5000})).rows, []);
   const [form, setForm] = useState<Row | null>(null);
   const f: Row = form ?? {reason: doc?.reason || '', receiver: doc?.receiver || '', receiver_address: doc?.receiver_address || '', customer_id: doc?.customer_id || '', note: doc?.note || '', items: (doc?.items || []).map((l: Row) => ({...l}))};
   const set = (patch: Row) => setForm({...f, ...patch});
+  // Trả nhà cung cấp: người nhận còn trống thì điền nhà cung cấp của sản phẩm đầu tiên có nhà cung cấp
+  const fromSupplier = (items: Row[]): Row => { if (f.receiver) return {}; const s = items.map((l) => suppliersOf(l.product_id, suppliersState.data || [])[0]).find(Boolean); return s ? {receiver: s.name, customer_id: '', receiver_address: f.receiver_address || s.address || ''} : {}; };
   const readonly = doc?.status === 'done' || !canWrite();
   async function save(confirm: boolean) {
     if (!f.reason) throw new Error('Vui lòng chọn lý do xuất.');
@@ -354,21 +357,29 @@ function ExportDoc({id}: {id: string}) {
     {doc?.status === 'draft' && canWrite() && <Action confirm="Xóa phiếu nháp này?" run={async () => { await invOp('delete_draft', {p_id: doc.id, p_kind: 'export'}); navigate('/stock-exports'); }}>Xóa phiếu</Action>}
   </Head>
   <Panel title="Thông tin phiếu"><div className="ar-grid">
-    <label><span>Lý do xuất *</span><Combo name="reason" label="Lý do xuất" value={f.reason} disabled={readonly} options={EXPORT_REASONS} placeholder="Chọn lý do hoặc gõ lý do khác…" onChange={(v) => set({reason: v})}/></label>
+    <label><span>Lý do xuất *</span><Combo name="reason" label="Lý do xuất" value={f.reason} disabled={readonly} options={EXPORT_REASONS} placeholder="Chọn lý do hoặc gõ lý do khác…" onChange={(v) => set({reason: v, ...(v === 'return_supplier' ? fromSupplier(f.items) : {})})}/></label>
     <ReceiverInput value={f.receiver} readOnly={readonly} onChange={(v) => set({receiver: v, customer_id: ''})} onPick={(c) => { const a: Row = (c.addresses || []).find((x: Row) => x.default) || (c.addresses || [])[0] || {}; set({receiver: c.name || c.phone, customer_id: c.id, receiver_address: [a.address, a.district, a.province].filter(Boolean).join(', ') || f.receiver_address}); }}/>
     <label className="full"><span>Địa chỉ (bộ phận) người nhận</span><input value={f.receiver_address} readOnly={readonly} placeholder="Địa chỉ khách / tên bộ phận nhận – in trên phiếu xuất kho" onChange={(e) => set({receiver_address: e.target.value})}/></label>
     <label className="full"><span>Ghi chú</span><input value={f.note} readOnly={readonly} onChange={(e) => set({note: e.target.value})}/></label>
   </div></Panel>
   <Panel title="Sản phẩm xuất">
-    {!readonly && <ProductPicker exclude={f.items.map((l: Row) => l.product_id)} onPick={(p) => set({items: [...f.items, {product_id: p.id, name: p.name, sku: p.sku, unit: p.unit || 'Cái', qty: 1, note: ''}]})}/>}
+    {!readonly && <ProductPicker exclude={f.items.map((l: Row) => l.product_id)} onPick={(p) => { const items = [...f.items, {product_id: p.id, name: p.name, sku: p.sku, unit: p.unit || 'Cái', qty: 1, note: ''}]; set({items, ...(f.reason === 'return_supplier' ? fromSupplier(items) : {})}); }}/>}
     {f.items.length ? <div className="ar-table-scroll"><table className="ar-table inv-lines"><thead><tr><th>Sản phẩm</th><th>Đơn vị</th><th>Có thể bán</th><th>SL xuất</th><th>Ghi chú</th>{!readonly && <th/>}</tr></thead><tbody>
       {f.items.map((l: Row, i: number) => <tr key={l.product_id}>
-        <td><b>{l.name}</b><small>{l.sku}</small></td><td>{l.unit}</td><td>{num(productOf(l.product_id)?.stock)}</td>
+        <td><b>{l.name}</b><small>{l.sku}</small><SupplierHint productId={l.product_id} suppliers={suppliersState.data}/></td><td>{l.unit}</td><td>{num(productOf(l.product_id)?.stock)}</td>
         <td>{readonly ? l.qty : <input aria-label={`Số lượng xuất ${l.name}`} type="number" min={1} step={1} value={l.qty} onChange={(e) => set({items: f.items.map((x: Row, k: number) => (k === i ? {...x, qty: e.target.value === '' ? '' : Number(e.target.value)} : x))})}/>}</td>
         <td>{readonly ? l.note || '—' : <input aria-label={`Ghi chú ${l.name}`} value={l.note || ''} onChange={(e) => set({items: f.items.map((x: Row, k: number) => (k === i ? {...x, note: e.target.value} : x))})}/>}</td>
         {!readonly && <td><button type="button" className="btn btn-light" aria-label={`Bỏ ${l.name}`} onClick={() => set({items: f.items.filter((_: Row, k: number) => k !== i)})}>×</button></td>}
       </tr>)}</tbody></table></div> : <p className="inv-muted">Phiếu xuất chưa có sản phẩm.</p>}
   </Panel></>}</DataState>;
+}
+
+// Dòng nhỏ dưới tên sản phẩm: nhà cung cấp của sản phẩm (lấy từ Nhà cung cấp › Sản phẩm cung cấp)
+function SupplierHint({productId, suppliers, current}: {productId: unknown; suppliers?: Row[] | null; current?: string}) {
+  const own = suppliersOf(productId, suppliers || []);
+  if (!own.length) return null;
+  const other = current && !own.some((s) => String(s.id) === current);
+  return <small className={`inv-sup${other ? ' inv-minus' : ''}`}>NCC: {own.map((s) => s.name).join(', ')}{other ? ' (khác nhà cung cấp đang chọn)' : ''}</small>;
 }
 
 /* ------------------------------------------------------------------ Lịch sử kho */

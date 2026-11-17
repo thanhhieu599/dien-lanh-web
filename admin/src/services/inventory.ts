@@ -14,6 +14,10 @@ export function issueInvoice(id: unknown): Promise<Row> {
 
 export const MOVE_TYPES: Record<string, string> = {purchase: 'Nhập hàng', sale: 'Bán hàng', cancel: 'Hủy đơn – hoàn kho', adjust: 'Kiểm hàng', export: 'Xuất kho', initial: 'Khởi tạo kho', manual: 'Sửa tay'};
 export const EXPORT_REASONS: [string, string][] = [['damaged', 'Hàng hỏng / lỗi'], ['sample', 'Hàng mẫu / trưng bày'], ['gift', 'Quà tặng doanh nghiệp'], ['internal', 'Sử dụng nội bộ'], ['return_supplier', 'Trả nhà cung cấp'], ['other', 'Khác']];
+// Nhà cung cấp có sản phẩm này trong mục "Sản phẩm cung cấp" (đang giao dịch trước)
+export function suppliersOf(productId: unknown, suppliers: Row[] = []): Row[] {
+  return suppliers.filter((s) => Array.isArray(s.product_ids) && s.product_ids.map(String).includes(String(productId))).sort((a, b) => Number(a.active === false) - Number(b.active === false));
+}
 export const PURCHASE_STATUS: Record<string, string> = {ordered: 'Đang giao dịch', done: 'Hoàn thành', cancelled: 'Đã hủy'};
 // Đơn bán chưa giao xong: số lượng đã giữ cho khách (đã trừ khỏi "Có thể bán")
 export const OPEN_ORDER = ['pending', 'confirmed', 'shipping', 'installing'];

@@ -54,6 +54,22 @@ export function ProductMembership({row,onChange,kind,bare=false}:{row:Row;onChan
  return bare?body:<section className="ar-panel"><h2>Sản phẩm trong {kind==='brands'?'thương hiệu':'danh mục'}</h2>{body}</section>;
 }
 
+// Nhà cung cấp › Sản phẩm cung cấp: chọn từ danh sách sản phẩm; đơn nhập / phiếu xuất dùng để tự nhận nhà cung cấp
+export function SupplierProducts({value,onChange}:{value:unknown;onChange:(ids:any[])=>void}){
+ const products:Row[]=ad.cache.products||[];const [q,setQ]=useState('');const [limit,setLimit]=useState(10);
+ const ids:any[]=Array.isArray(value)?value:[];const has=new Set(ids.map(String));
+ const selected=ids.map(id=>products.find(p=>String(p.id)===String(id))).filter(Boolean) as Row[];
+ const options=q.trim()?products.filter(p=>!has.has(String(p.id))&&`${p.name} ${p.sku}`.toLowerCase().includes(q.trim().toLowerCase())):[];
+ return <div className="pm" id="supplier-products">
+  <div className="pm-add"><label>Thêm sản phẩm<input type="search" value={q} placeholder="Gõ tên hoặc mã SKU để tìm…" onChange={e=>{setQ(e.target.value);setLimit(10);}} aria-label="Tìm sản phẩm nhà cung cấp"/></label>
+   {q.trim()&&<div className="pm-results">{options.length?options.slice(0,limit).map(p=><div key={p.id} className="pm-row"><span>{p.name}<small>{p.sku}</small></span><button type="button" className="btn btn-light" onClick={()=>onChange([...ids,p.id])}>Thêm</button></div>):<p className="ce-empty">Không tìm thấy sản phẩm phù hợp.</p>}
+    {options.length>limit&&<button type="button" className="btn btn-light" onClick={()=>setLimit(v=>v+10)}>Xem thêm sản phẩm</button>}</div>}
+  </div>
+  <p className="pm-count">{selected.length} sản phẩm do nhà cung cấp này cung cấp</p>
+  {selected.length?<ol className="pm-list">{selected.map((p,i)=><li key={p.id} className="pm-row"><span><b>{i+1}.</b> {p.name}<small>{p.sku}</small></span><button type="button" className="btn btn-light" aria-label={`Bỏ ${p.sku} khỏi nhà cung cấp`} onClick={()=>onChange(ids.filter(x=>String(x)!==String(p.id)))}>Bỏ</button></li>)}</ol>:<p className="ce-empty">Chưa có sản phẩm. Thêm sản phẩm để khi lập đơn nhập hàng, chọn sản phẩm là tự hiện nhà cung cấp.</p>}
+ </div>;
+}
+
 // Ô ảnh dạng thẻ (trang Tầm nhìn…): xem trước đúng tỉ lệ, tải ảnh / dán link / bỏ ảnh gọn trong 1 hàng nút
 export function ImageSlot({label,hint,size,value,onChange,folder='media',onPending}:{label:string;hint?:string;size?:string;value:any;onChange:(v:string)=>void;folder?:string;onPending?:(delta:number)=>void}){
  const [busy,setBusy]=useState(false);const [link,setLink]=useState<string|null>(null);const notice=useNotice();const id=useId();

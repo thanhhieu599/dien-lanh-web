@@ -1,4 +1,4 @@
 FROM php:8.5-apache
-RUN docker-php-ext-install pdo_mysql && a2enmod headers
+RUN docker-php-ext-install pdo_mysql && a2enmod headers rewrite
 RUN printf 'display_errors=Off\nlog_errors=On\nupload_max_filesize=8M\npost_max_size=9M\nsession.use_strict_mode=1\nexpose_php=Off\n' > /usr/local/etc/php/conf.d/app.ini
 RUN printf 'ServerTokens Prod\nServerSignature Off\n' > /etc/apache2/conf-enabled/zz-security.conf

@@ -239,6 +239,15 @@ export function Breadcrumb({
 }: {
   items: { label: string; href?: string }[];
 }) {
+  // BreadcrumbList cho Google: khớp đúng đường dẫn hiển thị (mục cuối là trang hiện tại, không cần URL)
+  useJsonLd("BreadcrumbList", {
+    itemListElement: [{ label: "Trang chủ", href: "index.html" }, ...items].map((i, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: i.label,
+      ...(i.href ? { item: dt.u.abs(i.href === "index.html" ? "./" : i.href) } : {}),
+    })),
+  });
   return (
     <nav className="breadcrumb" aria-label="Đường dẫn">
       <div className="container">

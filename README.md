@@ -49,6 +49,14 @@ Hosting cần PHP 8.3+ với PDO MySQL và fileinfo; khuyến nghị PHP 8.5 cù
 npm run package:hosting
 ```
 
+**Bản chuẩn SEO (khuyến nghị cho tên miền thật):** sau khi hosting đã chạy và có dữ liệu thật, dựng HTML đầy đủ nội dung, canonical, sitemap, robots.txt bằng chính API trên hosting rồi upload lại `dist/`:
+
+```sh
+npm run build -- --backend https://nhathaudienlanhkhanhle.vn/server/api.php --site https://nhathaudienlanhkhanhle.vn/frontend/
+```
+
+Bản `package:hosting` chỉ có trang trống chờ JavaScript vẽ nội dung, không có sitemap/robots.txt. Dựng lại bản SEO mỗi khi thêm nhiều sản phẩm, bài viết, dự án mới.
+
 Upload nội dung `dist/`, tạo database rồi cấu hình `server/config.local.php` trên hosting. Import `server/schema.sql`; thêm dữ liệu mẫu và tài khoản quản trị theo [hướng dẫn server](server/README.md). API dùng query string nên không cần rewrite URL. GitHub Pages chỉ phục vụ được bản demo tĩnh.
 
 ## Dữ liệu và tính năng

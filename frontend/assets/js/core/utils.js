@@ -26,10 +26,23 @@ DT.u = {
   today() { const x = new Date(); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; },
 
   // Link do quản trị nhập: chỉ cho http(s), tel, mailto, zalo hoặc đường dẫn nội bộ (chặn javascript:)
+  // Ảnh trong kho media (…/server/api.php?route=/media/…) luôn lấy từ máy chủ đang chạy website, dù lúc tải lên
+  // được lưu kèm địa chỉ khác (máy local, có/không www, tên miền cũ). Nhờ vậy chuyển database sang hosting không vỡ ảnh.
+  localMedia(url) {
+    if (DT.BACKEND?.mode !== 'mysql' || typeof DT.apiEndpoint !== 'function') return url;
+    try {
+      const u = new URL(url);
+      const route = u.searchParams.get('route') || '';
+      if (/\/server\/api\.php$/.test(u.pathname) && /^\/?media\/[A-Za-z0-9_./-]+$/.test(route) && !route.includes('..')) return DT.apiEndpoint(`/${route.replace(/^\//, '')}`);
+    } catch { /* không phải URL hợp lệ: giữ nguyên */ }
+    return url;
+  },
+
   safeUrl(u) {
     const s = String(u ?? '').trim();
     if (!s) return '';
-    if (/^(https?:|tel:|mailto:|zalo:)/i.test(s)) return s;
+    if (/^https?:/i.test(s)) return DT.u.localMedia(s);
+    if (/^(tel:|mailto:|zalo:)/i.test(s)) return s;
     if (/^[a-z][a-z0-9+.-]*:/i.test(s) || s.startsWith('//')) return '';
     return s;
   },

@@ -44,7 +44,8 @@ function copySite() {
   }
   fs.rmSync(OUT, { recursive: true, force: true });
   fs.mkdirSync(OUT, { recursive: true });
-  for (const f of ['index.html', '404.html', '.nojekyll', 'frontend', 'admin']) {
+  // .htaccess: bản SEO đưa lên hosting Apache cũng cần chuyển hướng trang gốc, trang 404, bảo mật và nén/cache
+  for (const f of ['index.html', '404.html', '.nojekyll', '.htaccess', 'frontend', 'admin']) {
     copySiteFiles(path.join(ROOT, f), path.join(OUT, f), (file)=>path.basename(file)!=='src');
   }
   copySiteFiles(path.join(ROOT, 'server'), path.join(OUT, 'server'),
@@ -114,7 +115,8 @@ function routes(data) {
   for (const p of data.projects || []) r.push({ src: `du-an-chi-tiet.html?slug=${p.slug}`, out: `du-an/${p.slug}.html`, data: { qSlug: p.slug }, priority: '0.7', lastmod: p.updated });
   for (const b of data.brands || []) {
     r.push({ src: `thuong-hieu.html?id=${b.slug || b.id}`, out: `thuong-hieu/${b.slug || b.id}.html`, data: { qId: b.slug || b.id }, priority: '0.7' });
-    if (b.slug && b.slug !== b.id) r.push({ src: `thuong-hieu.html?id=${b.slug}`, out: `thuong-hieu/${b.id}.html`, data: { qId: b.slug }, priority: '0.5' });
+    // Link cũ theo mã thương hiệu vẫn mở được, nhưng canonical về trang slug và không đưa vào sitemap (tránh trùng nội dung)
+    if (b.slug && b.slug !== b.id) r.push({ src: `thuong-hieu.html?id=${b.slug}`, out: `thuong-hieu/${b.id}.html`, data: { qId: b.slug }, canonical: `thuong-hieu/${b.slug}.html`, sitemap: false });
   }
   for (const k of data.policies) r.push({ src: `chinh-sach.html?type=${k}`, out: `chinh-sach/${k}.html`, data: { qType: k }, priority: '0.3' });
   return r;
@@ -133,9 +135,11 @@ async function snapshot(page, base, siteUrl, route) {
     const el = page.locator(route.ogSelector);
     if (await el.count()) await el.first().screenshot({ path: path.join(OUT, 'frontend', route.og) }).catch((e) => console.warn('  ! ảnh chia sẻ', route.out, e.message));
   }
-  return page.evaluate(({ out, data, siteUrl }) => {
+  const html = await page.evaluate(({ out, canonicalOut, data, siteUrl }) => {
     // Bỏ phần tạm thời (thông báo, cửa sổ bật lên) và trạng thái riêng của trình duyệt build
     document.querySelectorAll('#toasts, .modal-wrap, .cookie-bar').forEach((e) => e.remove());
+    // Gợi ý tải trước do Vite chèn lúc chạy mang địa chỉ máy build (http://127.0.0.1:...): bỏ, trình duyệt khách tự thêm lại khi cần
+    document.querySelectorAll('link[rel="modulepreload"]').forEach((e) => { if (/^https?:/.test(e.getAttribute('href') || '')) e.remove(); });
     // Runtime chung được bootstrap lại theo đúng thứ tự khi React khởi động ở máy khách.
     document.querySelectorAll('script[data-shared-runtime]').forEach((e)=>e.remove());
     document.body.classList.remove('no-scroll');
@@ -160,7 +164,8 @@ async function snapshot(page, base, siteUrl, route) {
       m.content = val;
     };
     const canonical=head.querySelector('link[rel="canonical"]') || document.createElement('link');
-    canonical.rel='canonical';canonical.href=abs(out === 'index.html' ? './' : out);head.appendChild(canonical);
+    const target = canonicalOut || out;
+    canonical.rel='canonical';canonical.href=abs(target === 'index.html' ? './' : target);head.appendChild(canonical);
     meta('property', 'og:url', head.querySelector('link[rel="canonical"]').href);
     meta('property', 'og:title', document.title);
     meta('property', 'og:site_name', DT.config.name);
@@ -168,7 +173,10 @@ async function snapshot(page, base, siteUrl, route) {
     if (!head.querySelector('meta[property="og:image"]')) meta('property', 'og:image', abs('og/home.png'));
     meta('name', 'twitter:card', 'summary_large_image');
     return `<!doctype html>\n${document.documentElement.outerHTML}\n`;
-  }, { out: route.out, data: route.data, siteUrl });
+  }, { out: route.out, canonicalOut: route.canonical, data: route.data, siteUrl });
+  // Địa chỉ tuyệt đối của máy build còn sót (vd link /frontend/...) đổi sang tên miền chính thức
+  const origin = new URL(base).origin;
+  return html.split(`${origin}/frontend/`).join(siteUrl).split(`${origin}/`).join(new URL('../', siteUrl).href);
 }
 
 // ---------------------------------------------------------------- 5. sitemap, robots, llms.txt
@@ -176,9 +184,10 @@ const xmlEsc = (s) => String(s).replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': 
 
 function writeSitemap(siteUrl, list) {
   // lastmod chỉ ghi khi biết ngày cập nhật thật (sản phẩm, bài viết, dự án) – không ghi "hôm nay" cho mọi trang
-  const urls = list.map((r) => `  <url><loc>${xmlEsc(new URL(r.out === 'index.html' ? './' : r.out, siteUrl).href)}</loc>${r.lastmod ? `<lastmod>${String(r.lastmod).slice(0, 10)}</lastmod>` : ''}<priority>${r.priority}</priority></url>`);
+  const urls = list.filter((r) => r.sitemap !== false).map((r) => `  <url><loc>${xmlEsc(new URL(r.out === 'index.html' ? './' : r.out, siteUrl).href)}</loc>${r.lastmod ? `<lastmod>${String(r.lastmod).slice(0, 10)}</lastmod>` : ''}<priority>${r.priority}</priority></url>`);
   fs.writeFileSync(path.join(OUT, 'frontend/sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`);
-  const robots = `User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /frontend/gio-hang.html\nDisallow: /frontend/thanh-toan.html\nDisallow: /frontend/tai-khoan.html\n\nSitemap: ${new URL('sitemap.xml', siteUrl).href}\n`;
+  // Giỏ hàng / thanh toán / tài khoản đã có thẻ noindex: không chặn bằng robots.txt để Google đọc được thẻ đó
+  const robots = `User-agent: *\nAllow: /\nDisallow: /admin/\n\nSitemap: ${new URL('sitemap.xml', siteUrl).href}\n`;
   // robots.txt chỉ có hiệu lực ở thư mục gốc tên miền (khi dùng tên miền riêng trỏ vào repo)
   fs.writeFileSync(path.join(OUT, 'robots.txt'), robots);
   fs.writeFileSync(path.join(OUT, 'frontend/robots.txt'), robots);

@@ -4,6 +4,19 @@ ServerSignature Off
 # Đường dẫn không tồn tại: hiện trang 404 thân thiện của website thay vì trang lỗi mặc định của máy chủ
 ErrorDocument 404 /frontend/404.html
 
+# SEO: trang gốc tên miền chuyển hẳn (301) sang trang chủ website trong frontend/, để Google gộp về 1 địa chỉ
+# (thay cho trang chuyển hướng bằng JavaScript). Đường dẫn tương đối nên vẫn đúng khi cài trong thư mục con.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # %2 = thư mục cài website (vd "/" hoặc "/thu-muc-con/"), tự tính từ địa chỉ đang mở
+  RewriteCond $0#%{REQUEST_URI} ^([^#]*)#(.*)\1$
+  RewriteRule ^(index\.html)?$ %2frontend/ [R=301,L]
+  # Khi tên miền đã chạy HTTPS ổn định, bỏ dấu # 2 dòng dưới để luôn dùng https://nhathaudienlanhkhanhle.vn (không www):
+  # RewriteCond %{HTTPS} off [OR]
+  # RewriteCond %{HTTP_HOST} ^www\. [NC]
+  # RewriteRule ^ https://nhathaudienlanhkhanhle.vn%{REQUEST_URI} [R=301,L]
+</IfModule>
+
 <IfModule mod_headers.c>
   # setifempty: API (PHP) đã tự đặt header chặt hơn thì giữ của PHP. Chống đoán sai loại tệp, chống nhúng trang vào web lừa đảo (clickjacking), hạn chế lộ đường dẫn.
   Header setifempty X-Content-Type-Options "nosniff"

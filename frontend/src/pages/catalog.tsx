@@ -99,7 +99,9 @@ export function ListingPage({
       setParams(next, { replace: true });
     }
   }, [mode, page, total, params, setParams]);
-  useMeta(title);
+  // Trang danh mục con (vd Máy lạnh › Treo tường): title / mô tả riêng, không trùng danh mục cha
+  const subCat = cat?.subs?.find((s: Row) => s.id && s.id === filters.sub);
+  useMeta(subCat ? `${subCat.name} - ${cat!.name}` : title);
   function change(key: string, value: string) {
     const next = new URLSearchParams(params);
     if (value || key === "cat" || key === "sub") next.set(key, value);

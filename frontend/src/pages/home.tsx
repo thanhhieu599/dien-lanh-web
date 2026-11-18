@@ -9,6 +9,7 @@ import {
   ProjectCard,
   Rich,
   ShopLink,
+  useJsonLd,
   useMeta,
 } from "../components/common";
 import {
@@ -87,7 +88,25 @@ export function HomePage() {
       (new Date(content.flash.endsAt || midnight).getTime() - now) / 1000,
     ),
   );
-  useMeta(`${dt.config.name} - Máy lạnh, tủ lạnh, máy giặt chính hãng`);
+  // Title không lặp tên cửa hàng (setMeta tự thêm " | tên cửa hàng")
+  useMeta(
+    "Máy lạnh, điện lạnh chính hãng - Lắp đặt, bảo trì",
+    `${dt.config.name}: máy lạnh, tủ lạnh, máy giặt, tủ đông chính hãng; lắp đặt, vệ sinh, bảo trì điện lạnh cho gia đình và doanh nghiệp.`,
+  );
+  // Thông tin doanh nghiệp cho Google (chỉ dùng dữ liệu nhập trong Admin › Cài đặt, trường trống thì bỏ)
+  const cfg = dt.config as Row;
+  const siteRoot = dt.u.abs("./");
+  useJsonLd("WebSite", { name: cfg.name, url: siteRoot, inLanguage: "vi-VN" });
+  useJsonLd("HVACBusiness", {
+    name: cfg.name,
+    url: siteRoot,
+    ...(cfg.company ? { legalName: cfg.company } : {}),
+    ...(cfg.hotline ? { telephone: cfg.hotline } : {}),
+    ...(cfg.email ? { email: cfg.email } : {}),
+    ...(cfg.address ? { address: { "@type": "PostalAddress", streetAddress: cfg.address, addressCountry: "VN" } } : {}),
+    ...(cfg.taxCode ? { taxID: cfg.taxCode } : {}),
+    image: dt.u.abs("og/home.png"),
+  });
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);

@@ -134,7 +134,7 @@ DT.store = (() => {
       .map((i) => ({
         ...i,
         key: i.key || lineKey(i.id, i.options),
-        product: DT.api.productById(i.id),
+        product: DT.api.priced(DT.api.productById(i.id), i.options),
       }))
       .filter((l) => l.product);
     const c = state.coupon && findCoupon(state.coupon);

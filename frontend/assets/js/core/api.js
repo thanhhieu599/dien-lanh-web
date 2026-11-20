@@ -25,8 +25,19 @@ DT.api = (() => {
     return byId.get(Number(key)) || bySlug.get(key);
   };
   const category = (id) => DT.categories.find((c) => c.id === id);
-  const optionGroups = (p) =>
-    Object.entries(p.options || {})
+  // Công suất & giá: khách chọn 1 mức, giá sản phẩm đổi theo mức đó (máy chủ tính lại giống hệt: shop.php cartLines)
+  const CAPACITY = "Công suất";
+  const capacities = (p) => (Array.isArray(p?.capacities) ? p.capacities : []).filter((c) => c && c.label);
+  const capacityOf = (p, options) => capacities(p).find((c) => c.label === options?.[CAPACITY]) || null;
+  // Sản phẩm với giá của mức công suất đã chọn (chưa chọn thì giữ giá chung = mức rẻ nhất)
+  const priced = (p, options) => {
+    const c = p && capacityOf(p, options);
+    return c ? { ...p, price: c.price, oldPrice: c.oldPrice ?? null } : p;
+  };
+  const optionGroups = (p) => [
+    ...(capacities(p).length ? [{ name: CAPACITY, values: capacities(p).map((c) => c.label), priced: true }] : []),
+    ...Object.entries(p.options || {})
+      .filter(([name]) => !(capacities(p).length && name.trim() === CAPACITY))
       .map(([name, values]) => ({
         name: name.trim(),
         values: [
@@ -40,7 +51,8 @@ DT.api = (() => {
           ),
         ],
       }))
-      .filter((group) => group.name && group.values.length);
+      .filter((group) => group.name && group.values.length),
+  ];
   const optionText = (options) =>
     Object.entries(options || {})
       .map(([name, value]) => `${name}: ${value}`)
@@ -240,6 +252,8 @@ DT.api = (() => {
     product,
     category,
     optionGroups,
+    capacities,
+    priced,
     optionText,
     inCategory,
     brand,

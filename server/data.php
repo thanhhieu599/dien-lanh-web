@@ -307,6 +307,7 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
         // Sản phẩm mới có tồn ban đầu: ghi vào lịch sử kho
         return transaction(function() use ($body, $user) {
             // Mã SKU: tự nhập hoặc để trống để hệ thống sinh (SP00001, SP00002…); không được trùng
+            $body = normalizeCapacities($body);
             $body['sku'] = trim((string)($body['sku'] ?? ''));
             if ($body['sku'] === '') $body['sku'] = newSku();
             elseif (mb_strlen($body['sku']) > 64) fail('Mã SKU tối đa 64 ký tự');
@@ -377,7 +378,7 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
         if ($stockChange) unset($patch['stock']);
         $before = $row;
         $row = array_merge($row, $patch);
-        if ($table === 'products') syncProductMembership($before, $row);
+        if ($table === 'products') { syncProductMembership($before, $row); if (array_key_exists('capacities', $patch)) $row = normalizeCapacities($row); }
         validateRow($table, $row);
         if ($stockChange) { stockMove($row, $stockChange, 'manual', '', 'Sửa tồn kho ở trang sản phẩm', $user, null, false); validateRow($table, $row); }
         return [put($table, $row)];

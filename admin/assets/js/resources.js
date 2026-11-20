@@ -362,6 +362,13 @@ window.AD = window.AD || {};
           col: "half",
         },
         {
+          key: "capacities",
+          label: "Công suất & giá",
+          type: "capacities",
+          col: "full",
+          help: "Mỗi dòng 1 mức công suất với giá riêng (vd 1HP – 10.990.000). Có ít nhất 1 dòng thì khách phải chọn công suất khi mua, giá đổi theo mức đã chọn; Giá bán / Giá gốc ở trên tự lấy theo mức rẻ nhất khi lưu. Tồn kho dùng chung.",
+        },
+        {
           key: "options",
           label: "Tùy chọn sản phẩm",
           type: "kv",

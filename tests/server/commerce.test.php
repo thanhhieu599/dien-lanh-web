@@ -75,6 +75,18 @@ try {
         ['shipping' => ['method' => 'pickup', 'store' => 'Không có']], ['phone' => '123'], ['name' => ''],
     ] as $bad) ok(isset(buy([['id' => $acc['id'], 'qty' => 1]], $bad)['error']), 'A13 Thông tin đặt hàng sai bị chặn: ' . json_encode($bad, JSON_UNESCAPED_UNICODE));
 
+    echo "--- A2. Công suất & giá: mỗi mức 1 giá, máy chủ tính theo mức khách chọn
+";
+    $cap = keep('products', normalizeCapacities(['id' => "$p-cap", 'sku' => "$p-cap", 'slug' => "$p-cap", 'name' => '[QA] Máy lạnh nhiều công suất', 'cat' => 'may-lanh', 'brand' => $brand, 'price' => 1, 'stock' => 5, 'active' => true, 'sold' => 0,
+        'capacities' => [['label' => '2HP', 'price' => 20000000, 'old_price' => 24000000], ['label' => '1HP', 'price' => 11000000]]]));
+    ok($cap['price'] === 11000000 && $cap['old_price'] === null, 'A2.1 Giá chung của sản phẩm = mức công suất rẻ nhất');
+    $o = buy([['id' => $cap['id'], 'qty' => 2, 'options' => ['Công suất' => '2HP'], 'price' => 1]]);
+    ok(!isset($o['error']) && $o['subtotal'] === 40000000 && $o['items'][0]['price'] === 20000000 && ($o['items'][0]['options']['Công suất'] ?? '') === '2HP', 'A2.2 Đặt mức 2HP: đơn giá và tạm tính theo giá 2HP');
+    ok(isset(buy([['id' => $cap['id'], 'qty' => 1]])['error']) && isset(buy([['id' => $cap['id'], 'qty' => 1, 'options' => ['Công suất' => '9HP']]])['error']), 'A2.3 Chưa chọn / chọn công suất không có bị chặn');
+    foreach ([[['label' => '1HP', 'price' => 1], ['label' => '1hp', 'price' => 2]], [['label' => '', 'price' => 1]], [['label' => '1HP', 'price' => -5]], [['label' => '1HP', 'price' => 1.5]]] as $bad) {
+        try { normalizeCapacities(['capacities' => $bad]); ok(false, 'A2.4 bảng công suất sai được chấp nhận: ' . json_encode($bad)); } catch (HttpError $e) { ok(true, 'A2.4 Chặn bảng công suất sai: ' . json_encode($bad, JSON_UNESCAPED_UNICODE)); }
+    }
+
     echo "--- B. Mã giảm giá không bị lạm dụng\n";
     // Trả tồn cho sản phẩm thử
     foreach ([$ac['id'] => 20, $acc['id'] => 20] as $id => $n) { $row = record('products', $id); stockMove($row, $n - (int)$row['stock'], 'manual', '', 'QA bổ sung tồn'); }

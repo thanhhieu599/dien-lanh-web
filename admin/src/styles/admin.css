@@ -502,3 +502,6 @@
 .ar-table tr.is-picked td{background:var(--ar-brand-soft)}
 .ar-bulk{display:flex;flex-wrap:wrap;align-items:center;gap:var(--ar-space-3);margin:0 0 var(--ar-space-4);padding:var(--ar-space-3) var(--ar-space-4);border:1px solid var(--ar-border);border-radius:10px;background:var(--ar-bg)}
 .ar-bulk b{margin-right:auto;font-size:var(--ar-font-14)}
+/* Bảng công suất & giá: Công suất | Giá bán | Giá gốc | Xóa */
+.ar-kv.ar-cap{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) auto}
+@media(max-width:700px){.ar-kv.ar-cap{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ar-kv.ar-cap>input:first-child{grid-column:1/-1}}

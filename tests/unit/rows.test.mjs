@@ -26,6 +26,8 @@ const legacyProductToView = (r) => ({
   attrs: r.attrs || {}, specs: r.specs || {}, highlights: r.highlights || [], short: r.short || '', warranty: r.warranty || '',
   technology: r.technology || '', origin: r.origin || '',
   description: r.description || '', options: r.options || {}, productTags: r.product_tags || [],
+  // Công suất & giá (thêm sau): old_price ↔ oldPrice
+  capacities: (r.capacities || []).map((c) => ({ label: c.label, price: Number(c.price), oldPrice: c.old_price == null ? null : Number(c.old_price) })),
   requiresShipping: r.requires_shipping !== false, weight: Number(r.weight || 0), weightUnit: r.weight_unit || 'g',
   art: r.art || { type: 'generic', color: 'white' }, images: r.images?.length ? r.images : ['art:0'],
   createdAt: String(r.created_at).slice(0, 10),
@@ -35,6 +37,7 @@ const legacyProductToRow = (p) => ({
   rating: p.rating, reviews: p.reviews, sold: p.sold, stock: p.stock, badges: p.badges, gift: p.gift,
   free_install: p.freeInstall, flash_sale: p.flashSale, attrs: p.attrs, specs: p.specs, highlights: p.highlights, short: p.short,
   description: p.description || '', options: p.options || {}, product_tags: p.productTags || [], requires_shipping: p.requiresShipping !== false,
+  capacities: (p.capacities || []).map((c) => ({ label: c.label, price: c.price, old_price: c.oldPrice ?? null })),
   weight: p.weight || 0, weight_unit: p.weightUnit || 'g', warranty: p.warranty, technology: p.technology || '', origin: p.origin || '', art: p.art, images: p.images, created_at: p.createdAt,
 });
 const legacyServiceToView = (s) => ({ ...s, price: Number(s.price), desc: s.description });
@@ -122,4 +125,19 @@ test('product: trường chuỗi rỗng vẫn nhận mặc định như trước
   const view = DT.rows.product.toView({ weight_unit: '', description: null });
   assert.equal(view.weightUnit, 'g');
   assert.equal(view.description, '');
+});
+
+// Công suất & giá: nhóm "Công suất" đứng đầu danh sách tùy chọn, giá theo mức đã chọn
+test('capacities: optionGroups + priced + chuyển đổi old_price', () => {
+  const ctx = { console }; ctx.window = ctx; vm.createContext(ctx);
+  for (const file of ['frontend/assets/js/data/catalog.js', 'frontend/assets/js/data/content.js', 'frontend/assets/js/core/utils.js', 'frontend/assets/js/core/rows.js', 'frontend/assets/js/core/api.js'])
+    vm.runInContext(fs.readFileSync(new URL(file, root), 'utf8'), ctx, { filename: file });
+  const view = ctx.DT.rows.product.toView({ ...plain(ctx.DT.products[0]), old_price: null, price: 9000000, options: { 'Màu sắc': ['Trắng'], 'Công suất': ['x'] },
+    capacities: [{ label: '1HP', price: 9000000, old_price: null }, { label: '2HP', price: 20000000, old_price: 24000000 }] });
+  assert.deepEqual(plain(view.capacities), [{ label: '1HP', price: 9000000, oldPrice: null }, { label: '2HP', price: 20000000, oldPrice: 24000000 }]);
+  assert.deepEqual(plain(ctx.DT.rows.product.toRow(view).capacities), [{ label: '1HP', price: 9000000, old_price: null }, { label: '2HP', price: 20000000, old_price: 24000000 }]);
+  assert.deepEqual(plain(ctx.DT.api.optionGroups(view)).map((g) => [g.name, g.values]), [['Công suất', ['1HP', '2HP']], ['Màu sắc', ['Trắng']]]);
+  const two = ctx.DT.api.priced(view, { 'Công suất': '2HP' });
+  assert.equal(two.price, 20000000); assert.equal(two.oldPrice, 24000000);
+  assert.equal(ctx.DT.api.priced(view, {}).price, 9000000);
 });

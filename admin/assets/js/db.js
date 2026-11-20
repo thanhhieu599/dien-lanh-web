@@ -492,6 +492,25 @@ AD.demo = () => {
     return prefix + String(db.counters[prefix]).padStart(pad, "0");
   }
   const nextId = (t) => Math.max(0, ...(db[t] || []).map((x) => Number(x.id) || 0)) + 1;
+  // Công suất & giá (giống máy chủ normalizeCapacities): giá chung = mức rẻ nhất
+  function normalizeCapacities(row) {
+    const caps = Array.isArray(row.capacities) ? row.capacities : [];
+    const seen = new Set();
+    row.capacities = caps.map((c, i) => {
+      const label = String(c?.label ?? "").trim();
+      if (!label) throw new Error(`Công suất dòng ${i + 1}: cần nhập tên mức`);
+      if (seen.has(label.toLowerCase())) throw new Error(`Công suất "${label}" bị trùng`);
+      seen.add(label.toLowerCase());
+      if (!Number.isInteger(Number(c.price)) || c.price === null || c.price === "" || Number(c.price) < 0) throw new Error(`Công suất ${label}: giá bán phải là số nguyên ≥ 0`);
+      return { label, price: Number(c.price), old_price: Number(c.old_price) > 0 ? Number(c.old_price) : null };
+    });
+    if (row.capacities.length) {
+      const cheap = row.capacities.reduce((a, b) => (b.price < a.price ? b : a));
+      row.price = cheap.price;
+      row.old_price = cheap.old_price;
+    }
+    return row;
+  }
   function stockMove(p, delta, type, ref = "", note = "", cost = null) {
     if (!delta) return;
     const before = Number(p.stock) || 0, after = before + delta;
@@ -1387,6 +1406,7 @@ AD.demo = () => {
       }
       // Mã SKU: tự nhập hoặc để trống để hệ thống sinh (SP00001…); không được trùng (giống máy chủ)
       if (table === "products") {
+        normalizeCapacities(row);
         row.sku = String(row.sku ?? "").trim();
         if (!row.sku) do row.sku = nextCode("SP"); while (db.products.some((p) => p.sku === row.sku));
         else if (db.products.some((p) => p.sku === row.sku)) throw new Error("Mã SKU đã tồn tại");
@@ -1453,6 +1473,8 @@ AD.demo = () => {
         patch = { ...patch };
         delete patch.sku;
       }
+      if (table === "products" && "capacities" in patch)
+        patch = { ...patch, ...normalizeCapacities({ capacities: patch.capacities, price: patch.price ?? row.price, old_price: "old_price" in patch ? patch.old_price : row.old_price }) };
       // Sửa tồn kho tay ở trang sản phẩm: vẫn ghi lịch sử kho
       if (table === "products" && patch.stock != null && Number(patch.stock) !== Number(row.stock)) {
         const { stock, ...rest } = patch;

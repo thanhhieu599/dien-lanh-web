@@ -178,6 +178,20 @@ try {
     assert.match(copySku, /^SP\d{5,}$/); // bản sao để trống SKU → tự sinh
     assert.notEqual(copySku, original.sku);
   }
+  // Công suất & giá: nhập 2 mức ở tab Giá & tồn kho → lưu, giá bán chung = mức rẻ nhất
+  {
+    await tabTo("Giá & tồn kho");
+    await page.getByRole("button", { name: "Thêm công suất", exact: true }).click();
+    await page.getByLabel("Công suất 1", { exact: true }).fill("2HP");
+    await page.getByLabel("Giá bán công suất 1", { exact: true }).fill("20000000");
+    await page.getByRole("button", { name: "Thêm công suất", exact: true }).click();
+    await page.getByLabel("Công suất 2", { exact: true }).fill("1HP");
+    await page.getByLabel("Giá bán công suất 2", { exact: true }).fill("9000000");
+    await saved();
+    const capped = await read("products", copyId);
+    assert.deepEqual(capped.capacities.map((c) => [c.label, c.price]), [["2HP", 20000000], ["1HP", 9000000]]);
+    assert.equal(capped.price, 9000000);
+  }
   // Thuộc tính bộ lọc: gõ giá trị mới (ngoài danh sách) → lưu vào sản phẩm và tự thêm vào bộ lọc của danh mục
   {
     const copy = await read("products", copyId);

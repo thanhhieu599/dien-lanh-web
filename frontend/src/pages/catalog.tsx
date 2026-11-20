@@ -348,6 +348,11 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
     p?.short || "",
     p ? dt.api.url(p) : undefined,
   );
+  // Sản phẩm có bảng công suất & giá: chọn sẵn mức rẻ nhất (đúng với giá hiện ở danh sách)
+  useEffect(() => {
+    const caps = p ? dt.api.capacities(p) : [];
+    setOptions(caps.length ? { "Công suất": caps.reduce((a: any, b: any) => (b.price < a.price ? b : a)).label } : {});
+  }, [p?.id]);
   useEffect(() => {
     let active = true;
     if (p) {
@@ -396,6 +401,8 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
     );
   const product = p;
   const groups = dt.api.optionGroups(p);
+  // Giá theo công suất đang chọn
+  const shown: Product = dt.api.priced(p, options);
   const sizeKeys = [
     "Công suất",
     "Dung tích tổng",
@@ -617,10 +624,10 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
               </span>
             </p>
             <div className="pd-price">
-              <strong>{money(p.price)}</strong>
-              {!!p.oldPrice && <del>{money(p.oldPrice)}</del>}
-              {dt.u.discount(p) > 0 && (
-                <span className="lbl lbl-sale">-{dt.u.discount(p)}%</span>
+              <strong>{money(shown.price)}</strong>
+              {!!shown.oldPrice && <del>{money(shown.oldPrice)}</del>}
+              {dt.u.discount(shown) > 0 && (
+                <span className="lbl lbl-sale">-{dt.u.discount(shown)}%</span>
               )}
             </div>
             <dl className="pd-facts">

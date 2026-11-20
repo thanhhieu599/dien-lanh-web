@@ -222,6 +222,11 @@ try {
     try { endpoint('products', 'POST', ['sku'=>$sold['sku'], 'slug'=>$prefix . '-dup', 'name'=>'QA trùng SKU', 'cat'=>$cat, 'brand'=>$brand, 'price'=>1000, 'stock'=>0, 'active'=>true]); throw new RuntimeException('Duplicate SKU accepted'); }
     catch (HttpError $e) { checkAdmin(str_contains($e->getMessage(), 'SKU'), 'Chặn mã SKU trùng'); }
     checkAdmin(patchAdmin('products', $auto['id'], ['sku'=>'DOI-MA'])['sku'] === $auto['sku'], 'Mã SKU không sửa được');
+    // Công suất & giá qua form admin: giá chung tự lấy mức rẻ nhất, sửa bảng thì giá chung đổi theo
+    $capP = patchAdmin('products', $auto['id'], ['capacities'=>[['label'=>'1.5HP', 'price'=>13000000, 'old_price'=>15000000], ['label'=>'1HP', 'price'=>9000000, 'old_price'=>null]]]);
+    checkAdmin($capP['price'] === 9000000 && count($capP['capacities']) === 2, 'Công suất & giá: giá chung = mức rẻ nhất');
+    $capP = patchAdmin('products', $auto['id'], ['capacities'=>[]]);
+    checkAdmin($capP['capacities'] === [] && $capP['price'] === 9000000, 'Công suất & giá: bỏ bảng thì giữ giá đang có');
     $item =fixture('order_items', ['id'=>$prefix . '-item', 'order_id'=>$prefix . '-order', 'product_id'=>$sold['id'], 'name'=>'QA đã bán', 'qty'=>1, 'price'=>1000]);
     try { endpoint('products', 'DELETE', [], ['id'=>'eq.' . $sold['id']]); throw new RuntimeException('Sold product must not be deleted'); }
     catch (HttpError $e) { checkAdmin(record('products', $sold['id']) !== null, 'Sản phẩm đã có đơn hàng không xóa được (chỉ ẩn)'); }

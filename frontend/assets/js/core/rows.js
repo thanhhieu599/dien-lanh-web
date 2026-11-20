@@ -56,6 +56,10 @@ DT.rows = (() => {
     ['origin', 'origin', (v) => v || '', (v) => v || ''],
     ['description', 'description', or(''), or('')],
     ['options', 'options', or({}), or({})],
+    // Công suất & giá: [{label, price, oldPrice}] (database lưu old_price)
+    ['capacities', 'capacities',
+      (v) => (Array.isArray(v) ? v : []).map((c) => ({ label: String(c.label || ''), price: num(c.price), oldPrice: numOrNull(c.old_price) })).filter((c) => c.label),
+      (v) => (Array.isArray(v) ? v : []).map((c) => ({ label: c.label, price: c.price, old_price: c.oldPrice ?? null }))],
     ['productTags', 'product_tags', or([]), or([])],
     ['requiresShipping', 'requires_shipping', (v) => v !== false, (v) => v !== false],
     ['weight', 'weight', numOr0, numOr0],

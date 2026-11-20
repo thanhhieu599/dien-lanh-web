@@ -211,6 +211,8 @@ export function ResourceEditor({ resource: key }: { resource: string }) {
                 : f.type === "bool"
                   ? false
                   : undefined;
+    // Giá đang tự lấy theo công suất thấp nhất: ô Giá bán / Giá gốc để trống (lưu lại vẫn tự lấy)
+    if (key === "products" && row.price_auto) { row.price = null; row.old_price = null; }
     if (!editing) {
       delete row[ad.PK[key]];
       if (params.get("from")) {

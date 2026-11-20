@@ -22,6 +22,7 @@ export interface Product {
   options: Record<string, string[]>;
   // Công suất & giá: mỗi mức 1 giá riêng (để trống = không có)
   capacities?: { label: string; price: number; oldPrice: number | null }[];
+  priceAuto?: boolean;
   short: string;
   description: string;
   warranty: string;

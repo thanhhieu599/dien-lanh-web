@@ -330,7 +330,7 @@ try {
   await shop.evaluate((id: number) => { DT.store.addToCart(id, 1); }, cheap);
   await shop.goto(`${fe}gio-hang.html`);
   await shop.waitForSelector('.summary');
-  check((await shop.locator('.summary').textContent())!.includes('35.000₫'), 'phí ship mới áp dụng ngay trên website');
+  check((await shop.locator('.summary').textContent())!.includes('35.000\u00a0₫'), 'phí ship mới áp dụng ngay trên website');
   check(await shop.locator('footer').textContent().then((t: string | null) => !t!.includes('Doanh nghiệp:')), 'xóa hotline doanh nghiệp → ẩn khỏi footer (không lỗi)');
   await shop.goto(`${fe}tam-nhin-su-menh.html`);
   await shop.waitForSelector('.vm-media-portrait.has-img', { timeout: 5000 }).catch(() => {});

@@ -107,7 +107,10 @@ try {
   const original = await read("products", 1001);
   assert.equal(await page.locator("[name=image]").count(), 0, "Sản phẩm không có ô Ảnh dịch vụ");
   await tabTo("Giá & tồn kho");
+  // Ô tiền chỉ nhận chữ số (không nhập được số âm); không có công suất thì giá bán bắt buộc
   await page.locator("[name=price]").fill("-1");
+  assert.equal(await page.locator("[name=price]").inputValue(), "1");
+  await page.locator("[name=price]").fill("");
   await tabTo("Thông tin chung");
   await page.click("#save");
   // Lưu bị lỗi: tự mở mục chứa ô lỗi
@@ -183,14 +186,28 @@ try {
     await tabTo("Giá & tồn kho");
     await page.getByRole("button", { name: "Thêm công suất", exact: true }).click();
     await page.getByLabel("Công suất 1", { exact: true }).fill("2HP");
-    await page.getByLabel("Giá bán công suất 1", { exact: true }).fill("20000000");
+    await page.getByLabel("Giá bán công suất 1", { exact: true }).fill("20.000.000");
+    assert.equal(await page.getByLabel("Giá bán công suất 1", { exact: true }).inputValue(), "20.000.000", "Gõ giá kiểu Việt Nam, không bị rút gọn");
     await page.getByRole("button", { name: "Thêm công suất", exact: true }).click();
     await page.getByLabel("Công suất 2", { exact: true }).fill("1HP");
     await page.getByLabel("Giá bán công suất 2", { exact: true }).fill("9000000");
+    await page.locator("#frm [name=price]").fill("11.490.000");
+    assert.equal(await page.locator("#frm [name=price]").inputValue(), "11.490.000");
+    await page.locator("#frm [name=old_price]").fill("13403000");
+    assert.equal(await page.locator("#frm [name=old_price]").inputValue(), "13.403.000");
     await saved();
-    const capped = await read("products", copyId);
+    let capped = await read("products", copyId);
     assert.deepEqual(capped.capacities.map((c) => [c.label, c.price]), [["2HP", 20000000], ["1HP", 9000000]]);
+    assert.equal(capped.price, 11490000, "Nhập giá bán thì giữ đúng số đã nhập");
+    assert.equal(capped.old_price, 13403000);
+    // Để trống Giá bán / Giá gốc → lấy giá công suất thấp nhất (1HP)
+    await tabTo("Giá & tồn kho");
+    await page.locator("#frm [name=price]").fill("");
+    await page.locator("#frm [name=old_price]").fill("");
+    await saved();
+    capped = await read("products", copyId);
     assert.equal(capped.price, 9000000);
+    assert.equal(capped.price_auto, true);
   }
   // Thuộc tính bộ lọc: gõ giá trị mới (ngoài danh sách) → lưu vào sản phẩm và tự thêm vào bộ lọc của danh mục
   {

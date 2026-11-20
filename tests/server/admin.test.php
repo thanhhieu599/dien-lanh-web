@@ -223,10 +223,14 @@ try {
     catch (HttpError $e) { checkAdmin(str_contains($e->getMessage(), 'SKU'), 'Chặn mã SKU trùng'); }
     checkAdmin(patchAdmin('products', $auto['id'], ['sku'=>'DOI-MA'])['sku'] === $auto['sku'], 'Mã SKU không sửa được');
     // Công suất & giá qua form admin: giá chung tự lấy mức rẻ nhất, sửa bảng thì giá chung đổi theo
-    $capP = patchAdmin('products', $auto['id'], ['capacities'=>[['label'=>'1.5HP', 'price'=>13000000, 'old_price'=>15000000], ['label'=>'1HP', 'price'=>9000000, 'old_price'=>null]]]);
-    checkAdmin($capP['price'] === 9000000 && count($capP['capacities']) === 2, 'Công suất & giá: giá chung = mức rẻ nhất');
+    $capP = patchAdmin('products', $auto['id'], ['price'=>null, 'old_price'=>null, 'capacities'=>[['label'=>'1.5HP', 'price'=>8000000, 'old_price'=>15000000], ['label'=>'1HP', 'price'=>9000000, 'old_price'=>10000000]]]);
+    checkAdmin($capP['price'] === 9000000 && $capP['old_price'] === 10000000 && $capP['price_auto'] === true, 'Công suất & giá: để trống giá bán → lấy giá công suất thấp nhất (1HP)');
+    $capP = patchAdmin('products', $auto['id'], ['capacities'=>[['label'=>'1HP', 'price'=>9500000, 'old_price'=>null], ['label'=>'1.5HP', 'price'=>8000000, 'old_price'=>null]]]);
+    checkAdmin($capP['price'] === 9500000 && $capP['price_auto'] === true, 'Công suất & giá: sửa bảng thì giá tự lấy cập nhật theo');
+    $capP = patchAdmin('products', $auto['id'], ['price'=>11490000, 'old_price'=>13403000]);
+    checkAdmin($capP['price'] === 11490000 && $capP['old_price'] === 13403000 && $capP['price_auto'] === false, 'Công suất & giá: nhập giá bán / giá gốc thì giữ nguyên số đã nhập');
     $capP = patchAdmin('products', $auto['id'], ['capacities'=>[]]);
-    checkAdmin($capP['capacities'] === [] && $capP['price'] === 9000000, 'Công suất & giá: bỏ bảng thì giữ giá đang có');
+    checkAdmin($capP['capacities'] === [] && $capP['price'] === 11490000, 'Công suất & giá: bỏ bảng thì giữ giá đang có');
     $item =fixture('order_items', ['id'=>$prefix . '-item', 'order_id'=>$prefix . '-order', 'product_id'=>$sold['id'], 'name'=>'QA đã bán', 'qty'=>1, 'price'=>1000]);
     try { endpoint('products', 'DELETE', [], ['id'=>'eq.' . $sold['id']]); throw new RuntimeException('Sold product must not be deleted'); }
     catch (HttpError $e) { checkAdmin(record('products', $sold['id']) !== null, 'Sản phẩm đã có đơn hàng không xóa được (chỉ ẩn)'); }

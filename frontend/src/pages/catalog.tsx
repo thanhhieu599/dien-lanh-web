@@ -348,10 +348,11 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
     p?.short || "",
     p ? dt.api.url(p) : undefined,
   );
-  // Sản phẩm có bảng công suất & giá: chọn sẵn mức rẻ nhất (đúng với giá hiện ở danh sách)
+  // Công suất & giá: admin để trống Giá bán → chọn sẵn công suất thấp nhất (giá mặc định = giá mức đó);
+  // admin nhập Giá bán / Giá gốc → hiện 2 giá đó, khách bấm chọn công suất thì giá đổi theo mức đã chọn
   useEffect(() => {
-    const caps = p ? dt.api.capacities(p) : [];
-    setOptions(caps.length ? { "Công suất": caps.reduce((a: any, b: any) => (b.price < a.price ? b : a)).label } : {});
+    const low = p && p.priceAuto ? dt.api.lowestCapacity(p) : null;
+    setOptions(low ? { "Công suất": low.label } : {});
   }, [p?.id]);
   useEffect(() => {
     let active = true;

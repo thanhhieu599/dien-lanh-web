@@ -195,7 +195,7 @@ function writeSitemap(siteUrl, list) {
 
 function writeLlms(siteUrl, d) {
   const u = (rel) => new URL(rel, siteUrl).href;
-  const money = (n) => `${Math.round(n).toLocaleString('vi-VN')}₫`;
+  const money = (n) => `${Math.round(n).toLocaleString('vi-VN')}\u00a0₫`;
   const c = d.config;
   const lines = [
     `# ${c.name}`, '',

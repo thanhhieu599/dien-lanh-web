@@ -27,6 +27,7 @@ const legacyProductToView = (r) => ({
   technology: r.technology || '', origin: r.origin || '',
   description: r.description || '', options: r.options || {}, productTags: r.product_tags || [],
   // Công suất & giá (thêm sau): old_price ↔ oldPrice
+  priceAuto: r.price_auto === true,
   capacities: (r.capacities || []).map((c) => ({ label: c.label, price: Number(c.price), oldPrice: c.old_price == null ? null : Number(c.old_price) })),
   requiresShipping: r.requires_shipping !== false, weight: Number(r.weight || 0), weightUnit: r.weight_unit || 'g',
   art: r.art || { type: 'generic', color: 'white' }, images: r.images?.length ? r.images : ['art:0'],
@@ -37,6 +38,7 @@ const legacyProductToRow = (p) => ({
   rating: p.rating, reviews: p.reviews, sold: p.sold, stock: p.stock, badges: p.badges, gift: p.gift,
   free_install: p.freeInstall, flash_sale: p.flashSale, attrs: p.attrs, specs: p.specs, highlights: p.highlights, short: p.short,
   description: p.description || '', options: p.options || {}, product_tags: p.productTags || [], requires_shipping: p.requiresShipping !== false,
+  price_auto: p.priceAuto === true,
   capacities: (p.capacities || []).map((c) => ({ label: c.label, price: c.price, old_price: c.oldPrice ?? null })),
   weight: p.weight || 0, weight_unit: p.weightUnit || 'g', warranty: p.warranty, technology: p.technology || '', origin: p.origin || '', art: p.art, images: p.images, created_at: p.createdAt,
 });

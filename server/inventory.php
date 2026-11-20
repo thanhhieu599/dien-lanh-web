@@ -121,7 +121,7 @@ function purchasePay(array $po, array $p, array $user): array {
     if ($po['status'] === 'cancelled') fail('Đơn đã hủy');
     $amount = invMoney($p['amount'] ?? 0, 'Số tiền thanh toán');
     $left = $po['total'] - ($po['paid'] ?? 0);
-    if ($amount <= 0 || $amount > $left) fail('Số tiền thanh toán phải lớn hơn 0 và không vượt ' . number_format($left, 0, ',', '.') . '₫');
+    if ($amount <= 0 || $amount > $left) fail('Số tiền thanh toán phải lớn hơn 0 và không vượt ' . moneyVnd($left));
     $method = in_array($p['method'] ?? '', ['cash', 'bank'], true) ? $p['method'] : 'bank';
     $po['payments'][] = ['amount' => $amount, 'method' => $method, 'note' => trim((string)($p['note'] ?? '')), 'at' => now(), 'by' => userName($user)];
     $po['paid'] = ($po['paid'] ?? 0) + $amount;

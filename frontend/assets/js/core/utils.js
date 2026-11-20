@@ -10,12 +10,13 @@ DT.u = {
     n = Number(n) || 0;
     if (n >= 1e6) return `${(Math.round(n / 1e5) / 10).toLocaleString('vi-VN')} triệu`;
     if (n >= 1e3) return `${Math.round(n / 1e3)}K`;
-    return `${n}₫`;
+    return `${n}\u00a0₫`;
   },
 
   money(n) {
     if (n == null || isNaN(n)) return 'Liên hệ';
-    return Math.round(n).toLocaleString('vi-VN') + '₫';
+    // Chuẩn Việt Nam: 11.490.000 ₫ (dấu chấm hàng nghìn, cách 1 khoảng trước ₫), giống admin và máy chủ
+    return Math.round(n).toLocaleString('vi-VN') + '\u00a0₫';
   },
 
   esc(s) {

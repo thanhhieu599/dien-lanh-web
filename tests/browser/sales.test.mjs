@@ -15,7 +15,7 @@ const errors = [];
 page.on('pageerror', (e) => errors.push(`${page.url()}: ${e.message}`));
 page.on('dialog', (d) => d.accept());
 const fe = `${base}frontend/`;
-const money = (n) => `${Math.round(n).toLocaleString('vi-VN')}₫`;
+const money = (n) => `${Math.round(n).toLocaleString('vi-VN')}\u00a0₫`;
 const leads = () => page.evaluate(() => JSON.parse(localStorage.getItem('dt_leads_v1') || '[]'));
 const cart = () => page.evaluate(() => DT.store.get().cart);
 

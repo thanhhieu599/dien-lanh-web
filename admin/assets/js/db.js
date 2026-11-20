@@ -504,11 +504,15 @@ AD.demo = () => {
       if (!Number.isInteger(Number(c.price)) || c.price === null || c.price === "" || Number(c.price) < 0) throw new Error(`Công suất ${label}: giá bán phải là số nguyên ≥ 0`);
       return { label, price: Number(c.price), old_price: Number(c.old_price) > 0 ? Number(c.old_price) : null };
     });
-    if (row.capacities.length) {
-      const cheap = row.capacities.reduce((a, b) => (b.price < a.price ? b : a));
-      row.price = cheap.price;
-      row.old_price = cheap.old_price;
-    }
+    // Giá bán / Giá gốc admin nhập thì giữ; để trống thì lấy công suất thấp nhất (giống máy chủ)
+    const manual = row.price != null && row.price !== "" && !row.price_auto;
+    if (!row.capacities.length) { row.price_auto = false; return row; }
+    if (manual) { row.price_auto = false; return row; }
+    const n = (c) => { const m = c.label.match(/\d+(?:[.,]\d+)?/); return m ? Number(m[0].replace(",", ".")) : Infinity; };
+    const low = row.capacities.reduce((a, b) => (n(a) <= n(b) ? a : b));
+    row.price = low.price;
+    row.old_price = low.old_price;
+    row.price_auto = true;
     return row;
   }
   function stockMove(p, delta, type, ref = "", note = "", cost = null) {
@@ -571,7 +575,7 @@ AD.demo = () => {
   function purchasePay(po, a) {
     if (po.status === "cancelled") invFail("Đơn đã hủy");
     const amount = moneyOf(a.amount, "Số tiền thanh toán"), left = po.total - (po.paid || 0);
-    if (amount <= 0 || amount > left) invFail(`Số tiền thanh toán phải lớn hơn 0 và không vượt ${left.toLocaleString("vi-VN")}₫`);
+    if (amount <= 0 || amount > left) invFail(`Số tiền thanh toán phải lớn hơn 0 và không vượt ${left.toLocaleString("vi-VN")}\u00a0₫`);
     po.payments = [...(po.payments || []), { amount, method: a.method === "cash" ? "cash" : "bank", note: String(a.note || "").trim(), at: nowIso(), by: userName() }];
     po.paid = (po.paid || 0) + amount; po.status = purchaseStatus(po); supplierRecalc(po.supplier_id);
     return po;
@@ -1406,6 +1410,7 @@ AD.demo = () => {
       }
       // Mã SKU: tự nhập hoặc để trống để hệ thống sinh (SP00001…); không được trùng (giống máy chủ)
       if (table === "products") {
+        row.price_auto = false;
         normalizeCapacities(row);
         row.sku = String(row.sku ?? "").trim();
         if (!row.sku) do row.sku = nextCode("SP"); while (db.products.some((p) => p.sku === row.sku));
@@ -1473,8 +1478,13 @@ AD.demo = () => {
         patch = { ...patch };
         delete patch.sku;
       }
-      if (table === "products" && "capacities" in patch)
-        patch = { ...patch, ...normalizeCapacities({ capacities: patch.capacities, price: patch.price ?? row.price, old_price: "old_price" in patch ? patch.old_price : row.old_price }) };
+      if (table === "products" && ["capacities", "price", "old_price"].some((k) => k in patch))
+        patch = { ...patch, ...normalizeCapacities({
+          capacities: "capacities" in patch ? patch.capacities : row.capacities,
+          price: "price" in patch ? patch.price : row.price,
+          old_price: "old_price" in patch ? patch.old_price : row.old_price,
+          price_auto: "price" in patch ? false : row.price_auto,
+        }) };
       // Sửa tồn kho tay ở trang sản phẩm: vẫn ghi lịch sử kho
       if (table === "products" && patch.stock != null && Number(patch.stock) !== Number(row.stock)) {
         const { stock, ...rest } = patch;

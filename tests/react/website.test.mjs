@@ -100,10 +100,10 @@ try {
   await page.getByRole('button',{name:'White',exact:true}).click();await page.locator('.buy-btns').getByRole('button',{name:'Thêm vào giỏ',exact:false}).click();await page.getByRole('button',{name:'Black',exact:true}).click();await page.locator('.buy-btns').getByRole('button',{name:'Thêm vào giỏ',exact:false}).click();assert.equal(await page.evaluate(()=>DT.store.get().cart.length),2,'Different options must produce separate cart lines');
   // Công suất & giá: chọn sẵn mức rẻ nhất, bấm mức khác thì giá đổi, giỏ hàng tính theo giá mức đã chọn
   await page.goto(base+'admin/');await page.waitForSelector('.ad-side');
-  await page.evaluate(async id=>{await AD.db.update('products',id,{capacities:[{label:'2HP',price:20000000,old_price:24000000},{label:'1HP',price:9000000,old_price:null}]});},product.id);
+  await page.evaluate(async id=>{await AD.db.update('products',id,{price:null,old_price:null,capacities:[{label:'2HP',price:20000000,old_price:24000000},{label:'1HP',price:9000000,old_price:null}]});},product.id);
   await open(`san-pham.html?id=${product.id}`);
   await page.waitForFunction(()=>/9\.000\.000/.test(document.querySelector('.pd-price strong')?.textContent||''));
-  assert.equal(await page.getByRole('button',{name:'1HP',exact:true}).getAttribute('aria-pressed'),'true','Chọn sẵn công suất rẻ nhất');
+  assert.equal(await page.getByRole('button',{name:'1HP',exact:true}).getAttribute('aria-pressed'),'true','Để trống giá bán: chọn sẵn công suất thấp nhất');
   await page.getByRole('button',{name:'2HP',exact:true}).click();
   await page.waitForFunction(()=>/20\.000\.000/.test(document.querySelector('.pd-price strong')?.textContent||'')&&!!document.querySelector('.pd-price del')&&/-17%/.test(document.querySelector('.pd-price')?.textContent||''));
   await page.evaluate(()=>DT.store.clearCart?.());

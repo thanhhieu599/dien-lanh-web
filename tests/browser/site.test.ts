@@ -5,7 +5,7 @@ import { check, failed, section, setup, toast } from '../support/harness.ts';
 const T = await setup('dt_site');
 const { sql, fe } = T;
 const page = await T.newPage();
-const money = (n: number) => `${Math.round(n).toLocaleString('vi-VN')}₫`;
+const money = (n: number) => `${Math.round(n).toLocaleString('vi-VN')}\u00a0₫`;
 
 try {
   section('Trang chủ & dữ liệu từ database');

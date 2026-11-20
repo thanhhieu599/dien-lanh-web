@@ -56,6 +56,8 @@ DT.rows = (() => {
     ['origin', 'origin', (v) => v || '', (v) => v || ''],
     ['description', 'description', or(''), or('')],
     ['options', 'options', or({}), or({})],
+    // Giá bán đang tự lấy theo công suất thấp nhất (admin để trống Giá bán)
+    ['priceAuto', 'price_auto', (v) => v === true, (v) => v === true],
     // Công suất & giá: [{label, price, oldPrice}] (database lưu old_price)
     ['capacities', 'capacities',
       (v) => (Array.isArray(v) ? v : []).map((c) => ({ label: String(c.label || ''), price: num(c.price), oldPrice: numOrNull(c.old_price) })).filter((c) => c.label),

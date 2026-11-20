@@ -77,9 +77,11 @@ try {
 
     echo "--- A2. Công suất & giá: mỗi mức 1 giá, máy chủ tính theo mức khách chọn
 ";
-    $cap = keep('products', normalizeCapacities(['id' => "$p-cap", 'sku' => "$p-cap", 'slug' => "$p-cap", 'name' => '[QA] Máy lạnh nhiều công suất', 'cat' => 'may-lanh', 'brand' => $brand, 'price' => 1, 'stock' => 5, 'active' => true, 'sold' => 0,
+    $cap = keep('products', normalizeCapacities(['id' => "$p-cap", 'sku' => "$p-cap", 'slug' => "$p-cap", 'name' => '[QA] Máy lạnh nhiều công suất', 'cat' => 'may-lanh', 'brand' => $brand, 'price' => null, 'stock' => 5, 'active' => true, 'sold' => 0,
         'capacities' => [['label' => '2HP', 'price' => 20000000, 'old_price' => 24000000], ['label' => '1HP', 'price' => 11000000]]]));
-    ok($cap['price'] === 11000000 && $cap['old_price'] === null, 'A2.1 Giá chung của sản phẩm = mức công suất rẻ nhất');
+    ok($cap['price'] === 11000000 && $cap['old_price'] === null && $cap['price_auto'] === true, 'A2.1 Để trống giá bán: lấy giá công suất thấp nhất (1HP)');
+    $manual = normalizeCapacities(['price' => 15000000, 'old_price' => 17000000, 'capacities' => $cap['capacities']]);
+    ok($manual['price'] === 15000000 && $manual['old_price'] === 17000000 && $manual['price_auto'] === false, 'A2.1b Nhập giá bán / giá gốc: giữ nguyên giá đã nhập, không tự đổi');
     $o = buy([['id' => $cap['id'], 'qty' => 2, 'options' => ['Công suất' => '2HP'], 'price' => 1]]);
     ok(!isset($o['error']) && $o['subtotal'] === 40000000 && $o['items'][0]['price'] === 20000000 && ($o['items'][0]['options']['Công suất'] ?? '') === '2HP', 'A2.2 Đặt mức 2HP: đơn giá và tạm tính theo giá 2HP');
     ok(isset(buy([['id' => $cap['id'], 'qty' => 1]])['error']) && isset(buy([['id' => $cap['id'], 'qty' => 1, 'options' => ['Công suất' => '9HP']]])['error']), 'A2.3 Chưa chọn / chọn công suất không có bị chặn');

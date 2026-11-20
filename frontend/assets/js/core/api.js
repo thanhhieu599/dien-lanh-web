@@ -28,6 +28,11 @@ DT.api = (() => {
   // Công suất & giá: khách chọn 1 mức, giá sản phẩm đổi theo mức đó (máy chủ tính lại giống hệt: shop.php cartLines)
   const CAPACITY = "Công suất";
   const capacities = (p) => (Array.isArray(p?.capacities) ? p.capacities : []).filter((c) => c && c.label);
+  // Mức công suất thấp nhất theo con số trong tên (1HP < 1.5HP < 2HP), giống máy chủ lowestCapacity()
+  const lowestCapacity = (p) => {
+    const n = (c) => { const m = String(c.label).match(/\d+(?:[.,]\d+)?/); return m ? Number(m[0].replace(",", ".")) : Infinity; };
+    return capacities(p).reduce((best, c) => (best && n(best) <= n(c) ? best : c), null);
+  };
   const capacityOf = (p, options) => capacities(p).find((c) => c.label === options?.[CAPACITY]) || null;
   // Sản phẩm với giá của mức công suất đã chọn (chưa chọn thì giữ giá chung = mức rẻ nhất)
   const priced = (p, options) => {
@@ -253,6 +258,7 @@ DT.api = (() => {
     category,
     optionGroups,
     capacities,
+    lowestCapacity,
     priced,
     optionText,
     inCategory,

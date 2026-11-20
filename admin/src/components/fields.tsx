@@ -10,14 +10,19 @@ export function KeyValues({value,onChange,arrays=false}:{value:Row;onChange:(v:R
  function update(next:typeof rows){setRows(next);onChange(Object.fromEntries(next.filter(r=>r.k.trim()).map(r=>[r.k.trim(),arrays?r.v.split(',').map(s=>s.trim()).filter(Boolean):r.v])));}
  return <div className="ar-repeat">{rows.map((r,i)=><div className="ar-kv" key={r.id}><input aria-label={`Tên thuộc tính ${i+1}`} value={r.k} onChange={e=>update(rows.map((x,j)=>j===i?{...x,k:e.target.value}:x))}/><input aria-label={`Giá trị thuộc tính ${i+1}`} value={r.v} onChange={e=>update(rows.map((x,j)=>j===i?{...x,v:e.target.value}:x))}/><button type="button" className="btn btn-light" aria-label={`Xóa thuộc tính ${i+1}`} onClick={()=>update(rows.filter((_,j)=>j!==i))}>Xóa</button></div>)}<button type="button" className="btn btn-light" onClick={()=>update([...rows,{id:crypto.randomUUID(),k:'',v:''}])}>Thêm thuộc tính</button></div>;
 }
+// Ô tiền chuẩn Việt Nam: gõ 11.490.000 / 11490000 / 11,490,000 đều hiểu là 11.490.000 ₫ (chỉ lấy chữ số,
+// không rút gọn, không hiểu dấu chấm là phần thập phân); tự hiện dấu chấm hàng nghìn. Để trống = null.
+export function MoneyField({value,onChange,...rest}:{value:any;onChange:(v:number|null)=>void}&Omit<React.InputHTMLAttributes<HTMLInputElement>,'value'|'onChange'|'type'>){
+ const text=value==null||value===''||!Number.isFinite(Number(value))?'':Math.round(Number(value)).toLocaleString('vi-VN');
+ return <input {...rest} type="text" inputMode="numeric" autoComplete="off" value={text} onChange={e=>{const d=e.target.value.replace(/\D/g,'').replace(/^0+(?=\d)/,'').slice(0,13);onChange(d===''?null:Number(d));}}/>;
+}
 // Bảng công suất & giá: mỗi dòng 1 mức (vd 1HP) với giá bán và giá gốc riêng
-type Cap={id:string;label:string;price:string;old_price:string};
+type Cap={id:string;label:string;price:number|null;old_price:number|null};
 export function CapacityPrices({value,onChange}:{value:any;onChange:(v:Row[])=>void}){
- const [rows,setRows]=useState<Cap[]>(()=>(Array.isArray(value)?value:[]).map((c:Row)=>({id:crypto.randomUUID(),label:String(c.label??''),price:c.price==null?'':String(c.price),old_price:c.old_price==null?'':String(c.old_price)})));
- const num=(v:string)=>v.trim()===''?null:Number(v);
- function update(next:Cap[]){setRows(next);onChange(next.filter(r=>r.label.trim()||r.price.trim()).map(r=>({label:r.label.trim(),price:num(r.price),old_price:num(r.old_price)})));}
+ const [rows,setRows]=useState<Cap[]>(()=>(Array.isArray(value)?value:[]).map((c:Row)=>({id:crypto.randomUUID(),label:String(c.label??''),price:c.price??null,old_price:c.old_price??null})));
+ function update(next:Cap[]){setRows(next);onChange(next.filter(r=>r.label.trim()||r.price!=null).map(r=>({label:r.label.trim(),price:r.price,old_price:r.old_price})));}
  const set=(i:number,patch:Partial<Cap>)=>update(rows.map((x,j)=>j===i?{...x,...patch}:x));
- return <div className="ar-repeat">{rows.map((r,i)=><div className="ar-kv ar-cap" key={r.id}><input aria-label={`Công suất ${i+1}`} placeholder="Vd: 1HP" value={r.label} onChange={e=>set(i,{label:e.target.value})}/><input type="number" min={0} step={1} aria-label={`Giá bán công suất ${i+1}`} placeholder="Giá bán (₫)" value={r.price} onChange={e=>set(i,{price:e.target.value})}/><input type="number" min={0} step={1} aria-label={`Giá gốc công suất ${i+1}`} placeholder="Giá gốc (₫, không bắt buộc)" value={r.old_price} onChange={e=>set(i,{old_price:e.target.value})}/><button type="button" className="btn btn-light" aria-label={`Xóa công suất ${i+1}`} onClick={()=>update(rows.filter((_,j)=>j!==i))}>Xóa</button></div>)}<button type="button" className="btn btn-light" onClick={()=>update([...rows,{id:crypto.randomUUID(),label:'',price:'',old_price:''}])}>Thêm công suất</button></div>;
+ return <div className="ar-repeat">{rows.map((r,i)=><div className="ar-kv ar-cap" key={r.id}><input aria-label={`Công suất ${i+1}`} placeholder="Vd: 1HP" value={r.label} onChange={e=>set(i,{label:e.target.value})}/><MoneyField aria-label={`Giá bán công suất ${i+1}`} placeholder="Giá bán (₫)" value={r.price} onChange={v=>set(i,{price:v})}/><MoneyField aria-label={`Giá gốc công suất ${i+1}`} placeholder="Giá gốc (₫, không bắt buộc)" value={r.old_price} onChange={v=>set(i,{old_price:v})}/><button type="button" className="btn btn-light" aria-label={`Xóa công suất ${i+1}`} onClick={()=>update(rows.filter((_,j)=>j!==i))}>Xóa</button></div>)}<button type="button" className="btn btn-light" onClick={()=>update([...rows,{id:crypto.randomUUID(),label:'',price:null,old_price:null}])}>Thêm công suất</button></div>;
 }
 // Ô ảnh dạng thẻ (giống trang Tầm nhìn, không có dòng ghi chú): xem trước + Tải ảnh / Dán link / Bỏ ảnh.
 // multiple = nhiều ảnh: mỗi ảnh 1 thẻ (↑ đưa lên trước, Bỏ ảnh) + 1 thẻ "Thêm ảnh".
@@ -50,6 +55,7 @@ export function EditorField({field:f,value,row,onChange,error,editing=false,onPe
  else if(['lines','tags'].includes(f.type||''))control=<ListInput attrs={attrs} rows={f.rows||3} value={value} onChange={onChange} separator={f.type==='tags'?',':'\n'}/>;
  else if(f.type==='html')control=<RichEditor id={id} label={f.label||f.key} rows={f.rows||12} value={value} onChange={onChange}/>;
  else if(f.type==='textarea')control=<textarea {...attrs} rows={f.rows||3} value={Array.isArray(value)?value.join('\n'):value??''} onChange={e=>onChange(e.target.value)}/>;
+ else if(f.type==='money')control=<MoneyField {...attrs} placeholder={f.placeholder} value={value} onChange={onChange}/>;
  else if(f.type==='capacities')control=<CapacityPrices value={value} onChange={onChange}/>;
  else if(f.type==='kv')control=<KeyValues value={value} onChange={onChange} arrays={f.key==='options'}/>;
  else if(f.type==='json')control=<JsonInput value={value} onChange={onChange} label={f.label||f.key}/>;

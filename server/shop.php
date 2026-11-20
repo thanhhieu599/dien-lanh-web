@@ -31,7 +31,8 @@ function orderByCode(string $code, string $phone, bool $lock = false): array {
     if ($row === false) fail('Không tìm thấy đơn hàng', 404);
     return record('orders', $row, $lock) ?? throw new HttpError('Không tìm thấy đơn hàng', 404);
 }
-function moneyVnd($n): string { return number_format((float)$n, 0, ',', '.') . '₫'; }
+// Chuẩn Việt Nam: 11.490.000 ₫ (giống website DT.u.money và admin)
+function moneyVnd($n): string { return number_format((float)$n, 0, ',', '.') . "\u{00A0}₫"; }
 // Luật mã giảm giá: PHẢI khớp DT.promotions.evaluate (frontend/assets/js/core/promotions.js); kiểm bằng tests/fixtures/pricing.json.
 // $data cho phép truyền nguồn dữ liệu (test không cần MySQL); mặc định đọc từ database.
 function couponResult(?array $coupon, array $lines, string $phone, array $data = []): array {
@@ -101,9 +102,24 @@ function orderQuote(array $lines, array $config, string $method, ?array $coupon)
 // và dòng giỏ hàng tính theo giá của mức đó (mã giảm giá, tổng tiền, đơn hàng đều dùng giá này).
 const CAPACITY_OPTION = 'Công suất';
 function productCapacities(array $p): array { return is_array($p['capacities'] ?? null) ? array_values($p['capacities']) : []; }
-// Kiểm tra + chuẩn hóa khi admin lưu; giá bán chung của sản phẩm = mức rẻ nhất (dùng cho danh sách, sắp xếp, bộ lọc giá)
+// Mức công suất thấp nhất: theo con số trong tên (1HP < 1.5HP < 2HP), không có số thì theo thứ tự nhập
+function lowestCapacity(array $caps): ?array {
+    $best = null; $bestN = INF;
+    foreach ($caps as $c) {
+        $n = preg_match('/\d+(?:[.,]\d+)?/', (string)($c['label'] ?? ''), $m) ? (float)str_replace(',', '.', $m[0]) : INF;
+        if ($best === null || $n < $bestN) { $best = $c; $bestN = $n; }
+    }
+    return $best;
+}
+// Kiểm tra + chuẩn hóa khi admin lưu. Giá bán / Giá gốc của sản phẩm: admin nhập thì giữ nguyên (hiện mặc định trên web);
+// để trống thì lấy giá của mức công suất thấp nhất (price_auto = true) — dùng cho danh sách, sắp xếp, bộ lọc giá.
 function normalizeCapacities(array $row): array {
-    if (!array_key_exists('capacities', $row) || $row['capacities'] === null || $row['capacities'] === []) { $row['capacities'] = []; return $row; }
+    $manual = isset($row['price']) && $row['price'] !== '' && !($row['price_auto'] ?? false);
+    if (!array_key_exists('capacities', $row) || $row['capacities'] === null || $row['capacities'] === []) {
+        $row['capacities'] = [];
+        if ($row['price_auto'] ?? false) $row['price_auto'] = false; // bỏ bảng công suất: giữ giá đang có làm giá bán
+        return $row;
+    }
     if (!is_array($row['capacities']) || !array_is_list($row['capacities']) || count($row['capacities']) > 20) fail('Bảng công suất không hợp lệ (tối đa 20 mức)');
     $out = []; $seen = [];
     foreach ($row['capacities'] as $i => $c) {
@@ -117,9 +133,10 @@ function normalizeCapacities(array $row): array {
         if ($old !== null && $old !== '' && (!is_numeric($old) || $old < 0 || floor((float)$old) != $old)) fail("Công suất $label: giá gốc phải là số nguyên ≥ 0");
         $out[] = ['label' => $label, 'price' => (int)$price, 'old_price' => $old === null || $old === '' || (int)$old === 0 ? null : (int)$old];
     }
-    $cheapest = $out[0];
-    foreach ($out as $c) if ($c['price'] < $cheapest['price']) $cheapest = $c;
-    $row['capacities'] = $out; $row['price'] = $cheapest['price']; $row['old_price'] = $cheapest['old_price'];
+    $row['capacities'] = $out;
+    if ($manual) { $row['price_auto'] = false; return $row; }
+    $low = lowestCapacity($out);
+    $row['price'] = $low['price']; $row['old_price'] = $low['old_price']; $row['price_auto'] = true;
     return $row;
 }
 function cartLines(array $items, bool $lock): array {

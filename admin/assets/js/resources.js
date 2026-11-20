@@ -234,9 +234,13 @@ window.AD = window.AD || {};
           label: "Giá bán (₫)",
           type: "money",
           step: 1,
-          required: true,
           col: "quarter",
-          validate: (v) => (v < 0 ? "Giá không hợp lệ" : null),
+          placeholder: "Vd: 11.490.000",
+          // Có Công suất & giá: để trống = hiện giá công suất thấp nhất; nhập = hiện giá này làm mặc định
+          validate: (v, o) =>
+            v == null
+              ? (o.capacities || []).length ? null : "Vui lòng nhập giá bán (hoặc thêm Công suất & giá)."
+              : v < 0 ? "Giá không hợp lệ" : null,
         },
         {
           key: "old_price",
@@ -245,7 +249,7 @@ window.AD = window.AD || {};
           step: 1,
           col: "quarter",
           validate: (v, o) =>
-            v != null && v < o.price ? "Giá gốc phải ≥ giá bán" : null,
+            v != null && o.price != null && v < o.price ? "Giá gốc phải ≥ giá bán" : null,
         },
         {
           key: "wholesale_price",
@@ -366,7 +370,7 @@ window.AD = window.AD || {};
           label: "Công suất & giá",
           type: "capacities",
           col: "full",
-          help: "Mỗi dòng 1 mức công suất với giá riêng (vd 1HP – 10.990.000). Có ít nhất 1 dòng thì khách phải chọn công suất khi mua, giá đổi theo mức đã chọn; Giá bán / Giá gốc ở trên tự lấy theo mức rẻ nhất khi lưu. Tồn kho dùng chung.",
+          help: "Mỗi dòng 1 mức công suất với giá riêng (vd 1HP – 10.990.000). Có ít nhất 1 dòng thì khách phải chọn công suất khi mua, giá đổi theo mức đã chọn; Giá bán / Giá gốc ở trên: nhập thì website hiện 2 giá đó làm mặc định; để trống thì hiện giá của công suất thấp nhất. Tồn kho dùng chung.",
         },
         {
           key: "options",

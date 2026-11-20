@@ -211,6 +211,7 @@ function crmSummary(): array {
 function validateRow(string $table, array $row): void {
     if ($table === 'products') {
         foreach (['sku', 'slug', 'name', 'cat', 'brand'] as $field) if (empty($row[$field]) || !is_string($row[$field])) fail("Thiếu {$field}");
+        if (!isset($row['price']) || $row['price'] === '') fail('Vui lòng nhập giá bán (hoặc thêm Công suất & giá)');
         foreach (['price', 'stock'] as $field) if (!isset($row[$field]) || !is_numeric($row[$field]) || $row[$field] < 0 || floor((float)$row[$field]) != $row[$field]) fail("{$field} không hợp lệ");
         if (!record('categories', $row['cat']) || !record('brands', $row['brand'])) fail('Danh mục hoặc thương hiệu không tồn tại');
     }
@@ -307,6 +308,7 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
         // Sản phẩm mới có tồn ban đầu: ghi vào lịch sử kho
         return transaction(function() use ($body, $user) {
             // Mã SKU: tự nhập hoặc để trống để hệ thống sinh (SP00001, SP00002…); không được trùng
+            $body['price_auto'] = false; // Giá bán trống + có công suất → tự lấy giá công suất thấp nhất
             $body = normalizeCapacities($body);
             $body['sku'] = trim((string)($body['sku'] ?? ''));
             if ($body['sku'] === '') $body['sku'] = newSku();
@@ -378,7 +380,12 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
         if ($stockChange) unset($patch['stock']);
         $before = $row;
         $row = array_merge($row, $patch);
-        if ($table === 'products') { syncProductMembership($before, $row); if (array_key_exists('capacities', $patch)) $row = normalizeCapacities($row); }
+        if ($table === 'products') {
+            syncProductMembership($before, $row);
+            // Form gửi Giá bán trống (null) = để hệ thống tự lấy giá công suất thấp nhất; gửi số = giá admin nhập
+            if (array_key_exists('price', $patch)) $row['price_auto'] = false;
+            if (array_intersect(['capacities', 'price', 'old_price'], array_keys($patch))) $row = normalizeCapacities($row);
+        }
         validateRow($table, $row);
         if ($stockChange) { stockMove($row, $stockChange, 'manual', '', 'Sửa tồn kho ở trang sản phẩm', $user, null, false); validateRow($table, $row); }
         return [put($table, $row)];

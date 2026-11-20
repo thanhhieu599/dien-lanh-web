@@ -173,7 +173,11 @@ try {
   await saved();
   const copyId = decodeURIComponent(new URL(page.url()).hash.split("/")[2]);
   assert.notEqual(copyId, "1001");
-  assert.equal((await read("products", copyId)).sku, `${original.sku}-COPY`);
+  {
+    const copySku = (await read("products", copyId)).sku;
+    assert.match(copySku, /^SP\d{5,}$/); // bản sao để trống SKU → tự sinh
+    assert.notEqual(copySku, original.sku);
+  }
   // Thuộc tính bộ lọc: gõ giá trị mới (ngoài danh sách) → lưu vào sản phẩm và tự thêm vào bộ lọc của danh mục
   {
     const copy = await read("products", copyId);
@@ -461,6 +465,24 @@ try {
   await page.getByRole("button", { name: "Xuất CSV", exact: true }).click();
   const csv = await csvPromise;
   assert.match(await fs.readFile(await csv.path(), "utf8"), /Khách CRM React/);
+  // Xóa khách hàng: từng khách (trang chi tiết) và chọn nhiều ở danh sách
+  {
+    const add = async (name, phone) => (await page.evaluate(([name, phone]) => AD.db.insert("crm_customers", { name, phone, addresses: [] }), [name, phone])).id;
+    const one = await add("QA xóa 1", "0901234561");
+    await add("QA xóa 2", "0901234562");
+    await add("QA xóa 3", "0901234563");
+    await open(`customers/${encodeURIComponent(one)}`);
+    await page.getByRole("button", { name: "Xóa khách hàng", exact: true }).click();
+    await page.waitForURL("**/#/customers");
+    assert.equal(await read("crm_customers", one), null);
+    await page.locator("#view .ar-toolbar input[name=q]").fill("QA xóa");
+    await page.getByRole("button", { name: "Lọc", exact: true }).click();
+    await page.waitForFunction(() => document.querySelectorAll(".ar-table tbody tr").length === 2);
+    await page.getByRole("checkbox", { name: "Chọn tất cả trên trang" }).check();
+    await page.locator(".ar-bulk").getByRole("button", { name: "Xóa đã chọn" }).click();
+    await page.locator(".ar-notices").filter({ hasText: "Đã xóa 2 mục" }).waitFor();
+    assert.equal((await page.evaluate(() => AD.db.list("crm_customers", { search: { q: "QA xóa", cols: ["name"] }, limit: 100 }))).count, 0);
+  }
 
   await open("misa");
   assert.equal(

@@ -214,7 +214,7 @@ export function ResourceEditor({ resource: key }: { resource: string }) {
     if (!editing) {
       delete row[ad.PK[key]];
       if (params.get("from")) {
-        row.sku = `${row.sku || "SKU"}-COPY`;
+        delete row.sku;
         row.slug = "";
         row.name = `${row.name || ""} (bản sao)`;
       }

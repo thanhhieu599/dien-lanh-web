@@ -15,6 +15,11 @@ function nextCode(string $prefix, int $pad = 5): string {
     put('settings', $row);
     return $prefix . str_pad((string)$n, $pad, '0', STR_PAD_LEFT);
 }
+// Mã SKU sản phẩm mới: SP00001…, bỏ qua mã đã có sẵn trong kho dữ liệu
+function newSku(): string {
+    do $sku = nextCode('SP'); while (sql("SELECT 1 FROM records WHERE resource='products' AND product_sku=?", [$sku])->fetchColumn());
+    return $sku;
+}
 function userName(?array $user): string { return (string)($user['name'] ?? $user['phone'] ?? 'Hệ thống'); }
 
 // Ghi 1 lần thay đổi tồn kho và cập nhật sản phẩm (sản phẩm truyền vào đã được khóa FOR UPDATE)

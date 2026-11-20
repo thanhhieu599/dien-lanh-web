@@ -159,7 +159,7 @@ window.AD = window.AD || {};
           col: "full",
         },
         { key: "name", label: "Tên sản phẩm", required: true, col: "full" },
-        { key: "sku", label: "Mã SKU", required: true, col: "third" },
+        { key: "sku", label: "Mã SKU", readonlyOnEdit: true, placeholder: "Để trống để tự sinh", help: "Tự nhập hoặc để trống để hệ thống tự sinh (SP00001…). Mã không được trùng và không đổi được sau khi lưu.", col: "third" },
         {
           key: "slug",
           label: "Đường dẫn (slug)",
@@ -420,10 +420,10 @@ window.AD = window.AD || {};
       beforeSave: (row) => {
         if (!row.slug) row.slug = DT.u.slugify(row.name);
       },
-      // Đường dẫn trùng (vd nhân bản, 2 sản phẩm cùng tên) -> thêm mã SKU vào cuối
+      // Đường dẫn trùng (vd nhân bản, 2 sản phẩm cùng tên) -> thêm đuôi ngắn vào cuối
       onDuplicate: (row, msg) =>
-        /slug/.test(msg) && row.sku
-          ? { ...row, slug: `${row.slug}-${DT.u.slugify(row.sku)}` }
+        /slug/.test(msg)
+          ? { ...row, slug: `${row.slug}-${DT.u.slugify(row.sku || Date.now().toString(36).slice(-5))}` }
           : null,
       preview: (row) => `../frontend/san-pham.html?id=${row.id}`,
       duplicate: true,

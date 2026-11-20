@@ -1385,6 +1385,12 @@ AD.demo = () => {
         row = { active: true, ...row, debt: 0, total_purchased: 0, purchase_count: 0 };
         if (!String(row.code || "").trim()) row.code = "NCC" + String(db.suppliers.length + 1).padStart(4, "0");
       }
+      // Mã SKU: tự nhập hoặc để trống để hệ thống sinh (SP00001…); không được trùng (giống máy chủ)
+      if (table === "products") {
+        row.sku = String(row.sku ?? "").trim();
+        if (!row.sku) do row.sku = nextCode("SP"); while (db.products.some((p) => p.sku === row.sku));
+        else if (db.products.some((p) => p.sku === row.sku)) throw new Error("Mã SKU đã tồn tại");
+      }
       // Sản phẩm mới có tồn ban đầu: ghi lịch sử kho
       const initial = table === "products" ? Number(row.stock) || 0 : 0;
       if (initial > 0) row.stock = 0;
@@ -1442,6 +1448,11 @@ AD.demo = () => {
         patch = { ...patch };
         delete patch.debt; delete patch.total_purchased; delete patch.purchase_count;
       }
+      // Mã SKU là mã định danh do hệ thống sinh: không cho sửa
+      if (table === "products" && row.sku && "sku" in patch) {
+        patch = { ...patch };
+        delete patch.sku;
+      }
       // Sửa tồn kho tay ở trang sản phẩm: vẫn ghi lịch sử kho
       if (table === "products" && patch.stock != null && Number(patch.stock) !== Number(row.stock)) {
         const { stock, ...rest } = patch;
@@ -1492,6 +1503,13 @@ AD.demo = () => {
         throw new Error('Sản phẩm đã có đơn hàng hoặc giao dịch kho, không xóa được. Hãy tắt "Bán trên website" để ẩn.');
       if (table === "suppliers" && db.purchase_orders.some((po) => String(po.supplier_id) === String(id)))
         throw new Error("Nhà cung cấp đã có đơn nhập, hãy chuyển sang ngừng giao dịch");
+      // Xóa khách hàng (giống máy chủ): khách đã có đơn hàng không xóa được; demo không xóa tài khoản đăng nhập
+      if (table === "crm_customers") {
+        const c = db.crm_customers.find((x) => String(x.id) === String(id));
+        if (!c) throw new Error(String(id).startsWith("profile:") ? "Chế độ demo không xóa tài khoản đăng nhập" : "Không tìm thấy khách hàng");
+        if (live("orders").some((o) => String(o.customer_id) === String(id) || crmPhone(o.phone) === crmPhone(c.phone)))
+          throw new Error("Khách hàng đã có đơn hàng, không xóa được");
+      }
       db[table] = db[table].filter(
         (x) => String(x[AD.PK[table]]) !== String(id),
       );

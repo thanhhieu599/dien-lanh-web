@@ -215,7 +215,14 @@ try {
     $cat = allRecords('categories')[0]['id']; $brand = allRecords('brands')[0]['id'];
     $sold = endpoint('products', 'POST', ['sku'=>$prefix . '-sold', 'slug'=>$prefix . '-sold', 'name'=>'QA đã bán', 'cat'=>$cat, 'brand'=>$brand, 'price'=>1000, 'stock'=>0, 'active'=>true])[0];
     $created[] = ['products', $sold['id']];
-    $item = fixture('order_items', ['id'=>$prefix . '-item', 'order_id'=>$prefix . '-order', 'product_id'=>$sold['id'], 'name'=>'QA đã bán', 'qty'=>1, 'price'=>1000]);
+    // Mã SKU: tự nhập hoặc để trống để hệ thống tự sinh; không trùng và không sửa được
+    $auto = endpoint('products', 'POST', ['sku'=>' ', 'slug'=>$prefix . '-auto', 'name'=>'QA tự sinh SKU', 'cat'=>$cat, 'brand'=>$brand, 'price'=>1000, 'stock'=>0, 'active'=>true])[0];
+    $created[] = ['products', $auto['id']];
+    checkAdmin($sold['sku'] === $prefix . '-sold' && preg_match('/^SP\d{5,}$/', $auto['sku']) === 1, 'Mã SKU tự nhập được, để trống thì tự sinh');
+    try { endpoint('products', 'POST', ['sku'=>$sold['sku'], 'slug'=>$prefix . '-dup', 'name'=>'QA trùng SKU', 'cat'=>$cat, 'brand'=>$brand, 'price'=>1000, 'stock'=>0, 'active'=>true]); throw new RuntimeException('Duplicate SKU accepted'); }
+    catch (HttpError $e) { checkAdmin(str_contains($e->getMessage(), 'SKU'), 'Chặn mã SKU trùng'); }
+    checkAdmin(patchAdmin('products', $auto['id'], ['sku'=>'DOI-MA'])['sku'] === $auto['sku'], 'Mã SKU không sửa được');
+    $item =fixture('order_items', ['id'=>$prefix . '-item', 'order_id'=>$prefix . '-order', 'product_id'=>$sold['id'], 'name'=>'QA đã bán', 'qty'=>1, 'price'=>1000]);
     try { endpoint('products', 'DELETE', [], ['id'=>'eq.' . $sold['id']]); throw new RuntimeException('Sold product must not be deleted'); }
     catch (HttpError $e) { checkAdmin(record('products', $sold['id']) !== null, 'Sản phẩm đã có đơn hàng không xóa được (chỉ ẩn)'); }
     $fresh = endpoint('products', 'POST', ['sku'=>$prefix . '-new', 'slug'=>$prefix . '-new', 'name'=>'QA chưa bán', 'cat'=>$cat, 'brand'=>$brand, 'price'=>1000, 'stock'=>0, 'active'=>true])[0];
@@ -264,6 +271,21 @@ try {
     rpcEndpoint('customer_group', ['p_op'=>'delete', 'p_id'=>$newId]);
     checkAdmin((record('crm_customers', $c2['id'])['group'] ?? '') === 'ban-le' && record('coupons', $cp['code'])['customer_groups'] === ['tag:QA'] && !in_array($newId, array_column(customerGroups(), 'id'), true), 'Nhóm khách hàng: xóa nhóm → khách về Bán lẻ, mã giảm giá bỏ nhóm');
     if ($before) put('settings', $before); else sql("DELETE FROM records WHERE resource='settings' AND record_id='customer_groups'");
+    // Xóa khách hàng: khách vãng lai, khách có tài khoản (xóa luôn tài khoản); chặn khách đã có đơn và tài khoản quản trị
+    endpoint('crm_customers', 'DELETE', [], ['id'=>'eq.' . $c1['id']]);
+    checkAdmin(record('crm_customers', $c1['id']) === null, 'Xóa khách hàng vãng lai');
+    $accId = substr(md5($prefix . 'acc'), 0, 32);
+    sql('INSERT INTO users (id, phone, password_hash) VALUES (?, ?, ?)', [$accId, '0900000096', 'x']);
+    fixture('profiles', ['id'=>$accId, 'phone'=>'0900000096', 'name'=>'QA có tài khoản', 'role'=>'customer', 'addresses'=>[]]);
+    try {
+        endpoint('crm_customers', 'DELETE', [], ['id'=>'eq.profile:' . $accId]);
+        checkAdmin(record('profiles', $accId) === null && !sql('SELECT 1 FROM users WHERE id=?', [$accId])->fetchColumn(), 'Xóa khách có tài khoản: xóa luôn tài khoản đăng nhập');
+    } finally { sql('DELETE FROM users WHERE id=?', [$accId]); }
+    try { endpoint('crm_customers', 'DELETE', [], ['id'=>'eq.profile:' . $admin['id']]); throw new RuntimeException('Admin account deleted as customer'); }
+    catch (HttpError $e) { checkAdmin(record('profiles', $admin['id']) !== null, 'Không xóa được tài khoản quản trị ở mục Khách hàng'); }
+    fixture('orders', ['id'=>$prefix . '-c2-order', 'code'=>'QA' . substr($prefix, -6), 'phone'=>'0900000098', 'status'=>'pending', 'total'=>1000, 'created_at'=>gmdate('c')]);
+    try { endpoint('crm_customers', 'DELETE', [], ['id'=>'eq.' . $c2['id']]); throw new RuntimeException('Customer with orders deleted'); }
+    catch (HttpError $e) { checkAdmin(record('crm_customers', $c2['id']) !== null, 'Khách đã có đơn hàng không xóa được'); }
     echo "Admin MySQL: $checks checks passed.\n";
 } finally {
     foreach (array_reverse($created) as [$table, $id]) sql('DELETE FROM records WHERE resource=? AND record_id=?', [$table, (string)$id]);

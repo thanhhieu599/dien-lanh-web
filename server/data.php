@@ -150,6 +150,32 @@ function crmInvoice($v): array {
     if ($out['email'] !== '' && !filter_var($out['email'], FILTER_VALIDATE_EMAIL)) fail('Email nhận hóa đơn không hợp lệ');
     return $out;
 }
+// Xóa khách hàng: xóa hồ sơ CRM và tài khoản đăng nhập (nếu là tài khoản khách).
+// Không xóa khách đã có đơn hàng (giữ chứng từ) và tài khoản nhân viên / quản trị (đổi vai trò trước).
+function deleteCustomer(string $id, ?array $user): void {
+    if (!allowed('crm_customers', 'DELETE', $user)) fail('Không có quyền', 403);
+    $crm = str_starts_with($id, 'profile:') ? null : record('crm_customers', $id, true);
+    $profileId = $crm['profile_id'] ?? (str_starts_with($id, 'profile:') ? substr($id, 8) : null);
+    $profile = $profileId ? record('profiles', $profileId, true) : null;
+    if ($crm && !$profile && !empty($crm['phone'])) {
+        foreach (allRecords('profiles') as $p) if (phoneKey((string)($p['phone'] ?? '')) === phoneKey((string)$crm['phone'])) { $profile = $p; break; }
+    }
+    if (!$crm && !$profile) fail('Không tìm thấy khách hàng', 404);
+    if ($profile && ($profile['id'] ?? '') === ($user['id'] ?? null)) fail('Không thể xóa tài khoản đang đăng nhập');
+    if ($profile && ($profile['role'] ?? 'customer') !== 'customer') fail('Đây là tài khoản nhân viên / quản trị, hãy đổi vai trò về Khách hàng trước khi xóa');
+    $phones = array_filter([phoneKey((string)($crm['phone'] ?? '')), phoneKey((string)($profile['phone'] ?? ''))]);
+    foreach (allRecords('orders') as $o) {
+        if ((isset($o['customer_id']) && in_array((string)$o['customer_id'], [$id, 'profile:' . ($profile['id'] ?? '')], true))
+            || ($profile && ($o['user_id'] ?? null) === $profile['id'])
+            || in_array(phoneKey((string)($o['phone'] ?? '')), $phones, true)) fail('Khách hàng đã có đơn hàng, không xóa được');
+    }
+    if ($crm) sql("DELETE FROM records WHERE resource='crm_customers' AND record_id=?", [$crm['id']]);
+    if ($profile) {
+        sql("DELETE FROM records WHERE resource='crm_customers' AND JSON_UNQUOTE(JSON_EXTRACT(data,'$.profile_id'))=?", [$profile['id']]);
+        sql("DELETE FROM records WHERE resource='profiles' AND record_id=?", [$profile['id']]);
+        sql('DELETE FROM users WHERE id=?', [$profile['id']]);
+    }
+}
 function crmSummary(): array {
     $customers = allRecords('crm_customers');
     foreach (allRecords('profiles') as $profile) {
@@ -268,7 +294,7 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
     if (!$user) fail('Vui lòng đăng nhập', 401);
     if ($method === 'POST') {
         if (!allowed($table, $method, $user, $body) || !in_array($table, ['products','categories','brands','coupons','posts','banners','stores','services','policies','settings','projects','faqs','jobs','crm_customers','maintenance_contracts','maintenance_visits','suppliers'], true)) fail('Không có quyền tạo dữ liệu', 403);
-        validateRow($table, $body);
+        if ($table !== 'products') validateRow($table, $body);
         if ($table === 'crm_customers') {
             $body['phone'] = phoneKey((string)($body['phone'] ?? ''));
             if (!preg_match('/^0[0-9]{9,10}$/', $body['phone'])) fail('Số điện thoại không hợp lệ');
@@ -280,6 +306,12 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
         if ($table !== 'products') return [put($table, $body, true)];
         // Sản phẩm mới có tồn ban đầu: ghi vào lịch sử kho
         return transaction(function() use ($body, $user) {
+            // Mã SKU: tự nhập hoặc để trống để hệ thống sinh (SP00001, SP00002…); không được trùng
+            $body['sku'] = trim((string)($body['sku'] ?? ''));
+            if ($body['sku'] === '') $body['sku'] = newSku();
+            elseif (mb_strlen($body['sku']) > 64) fail('Mã SKU tối đa 64 ký tự');
+            elseif (sql("SELECT 1 FROM records WHERE resource='products' AND product_sku=?", [$body['sku']])->fetchColumn()) fail('Mã SKU đã tồn tại', 409);
+            validateRow('products', $body);
             $stock = (int)($body['stock'] ?? 0); $body['stock'] = 0;
             $row = put('products', $body, true);
             if ($stock > 0) stockMove($row, $stock, 'initial', '', 'Khởi tạo kho', $user);
@@ -290,6 +322,7 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
     if (!str_starts_with($filter, 'eq.')) fail('Phải chỉ định một bản ghi');
     $id = substr($filter, 3);
     return transaction(function() use ($table, $method, $body, $user, $id) {
+        if ($table === 'crm_customers' && $method === 'DELETE') { deleteCustomer((string)$id, $user); return null; }
         $row = record($table, $id, true);
         // Profiles created by CLI/seed can appear in CRM before a CRM row exists.
         if (!$row && $table === 'crm_customers' && $method === 'PATCH' && str_starts_with($id, 'profile:')) {
@@ -337,6 +370,8 @@ function dataEndpoint(string $table, string $method, array $body): mixed {
             if (isset($patch['email'])) sql('UPDATE users SET email=? WHERE id=?', [$patch['email'] ?: null, $id]);
         }
         if ($table === 'suppliers') unset($patch['debt'], $patch['total_purchased'], $patch['purchase_count']);
+        // Mã SKU là mã định danh do hệ thống sinh: không cho sửa
+        if ($table === 'products' && !empty($row['sku'])) unset($patch['sku']);
         // Sửa tồn kho tay ở trang sản phẩm: vẫn ghi lịch sử kho
         $stockChange = $table === 'products' && isset($patch['stock']) && is_numeric($patch['stock']) ? (int)$patch['stock'] - (int)($row['stock'] ?? 0) : 0;
         if ($stockChange) unset($patch['stock']);

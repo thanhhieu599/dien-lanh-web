@@ -43,7 +43,7 @@ AD.pages.crudForm = async (key, id, params, el) => {
     if (!row) { el.innerHTML = `<div class="ad-empty"><p>Không tìm thấy bản ghi.</p><a class="btn btn-light" href="#/${key}">Quay lại</a></div>`; return; }
   } else if (params.from) {
     const src = await AD.db.get(R.table, params.from);
-    row = { ...src, [pk]: undefined, name: src?.name ? `${src.name} (bản sao)` : src?.name, sku: src?.sku ? `${src.sku}-COPY` : undefined, slug: undefined, created_at: undefined, updated_at: undefined, sold: 0 };
+    row = { ...src, [pk]: undefined, name: src?.name ? `${src.name} (bản sao)` : src?.name, sku: undefined, slug: undefined, created_at: undefined, updated_at: undefined, sold: 0 };
   } else row = R.defaults ? R.defaults() : {};
 
   const ctx = { editing, values: row };

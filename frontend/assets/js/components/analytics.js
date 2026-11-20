@@ -219,7 +219,7 @@ DT.track = DT.analytics.track;
     const add = DT.store.addToCart;
     DT.store.addToCart = (id, qty = 1, opts) => {
       const ok = add(id, qty, opts);
-      if (ok) A.addToCart(DT.api.productById(id), qty);
+      if (ok) A.addToCart(DT.api.priced(DT.api.productById(id), opts?.options), qty);
       return ok;
     };
   }

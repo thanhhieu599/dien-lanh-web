@@ -81,7 +81,13 @@ export function ListingPage({
   // Số sản phẩm theo từng giá trị bộ lọc trong phạm vi đang xem (bỏ qua các bộ lọc thuộc tính)
   const attrCounts: Record<string, Record<string, number>> = {};
   for (const p of dt.api.list({ ...filters, attrs: {}, page: 1, limit: dt.products.length || 1 }).items as Product[])
-    for (const [k, v] of Object.entries(p.attrs || {})) if (v) ((attrCounts[k] ||= {})[String(v)] = (attrCounts[k]?.[String(v)] || 0) + 1);
+  {
+    const add = (k: string, v: string) => ((attrCounts[k] ||= {})[v] = (attrCounts[k]?.[v] || 0) + 1);
+    for (const [k, v] of Object.entries(p.attrs || {})) if (v) add(k, String(v));
+    // Bảng Công suất & giá cũng tính vào bộ lọc Công suất (theo con số: "2HP" ↔ "2 HP")
+    for (const f of cat?.filters || []) if (dt.api.isCapacityFilter(f))
+      for (const c of dt.api.capacities(p)) { const o = (f.options as string[]).find((x) => dt.api.capNum(x) === dt.api.capNum(c.label)); if (o && o !== p.attrs?.[f.key]) add(f.key, o); }
+  }
   // Xuất xứ có trong phạm vi đang xem (bỏ qua chính bộ lọc xuất xứ để vẫn chọn thêm được)
   const originChoices: string[] = [
     ...new Set(

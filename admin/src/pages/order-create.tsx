@@ -2,7 +2,7 @@
 // (trừ kho khi tạo) hoặc dòng tự nhập; tự chỉnh đơn giá, phí lắp đặt, phí giao hàng, chiết khấu, thuế GTGT.
 import {useEffect, useState} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
-import {ad, money} from '../services/runtime';
+import {ad, dt, money} from '../services/runtime';
 import {loadCache} from '../services/runtime';
 import {adminOrderTotals, createOrder, VAT_RATES, type OrderLine} from '../services/orders';
 import {Action, Head, MoneyInput, Panel, Sec, useNotice} from '../components/common';
@@ -68,8 +68,11 @@ export function OrderCreate() {
     const v: Row = c.invoice || {};
     if (v.company || v.taxCode) { setInvoice({company: v.company || '', taxCode: v.taxCode || '', address: v.address || '', email: v.email || ''}); setWantInvoice(true); }
   }
+  // Sản phẩm có Công suất & giá: chọn sẵn công suất thấp nhất, đơn giá theo mức đó (vẫn sửa tay được)
   function addProduct(p: Row) {
-    setLines([...lines, {key: lineKey(), product_id: p.id, name: p.name, sku: p.sku || '', unit: p.unit || 'Cái', qty: 1, price: num(p.price), stock: num(p.stock)}]);
+    const caps: {label: string; price: number}[] = Array.isArray(p.capacities) ? p.capacities : [];
+    const low = caps.length ? dt.api.lowestCapacity({capacities: caps}) : null;
+    setLines([...lines, {key: lineKey(), product_id: p.id, name: p.name, sku: p.sku || '', unit: p.unit || 'Cái', qty: 1, price: low ? num(low.price) : num(p.price), stock: num(p.stock), caps, capacity: low?.label}]);
   }
   async function submit() {
     setError('');
@@ -78,7 +81,7 @@ export function OrderCreate() {
       const order = await createOrder({
         p_customer: {name: customer.name.trim(), phone: customer.phone.trim(), email: customer.email.trim()},
         p_shipping: method === 'delivery' ? {method, address: customer.address.trim(), district: customer.district.trim(), province: customer.province.trim()} : {method},
-        p_items: lines.map((l) => ({product_id: l.product_id, name: l.name.trim(), sku: l.sku.trim(), unit: l.unit.trim(), qty: Math.round(num(l.qty)), price: Math.round(num(l.price))})),
+        p_items: lines.map((l) => ({product_id: l.product_id, name: l.name.trim(), sku: l.sku.trim(), unit: l.unit.trim(), qty: Math.round(num(l.qty)), price: Math.round(num(l.price)), options: l.capacity ? {'Công suất': l.capacity} : {}})),
         p_install_fee: num(install), p_shipping_fee: num(shipping), p_discount: num(discount),
         p_vat_rate: vatRate, p_vat_included: vatIncluded, p_payment: payment, p_payment_status: paymentStatus, p_status: status,
         p_note: note, p_staff_note: staffNote, p_invoice: wantInvoice ? invoice : null,
@@ -129,12 +132,12 @@ export function OrderCreate() {
     </Sec>
   </div>
   <Sec title="Sản phẩm">
-    <ProductPicker label="Thêm sản phẩm có sẵn" exclude={lines.map((l) => l.product_id).filter((v) => v != null)} onPick={addProduct}/>
+    <ProductPicker label="Thêm sản phẩm có sẵn" exclude={lines.filter((l) => !l.caps?.length).map((l) => l.product_id).filter((v) => v != null)} onPick={addProduct}/>
     <p><button type="button" className="inv-link" id="order-add-custom" onClick={() => setLines([...lines, {key: lineKey(), product_id: null, name: '', sku: '', unit: 'Cái', qty: 1, price: 0}])}>+ Thêm dòng tự nhập (hàng ngoài hệ thống, dịch vụ, vật tư…)</button></p>
     {lines.length ? <div className="ar-table-scroll"><table className="ar-table inv-lines order-lines"><thead><tr><th>#</th><th>Tên sản phẩm / dịch vụ</th><th>Mã SKU</th><th>Đơn vị</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th><th/></tr></thead><tbody>
       {lines.map((l, i) => <tr key={l.key}>
         <td>{i + 1}</td>
-        <td><input aria-label={`Tên dòng ${i + 1}`} value={l.name} placeholder="Tên hàng hóa / dịch vụ" onChange={(e) => setLine(i, {name: e.target.value})}/>{l.product_id != null ? <small>Trong kho: {l.stock ?? 0}{num(l.qty) > num(l.stock) ? ' · không đủ hàng' : ''}</small> : <small>Dòng tự nhập · không trừ kho</small>}</td>
+        <td><input aria-label={`Tên dòng ${i + 1}`} value={l.name} placeholder="Tên hàng hóa / dịch vụ" onChange={(e) => setLine(i, {name: e.target.value})}/>{!!l.caps?.length && <select aria-label={`Công suất dòng ${i + 1}`} value={l.capacity || ''} onChange={(e) => { const c = l.caps!.find((x) => x.label === e.target.value); setLine(i, {capacity: e.target.value, ...(c ? {price: num(c.price)} : {})}); }}>{l.caps.map((c) => <option key={c.label} value={c.label}>Công suất {c.label} · {money(c.price)}</option>)}</select>}{l.product_id != null ? <small>Trong kho: {l.stock ?? 0}{num(l.qty) > num(l.stock) ? ' · không đủ hàng' : ''}</small> : <small>Dòng tự nhập · không trừ kho</small>}</td>
         <td><input aria-label={`SKU dòng ${i + 1}`} value={l.sku} onChange={(e) => setLine(i, {sku: e.target.value})}/></td>
         <td><input aria-label={`Đơn vị dòng ${i + 1}`} value={l.unit} onChange={(e) => setLine(i, {unit: e.target.value})}/></td>
         <td><input aria-label={`Số lượng dòng ${i + 1}`} type="number" min={1} step={1} value={l.qty} onChange={(e) => setLine(i, {qty: e.target.value === '' ? ('' as unknown as number) : Number(e.target.value)})}/></td>

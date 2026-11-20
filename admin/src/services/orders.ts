@@ -3,7 +3,8 @@ import {ad} from './runtime';
 import type {Row} from '../types';
 
 export const VAT_RATES: [number, string][] = [[10, 'VAT 10%'], [8, 'VAT 8%'], [5, 'VAT 5%'], [0, 'VAT 0%'], [-1, 'Không chịu thuế']];
-export type OrderLine = {key: string; product_id: string | number | null; name: string; sku: string; unit: string; qty: number; price: number; stock?: number};
+// caps: bảng Công suất & giá của sản phẩm; capacity: mức đã chọn (ghi vào đơn ở thuộc tính "Công suất")
+export type OrderLine = {key: string; product_id: string | number | null; name: string; sku: string; unit: string; qty: number; price: number; stock?: number; caps?: {label: string; price: number}[]; capacity?: string};
 
 // PHẢI khớp adminOrderTotals (server/shop.php) và bản demo (admin/assets/js/db.js)
 export function adminOrderTotals(lines: {price: number; qty: number}[], install: number, shipping: number, discount: number, rate: number, included: boolean) {

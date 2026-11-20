@@ -89,6 +89,10 @@ try {
         try { normalizeCapacities(['capacities' => $bad]); ok(false, 'A2.4 bảng công suất sai được chấp nhận: ' . json_encode($bad)); } catch (HttpError $e) { ok(true, 'A2.4 Chặn bảng công suất sai: ' . json_encode($bad, JSON_UNESCAPED_UNICODE)); }
     }
 
+    $qLines = cartLines([['id' => $cap['id'], 'qty' => 1, 'options' => ['Công suất' => '2HP']]], false);
+    $guestQuote = couponResult(['code' => 'QA', 'type' => 'fixed', 'value' => 100000, 'min' => 15000000, 'active' => true], $qLines, '');
+    ok($qLines[0]['product']['price'] === 20000000 && $guestQuote['ok'], 'A2.5 Kiểm tra mã giảm giá (validate_coupon_cart) tính theo giá công suất khách chọn: 2HP đạt đơn tối thiểu 15 triệu');
+
     echo "--- B. Mã giảm giá không bị lạm dụng\n";
     // Trả tồn cho sản phẩm thử
     foreach ([$ac['id'] => 20, $acc['id'] => 20] as $id => $n) { $row = record('products', $id); stockMove($row, $n - (int)$row['stock'], 'manual', '', 'QA bổ sung tồn'); }
@@ -187,6 +191,12 @@ try {
     ok(isset($create(['p_items' => [$line(['qty' => 1]), ['product_id' => 'khong-co', 'qty' => 1, 'price' => 1]]])['error']) && stock($acc['id']) === $s2, 'F17 Một dòng lỗi: cả đơn không tạo, kho không bị trừ');
     $row = $patch($o['id'], ['status' => 'cancelled']);
     ok($row['status'] === 'cancelled' && stock($acc['id']) === $s2 + 2, 'F18 Hủy đơn tạo tay: hoàn kho đúng (bỏ qua dòng tự nhập)');
+    // Sản phẩm có Công suất & giá: phải chọn công suất, ghi vào đơn; nhân viên vẫn tự chỉnh đơn giá
+    ok(isset($create(['p_items' => [['product_id' => $cap['id'], 'qty' => 1, 'price' => 1000]]])['error']), 'F19 Tạo đơn tay sản phẩm có công suất: chưa chọn công suất bị chặn');
+    $oc = $create(['p_items' => [['product_id' => $cap['id'], 'qty' => 1, 'price' => 19500000, 'options' => ['Công suất' => '2HP']], ['product_id' => $cap['id'], 'qty' => 1, 'price' => 11000000, 'options' => ['Công suất' => '1HP']]]]);
+    $ocItems = array_values(array_filter(allRecords('order_items'), fn($i) => $i['order_id'] === ($oc['id'] ?? '')));
+    ok(!isset($oc['error']) && count($ocItems) === 2 && in_array('2HP', array_map(fn($i) => $i['options']['Công suất'] ?? '', $ocItems), true) && $oc['subtotal'] === 30500000, 'F20 Tạo đơn tay: 2 công suất cùng sản phẩm, ghi công suất vào đơn, giữ đơn giá nhân viên nhập');
+    $patch($oc['id'], ['status' => 'cancelled']);
     $_SESSION = [];
 
     echo "--- E. Đối soát toàn bộ database\n";

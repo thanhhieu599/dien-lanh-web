@@ -345,7 +345,14 @@ function adminCreateOrder(array $args): array {
             if ($pid !== null && $pid !== '' && !$p) fail("Dòng $n: sản phẩm không tồn tại");
             $name = cleanText($it['name'] ?? '', 300) ?: ($p['name'] ?? '');
             if ($name === '') fail("Dòng $n: vui lòng nhập tên sản phẩm");
-            $lines[] = ['product' => $p, 'name' => $name, 'sku' => cleanText($it['sku'] ?? '', 80) ?: ($p['sku'] ?? ''), 'unit' => cleanText($it['unit'] ?? '', 30) ?: ($p['unit'] ?? 'Cái'), 'qty' => $qty, 'price' => $price];
+            // Sản phẩm có Công suất & giá: phải chọn 1 mức có trong bảng (đơn giá nhân viên tự chỉnh được)
+            $options = [];
+            if ($p && ($caps = productCapacities($p))) {
+                $label = is_array($it['options'] ?? null) ? ($it['options'][CAPACITY_OPTION] ?? null) : null;
+                if (!in_array($label, array_column($caps, 'label'), true)) fail("Dòng $n: vui lòng chọn công suất");
+                $options = [CAPACITY_OPTION => $label];
+            }
+            $lines[] = ['options' => $options, 'product' => $p, 'name' => $name, 'sku' => cleanText($it['sku'] ?? '', 80) ?: ($p['sku'] ?? ''), 'unit' => cleanText($it['unit'] ?? '', 30) ?: ($p['unit'] ?? 'Cái'), 'qty' => $qty, 'price' => $price];
         }
         $install = adminOrderMoney($args['p_install_fee'] ?? 0, 'Phí lắp đặt');
         $ship = adminOrderMoney($args['p_shipping_fee'] ?? 0, 'Phí giao hàng');
@@ -367,7 +374,7 @@ function adminCreateOrder(array $args): array {
         foreach ($lines as $l) {
             $p = $l['product'];
             if ($p) { $p = record('products', $p['id'], true); $p['sold'] = ($p['sold'] ?? 0) + $l['qty']; stockMove($p, -$l['qty'], 'sale', $code, 'Bán hàng (tạo đơn tại quản trị)', $user); }
-            put('order_items', ['order_id' => $order['id'], 'product_id' => $p['id'] ?? null, 'sku' => $l['sku'], 'name' => $l['name'], 'unit' => $l['unit'], 'price' => $l['price'], 'qty' => $l['qty'], 'install' => false, 'options' => (object)[]], true);
+            put('order_items', ['order_id' => $order['id'], 'product_id' => $p['id'] ?? null, 'sku' => $l['sku'], 'name' => $l['name'], 'unit' => $l['unit'], 'price' => $l['price'], 'qty' => $l['qty'], 'install' => false, 'options' => (object)$l['options']], true);
         }
         put('order_status_history', ['order_id' => $order['id'], 'status' => $status, 'note' => 'Tạo đơn tại quản trị – ' . userName($user), 'changed_by' => $user['id']], true);
         return $order;

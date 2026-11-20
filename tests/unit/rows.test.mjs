@@ -143,3 +143,17 @@ test('capacities: optionGroups + priced + chuyển đổi old_price', () => {
   assert.equal(two.price, 20000000); assert.equal(two.oldPrice, 24000000);
   assert.equal(ctx.DT.api.priced(view, {}).price, 9000000);
 });
+
+// Bộ lọc Công suất ở trang danh mục: sản phẩm chỉ có bảng Công suất & giá vẫn khớp theo con số
+test('capacities: bộ lọc Công suất khớp bảng công suất', () => {
+  const ctx = { console }; ctx.window = ctx; vm.createContext(ctx);
+  for (const file of ['frontend/assets/js/data/catalog.js', 'frontend/assets/js/data/content.js', 'frontend/assets/js/core/utils.js', 'frontend/assets/js/core/rows.js', 'frontend/assets/js/core/api.js'])
+    vm.runInContext(fs.readFileSync(new URL(file, root), 'utf8'), ctx, { filename: file });
+  const DT = ctx.DT;
+  const base = DT.products.find((p) => p.cat === 'may-lanh');
+  const p = { ...base, id: 990001, slug: 'qa-cap', attrs: {}, capacities: [{ label: '1HP', price: 1, oldPrice: null }, { label: '2.5HP', price: 2, oldPrice: null }] };
+  DT.products.push(p);
+  const ids = (vals) => DT.api.list({ cat: 'may-lanh', attrs: { capacity: vals }, page: 1, limit: 1000 }).items.map((x) => x.id);
+  assert.ok(ids(['2.5 HP']).includes(990001), 'lọc 2.5 HP khớp mức 2.5HP');
+  assert.ok(!ids(['2 HP']).includes(990001), 'lọc 2 HP không khớp');
+});

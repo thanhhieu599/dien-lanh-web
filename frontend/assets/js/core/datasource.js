@@ -109,7 +109,8 @@ DT.dataSource = (() => {
     couponContext() { return { skipCustomer: true }; },
     async validateCoupon({ code, lines, phone }) {
       const result = await api().rpc('validate_coupon_cart', {
-        p_code: code, p_items: lines.map((l) => ({ id: l.id, qty: l.qty })), p_phone: phone || null,
+        // Gửi kèm thuộc tính (Công suất…) để máy chủ tính theo đúng giá mức khách chọn
+        p_code: code, p_items: lines.map((l) => ({ id: l.id, qty: l.qty, options: l.options || {} })), p_phone: phone || null,
       });
       if (!result.ok) return result;
       const row = result.coupon;

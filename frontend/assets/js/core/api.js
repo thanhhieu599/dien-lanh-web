@@ -33,6 +33,14 @@ DT.api = (() => {
     const n = (c) => { const m = String(c.label).match(/\d+(?:[.,]\d+)?/); return m ? Number(m[0].replace(",", ".")) : Infinity; };
     return capacities(p).reduce((best, c) => (best && n(best) <= n(c) ? best : c), null);
   };
+  // Bộ lọc Công suất của danh mục (mã capacity hoặc tên "Công suất"): sản phẩm có bảng Công suất & giá
+  // khớp khi 1 mức trong bảng có cùng con số (vd lọc "2 HP" khớp mức "2HP")
+  const capNum = (v) => { const m = String(v ?? "").match(/\d+(?:[.,]\d+)?/); return m ? Number(m[0].replace(",", ".")) : NaN; };
+  const isCapacityFilter = (f) => f && (f.key === "capacity" || String(f.label || "").trim().toLowerCase() === "công suất");
+  const capacityKey = (p, k) => k === "capacity" || (DT.categories.find((c) => c.id === p.cat)?.filters || []).some((f) => f.key === k && isCapacityFilter(f));
+  const matchAttr = (p, k, vals) =>
+    vals.includes(p.attrs?.[k]) ||
+    (capacities(p).length > 0 && capacityKey(p, k) && capacities(p).some((c) => vals.some((v) => capNum(v) === capNum(c.label))));
   const capacityOf = (p, options) => capacities(p).find((c) => c.label === options?.[CAPACITY]) || null;
   // Sản phẩm với giá của mức công suất đã chọn (chưa chọn thì giữ giá chung = mức rẻ nhất)
   const priced = (p, options) => {
@@ -152,7 +160,7 @@ DT.api = (() => {
       }
       if (f.attrs) {
         for (const [k, vals] of Object.entries(f.attrs)) {
-          if (vals.length && !vals.includes(p.attrs[k])) return false;
+          if (vals.length && !matchAttr(p, k, vals)) return false;
         }
       }
       if (f.q && !matchQuery(p, f.q)) return false;
@@ -258,6 +266,8 @@ DT.api = (() => {
     category,
     optionGroups,
     capacities,
+    capNum,
+    isCapacityFilter,
     lowestCapacity,
     priced,
     optionText,

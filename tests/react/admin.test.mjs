@@ -978,6 +978,17 @@ try {
     await page.locator(".inv-sheet").waitFor();
     const invText = await page.locator(".inv-sheet").innerText();
     assert.match(invText, /2\.100\.000/); assert.match(invText, /210\.000/); assert.match(invText, /Công lắp đặt ống đồng/);
+    // Sản phẩm có Công suất & giá (gắn tạm bảng công suất): tạo đơn tay phải chọn công suất, công suất ghi vào đơn
+    const capId = prod.id;
+    const prodBefore = await read("products", capId);
+    await page.evaluate((id) => AD.db.update("products", id, { capacities: [{ label: "1HP", price: 9000000 }, { label: "2HP", price: 20000000 }] }), capId);
+    const capOrder = (items) => page.evaluate(async (items) => { try { return await AD.db.createOrder({ p_customer: { name: "QA công suất", phone: "0977000112" }, p_shipping: { method: "pickup" }, p_payment: "cod", p_items: items }); } catch (e) { return { error: e.message }; } }, items);
+    assert.match((await capOrder([{ product_id: capId, qty: 1, price: 100 }])).error || "", /chọn công suất/);
+    const okCap = await capOrder([{ product_id: capId, qty: 1, price: 19000000, options: { "Công suất": "2HP" } }]);
+    assert.ok(!okCap.error, okCap.error);
+    const capMade = (await page.evaluate(() => AD.db.list("orders", { filters: [["source", "eq", "admin"]], order: "created_at.desc", limit: 1, select: "*,order_items(*)" }))).rows[0];
+    assert.equal(capMade.order_items[0].options["Công suất"], "2HP");
+    await page.evaluate(([id, price, old]) => AD.db.update("products", id, { capacities: [], price, old_price: old }), [capId, prodBefore.price, prodBefore.old_price]);
   }
   // Danh mục: bật/tắt "Hiện dải sản phẩm ở trang chủ" → trang chủ website thêm / bớt dải tương ứng
   {

@@ -1160,7 +1160,10 @@ AD.demo = () => {
           const p = has ? product(it.product_id) || invFail(`Dòng ${n}: sản phẩm không tồn tại`) : null;
           const name = String(it.name || "").trim() || p?.name || "";
           if (!name) invFail(`Dòng ${n}: vui lòng nhập tên sản phẩm`);
-          return { p, name, sku: String(it.sku || "").trim() || p?.sku || "", unit: String(it.unit || "").trim() || p?.unit || "Cái", qty: it.qty, price };
+          const caps = Array.isArray(p?.capacities) ? p.capacities : [];
+          const label = it.options?.["Công suất"];
+          if (caps.length && !caps.some((c) => c.label === label)) invFail(`Dòng ${n}: vui lòng chọn công suất`);
+          return { options: caps.length ? { "Công suất": label } : {}, p, name, sku: String(it.sku || "").trim() || p?.sku || "", unit: String(it.unit || "").trim() || p?.unit || "Cái", qty: it.qty, price };
         });
         const install = money(a.p_install_fee, "Phí lắp đặt"), ship = money(a.p_shipping_fee, "Phí giao hàng"), discount = money(a.p_discount, "Chiết khấu");
         const goods = lines.reduce((t, l) => t + l.price * l.qty, 0);
@@ -1175,7 +1178,7 @@ AD.demo = () => {
           code, createdAt, status, source: "admin", createdByName: userName(),
           customer: { name: String(c.name).trim(), phone, email: String(c.email || "").trim() }, shipping,
           payment: a.p_payment, paymentStatus, invoice: a.p_invoice || null, note: String(a.p_note || "").trim(), staffNote: String(a.p_staff_note || "").trim(),
-          items: lines.map((l) => ({ id: l.p ? l.p.id : null, name: l.name, sku: l.sku, unit: l.unit, price: l.price, qty: l.qty, install: false, options: {} })),
+          items: lines.map((l) => ({ id: l.p ? l.p.id : null, name: l.name, sku: l.sku, unit: l.unit, price: l.price, qty: l.qty, install: false, options: l.options })),
           subtotal: goods, install, shippingFee: ship, discount, coupon: null, vatRate: rate, vatIncluded: included, vatAmount: vat, total,
         };
         const shop = read(SHOP, { orders: [], users: [] });

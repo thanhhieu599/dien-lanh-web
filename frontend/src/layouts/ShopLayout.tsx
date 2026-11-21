@@ -538,13 +538,10 @@ export function ShopLayout({ children }: { children: ReactNode }) {
                     Hotline: {config.hotline}
                   </a>
                 </li>
-                {config.hotlineB2B && (
+                {config.company && (
                   <li>
                     <Icon name="building" />
-                    Doanh nghiệp:{" "}
-                    <a href={`tel:${dt.u.tel(config.hotlineB2B)}`}>
-                      {config.hotlineB2B}
-                    </a>
+                    Doanh nghiệp: {config.company}
                   </li>
                 )}
                 <li>

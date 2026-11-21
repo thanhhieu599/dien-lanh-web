@@ -185,8 +185,8 @@ export function ShopLayout({ children }: { children: ReactNode }) {
       className="logo"
       aria-label={`${config.name} - Trang chủ`}
     >
-      <span className="logo-mark">
-        <img src={logoUrl} alt="" width="56" height="56" />
+      <span className="logo-mark logo-img">
+        <img src={logoUrl} alt="" width="48" height="48" />
       </span>
     </ShopLink>
   );

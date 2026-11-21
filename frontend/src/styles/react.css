@@ -1316,11 +1316,11 @@ button:disabled {
   .header-main .logo-text b {
     font-size: 20px;
   }
-  .logo-mark,
-  .logo-mark:has(img) {
-    width: 44px;
-    height: 44px;
+  .logo-mark {
+    width: 36px;
+    height: 36px;
   }
+
   .hero .slider {
     min-height: 250px;
   }
@@ -3523,4 +3523,33 @@ body{-webkit-font-smoothing:antialiased;color:#212121}
 .opt-missing,
 .pd-option-group.opt-need legend {
   color: var(--accent, #c8102e);
+}
+
+/* Logo công ty (ảnh): khung trắng, ảnh nằm gọn bên trong */
+.logo-mark.logo-img {
+  box-sizing: border-box;
+  width: 56px;
+  height: 56px;
+  padding: 4px;
+  background: #fff;
+  overflow: hidden;
+}
+.footer .logo-mark.logo-img {
+  width: 72px;
+  height: 72px;
+  padding: 6px;
+}
+.logo-mark.logo-img img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+@media (max-width: 768px) {
+  .header .logo-mark.logo-img,
+  .header-main .logo-mark.logo-img {
+    width: 44px;
+    height: 44px;
+    padding: 3px;
+  }
 }

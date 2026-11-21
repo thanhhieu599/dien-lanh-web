@@ -441,7 +441,8 @@ try {
   await page.keyboard.press("Escape");
   await page.locator("#view .ar-range-btn").first().click();
   await page.locator(".ar-range-pop button", { hasText: "Năm nay" }).click();
-  assert.match(await page.locator("#view").innerText(), /so với kỳ trước/i);
+  // Chờ số liệu tải xong (máy chậm có thể còn "Đang tải dữ liệu…")
+  await page.waitForFunction(() => /so với kỳ trước/i.test(document.querySelector("#view")?.innerText || ""), null, { timeout: 30000 });
   for (const route of ["reports", "orders", "leads", "misa", "maintenance", "purchases", "stock-exports", "stock-history"]) {
     await open(route);
     assert.equal(await page.locator("#view .ar-range-btn").count(), 1, `${route}: có bộ lọc thời gian`);

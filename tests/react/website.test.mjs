@@ -13,6 +13,14 @@ try {
   const fe=base+'frontend/';
   async function open(route){console.log(`Open: ${route}`);await page.goto(fe+route);await page.waitForSelector('html[data-frontend="react"] #main h1',{state:'attached'});await page.waitForFunction(()=>!document.querySelector('#main [role="status"]'));}
   await open('index.html');
+  // Trang chủ: mỗi dải danh mục tối đa 2 lượt (2 chấm); danh mục nhiều sản phẩm vẫn còn "Xem tất cả"
+  {
+    const strips=await page.$$eval('section[data-block]',(els)=>els.map((el)=>({dots:el.querySelectorAll('.paged-dots > *').length,size:Number(el.querySelector('[data-collection-size]')?.dataset.collectionSize||0),all:!!el.querySelector('.section-head a.link'),cat:el.dataset.block})));
+    assert.ok(strips.length>0,'Có dải danh mục ở trang chủ');
+    for(const s of strips){assert.ok(s.dots<=2,`${s.cat}: tối đa 2 chấm`);assert.ok(s.size<=10,`${s.cat}: tối đa 2 lượt sản phẩm`);assert.ok(s.all,`${s.cat}: có Xem tất cả`);}
+    const big=await page.evaluate(()=>DT.categories.find((c)=>document.querySelector(`section[data-block="${c.id}"]`)&&DT.api.list({cat:c.id,limit:1000}).total>10)?.id);
+    if(big)assert.equal(strips.find((s)=>s.cat===big).dots,2,'Danh mục nhiều sản phẩm: đúng 2 chấm');
+  }
   assert.ok(await page.locator('.pcard').count()>0);
   assert.equal(await page.locator('script[data-shared-runtime*="pages/"]').count(),0,'React must render pages without the old page scripts');
   assert.equal(await page.locator('script[data-shared-runtime="components/analytics"]').count(),1,'Shared runtime must initialize once');

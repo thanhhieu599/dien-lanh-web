@@ -176,6 +176,8 @@ export function ProductGrid({
   );
 }
 export const PRODUCTS_PER_PAGE = ITEMS_PER_PAGE;
+// Dải sản phẩm theo danh mục ở trang chủ: tối đa 2 lượt (chấm), còn lại xem ở trang danh mục
+export const HOME_PAGES = 2;
 // Trang danh mục / tìm kiếm: hiện đủ 20 sản phẩm mỗi trang, chọn trang ở cuối danh sách
 export const LISTING_PER_PAGE = 20;
 function ProductResults({
@@ -211,6 +213,9 @@ export function CategorySection({
   const products = dt.api.list({ cat: c.id, sub: tab || undefined, sort: "category" }).items;
   // Ảnh quảng cáo cột đầu: chọn trong Admin › Danh mục › Ảnh quảng cáo trang chủ
   const promo = safeImage(c.promo_image);
+  // Trang chủ: mỗi danh mục tối đa 2 lượt sản phẩm (2 chấm), xem hết bấm "Xem tất cả" để trang chủ nhẹ
+  const size = promo ? 4 : PRODUCTS_PER_PAGE;
+  const shown = products.slice(0, size * HOME_PAGES);
   return (
     <section className="section section-box" data-block={c.id}>
       <div className="section-head">
@@ -240,11 +245,11 @@ export function CategorySection({
             {/* Chỉ hiện ảnh, không chữ / nút đè lên ảnh */}
             <img src={promo} alt="" loading="lazy" />
           </ShopLink>
-          <ProductGrid key={tab} products={products} pageSize={4} />
+          <ProductGrid key={tab} products={shown} pageSize={4} />
         </div>
       ) : (
         <div className="block-body">
-          <ProductGrid key={tab} products={products} />
+          <ProductGrid key={tab} products={shown} />
         </div>
       )}
     </section>

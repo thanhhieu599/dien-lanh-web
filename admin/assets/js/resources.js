@@ -925,17 +925,18 @@ window.AD = window.AD || {};
         },
         { key: "author", label: "Tác giả", col: "third" },
         {
-          key: "art",
-          label: "Ảnh minh họa",
-          type: "select",
-          options: ARTS,
-          col: "third",
-        },
-        {
           key: "published",
           label: "Đăng công khai",
           type: "bool",
           col: "third",
+        },
+        {
+          key: "image",
+          label: "Ảnh đại diện bài viết",
+          type: "image",
+          folder: "posts",
+          col: "full",
+          help: "Ảnh ngang 1200 × 675 px (16:9). Hiện ở danh sách tin tức, trang chủ và đầu bài viết.",
         },
         {
           key: "excerpt",

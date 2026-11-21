@@ -808,7 +808,7 @@ export const RESOURCE_TABS: Record<string, ResourceTab[]> = {
     tab("req", "Yêu cầu & quyền lợi", "Yêu cầu ứng viên, quyền lợi và cách nộp hồ sơ.", ["requirements", "benefits", "contact"]),
   ],
   posts: [
-    tab("info", "Thông tin bài viết", "Tiêu đề, đường dẫn, chuyên mục, ngày đăng và mô tả ngắn cho Google.", ["title", "slug", "cat", "date", "author", "art", "published", "excerpt"]),
+    tab("info", "Thông tin bài viết", "Tiêu đề, đường dẫn, chuyên mục, ngày đăng, ảnh đại diện và mô tả ngắn cho Google.", ["title", "slug", "cat", "date", "author", "published", "image", "excerpt"]),
     tab("content", "Nội dung", "Nội dung bài viết.", ["content"]),
   ],
 };

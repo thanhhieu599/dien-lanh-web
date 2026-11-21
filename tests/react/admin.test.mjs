@@ -1108,6 +1108,13 @@ try {
   {
     const post = (await page.evaluate(() => AD.db.list("posts", { limit: 1 }))).rows[0];
     await open(`posts/${encodeURIComponent(post.slug || post.id)}`);
+    // Ảnh đại diện bài viết: ô tải ảnh (không còn danh sách chọn ảnh minh họa mẫu)
+    assert.equal(await page.locator('#view select[name="art"]').count(), 0);
+    const cover = page.locator("#view [data-field=image]");
+    assert.match(await cover.innerText(), /Ảnh đại diện bài viết/);
+    const png = await page.evaluate(() => { const c = document.createElement("canvas"); c.width = 16; c.height = 9; c.getContext("2d").fillRect(0, 0, 16, 9); return c.toDataURL("image/png").split(",")[1]; });
+    await cover.locator("input[type=file]").setInputFiles({ name: "bia.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
+    await cover.locator("img").waitFor();
     await tabTo("Nội dung");
     const area = page.locator(".re-area");
     await area.click();
@@ -1135,6 +1142,7 @@ try {
     const stored = await read("posts", post.slug || post.id);
     assert.match(stored.content, /<table/);
     assert.match(stored.content, /lien-he\.html/);
+    assert.ok(stored.image, "Lưu ảnh đại diện bài viết");
   }
   await open("dashboard");
   await page.reload();

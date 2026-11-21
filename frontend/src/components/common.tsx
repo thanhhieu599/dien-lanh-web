@@ -296,15 +296,16 @@ export function ProjectCard({ project: p }: { project: Row }) {
     </article>
   );
 }
-export function useMeta(title: string, description = "", canonical?: string) {
+export function useMeta(title: string, description = "", canonical?: string, image?: string) {
   useEffect(() => {
     dt.u.setMeta({
       title,
       description:
         description || `${title} tại ${dt.config.name}. ${dt.config.slogan}`,
       canonical: canonical || location.href,
+      ...(image ? { image } : {}),
     });
-  }, [title, description, canonical]);
+  }, [title, description, canonical, image]);
 }
 export function useJsonLd(type: string, data: Record<string, unknown>) {
   const encoded = JSON.stringify({

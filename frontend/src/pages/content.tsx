@@ -88,13 +88,14 @@ export function BrandsPage({ id }: { id?: string }) {
 export function BlogPage({ slug }: { slug?: string }) {
   const [category, setCategory] = useState("");
   const post = slug ? dt.posts.find((p) => p.slug === slug) : undefined;
-  useMeta(post?.title || "Tin tức - Tư vấn", post?.excerpt || "");
+  useMeta(post?.title || "Tin tức - Tư vấn", post?.excerpt || "", undefined, post?.image ? String(post.image) : undefined);
   useJsonLd(
     post ? "Article" : "ItemList",
     post
       ? {
           headline: post.title,
           datePublished: post.date,
+          ...(post.image ? { image: dt.u.abs(String(post.image)) } : {}),
           author: { "@type": "Person", name: post.author || dt.config.name },
         }
       : {

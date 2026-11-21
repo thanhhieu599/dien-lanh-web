@@ -580,8 +580,10 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
                 </>
               )}
             </div>
+            {/* Hàng ảnh nhỏ chỉ hiện khi sản phẩm có từ 2 ảnh trở lên */}
+            {p.images.length > 1 && (
             <div className="gallery-thumbs g-thumbs">
-              {(p.images.length ? p.images : ["art:0"]).map((_, i) => (
+              {p.images.map((_, i) => (
                 <button
                   key={i}
                   className={image === i ? "active" : ""}
@@ -600,6 +602,7 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
                 ),
               )}
             </div>
+            )}
             <div className="gallery-feats">
               <div>
                 <Icon name="shield" />
@@ -664,58 +667,6 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
                 </div>
               </div>
             )}
-            {p.cat === "may-lanh" && (
-              <ShopLink
-                className="calc-hint react-capacity-link"
-                href="tinh-cong-suat-may-lanh.html"
-              >
-                <Icon name="snow" />
-                <span>
-                  Chưa chắc công suất phù hợp?{" "}
-                  <b>Tính công suất theo diện tích phòng</b>
-                </span>
-                <Icon name="right" />
-              </ShopLink>
-            )}
-            <div className="promo-box">
-              <h4>
-                <Icon name="gift" />
-                Khuyến mãi & ưu đãi
-              </h4>
-              <ul>
-                {p.gift && (
-                  <li>
-                    <i>1</i>
-                    <span>{p.gift}</span>
-                  </li>
-                )}
-                {dt.coupons.slice(0, 1).map((coupon: Row) => (
-                  <li key={coupon.code}>
-                    <i>
-                      <Icon name="check" />
-                    </i>
-                    <span>
-                      Nhập mã <b>{coupon.code}</b>{" "}
-                      {coupon.desc || coupon.description}
-                    </span>
-                  </li>
-                ))}
-                <li>
-                  <i>
-                    <Icon name="check" />
-                  </i>
-                  <span>
-                    Doanh nghiệp mua số lượng:{" "}
-                    <ShopLink
-                      className="link"
-                      href={`bao-gia-du-an.html?product=${p.id}`}
-                    >
-                      nhận báo giá riêng
-                    </ShopLink>
-                  </span>
-                </li>
-              </ul>
-            </div>
             {groups.length > 0 && (
               <div className="pd-options">
                 {groups.map((group: any) => (
@@ -799,6 +750,59 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
                 {dt.config.hotline}
               </a>{" "}
               ({dt.config.workingHours})
+            </div>
+            {/* Tính công suất + Khuyến mãi & ưu đãi: nằm dưới nút Mua ngay */}
+            {p.cat === "may-lanh" && (
+              <ShopLink
+                className="calc-hint react-capacity-link"
+                href="tinh-cong-suat-may-lanh.html"
+              >
+                <Icon name="snow" />
+                <span>
+                  Chưa chắc công suất phù hợp?{" "}
+                  <b>Tính công suất theo diện tích phòng</b>
+                </span>
+                <Icon name="right" />
+              </ShopLink>
+            )}
+            <div className="promo-box">
+              <h4>
+                <Icon name="gift" />
+                Khuyến mãi & ưu đãi
+              </h4>
+              <ul>
+                {p.gift && (
+                  <li>
+                    <i>1</i>
+                    <span>{p.gift}</span>
+                  </li>
+                )}
+                {dt.coupons.slice(0, 1).map((coupon: Row) => (
+                  <li key={coupon.code}>
+                    <i>
+                      <Icon name="check" />
+                    </i>
+                    <span>
+                      Nhập mã <b>{coupon.code}</b>{" "}
+                      {coupon.desc || coupon.description}
+                    </span>
+                  </li>
+                ))}
+                <li>
+                  <i>
+                    <Icon name="check" />
+                  </i>
+                  <span>
+                    Doanh nghiệp mua số lượng:{" "}
+                    <ShopLink
+                      className="link"
+                      href={`bao-gia-du-an.html?product=${p.id}`}
+                    >
+                      nhận báo giá riêng
+                    </ShopLink>
+                  </span>
+                </li>
+              </ul>
             </div>
           </section>
           <aside className="pd-aside">

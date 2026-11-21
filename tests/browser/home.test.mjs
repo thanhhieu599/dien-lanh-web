@@ -70,8 +70,8 @@ try {
 
   console.log('Trang sản phẩm: ảnh & chọn theo nhu cầu');
   await page.goto(`${fe}san-pham.html?id=1031`);
-  await page.waitForSelector('.gallery-thumbs');
-  check(await page.locator('.gallery-thumbs > *').count() >= 5, 'dưới ảnh chính có hàng ô ảnh nhỏ (ít nhất 5 ô)');
+  await page.waitForSelector('#g-main');
+  check(await page.locator('.gallery-thumbs').count() === 0, 'sản phẩm chỉ có 1 ảnh: ẩn hàng ô ảnh nhỏ');
   const vs = await page.$$eval('.pd-variants .variant', (a) => a.map((x) => ({ size: x.querySelector('b').textContent, need: x.querySelector('span')?.textContent || '', active: x.classList.contains('active') })));
   check(await page.locator('.pd-variants h4').textContent() === 'Chọn theo nhu cầu' && vs.length === 4, `tủ lạnh: "Chọn theo nhu cầu" có 4 dung tích (${vs.map((v) => v.size).join(', ')})`);
   check(vs.every((v) => /lít$/.test(v.size) && v.need) && vs.filter((v) => v.active).length === 1 && vs.find((v) => v.active).size === '212 lít', 'mỗi ô ghi dung tích + nhu cầu, ô đang xem được chọn');

@@ -97,12 +97,14 @@ try {
   await page.evaluate(async id=>{await AD.db.update('products',id,{options:{Color:['White','Black']},images:['data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6XcAAAAASUVORK5CYII=']});},product.id);
   await open(`san-pham.html?id=${product.id}`);await page.getByRole('button',{name:'Mua ngay',exact:true}).click();assert.equal(await page.evaluate(()=>DT.store.get().cart.length),0,'Required options must be selected before adding');
   await page.waitForFunction(()=>document.querySelector('#g-main img')?.naturalWidth===1);
+  assert.equal(await page.locator('.gallery-thumbs').count(),0,'Chỉ 1 ảnh: ẩn hàng ảnh nhỏ');
   await page.getByRole('button',{name:'White',exact:true}).click();await page.locator('.buy-btns').getByRole('button',{name:'Thêm vào giỏ',exact:false}).click();await page.getByRole('button',{name:'Black',exact:true}).click();await page.locator('.buy-btns').getByRole('button',{name:'Thêm vào giỏ',exact:false}).click();assert.equal(await page.evaluate(()=>DT.store.get().cart.length),2,'Different options must produce separate cart lines');
   // Công suất & giá: chọn sẵn mức rẻ nhất, bấm mức khác thì giá đổi, giỏ hàng tính theo giá mức đã chọn
   await page.goto(base+'admin/');await page.waitForSelector('.ad-side');
-  await page.evaluate(async id=>{await AD.db.update('products',id,{price:null,old_price:null,capacities:[{label:'2HP',price:20000000,old_price:24000000},{label:'1HP',price:9000000,old_price:null}]});},product.id);
+  await page.evaluate(async id=>{await AD.db.update('products',id,{images:['data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6XcAAAAASUVORK5CYII=','data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6XcAAAAASUVORK5CYII='],price:null,old_price:null,capacities:[{label:'2HP',price:20000000,old_price:24000000},{label:'1HP',price:9000000,old_price:null}]});},product.id);
   await open(`san-pham.html?id=${product.id}`);
   await page.waitForFunction(()=>/9\.000\.000/.test(document.querySelector('.pd-price strong')?.textContent||''));
+  assert.equal(await page.locator('.gallery-thumbs button').count(),2,'Từ 2 ảnh: hiện hàng ảnh nhỏ');
   assert.equal(await page.getByRole('button',{name:'1HP',exact:true}).getAttribute('aria-pressed'),'true','Để trống giá bán: chọn sẵn công suất thấp nhất');
   await page.getByRole('button',{name:'2HP',exact:true}).click();
   await page.waitForFunction(()=>/20\.000\.000/.test(document.querySelector('.pd-price strong')?.textContent||'')&&!!document.querySelector('.pd-price del')&&/-17%/.test(document.querySelector('.pd-price')?.textContent||''));

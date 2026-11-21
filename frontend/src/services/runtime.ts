@@ -8,7 +8,7 @@ function script(file: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const element = document.createElement("script");
     const url = new URL(`assets/js/${file}.js`, siteBase);
-    url.searchParams.set("v", __BUILD_VERSION__);
+    url.searchParams.set("b", __BUILD_VERSION__); // không dùng ?v=: Vite dev coi là file bất biến, lưu đệm 1 năm
     element.async = false; // tải song song nhưng vẫn chạy đúng thứ tự thêm vào
     element.src = url.href;
     element.dataset.sharedRuntime = file;

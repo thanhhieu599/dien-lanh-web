@@ -4,7 +4,8 @@ export let ad:Admin;
 export let dt:Row;
 export const adminBase=new URL('./',document.baseURI);
 export const websiteBase=new URL('../frontend/',adminBase);
-async function script(path:string){await new Promise<void>((resolve,reject)=>{const el=document.createElement('script');const url=new URL(path,adminBase);url.searchParams.set('v',__BUILD_VERSION__);el.src=url.href;el.dataset.adminRuntime=path;el.onload=()=>resolve();el.onerror=()=>reject(new Error(`Không tải được ${path}`));document.head.append(el);});}
+// Tham số 'b' (không dùng 'v': Vite dev coi ?v= là file bất biến, lưu đệm 1 năm -> trình duyệt giữ bản cũ)
+async function script(path:string){await new Promise<void>((resolve,reject)=>{const el=document.createElement('script');const url=new URL(path,adminBase);url.searchParams.set('b',__BUILD_VERSION__);el.src=url.href;el.dataset.adminRuntime=path;el.onload=()=>resolve();el.onerror=()=>reject(new Error(`Không tải được ${path}`));document.head.append(el);});}
 export async function bootstrap(){
  for(const file of ['data/catalog','data/content','seo-config','backend-config','core/utils','components/icons','core/rows','core/api','components/art'])await script(`../frontend/assets/js/${file}.js`);
  dt=window.DT;window.AD={cache:{},me:null} as Admin;ad=window.AD;

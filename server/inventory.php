@@ -62,6 +62,8 @@ function invLines(array $items, string $kind): array {
             if ($line['discount'] > $line['qty'] * $line['price']) fail('Chiết khấu vượt thành tiền: ' . $p['name']);
         } elseif ($kind === 'export') {
             $line['qty'] = invInt($item['qty'] ?? 0, 1, 1000000, 'Số lượng xuất');
+            // Đơn giá xuất: nhân viên nhập (mặc định giá vốn); để trống thì lấy giá vốn lúc xuất kho
+            $line['price'] = ($item['price'] ?? null) === null || $item['price'] === '' ? null : invMoney($item['price'], 'Đơn giá xuất');
         } else {
             $line['actual'] = invInt($item['actual'] ?? -1, 0, 100000000, 'Tồn thực tế');
             $line['system'] = (int)($p['stock'] ?? 0);
@@ -221,11 +223,30 @@ function inventoryEndpoint(array $a): array {
                 $value = 0.0; $costs = [];
                 foreach ($items as $l) {
                     $p = record('products', $l['product_id'], true) ?? fail('Sản phẩm không còn tồn tại: ' . $l['name']);
-                    $costs[$l['product_id']] = (float)($p['cost_price'] ?? 0); $value += $l['qty'] * $costs[$l['product_id']];
+                    $costs[$l['product_id']] = (float)($p['cost_price'] ?? 0);
                     stockMove($p, -$l['qty'], 'export', $doc['code'], $l['note'] ?: 'Xuất kho', $user);
                 }
-                $doc['items'] = array_map(fn($l) => $l + ['cost' => $costs[$l['product_id']]], $doc['items']);
-                $doc['value'] = $value; $doc['status'] = 'done'; $doc['done_at'] = now(); $doc['done_by'] = userName($user);
+                $doc['items'] = array_map(function ($l) use ($costs) {
+                    $l['cost'] = $costs[$l['product_id']];
+                    $l['price'] = isset($l['price']) && $l['price'] !== null ? (float)$l['price'] : $l['cost'];
+                    $l['amount'] = $l['qty'] * $l['price'];
+                    return $l;
+                }, $doc['items']);
+                $doc['value'] = array_sum(array_column($doc['items'], 'amount')); $doc['status'] = 'done'; $doc['done_at'] = now(); $doc['done_by'] = userName($user);
+                return put('stock_exports', $doc);
+            }
+            case 'export_price': {
+                // Sửa đơn giá phiếu đã xuất (không đổi số lượng, không đụng tồn kho): tính lại thành tiền và giá trị phiếu
+                $doc = record('stock_exports', $id, true) ?? fail('Không tìm thấy phiếu xuất', 404);
+                if ($doc['status'] !== 'done') fail('Phiếu chưa xuất kho: sửa đơn giá ngay trên phiếu rồi bấm Lưu');
+                $prices = [];
+                foreach ($a['items'] ?? [] as $item) $prices[(string)($item['product_id'] ?? '')] = invMoney($item['price'] ?? 0, 'Đơn giá xuất');
+                $doc['items'] = array_map(function ($l) use ($prices) {
+                    if (array_key_exists((string)$l['product_id'], $prices)) $l['price'] = $prices[(string)$l['product_id']];
+                    $l['price'] = (float)($l['price'] ?? $l['cost'] ?? 0); $l['amount'] = $l['qty'] * $l['price'];
+                    return $l;
+                }, $doc['items']);
+                $doc['value'] = array_sum(array_column($doc['items'], 'amount'));
                 return put('stock_exports', $doc);
             }
             case 'delete_draft': {

@@ -537,7 +537,7 @@ AD.demo = () => {
       if (kind === "purchase") {
         l.qty = intOf(it.qty, 1, 1e6, "Số lượng nhập"); l.price = moneyOf(it.price, "Đơn giá"); l.discount = moneyOf(it.discount, "Chiết khấu dòng"); l.tax_rate = intOf(it.tax_rate ?? 0, 0, 100, "Thuế suất");
         if (l.discount > l.qty * l.price) invFail("Chiết khấu vượt thành tiền: " + p.name);
-      } else if (kind === "export") l.qty = intOf(it.qty, 1, 1e6, "Số lượng xuất");
+      } else if (kind === "export") { l.qty = intOf(it.qty, 1, 1e6, "Số lượng xuất"); l.price = it.price == null || it.price === "" ? null : moneyOf(it.price, "Đơn giá xuất"); }
       else { l.actual = intOf(it.actual, 0, 1e8, "Tồn thực tế"); l.system = Number(p.stock) || 0; l.diff = l.actual - l.system; l.reason = String(it.reason || "").trim(); }
       return l;
     });
@@ -645,14 +645,22 @@ AD.demo = () => {
         Object.assign(doc, { reason: a.reason, items: invLines(a.items, "export"), note: String(a.note || "").trim(), receiver: String(a.receiver || "").trim().slice(0, 200), receiver_address: String(a.receiver_address || "").trim().slice(0, 300), customer_id: String(a.customer_id || "").trim().slice(0, 80), updated_at: nowIso() });
         if (!a.confirm) return doc;
       }
-      let value = 0;
       doc.items = doc.items.map((l) => {
         const p = product(l.product_id) || invFail("Sản phẩm không còn tồn tại: " + l.name);
-        const cost = Number(p.cost_price) || 0; value += l.qty * cost;
+        const cost = Number(p.cost_price) || 0;
         stockMove(p, -l.qty, "export", doc.code, l.note || "Xuất kho");
-        return { ...l, cost };
+        const price = l.price == null ? cost : Number(l.price);
+        return { ...l, cost, price, amount: l.qty * price };
       });
+      const value = doc.items.reduce((s, l) => s + l.amount, 0);
       return Object.assign(doc, { value, status: "done", done_at: nowIso(), done_by: userName() });
+    }
+    if (op === "export_price") {
+      const doc = find("stock_exports", id) || invFail("Không tìm thấy phiếu xuất");
+      if (doc.status !== "done") invFail("Phiếu chưa xuất kho: sửa đơn giá ngay trên phiếu rồi bấm Lưu");
+      const prices = new Map((a.items || []).map((it) => [String(it.product_id), moneyOf(it.price, "Đơn giá xuất")]));
+      doc.items = doc.items.map((l) => { const price = prices.has(String(l.product_id)) ? prices.get(String(l.product_id)) : Number(l.price ?? l.cost) || 0; return { ...l, price, amount: l.qty * price }; });
+      return Object.assign(doc, { value: doc.items.reduce((s, l) => s + l.amount, 0), updated_at: nowIso() });
     }
     if (op === "delete_draft") {
       const t = { adjustment: "stock_adjustments", export: "stock_exports" }[a.p_kind] || invFail("Loại phiếu không hợp lệ");

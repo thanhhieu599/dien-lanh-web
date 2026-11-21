@@ -6,6 +6,7 @@ import {EXPORT_REASONS, LEVEL_LABEL, MOVE_TYPES, PURCHASE_STATUS, incomingMap, i
 import {Action, DataState, Head, Panel, Sec, Table, useData, useNotice} from '../components/common';
 import {MovesTable, ProductPicker} from '../components/stock';
 import {Combo} from '../components/combo';
+import {MoneyField} from '../components/fields';
 import {DateRange, inRange, useRange} from '../components/date-range';
 import type {Row} from '../types';
 
@@ -337,21 +338,26 @@ function ExportDoc({id}: {id: string}) {
   const doc = state.data?.doc;
   const suppliersState = useData(async () => (await ad.db.list('suppliers', {order: 'name.asc', limit: 5000})).rows, []);
   const [form, setForm] = useState<Row | null>(null);
-  const f: Row = form ?? {reason: doc?.reason || '', receiver: doc?.receiver || '', receiver_address: doc?.receiver_address || '', customer_id: doc?.customer_id || '', note: doc?.note || '', items: (doc?.items || []).map((l: Row) => ({...l}))};
+  const f: Row = form ?? {reason: doc?.reason || '', receiver: doc?.receiver || '', receiver_address: doc?.receiver_address || '', customer_id: doc?.customer_id || '', note: doc?.note || '', items: (doc?.items || []).map((l: Row) => ({...l, price: l.price ?? (doc?.status === 'done' ? l.cost ?? null : (num(productOf(l.product_id)?.cost_price) || null))}))};
   const set = (patch: Row) => setForm({...f, ...patch});
   // Trả nhà cung cấp: người nhận còn trống thì điền nhà cung cấp của sản phẩm đầu tiên có nhà cung cấp
   const fromSupplier = (items: Row[]): Row => { if (f.receiver) return {}; const s = items.map((l) => suppliersOf(l.product_id, suppliersState.data || [])[0]).find(Boolean); return s ? {receiver: s.name, customer_id: '', receiver_address: f.receiver_address || s.address || ''} : {}; };
   const readonly = doc?.status === 'done' || !canWrite();
+  // Đơn giá xuất: mặc định giá vốn, sửa được cả khi phiếu đã xuất (chỉ tính lại thành tiền, không đụng tồn kho)
+  const priceEdit = canWrite();
+  const total = f.items.reduce((s: number, l: Row) => s + num(l.qty) * num(l.price), 0);
+  const setLine = (i: number, patch: Row) => set({items: f.items.map((x: Row, k: number) => (k === i ? {...x, ...patch} : x))});
   async function save(confirm: boolean) {
     if (!f.reason) throw new Error('Vui lòng chọn lý do xuất.');
     if (!f.items.length) throw new Error('Phiếu xuất chưa có sản phẩm.');
-    const res = await invOp('export_save', {p_id: doc?.id, reason: f.reason, receiver: f.receiver, receiver_address: f.receiver_address, customer_id: f.customer_id, note: f.note, items: f.items.map((l: Row) => ({product_id: l.product_id, qty: num(l.qty), note: l.note || ''})), confirm});
+    const res = await invOp('export_save', {p_id: doc?.id, reason: f.reason, receiver: f.receiver, receiver_address: f.receiver_address, customer_id: f.customer_id, note: f.note, items: f.items.map((l: Row) => ({product_id: l.product_id, qty: num(l.qty), price: l.price ?? null, note: l.note || ''})), confirm});
     await loadCache(); notice(confirm ? `Đã xuất kho theo phiếu ${res.code}.` : `Đã lưu phiếu ${res.code}.`);
     setForm(null); navigate(`/stock-exports/${res.id}?r=${Date.now()}`, {replace: true});
   }
   return <DataState state={state}>{state.data && <><Head title={doc ? `Phiếu xuất ${doc.code}` : 'Tạo phiếu xuất kho'} subtitle={doc?.status === 'done' ? `Đã xuất ${date(doc.done_at)} · ${doc.done_by} · Giá trị ${money(doc.value)}` : undefined}>
     <Link className="btn btn-light" to="/stock-exports">Thoát</Link>
     {doc?.status === 'done' && <Link className="btn btn-light" to={`/voucher/xuat/${doc.id}`}>In phiếu xuất kho</Link>}
+    {doc?.status === 'done' && priceEdit && form && <Action className="btn btn-primary" id="exp-price" run={async () => { await invOp('export_price', {p_id: doc.id, items: f.items.map((l: Row) => ({product_id: l.product_id, price: l.price ?? 0}))}); notice('Đã lưu đơn giá phiếu xuất.'); setForm(null); navigate(`/stock-exports/${doc.id}?r=${Date.now()}`, {replace: true}); }}>Lưu đơn giá</Action>}
     {!readonly && <><Action run={() => save(false)}>Lưu nháp</Action><Action className="btn btn-primary" id="exp-confirm" confirm="Xuất kho: trừ tồn kho các sản phẩm trong phiếu?" run={() => save(true)}>Xuất kho</Action></>}
     {doc?.status === 'draft' && canWrite() && <Action confirm="Xóa phiếu nháp này?" run={async () => { await invOp('delete_draft', {p_id: doc.id, p_kind: 'export'}); navigate('/stock-exports'); }}>Xóa phiếu</Action>}
   </Head>
@@ -362,14 +368,17 @@ function ExportDoc({id}: {id: string}) {
     <label className="full"><span>Ghi chú</span><input value={f.note} readOnly={readonly} onChange={(e) => set({note: e.target.value})}/></label>
   </div>
   <Sec title="Sản phẩm xuất">
-    {!readonly && <ProductPicker exclude={f.items.map((l: Row) => l.product_id)} onPick={(p) => { const items = [...f.items, {product_id: p.id, name: p.name, sku: p.sku, unit: p.unit || 'Cái', qty: 1, note: ''}]; set({items, ...(f.reason === 'return_supplier' ? fromSupplier(items) : {})}); }}/>}
-    {f.items.length ? <div className="ar-table-scroll"><table className="ar-table inv-lines"><thead><tr><th>Sản phẩm</th><th>Đơn vị</th><th>Có thể bán</th><th>SL xuất</th><th>Ghi chú</th>{!readonly && <th/>}</tr></thead><tbody>
+    {!readonly && <ProductPicker exclude={f.items.map((l: Row) => l.product_id)} onPick={(p) => { const items = [...f.items, {product_id: p.id, name: p.name, sku: p.sku, unit: p.unit || 'Cái', qty: 1, price: num(p.cost_price) || null, note: ''}]; set({items, ...(f.reason === 'return_supplier' ? fromSupplier(items) : {})}); }}/>}
+    {f.items.length ? <div className="ar-table-scroll"><table className="ar-table inv-lines"><thead><tr><th>Sản phẩm</th><th>Đơn vị</th><th>Có thể bán</th><th>SL xuất</th><th>Đơn giá</th><th>Thành tiền</th><th>Ghi chú</th>{!readonly && <th/>}</tr></thead><tbody>
       {f.items.map((l: Row, i: number) => <tr key={l.product_id}>
         <td><b>{l.name}</b><small>{l.sku}</small><SupplierHint productId={l.product_id} suppliers={suppliersState.data}/></td><td>{l.unit}</td><td>{num(productOf(l.product_id)?.stock)}</td>
-        <td>{readonly ? l.qty : <input aria-label={`Số lượng xuất ${l.name}`} type="number" min={1} step={1} value={l.qty} onChange={(e) => set({items: f.items.map((x: Row, k: number) => (k === i ? {...x, qty: e.target.value === '' ? '' : Number(e.target.value)} : x))})}/>}</td>
+        <td>{readonly ? l.qty : <input aria-label={`Số lượng xuất ${l.name}`} type="number" min={1} step={1} value={l.qty} onChange={(e) => setLine(i, {qty: e.target.value === '' ? '' : Number(e.target.value)})}/>}</td>
+        <td>{priceEdit ? <MoneyField aria-label={`Đơn giá xuất ${l.name}`} placeholder={num(productOf(l.product_id)?.cost_price) ? 'Đơn giá (₫)' : 'Chưa có giá vốn – nhập đơn giá'} value={l.price} onChange={(v) => setLine(i, {price: v})}/> : money(num(l.price))}</td>
+        <td className="num">{money(num(l.qty) * num(l.price))}</td>
         <td>{readonly ? l.note || '—' : <input aria-label={`Ghi chú ${l.name}`} value={l.note || ''} onChange={(e) => set({items: f.items.map((x: Row, k: number) => (k === i ? {...x, note: e.target.value} : x))})}/>}</td>
         {!readonly && <td><button type="button" className="btn btn-light" aria-label={`Bỏ ${l.name}`} onClick={() => set({items: f.items.filter((_: Row, k: number) => k !== i)})}>×</button></td>}
-      </tr>)}</tbody></table></div> : <p className="inv-muted">Chưa có sản phẩm.</p>}
+      </tr>)}</tbody><tfoot><tr><th colSpan={5}>Cộng</th><th className="num" id="exp-total">{money(total)}</th><th colSpan={readonly ? 1 : 2}/></tr></tfoot></table></div> : <p className="inv-muted">Chưa có sản phẩm.</p>}
+    {f.items.length > 0 && <p className="inv-muted">Đơn giá điền sẵn giá vốn của sản phẩm (giá nhập bình quân), sửa được nếu cần. Đơn giá và thành tiền in trên phiếu xuất kho.</p>}
   </Sec></Panel></>}</DataState>;
 }
 

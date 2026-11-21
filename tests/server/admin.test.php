@@ -138,13 +138,21 @@ try {
     $exp = rpcEndpoint('inventory', ['p_op'=>'export_save', 'reason'=>'gift', 'items'=>[['product_id'=>$prod['id'], 'qty'=>2]], 'confirm'=>true]);
     $created[] = ['stock_exports', $exp['id']];
     checkAdmin($exp['status'] === 'done' && record('products', $prod['id'])['stock'] === 15 && $exp['value'] > 0, 'Export reduces stock and records cost value');
+    checkAdmin($exp['items'][0]['price'] == $exp['items'][0]['cost'] && $exp['value'] == 2 * $exp['items'][0]['cost'], 'Export without unit price uses cost price');
+    $priced = rpcEndpoint('inventory', ['p_op'=>'export_save', 'reason'=>'internal', 'items'=>[['product_id'=>$prod['id'], 'qty'=>1, 'price'=>'1234567']], 'confirm'=>true]);
+    $created[] = ['stock_exports', $priced['id']];
+    checkAdmin($priced['items'][0]['price'] == 1234567 && $priced['items'][0]['amount'] == 1234567 && $priced['value'] == 1234567, 'Export keeps typed unit price and amount');
+    $repriced = rpcEndpoint('inventory', ['p_op'=>'export_price', 'p_id'=>$priced['id'], 'items'=>[['product_id'=>$prod['id'], 'price'=>2000000]]]);
+    checkAdmin($repriced['value'] == 2000000 && $repriced['items'][0]['qty'] === 1 && record('products', $prod['id'])['stock'] === 14, 'Done export unit price can be corrected without touching stock');
+    try { rpcEndpoint('inventory', ['p_op'=>'export_price', 'p_id'=>$priced['id'], 'items'=>[['product_id'=>$prod['id'], 'price'=>-5]]]); throw new RuntimeException('Negative price must fail'); }
+    catch (HttpError $e) { checkAdmin(record('stock_exports', $priced['id'])['value'] == 2000000, 'Negative export unit price is rejected'); }
     $custom = rpcEndpoint('inventory', ['p_op'=>'export_save', 'reason'=>'  Bảo hành đổi máy cho khách ', 'items'=>[['product_id'=>$prod['id'], 'qty'=>1]]]);
     $created[] = ['stock_exports', $custom['id']];
     checkAdmin($custom['reason'] === 'Bảo hành đổi máy cho khách' && $custom['status'] === 'draft', 'Export accepts a typed reason outside the preset list');
     try { rpcEndpoint('inventory', ['p_op'=>'export_save', 'reason'=>'   ', 'items'=>[['product_id'=>$prod['id'], 'qty'=>1]]]); throw new RuntimeException('Blank reason must fail'); }
     catch (HttpError $e) { checkAdmin(true, 'Export requires a reason'); }
     patchAdmin('products', $prod['id'], ['stock'=>16]);
-    $types = array_column($moves(), 'type');
+    $types = array_values(array_unique(array_column($moves(), 'type')));
     sort($types);
     checkAdmin($types === ['adjust', 'export', 'manual', 'purchase'], 'Every stock change is in the stock history');
     try { patchAdmin('purchase_orders', $po['id'], ['total'=>1]); throw new RuntimeException('Direct edit must fail'); }

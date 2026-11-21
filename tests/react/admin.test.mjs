@@ -847,6 +847,10 @@ try {
     assert.equal(await page.locator("[name=reason]").inputValue(), "Quà tặng doanh nghiệp");
     await page.locator(".inv-picker input").fill(before.sku);
     await page.keyboard.press("Enter");
+    // Đơn giá điền sẵn giá vốn, sửa được; thành tiền và dòng Cộng tự tính
+    await page.locator(`input[aria-label^="Đơn giá xuất"]`).fill("1.250.000");
+    assert.match(await page.locator("#exp-total").innerText(), /^1\.250\.000\s₫$/);
+    await page.locator(`input[aria-label^="Số lượng xuất"]`).fill("1");
     await page.locator("#exp-confirm").click();
     await waitUntil(async ([id, n]) => (await AD.db.get("products", id)).stock === n, [pid, afterPo.stock - 3]);
     // Xuất quá tồn bị chặn, không ghi gì
@@ -886,6 +890,14 @@ try {
     sheet = await page.locator(".vc-sheet").innerText();
     assert.match(sheet, /PHIẾU XUẤT KHO/); assert.doesNotMatch(sheet, /Mẫu số|Nợ:|Có:/); assert.match(sheet, /Quà tặng doanh nghiệp/); assert.match(sheet, /Giám đốc/);
     assert.equal(await page.locator(".vc-sheet tbody tr").count(), 1);
+    assert.match(sheet, /1\.250\.000/, "Phiếu in đơn giá đã nhập");
+    assert.equal(await page.locator(".vc-total").innerText(), "1.250.000");
+    // Sửa đơn giá phiếu đã xuất: tính lại giá trị, không đổi tồn kho
+    await open(`stock-exports/${exp.id}`);
+    await page.locator(`input[aria-label^="Đơn giá xuất"]`).fill("1.300.000");
+    await page.locator("#exp-price").click();
+    await waitUntil(async (id) => (await AD.db.get("stock_exports", id)).value === 1300000, exp.id);
+    assert.equal((await read("products", pid)).stock, afterPo.stock - 3);
     // Phiếu xuất kho bán hàng theo đơn
     await open("orders/DTREACTQA");
     await page.locator("#view a", { hasText: "Phiếu xuất kho" }).click();

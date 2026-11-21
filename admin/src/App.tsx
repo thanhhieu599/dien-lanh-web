@@ -9,6 +9,7 @@ import {
   type ReactNode,
   type FormEvent,
 } from "react";
+import logoUrl from "../../frontend/assets/images/logo.svg";
 import {
   HashRouter,
   Link,
@@ -121,7 +122,7 @@ function Login({
     <main className="ar-login">
       <div className="ar-login-card">
         <div className="ar-brand">
-          <Icon name="snow" />
+          <img className="ar-brand-logo" src={logoUrl} alt="" width="40" height="40" />
           <div>
             <strong>{dt.config.name}</strong>
           </div>
@@ -333,7 +334,7 @@ function Shell({
         id="admin-menu"
       >
         <div className="ar-brand">
-          <Icon name="snow" />
+          <img className="ar-brand-logo" src={logoUrl} alt="" width="40" height="40" />
           <div>
             <strong>{dt.config.name}</strong>
             <span>Quản trị cửa hàng</span>

@@ -12,6 +12,7 @@ import { uniqueCategories, CategoryGroups } from "../components/navigation";
 import type { Row } from "../types";
 import { PagedList } from "../components/collections";
 import { Icon, Picture, ShopLink, Rich } from "../components/common";
+import logoUrl from "../../assets/images/logo.svg";
 
 // Cột chân trang hiện đủ liên kết; chỉ hiện "Xem thêm" khi danh sách dài hơn mức này
 const FOOTER_LINKS = 12;
@@ -185,7 +186,7 @@ export function ShopLayout({ children }: { children: ReactNode }) {
       aria-label={`${config.name} - Trang chủ`}
     >
       <span className="logo-mark">
-        <Icon name="snow" />
+        <img src={logoUrl} alt="" width="42" height="42" />
       </span>
       <span className="logo-text">
         <b>LOGO</b>

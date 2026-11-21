@@ -58,6 +58,94 @@ DT.VISION_DEMO_KEY = 'dt_vision_v1';
 DT.visionFiles = [];
 // Bản demo: dữ liệu trang quản trị demo (cùng trình duyệt). Website dùng các bảng đã sửa trong quản trị (core/backend.js › demoAdmin)
 DT.ADMIN_DEMO_KEY = 'dt_admin_demo_v1';
+// Chữ & số liệu trang Tầm nhìn & Sứ mệnh: Quản trị › Trang Tầm nhìn (lưu cùng ảnh trong settings 'vision').
+// Đây là nội dung mặc định; mục nào quản trị đã lưu thì dùng bản đã lưu.
+// Ký hiệu: {ten} = tên cửa hàng, {cong_ty} = tên công ty, *chữ* = tô màu / in đậm nhấn mạnh.
+DT.visionContentDefaults = {
+  hero: {
+    kicker: 'Tầm nhìn & Sứ mệnh',
+    title: 'Kiến tạo *không gian mát lành*, bền vững cho mọi công trình Việt',
+    lead: '{ten} không chỉ bán thiết bị điện lạnh. Chúng tôi mang đến giải pháp làm mát *đúng công suất – tiết kiệm năng lượng – vận hành bền bỉ* cho gia đình, nhà xưởng và doanh nghiệp.',
+    btn: 'Khám phá tầm nhìn', btn2: 'Hợp tác cùng chúng tôi', btn2Href: 'bao-gia-du-an.html',
+    floats: [{ value: '10+', label: 'Năm kinh nghiệm' }, { value: '500+', label: 'Dự án doanh nghiệp' }],
+  },
+  marquee: ['Chính hãng', 'Tiết kiệm năng lượng', 'Lắp đặt chuẩn kỹ thuật', 'Giải pháp doanh nghiệp', 'Bảo trì trọn vòng đời', 'Phát triển bền vững'],
+  vision: {
+    kicker: '01 — Tầm nhìn',
+    title: 'Đến năm 2030, trở thành *đối tác giải pháp điện lạnh* được tin cậy hàng đầu khu vực phía Nam',
+    quote: 'Mỗi hệ thống chúng tôi lắp đặt phải chạy êm hơn, tiết kiệm điện hơn và bền lâu hơn so với kỳ vọng của khách hàng.',
+    goals: [
+      { title: 'Dẫn đầu chất lượng dịch vụ', text: 'Chuẩn hóa quy trình khảo sát – thi công – bảo trì, cam kết thời gian phản hồi trong 2 giờ.' },
+      { title: 'Đối tác chiến lược của doanh nghiệp', text: 'Đồng hành cùng nhà máy, văn phòng, chuỗi bán lẻ với giải pháp tổng thể và hợp đồng bảo trì dài hạn.' },
+      { title: 'Tiên phong làm mát xanh', text: 'Ưu tiên công nghệ Inverter, môi chất lạnh thân thiện môi trường, giúp khách hàng giảm chi phí điện năng.' },
+    ],
+  },
+  mission: {
+    kicker: '02 — Sứ mệnh',
+    title: 'Mang lại sự *dễ chịu* – *an tâm* – *hiệu quả* cho từng không gian sống và làm việc',
+    cards: [
+      { tag: 'Với khách hàng', title: 'Đúng nhu cầu, đúng công suất', text: 'Tư vấn trung thực, không bán thừa. Sản phẩm chính hãng, lắp đặt chuẩn kỹ thuật và hậu mãi tận nơi suốt vòng đời thiết bị.' },
+      { tag: 'Với doanh nghiệp', title: 'Vận hành liên tục, chi phí tối ưu', text: 'Giải pháp tổng thể cho nhà xưởng, văn phòng: khảo sát miễn phí, báo giá minh bạch, bảo trì định kỳ, giảm rủi ro dừng máy.' },
+      { tag: 'Với cộng đồng', title: 'Làm mát xanh, sống bền vững', text: 'Thu hồi – xử lý môi chất lạnh đúng quy định, khuyến khích thiết bị tiết kiệm điện, góp phần giảm phát thải cho thành phố.' },
+      { tag: 'Với đội ngũ', title: 'Nơi người thợ giỏi phát triển', text: 'Đào tạo bài bản, chứng chỉ kỹ thuật, môi trường làm việc an toàn và lộ trình thăng tiến rõ ràng cho từng kỹ thuật viên.' },
+    ],
+  },
+  stats: [
+    { value: '10+', label: 'Năm kinh nghiệm' }, { value: '50.000+', label: 'Khách hàng tin dùng' },
+    { value: '500+', label: 'Dự án doanh nghiệp' }, { value: '98%', label: 'Khách hàng hài lòng' },
+  ],
+  values: {
+    kicker: '03 — Giá trị cốt lõi',
+    title: '5 giá trị định hình *mọi quyết định* của chúng tôi',
+    core: [
+      { title: 'Chính trực', text: 'Nói đúng, làm đúng. Báo giá minh bạch, hàng chính hãng, hóa đơn đầy đủ.' },
+      { title: 'Tận tâm', text: 'Lắng nghe đúng nhu cầu, hỗ trợ khách hàng trọn vòng đời sản phẩm.' },
+      { title: 'Chuyên nghiệp', text: 'Quy trình chuẩn, an toàn lao động, công trình sạch sẽ và đúng tiến độ.' },
+      { title: 'Đổi mới', text: 'Ứng dụng công nghệ mới, số hóa quản lý bảo trì và chăm sóc khách hàng.' },
+      { title: 'Bền vững', text: 'Ưu tiên giải pháp tiết kiệm năng lượng, thân thiện môi trường.' },
+    ],
+  },
+  journey: {
+    kicker: '04 — Hành trình',
+    title: 'Từng bước *vững chắc* hướng tới tầm nhìn 2030',
+    milestones: [
+      { year: '2015', title: 'Khởi đầu', text: 'Thành lập với đội ngũ kỹ thuật lắp đặt và bảo trì máy lạnh dân dụng.', goal: false },
+      { year: '2018', title: 'Mở rộng doanh nghiệp', text: 'Triển khai các dự án điều hòa trung tâm cho văn phòng, nhà xưởng.', goal: false },
+      { year: '2022', title: 'Hệ thống showroom', text: 'Mở chuỗi cửa hàng, chuẩn hóa quy trình bán hàng và hậu mãi.', goal: false },
+      { year: '2026', title: 'Chuyển đổi số', text: 'Ra mắt nền tảng mua sắm trực tuyến, đặt lịch dịch vụ và quản lý bảo trì.', goal: false },
+      { year: '2030', title: 'Mục tiêu', text: 'Đối tác giải pháp điện lạnh được tin cậy hàng đầu khu vực phía Nam.', goal: true },
+    ],
+  },
+  gallery: { kicker: '05 — Hình ảnh', title: 'Con người & *công trình* của chúng tôi' },
+  leader: {
+    kicker: 'Thông điệp lãnh đạo',
+    message: 'Chúng tôi xây dựng {ten} với một niềm tin giản dị: khách hàng xứng đáng được tư vấn trung thực và phục vụ tận tâm. Mỗi công trình hoàn thành là một lời cam kết về chất lượng – và cũng là động lực để chúng tôi tiếp tục đổi mới mỗi ngày.',
+    director: '', position: 'Giám đốc – {cong_ty}',
+  },
+  final: {
+    title: 'Cùng kiến tạo không gian *mát lành & bền vững*',
+    text: 'Khảo sát miễn phí – báo giá trong 24h – xuất hóa đơn VAT cho doanh nghiệp.',
+    btn: 'Nhận báo giá dự án', btnHref: 'bao-gia-du-an.html', btn2: 'Liên hệ tư vấn', btn2Href: 'lien-he.html',
+  },
+};
+// Nội dung đang dùng = mặc định + phần quản trị đã lưu (saved: giá trị settings 'vision'; mặc định lấy bản website đang tải)
+DT.visionContent = (saved) => {
+  let o = saved;
+  if (o === undefined) {
+    if (DT.backend?.enabled) o = DT.vision || {};
+    else { try { o = JSON.parse(localStorage.getItem(DT.VISION_DEMO_KEY) || '{}') || {}; } catch { o = {}; } }
+  }
+  const d = DT.visionContentDefaults; const out = {};
+  for (const [k, def] of Object.entries(d)) {
+    const v = o?.[k];
+    if (Array.isArray(def)) out[k] = Array.isArray(v) && v.length ? v : def;
+    else {
+      out[k] = { ...def, ...(v && typeof v === 'object' && !Array.isArray(v) ? v : {}) };
+      for (const [lk, lv] of Object.entries(def)) if (Array.isArray(lv) && !(Array.isArray(out[k][lk]) && out[k][lk].length)) out[k][lk] = lv;
+    }
+  }
+  return out;
+};
 DT.visionImages = () => {
   if (DT.backend?.enabled) return DT.vision?.images || {};
   try { return JSON.parse(localStorage.getItem(DT.VISION_DEMO_KEY) || '{}').images || {}; } catch { return {}; }
@@ -317,6 +405,7 @@ DT.siteText = (s, { rich = false } = {}) => {
   const ship = 0;
   const values = {
     ten: DT.config.name || '',
+    cong_ty: DT.config.company || DT.config.name || '',
     nguong_vnd: ship ? DT.u.money(ship) : '',
     nguong: ship ? DT.u.shortMoney(ship) : '',
     gia_ve_sinh: svc.length ? DT.u.shortMoney(Math.min(...svc)) : '',

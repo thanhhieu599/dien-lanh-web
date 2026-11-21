@@ -173,6 +173,7 @@ try {
   await web.locator('#login-form [name=phone]').fill(member); await web.locator('#login-form [name=password]').fill('MatKhau!2026');
   await web.locator('#login-form button').click(); await web.locator('.account').waitFor({ timeout: 15000 });
   await admin.bringToFront();
+  await admin.locator('.ce-nav button', { hasText: 'Hình ảnh' }).click(); // trang Tầm nhìn: ảnh ở mục Hình ảnh (mục cuối)
   const png = await admin.evaluate(async () => { const c = document.createElement('canvas'); c.width = 40; c.height = 30; const g = c.getContext('2d'); g.fillStyle = '#1A5BA6'; g.fillRect(0, 0, 40, 30); return Array.from(new Uint8Array(await (await new Promise((r) => c.toBlob(r, 'image/png'))).arrayBuffer())); }).then((a) => Buffer.from(a));
   const up = admin.waitForResponse((r) => r.url().includes('media') && r.request().method() === 'POST');
   await admin.locator('.ar-slot input[type=file]').first().setInputFiles({ name: 'tam-nhin.png', mimeType: 'image/png', buffer: png });

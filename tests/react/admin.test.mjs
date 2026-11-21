@@ -548,6 +548,41 @@ try {
   await page.locator(".ar-notices").filter({ hasText: "khách bảo trì từ đơn hàng" }).waitFor();
   assert.ok((await page.evaluate(() => AD.db.list("maintenance_contracts", { filters: [["source", "eq", "order"]] }))).rows.some((c) => c.order_code === "DTREACTQA"));
   await open("vision");
+  // Trang Tầm nhìn: toàn bộ chữ & số liệu nhập từ quản trị (có ô Họ và tên Giám đốc), web hiện đúng nội dung đã lưu
+  {
+    const nav = (t) => page.locator(".ce-nav button", { hasText: t }).click();
+    for (const t of ["Đầu trang", "Dải chữ chạy", "Tầm nhìn", "Sứ mệnh", "Số liệu", "Giá trị cốt lõi", "Hành trình", "Thư viện ảnh", "Thông điệp lãnh đạo", "Kêu gọi cuối trang", "Hình ảnh"])
+      assert.equal(await page.locator(".ce-nav button", { hasText: t }).count() >= 1, true, `Có mục ${t}`);
+    await nav("Đầu trang");
+    await page.getByLabel("Tiêu đề", { exact: true }).fill("Tiêu đề *QA tầm nhìn* mới");
+    await nav("Số liệu");
+    await page.locator('input[aria-label="Giá trị 1"]').fill("15+");
+    await page.locator('input[aria-label="Nhãn 1"]').fill("Năm hoạt động QA");
+    await nav("Thông điệp lãnh đạo");
+    await page.getByLabel("Họ và tên Giám đốc", { exact: true }).fill("Nguyễn Văn QA");
+    await page.getByLabel("Chức vụ", { exact: true }).fill("Giám đốc điều hành");
+    await nav("Hành trình");
+    await page.getByRole("button", { name: /^Xóa Mốc 1/ }).click();
+    await saved("#view .ar-form-foot button", "Đã lưu nội dung website.");
+    const site = await context.newPage();
+    await site.goto(base + "frontend/tam-nhin-su-menh.html");
+    await site.waitForSelector("html[data-react-ready=\"true\"] .vm-hero h1");
+    assert.equal(await site.locator(".vm-hero h1").innerText(), "Tiêu đề QA tầm nhìn mới");
+    assert.equal(await site.locator(".vm-hero h1 .vm-grad").innerText(), "QA tầm nhìn");
+    assert.equal(await site.locator(".vm-eyebrow").textContent(), "Tầm nhìn & Sứ mệnh", "Ký tự & hiện đúng, không thành &amp;");
+    assert.match(await site.locator("#hinh-anh h2").innerText(), /^Con người & công trình/);
+    assert.match(await site.locator(".vm-sign").innerText(), /Nguyễn Văn QA[\s\S]*Giám đốc điều hành/);
+    assert.equal(await site.locator(".vm-stats .vm-stat").first().locator("span").innerText(), "Năm hoạt động QA");
+    assert.equal(await site.locator(".vm-stats .vm-stat b").first().getAttribute("data-count"), "15");
+    assert.equal(await site.locator(".vm-timeline li").count(), 4, "Xóa 1 mốc hành trình");
+    assert.match(await site.locator(".vm-timeline").innerText(), /^2018/);
+    await site.close();
+    // Mục "Giới thiệu thương hiệu" không hiện ở trang nào nên đã ẩn khỏi Nội dung website
+    await open("content");
+    assert.equal(await page.locator(".ce-nav button", { hasText: "Giới thiệu thương hiệu" }).count(), 0);
+    await open("vision");
+    await nav("Hình ảnh");
+  }
   // Trang Tầm nhìn: mỗi vị trí ảnh là 1 thẻ (xem trước + Tải ảnh / Dán link / Bỏ ảnh)
   assert.equal(await page.locator(".ar-slot").count(), 10);
   assert.equal(await page.locator(".ar-gallery").count(), 0);
@@ -609,12 +644,12 @@ try {
   assert.equal(await page.locator(".ce-section").getByLabel(/Tiêu đề|Mô tả phụ|Nút hành động/).count(), 0);
   // Banner trang Khuyến mãi dùng ảnh banner nhỏ 1: không có mục riêng
   assert.equal(await page.locator(".ce-nav button", { hasText: "Banner trang Khuyến mãi" }).count(), 0);
-  // Sửa 1 số liệu ở mục Giới thiệu thương hiệu, lưu và đọc lại từ dữ liệu
-  await page.locator(".ce-nav button", { hasText: "Giới thiệu thương hiệu" }).click();
-  await page.getByLabel("Giá trị 1", { exact: true }).fill("12+");
+  // Sửa 1 số liệu ở mục Doanh nghiệp, lưu và đọc lại từ dữ liệu
+  await page.locator(".ce-nav button", { hasText: "Doanh nghiệp" }).click();
+  await page.getByLabel("Giá trị 1", { exact: true }).fill("600+");
   await saved("#view .ar-form-foot button", "Đã lưu nội dung website.");
-  assert.equal((await read("settings", "home")).value.story.stats[0].value, "12+");
-  await page.getByLabel("Giá trị 1", { exact: true }).fill("10+");
+  assert.equal((await read("settings", "home")).value.b2b.stats[0].value, "600+");
+  await page.getByLabel("Giá trị 1", { exact: true }).fill("500+");
   await saved("#view .ar-form-foot button", "Đã lưu nội dung website.");
   await open("settings");
   assert.ok((await page.locator(".ce-nav button").count()) >= 5, "Cài đặt chia nhóm ở cột trái");

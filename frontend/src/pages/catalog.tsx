@@ -347,6 +347,7 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
   const [reviews, setReviews] = useState<Row[]>([]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [need, setNeed] = useState(false); // tô đỏ nhóm thuộc tính khách chưa chọn
   const state = useShop();
   const navigate = useNavigate();
   useMeta(
@@ -462,9 +463,17 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
       ["Bảo hành", p.warranty || p.specs["Bảo hành"]],
     ] as [string, React.ReactNode][]
   ).filter(([, value]) => value);
+  // Chưa chọn đủ thuộc tính: báo khách và cuộn tới nhóm thuộc tính còn thiếu
+  function needOptions() {
+    toast("Vui lòng chọn đầy đủ thuộc tính sản phẩm", true);
+    const first = groups.find((g: any) => !g.values.includes(options[g.name]));
+    const el = first && document.querySelector(`.pd-option-group[data-group="${CSS.escape(first.name)}"]`);
+    el?.scrollIntoView({ block: "center", behavior: "smooth" });
+    setNeed(true);
+  }
   function buy() {
     if (groups.some((g: any) => !g.values.includes(options[g.name]))) {
-      toast("Vui lòng chọn đầy đủ thuộc tính sản phẩm", true);
+      needOptions();
       return;
     }
     if (dt.store.addToCart(product.id, qty, { options }))
@@ -670,7 +679,7 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
             {groups.length > 0 && (
               <div className="pd-options">
                 {groups.map((group: any) => (
-                  <fieldset key={group.name} className="pd-option-group">
+                  <fieldset key={group.name} className={`pd-option-group${need && !group.values.includes(options[group.name]) ? " opt-need" : ""}`} data-group={group.name}>
                     <legend>{group.name}</legend>
                     <div className="pd-option-values">
                       {group.values.map((value: string) => (
@@ -742,6 +751,7 @@ export function ProductPage({ id, slug }: { id?: string; slug?: string }) {
                 qty={qty}
                 options={options}
                 className="btn btn-outline btn-lg"
+                onMissing={needOptions}
               />
             </div>
             <div className="pd-hotline">

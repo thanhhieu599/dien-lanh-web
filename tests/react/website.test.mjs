@@ -119,6 +119,32 @@ try {
   await page.evaluate(()=>DT.store.clearCart?.());
   await page.getByRole('button',{name:'White',exact:true}).click();await page.locator('.buy-btns').getByRole('button',{name:'Thêm vào giỏ',exact:false}).click();
   assert.equal(await page.evaluate(()=>DT.store.totals().lines.find(l=>l.options['Công suất']==='2HP')?.product.price),20000000,'Giỏ hàng tính theo giá công suất đã chọn');
+  // Thẻ sản phẩm cần thuộc tính: vẫn hiện "Thêm vào giỏ"; bấm thì mở hộp chọn, chọn đủ mới thêm vào giỏ
+  { await page.evaluate(()=>DT.store.clearCart?.());
+    const name=await page.evaluate(id=>DT.api.productById(id).name,product.id);
+    await open(`tim-kiem.html?q=${encodeURIComponent(name)}`);
+    const card=page.locator(`.pcard[data-id="${product.id}"]`).first();
+    assert.equal(await page.locator('.pcard-buy',{hasText:'Chọn thuộc tính'}).count(),0,'Không còn nút Chọn thuộc tính');
+    await card.locator('.pcard-buy',{hasText:'Thêm vào giỏ'}).click();
+    const dlg=page.locator('dialog[open] .opt-picker');await dlg.waitFor();
+    await dlg.locator('[data-action=add-cart-confirm]').click();
+    assert.equal(await page.evaluate(()=>DT.store.get().cart.length),0,'Chưa chọn đủ thuộc tính thì không thêm');
+    assert.ok(await dlg.locator('.opt-missing').count()>=1,'Báo thuộc tính còn thiếu');
+    await dlg.getByRole('button',{name:'2HP',exact:true}).click();
+    await dlg.getByRole('button',{name:'Black',exact:true}).click();
+    assert.match(await dlg.locator('.price').innerText(),/20\.000\.000/,'Hộp chọn hiện giá theo công suất');
+    await dlg.locator('[data-action=add-cart-confirm]').click();
+    await page.waitForFunction(()=>DT.store.get().cart.length===1);
+    assert.deepEqual(await page.evaluate(()=>DT.store.get().cart[0].options),{'Công suất':'2HP',Color:'Black'});
+    assert.equal(await page.locator('dialog[open] .opt-picker').count(),0,'Thêm xong thì đóng hộp chọn');
+    // Trang sản phẩm: chưa chọn thuộc tính mà bấm Thêm vào giỏ -> báo và tô đỏ nhóm thiếu, không thêm
+    await page.evaluate(()=>DT.store.clearCart?.());
+    await open(`san-pham.html?id=${product.id}`);
+    await page.locator('.buy-btns').getByRole('button',{name:'Thêm vào giỏ',exact:false}).click();
+    assert.equal(await page.evaluate(()=>DT.store.get().cart.length),0);
+    assert.equal(await page.locator('.pd-option-group.opt-need').count(),1,'Tô đỏ nhóm Color chưa chọn');
+    await page.getByRole('button',{name:'White',exact:true}).click();
+    assert.equal(await page.locator('.pd-option-group.opt-need').count(),0,'Chọn xong thì bỏ tô đỏ'); }
   await page.setViewportSize({width:390,height:844});
   for(const route of ['index.html',`san-pham.html?id=${product.id}`,'danh-muc.html?cat=may-lanh','thanh-toan.html','hoi-dap.html']){await open(route);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),`Mobile overflow: ${route}`);}
   await open('index.html');await page.getByRole('button',{name:'Mở menu',exact:true}).click();await page.locator('.drawer.open').waitFor();await page.getByRole('button',{name:'Đóng menu'}).click();

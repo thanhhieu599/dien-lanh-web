@@ -3023,6 +3023,9 @@ body{-webkit-font-smoothing:antialiased;color:#212121}
   gap: 16px;
   align-items: start;
 }
+.checkout-bank.no-qr {
+  grid-template-columns: 1fr;
+}
 .checkout-qr {
   width: 180px;
   height: auto;
@@ -3037,7 +3040,7 @@ body{-webkit-font-smoothing:antialiased;color:#212121}
 }
 .checkout-bank-acc div {
   display: grid;
-  grid-template-columns: 110px 1fr;
+  grid-template-columns: 110px minmax(0, 1fr);
   gap: 8px;
 }
 .checkout-bank-acc dt {
@@ -3493,4 +3496,31 @@ body{-webkit-font-smoothing:antialiased;color:#212121}
   .job-grid, .job-perk-grid, .job-apply-grid { grid-template-columns: 1fr; }
   .job-head { flex-direction: column; align-items: flex-start; }
   .job-head h1 { font-size: 22px; }
+}
+
+/* Hộp chọn thuộc tính khi bấm Thêm vào giỏ ở thẻ sản phẩm */
+.opt-picker {
+  display: grid;
+  gap: 12px;
+  min-width: min(420px, calc(100vw - 64px));
+}
+.opt-picker h2 {
+  font-size: 17px;
+  margin: 0;
+}
+.opt-picker .price {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent, #c8102e);
+}
+.opt-picker .price del {
+  margin-left: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--muted, #666);
+}
+.opt-missing,
+.pd-option-group.opt-need legend {
+  color: var(--accent, #c8102e);
 }

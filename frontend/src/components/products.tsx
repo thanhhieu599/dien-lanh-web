@@ -11,34 +11,120 @@ export function AddToCart({
   options = {},
   children = "Thêm vào giỏ",
   className = "btn btn-primary",
+  onMissing,
 }: {
   product: Product;
   qty?: number;
   options?: Record<string, string>;
   children?: React.ReactNode;
   className?: string;
+  // Trang sản phẩm: báo khách chọn ở khối thuộc tính có sẵn; nơi khác (thẻ sản phẩm) mở hộp chọn thuộc tính
+  onMissing?: () => void;
+}) {
+  const [picking, setPicking] = useState(false);
+  const groups = dt.api.optionGroups(product);
+  const missing = groups.some((g: any) => !g.values.includes(options[g.name]));
+  return (
+    <>
+      <button
+        type="button"
+        className={className}
+        data-action="add-cart"
+        disabled={product.stock <= 0}
+        onClick={() => {
+          if (missing) {
+            if (onMissing) onMissing();
+            else setPicking(true);
+            return;
+          }
+          if (dt.store.addToCart(product.id, qty, { options }))
+            toast("Đã thêm vào giỏ hàng");
+        }}
+      >
+        <Icon name="cart" />
+        {product.stock <= 0 ? "Hết hàng" : children}
+      </button>
+      {picking && (
+        <OptionPicker
+          product={product}
+          qty={qty}
+          initial={options}
+          close={() => setPicking(false)}
+        />
+      )}
+    </>
+  );
+}
+// Hộp chọn thuộc tính khi khách bấm Thêm vào giỏ ở thẻ sản phẩm: chọn đủ mới thêm được
+function OptionPicker({
+  product,
+  qty,
+  initial,
+  close,
+}: {
+  product: Product;
+  qty: number;
+  initial: Record<string, string>;
+  close: () => void;
 }) {
   const groups = dt.api.optionGroups(product);
-  if (groups.some((g: any) => !g.values.includes(options[g.name])))
-    return (
-      <ShopLink className={className} href={dt.api.url(product)}>
-        Chọn thuộc tính
-      </ShopLink>
-    );
+  const [options, setOptions] = useState<Record<string, string>>(initial);
+  const [tried, setTried] = useState(false);
+  const shown: Product = dt.api.priced(product, options);
+  const left = groups.filter((g: any) => !g.values.includes(options[g.name]));
   return (
-    <button
-      type="button"
-      className={className}
-      data-action="add-cart"
-      disabled={product.stock <= 0}
-      onClick={() => {
-        if (dt.store.addToCart(product.id, qty, { options }))
-          toast("Đã thêm vào giỏ hàng");
-      }}
-    >
-      <Icon name="cart" />
-      {product.stock <= 0 ? "Hết hàng" : children}
-    </button>
+    <Modal title={`Chọn thuộc tính: ${product.name}`} close={close}>
+      <div className="opt-picker">
+        <h2>{product.name}</h2>
+        <p className="price">
+          {money(shown.price)}
+          {Number(shown.oldPrice) > Number(shown.price) && (
+            <del>{money(shown.oldPrice)}</del>
+          )}
+        </p>
+        {groups.map((group: any) => (
+          <fieldset key={group.name} className="pd-option-group">
+            <legend>
+              {group.name}
+              {tried && !group.values.includes(options[group.name]) && (
+                <span className="opt-missing"> – vui lòng chọn</span>
+              )}
+            </legend>
+            <div className="pd-option-values">
+              {group.values.map((value: string) => (
+                <button
+                  type="button"
+                  key={value}
+                  className={`pd-option ${options[group.name] === value ? "active" : ""}`}
+                  aria-pressed={options[group.name] === value}
+                  onClick={() => setOptions({ ...options, [group.name]: value })}
+                >
+                  {value}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+        ))}
+        <button
+          type="button"
+          className="btn btn-primary btn-block"
+          data-action="add-cart-confirm"
+          onClick={() => {
+            if (left.length) {
+              setTried(true);
+              toast(`Vui lòng chọn ${left.map((g: any) => g.name).join(", ")}`, true);
+              return;
+            }
+            if (dt.store.addToCart(product.id, qty, { options })) {
+              toast("Đã thêm vào giỏ hàng");
+              close();
+            }
+          }}
+        >
+          <Icon name="cart" /> Thêm vào giỏ
+        </button>
+      </div>
+    </Modal>
   );
 }
 export function ProductCard({

@@ -469,7 +469,7 @@ export function CheckoutPage() {
                   ))}
               </div>
               {payment === "bank" && (
-                <div className="bank-info react-bank-info checkout-bank">
+                <div className={`bank-info react-bank-info checkout-bank${dt.payments.qrUrl(totals.total, "") ? "" : " no-qr"}`}>
                   {dt.payments.qrUrl(totals.total, "") && (
                     <img
                       className="checkout-qr"
@@ -652,7 +652,7 @@ export function OrderDetails({
               Nội dung chuyển khoản: <b>{order.code}</b>
             </p>
             <p className="checkout-bank-note">
-              Quét mã QR bằng app ngân hàng, nhập đúng số tiền và nội dung là mã đơn. Cửa hàng xác nhận đơn sau khi kiểm tra tiền đã về tài khoản.
+              {dt.payments.qrUrl(order.total, order.code) ? "Quét mã QR bằng app ngân hàng, nhập" : "Chuyển khoản qua app ngân hàng, nhập"} đúng số tiền và nội dung là mã đơn. Cửa hàng xác nhận đơn sau khi kiểm tra tiền đã về tài khoản.
             </p>
           </div>
         )}

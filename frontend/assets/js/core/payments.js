@@ -32,7 +32,7 @@ DT.payments = (() => {
             <div><span>Số tiền</span><b class="price">${money(o.total)}</b></div>
             <div><span>Nội dung</span><b>${esc(o.code)}</b> <button type="button" class="link" data-copy="${esc(o.code)}">Sao chép</button></div>
           </div></div>
-        <p class="muted" data-bank-note>Quét mã QR bằng app ngân hàng, nhập đúng <b>số tiền</b> và <b>nội dung là mã đơn</b>. Cửa hàng xác nhận đơn sau khi kiểm tra tiền đã về tài khoản. ${o.paymentStatus === 'partial' ? '<b>Đơn hàng đã nhận thanh toán một phần, vui lòng chuyển phần còn lại hoặc gọi hotline.</b>' : ''}</p>
+        <p class="muted" data-bank-note>${qr ? 'Quét mã QR bằng app ngân hàng, nhập' : 'Chuyển khoản qua app ngân hàng, nhập'} đúng <b>số tiền</b> và <b>nội dung là mã đơn</b>. Cửa hàng xác nhận đơn sau khi kiểm tra tiền đã về tài khoản. ${o.paymentStatus === 'partial' ? '<b>Đơn hàng đã nhận thanh toán một phần, vui lòng chuyển phần còn lại hoặc gọi hotline.</b>' : ''}</p>
       </div>`;
     }
     return '';

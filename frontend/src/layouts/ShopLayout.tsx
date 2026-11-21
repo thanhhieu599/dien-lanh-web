@@ -186,13 +186,7 @@ export function ShopLayout({ children }: { children: ReactNode }) {
       aria-label={`${config.name} - Trang chủ`}
     >
       <span className="logo-mark">
-        <img src={logoUrl} alt="" width="42" height="42" />
-      </span>
-      <span className="logo-text">
-        <b>LOGO</b>
-        <small>
-          {String(config.name || "Tên thương hiệu").toLocaleUpperCase("vi-VN")}
-        </small>
+        <img src={logoUrl} alt="" width="56" height="56" />
       </span>
     </ShopLink>
   );

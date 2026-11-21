@@ -1316,9 +1316,10 @@ button:disabled {
   .header-main .logo-text b {
     font-size: 20px;
   }
-  .logo-mark {
-    width: 36px;
-    height: 36px;
+  .logo-mark,
+  .logo-mark:has(img) {
+    width: 44px;
+    height: 44px;
   }
   .hero .slider {
     min-height: 250px;

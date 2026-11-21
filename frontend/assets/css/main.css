@@ -687,7 +687,15 @@ table {
   height: 26px;
 }
 .logo-mark:has(img) {
-  background: none;
+  width: 56px;
+  height: 56px;
+  padding: 4px;
+  background: #fff;
+}
+.footer .logo-mark:has(img) {
+  width: 72px;
+  height: 72px;
+  padding: 6px;
 }
 .logo-mark img {
   width: 100%;
